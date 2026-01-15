@@ -1,0 +1,23 @@
+#!/usr/bin/env php
+<?php
+
+use Omega\Console\AbstractCommand;
+use Omega\Console\Prompt;
+
+require_once dirname(__DIR__, 4) . '/vendor/autoload.php';
+
+$command = new class($argv) extends AbstractCommand {
+  public function main(): void
+  {    
+    $prompt = new Prompt('test', [
+      'test_1' => function () {
+        echo "ok";
+      }
+    ]);      
+    $prompt->anyKey(function($input) {
+      echo "you press " . $input;
+    });
+  }
+};
+
+$command->main();

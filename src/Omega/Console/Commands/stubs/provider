@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Providers;
+
+use Omega\Container\Provider\AbstractServiceProvider;
+
+class __provider__ServiceProvider extends AbstractServiceProvider
+{
+    /**
+     * {@inheritdoc}
+     */
+    public function boot(): void
+    {
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function register(): void
+    {
+    }
+}

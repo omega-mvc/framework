@@ -1,0 +1,54 @@
+<?php
+
+class NewClass
+{
+	/**
+	 * A method
+	 *
+	 * @return string $name Test
+	 */
+	function test(string $name = "test"): string
+	{
+		return $name;
+	}
+
+	function test_0($param_0): int
+	{
+		return $param_0;
+	}
+
+	function test_1($param_1): int
+	{
+		return $param_1;
+	}
+
+	function test_2($param_2): int
+	{
+		return $param_2;
+	}
+
+	/** @return bool true if true */
+	final public static function someTest(string $case, int $number): bool
+	{
+		$bool = true;
+		return $bool;
+	}
+
+	/**
+	 * @param string $param String param
+	 * @return string Same as param
+	 */
+	public function function_1(string $param): string
+	{
+		return $param;
+	}
+
+	/**
+	 * @param string $param String param
+	 * @return string Same as param
+	 */
+	public function function_2(string $param): string
+	{
+		return $param;
+	}
+}

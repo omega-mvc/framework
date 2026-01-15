@@ -1,0 +1,13 @@
+{
+  "resources/js/app.js": {
+    "file": "fixtures/app.111aaa.js",
+    "css": ["fixtures/app.111aaa.css"],
+    "imports": ["fixtures/vendor.222bbb.js"]
+  },
+  "fixtures/vendor.222bbb.js": {
+    "file": "fixtures/vendor.222bbb.js",
+    "imports": ["fixtures/chunk-vue.333ccc.js", "fixtures/chunk-utils.444ddd.js"]
+  },
+  "fixtures/chunk-vue.333ccc.js": { "file": "fixtures/chunk-vue.333ccc.js" },
+  "fixtures/chunk-utils.444ddd.js": { "file": "fixtures/chunk-utils.444ddd.js" }
+}

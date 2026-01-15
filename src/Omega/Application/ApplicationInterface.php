@@ -1,0 +1,234 @@
+<?php
+
+/**
+ * Part of Omega - Application Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
+declare(strict_types=1);
+
+namespace Omega\Application;
+
+use Omega\Config\ConfigRepository;
+use Omega\Container\Provider\AbstractServiceProvider;
+
+/**
+ * Defines the contract for an application instance.
+ *
+ * The ApplicationInterface represents the core entry point of the framework
+ * and coordinates configuration loading, environment detection, service
+ * provider registration, bootstrapping, and application lifecycle management.
+ *
+ * This interface is intentionally decoupled from any specific container
+ * implementation or container-related exceptions, allowing developers to
+ * provide custom Application implementations or extend the default one
+ * without being forced to depend on a particular container behavior.
+ *
+ * Implementations are expected to manage:
+ * - Application configuration and environment
+ * - Service provider registration and booting
+ * - Application bootstrapping lifecycle
+ * - Maintenance and termination handling
+ * - Global application state access (singleton-style, if desired)
+ *
+ * @category  Omega
+ * @package   Application
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+interface ApplicationInterface
+{
+    /**
+     * Default application version identifier.
+     *
+     * This constant represents the fallback version of the application and is
+     * returned when no explicit version string is provided at runtime.
+     *
+     * Implementations may override or dynamically replace this value when
+     * exposing the application version.
+     */
+    public const string VERSION = '1.0.0';
+
+    /**
+     * Get the application version string.
+     *
+     * If a version string is explicitly provided, it will be returned as-is.
+     * Otherwise, the method falls back to the default application version
+     * defined by the VERSION constant.
+     *
+     * This allows consumers to dynamically override the application version
+     * (e.g. during runtime, build, or release phases) without modifying
+     * the underlying application state.
+     *
+     * @param string|null $version Optional version override.
+     * @return string The resolved application version.
+     */
+    public function getVersion(?string $version): string;
+
+    /**
+     * Get the default application bindings and path definitions.
+     *
+     * @return array<string, mixed> Key-value pairs defining paths, environment, and core settings.
+     */
+    public function definitions(): array;
+
+    /**
+     * Define and register the configuration directory path for the application.
+     *
+     * This method is responsible for setting the container binding that represents
+     * the base configuration path (typically `path.config`).
+     *
+     * Concrete application implementations must define where configuration files
+     * are located and how the path is resolved.
+     *
+     * This method is invoked during application initialization and may override
+     * the default configuration path resolution.
+     *
+     * @return void
+     */
+    public function setConfigPath(): void;
+
+    /**
+     * Get instance Application container.
+     *
+     * @return Application|null Return instance Application container.
+     */
+    public static function getInstance(): ?Application;
+
+    /**
+     * Load and set Configuration to application.
+     *
+     * @param ConfigRepository $configs ConfigRepository object.
+     * @return void
+     */
+    public function loadConfig(ConfigRepository $configs): void;
+
+    /**
+     * Get application (bootstrapper) cache path.
+     *
+     * default './boostrap/cache/'.
+     *
+     * @return string Absolute path to the application bootstrap cache directory.
+     */
+    public function getApplicationCachePath(): string;
+
+    /**
+     * Detect application environment.
+     *
+     * @return string Current application environment (e.g. "dev", "prod").
+     */
+    public function getEnvironment(): string;
+
+    /**
+     * Detect application debug enable.
+     *
+     * @return bool True when application debug mode is enabled.
+     */
+    public function isDebugMode(): bool;
+
+    /**
+     * Detect application production mode.
+     *
+     * @return bool True when the application is running in production environment.
+     */
+    public function isProduction(): bool;
+
+    /**
+     * Detect application development mode.
+     *
+     * @return bool True when the application is running in development environment.
+     */
+    public function isDev(): bool;
+
+    /**
+     * Bootstrap the application using the given bootstrapper classes.
+     *
+     * @param array<int, class-string> $bootstrappers List of bootstrapper class names.
+     * @return void
+     */
+    public function bootstrapWith(array $bootstrappers): void;
+
+    /**
+     * Boot service provider.
+     *
+     * @return void
+     */
+    public function bootProvider(): void;
+
+    /**
+     * Register service providers.
+     *
+     * @return void
+     */
+    public function registerProvider(): void;
+
+    /**
+     * Call the registered booting callbacks.
+     *
+     * @param callable[] $bootCallBacks Callbacks executed during the booting phase.
+     * @return void
+     */
+    public function callBootCallbacks(array $bootCallBacks): void;
+
+    /**
+     * Add booted call back, call after boot is called.
+     *
+     * @param callable $callback Callback executed after the application has booted.
+     * @return void
+     */
+    public function bootedCallback(callable $callback): void;
+
+    /**
+     * Flush or reset application (static).
+     *
+     * @return void
+     */
+    public function flush(): void;
+
+    /**
+     * Register service provider.
+     *
+     * @param string $provider Class-name service provider
+     * @return AbstractServiceProvider The instantiated and registered service provider.
+     */
+    public function register(string $provider): AbstractServiceProvider;
+
+    /**
+     * Terminate the application.
+     *
+     * @return void
+     */
+    public function terminate(): void;
+
+    /**
+     * Determinate application maintenance mode.
+     *
+     * @return bool True if the application is currently in maintenance mode.
+     */
+    public function isDownMaintenanceMode(): bool;
+
+    /**
+     * Get down maintenance file config.
+     *
+     * @return array<string, string|int|null> Maintenance mode configuration data.
+     */
+    public function getDownData(): array;
+
+    /**
+     * Abort application to http exception.
+     *
+     * @param int                   $code    HTTP status code.
+     * @param string                $message Exception message.
+     * @param array<string, string> $headers HTTP response headers.
+     * @return void
+     */
+    public function abort(int $code, string $message = '', array $headers = []): void;
+}

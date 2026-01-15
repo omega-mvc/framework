@@ -1,0 +1,190 @@
+<?php
+
+/**
+ * Part of Omega - Template Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
+/** @noinspection PhpDocSignatureInspection */
+/** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
+
+declare(strict_types=1);
+
+namespace Omega\Template\Traits;
+
+use function array_unshift;
+use function count;
+use function implode;
+use function str_repeat;
+use function str_replace;
+
+/**
+ * Trait CommentTrait
+ *
+ * Provides a collection of helper methods for building structured PHPDoc-style
+ * comment blocks. This trait allows appending comment lines, parameters, variable
+ * annotations, return annotations, and generating a fully formatted multi-line
+ * documentation block. It is used by template classes that need to produce
+ * consistent, standardized code comments during generation.
+ *
+ * @category   Omega
+ * @package    Template
+ * @subpackage Traits
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version    2.0.0
+ */
+trait CommentTrait
+{
+    /**
+     * Holds the list of comment lines that will be assembled into
+     * a complete documentation block.
+     *
+     * @var string[]
+     */
+    private array $comments = [];
+
+    /**
+     * Adds a raw comment line to the internal comment buffer.
+     *
+     * If the comment is null, a blank comment line is added instead,
+     * making it possible to insert empty separating lines.
+     *
+     * @param string|null $comment The comment text to append, or null for a blank line.
+     * @return $this Returns the current instance for fluent chaining.
+     */
+    public function addComment(?string $comment): self
+    {
+        $this->comments[] = null !== $comment ? " {$comment}" : '';
+
+        return $this;
+    }
+
+    /**
+     * Adds an empty comment line to the buffer.
+     *
+     * This is equivalent to `addComment(null)` and is used to insert spacing
+     * between other comment lines for readability.
+     *
+     * @return $this Returns the current instance for fluent chaining.
+     */
+    public function addLineComment(): self
+    {
+        return $this->addComment(null);
+    }
+
+    /**
+     * Adds a param annotation to the comment buffer.
+     *
+     * Generates a complete parameter line including datatype, parameter name,
+     * and optional description. Empty values are automatically omitted without
+     * breaking formatting.
+     *
+     * @param string $datatype    The parameter type.
+     * @param string $name        The parameter name (optional).
+     * @param string $description A description of the parameter (optional).
+     * @return self Returns the current instance for fluent chaining.
+     */
+    public function addParamComment(string $datatype, string $name, string $description): self
+    {
+        $name        = $name == '' ? $name : ' ' . $name;
+        $description = $description == '' ? $description : ' ' . $description;
+
+        $this->addComment("@param {$datatype}{$name}{$description}");
+
+        return $this;
+    }
+
+    /**
+     * Adds a var annotation to the comment buffer.
+     *
+     * Used primarily for documenting properties or temporary variables in
+     * generated code structures.
+     *
+     * @param string $datatype The variable type.
+     * @param string $name     The variable name (optional).
+     * @return self Returns the current instance for fluent chaining.
+     */
+    public function addVariableComment(string $datatype, string $name = ''): self
+    {
+        $name = $name == '' ? $name : ' ' . $name;
+
+        $this->addComment("@var {$datatype}{$name}");
+
+        return $this;
+    }
+
+    /**
+     * Adds a return annotation to the comment buffer.
+     *
+     * Supports including a return type, an optional variable name, and an
+     * optional description, all safely formatted.
+     *
+     * @param string $datatype    The return type.
+     * @param string $name        Optional variable name.
+     * @param string $description Optional return description.
+     * @return self Returns the current instance for fluent chaining.
+     */
+    public function addReturnComment(string $datatype, string $name = '', string $description = ''): self
+    {
+        $name        = $name == '' ? $name : ' ' . $name;
+        $description = $description == '' ? $description : ' ' . $description;
+
+        $this->addComment("@return {$datatype}{$name}{$description}");
+
+        return $this;
+    }
+
+    /**
+     * Returns the base template used to wrap the formatted comment body.
+     *
+     * The string `{{body}}` acts as a placeholder for the comment content
+     * generated by `generateComment()`.
+     *
+     * @return string The comment wrapper template.
+     */
+    public function commentTemplate(): string
+    {
+        return '/**{{body}} */';
+    }
+
+    /**
+     * Builds and returns the final formatted comment block.
+     *
+     * Each comment line is prefixed with `*` and indented based on the
+     * provided indentation settings. If no comments exist, an empty
+     * string is returned.
+     *
+     * @param int    $tabSize   How many indentation levels to apply.
+     * @param string $tabIndent The indentation unit (default: a tab).
+     * @return string The fully constructed documentation block, or an empty string.
+     */
+    public function generateComment(int $tabSize = 0, string $tabIndent = "\t"): string
+    {
+        $template     = $this->commentTemplate();
+        $countComment = count($this->comments);
+        $endLine      = '';
+        $tabDept      = str_repeat($tabIndent, $tabSize);
+
+        if ($countComment > 0) {
+            if ($countComment > 1) {
+                array_unshift($this->comments, '');
+                $endLine = "\n$tabDept";
+            }
+
+            $comment = implode("\n$tabDept *", $this->comments) . $endLine;
+
+            return str_replace('{{body}}', $comment, $template);
+        }
+
+        // return empty if comment not available
+        return '';
+    }
+}

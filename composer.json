@@ -1,0 +1,75 @@
+{
+    "name": "omega-mvc/framework",
+    "type": "library",
+    "description": "OmegaFramework is a lightweight and modular PHP framework designed for building modern web applications following the MVC architecture. It is optimized for PHP 8+ and provides a simple, extensible foundation for rapid application development.",
+    "homepage": "https://omega-mvc.github.io",
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "Adriano Giovannini",
+            "email": "agisoftt@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.4",
+        "ext-apcu": "*",
+        "ext-http": "*",
+        "ext-iconv": "*",
+        "ext-mbstring": "*",
+        "ext-openssl": "*",
+        "ext-pcntl": "*",
+        "ext-pdo": "*",
+        "ext-posix": "*",
+        "ext-readline": "*",
+        "ext-simplexml": "*",
+        "omega-mvc/serializable-closure":  "^2.0.0",
+        "omega-mvc/validator": "^2.0.0",
+        "psr/container": "^2.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.4",
+        "squizlabs/php_codesniffer": "^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Omega\\": "src/Omega/"
+        },
+        "files": [
+            "src/Omega/Collection/helper.php",
+            "src/Omega/Console/helper.php",
+            "src/Omega/Text/helper.php",
+            "src/Omega/Time/helper.php",
+            "src/Omega/Support/helper.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/Tests/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "0.x-dev"
+        }
+    },
+    "scripts": {
+        "lint": "php-cs-fixer fix -v",
+        "test:lint": "php-cs-fixer fix -v --dry-run --diff",
+        "test:facade": "php ./bin/facade.php facade:update --from-file /resources/facades.php --debug --dry-run",
+        "test:facade:update": "php ./bin/facade.php facade:update --from-file /resources/facades.php --debug",
+        "test:dev": [
+            "@test:lint",
+            "@test:facade"
+        ],
+        "test": [
+            "php-cs-fixer fix -v --dry-run",
+            "php ./bin/facade.php facade:update --from-file /resources/facades.php --dry-run"
+        ]
+    },
+    "suggest": {
+		"ext-apache": "If you wanto to use apache extension"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
