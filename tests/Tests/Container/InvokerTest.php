@@ -83,6 +83,7 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -101,6 +102,7 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -117,6 +119,7 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -153,8 +156,9 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItOverridesParametersCorrectly(): void
     {
@@ -174,8 +178,9 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItThrowsExceptionForUnsupportedCallableType(): void
     {
@@ -191,8 +196,9 @@ final class InvokerTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItThrowsExceptionIfInvokableClassHasNoInvokeMethod(): void
     {

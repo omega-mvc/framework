@@ -88,7 +88,7 @@ final class ReflectionCacheTest extends TestCase
      * Test it gets and caches reflection method.
      *
      * @return void
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItGetsAndCachesReflectionMethod(): void
     {
@@ -142,7 +142,7 @@ final class ReflectionCacheTest extends TestCase
      * Test it clear al caches.
      *
      * @return void
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItClearsAllCaches(): void
     {

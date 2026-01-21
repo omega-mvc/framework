@@ -21,6 +21,7 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Resolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
 use Tests\Container\Fixtures\CircularA;
@@ -55,8 +56,9 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testResolveClassWithoutConstructor()
     {
@@ -73,8 +75,9 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testResolveClassWithDependencies()
     {
@@ -92,8 +95,9 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testCircularDependencyThrowsException()
     {

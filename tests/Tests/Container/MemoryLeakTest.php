@@ -18,6 +18,8 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Group;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
 use Tests\Container\Fixtures\DependencyClass;
@@ -59,8 +61,7 @@ class MemoryLeakTest extends AbstractTestContainer
 	 * @var int
 	 */
 	private int $iterations;
-		
-	
+
     /**
      * Sets up the environment before each test method.
      *
@@ -76,16 +77,18 @@ class MemoryLeakTest extends AbstractTestContainer
 
 		$this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
 	}
-	
+
     /**
      * Test leak repeated make on non-shared.
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
+    #[Group('memory-leak')]
     public function testLeakRepeatedMakeNonShared(): void
     {
         $initialBindingsCount  = count($this->getProtectedProperty('bindings'));
@@ -112,9 +115,11 @@ class MemoryLeakTest extends AbstractTestContainer
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
+    #[Group('memory-leak')]
     public function testLeakCallMetadata(): void
     {
         $callable = function (DependencyClass $dep) {
@@ -134,10 +139,12 @@ class MemoryLeakTest extends AbstractTestContainer
      * Test leak inject on.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @noinspection PhpGetterAndSetterCanBeReplacedWithPropertyHooksInspection
      */
+    #[Group('memory-leak')]
     public function testLeakInjectOn(): void
     {
         // Define a simple class with a setter to be injected

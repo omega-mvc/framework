@@ -17,6 +17,7 @@ namespace Tests\Container;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
 use Tests\Container\Fixtures\AnotherService;
@@ -67,6 +68,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject call setters.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -82,6 +84,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject skips non setters.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -98,6 +101,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject only class types.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -113,6 +117,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject ignores unresolvable.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -128,6 +133,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test injects skips static.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -147,6 +153,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test injects multiple setters.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -163,6 +170,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject resolves nested.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -181,6 +189,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject returns original.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -196,6 +205,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject using in inject attribute.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -213,6 +223,7 @@ class InjectOnTest extends AbstractTestContainer
      *
      * @return void
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -231,6 +242,7 @@ class InjectOnTest extends AbstractTestContainer
      *
      * @return void
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
