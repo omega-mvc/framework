@@ -20,12 +20,41 @@ use Omega\Config\Source\ArrayConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Class ConfigBuilderTest
+ *
+ * This test suite verifies the behavior of the ConfigBuilder component,
+ * ensuring it correctly aggregates, merges, and transforms configuration
+ * sources into a final configuration structure. The tests cover scenarios such
+ * as handling empty configurations, recursive merging, replacement of indexed
+ * arrays, and merging configuration sources into specific or nested keys.
+ *
+ * The goal is to guarantee that ConfigBuilder behaves predictably under
+ * various merging strategies and input combinations, producing a consistent and
+ * reliable configuration array for the framework.
+ *
+ * @category  Tests
+ * @package   Config
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(ConfigBuilder::class)]
 #[CoversClass(MergeStrategy::class)]
 #[CoversClass(ArrayConfig::class)]
 class ConfigBuilderTest extends TestCase
 {
-
+    /**
+     * Instance of the ConfigBuilder used across test methods.
+     *
+     * This builder is initialized fresh for each test in setUp(), ensuring
+     * isolation between test cases and providing a clean environment to verify
+     * configuration aggregation, merging behavior, and nested insertion logic.
+     *
+     * @var ConfigBuilder
+     */
     private ConfigBuilder $builder;
 
     /**

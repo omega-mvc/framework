@@ -22,10 +22,41 @@ use PHPUnit\Framework\TestCase;
 
 use function class_implements;
 
+/**
+ * Class ConfigTest
+ *
+ * This test suite validates the behavior of the ConfigRepository component,
+ * ensuring it provides correct access, mutation, and merging of configuration
+ * values. The tests cover a variety of scenarios, including basic retrieval,
+ * nested key resolution, default value handling, value removal, clearing the
+ * repository, and merging configurations—both at the root level and within
+ * nested structures.
+ *
+ * Through these tests, the reliability and consistency of the configuration
+ * storage layer are verified, guaranteeing predictable behavior when used by
+ * the framework or application code.
+ *
+ * @category  Tests
+ * @package   Config
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(ConfigRepository::class)]
 #[CoversClass(MergeStrategy::class)]
 class ConfigTest extends TestCase
 {
+    /**
+     * The ConfigRepository instance used within each test.
+     *
+     * A fresh repository is created in setUp() before every test method to
+     * guarantee isolation and reproducibility. Tests use this instance to verify
+     * configuration retrieval, mutation, nested key handling, and merging behavior.
+     *
+     * @var ConfigRepository
+     */
     private ConfigRepository $configuration;
 
     /**
