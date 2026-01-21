@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Config Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Config;
@@ -7,24 +17,47 @@ namespace Tests\Config;
 use Omega\Config\ConfigBuilder;
 use Omega\Config\MergeStrategy;
 use Omega\Config\Source\ArrayConfig;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
+#[CoversClass(ConfigBuilder::class)]
+#[CoversClass(MergeStrategy::class)]
+#[CoversClass(ArrayConfig::class)]
 class ConfigBuilderTest extends TestCase
 {
 
     private ConfigBuilder $builder;
 
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
     protected function setUp(): void
     {
         $this->builder = new ConfigBuilder();
     }
 
-    public function testShouldProduceEmptyConfigurationObjectIfNoSources(): void
+    /**
+     * Test it should roduce empty configuration object if no sources.
+     *
+     * @return void
+     */
+    public function testItShouldProduceEmptyConfigurationObjectIfNoSources(): void
     {
         $this->assertEmpty($this->builder->build()->getAll());
     }
 
-    public function should_accept_configuration_source(): void
+    /**
+     * Test it should accept configuration source.
+     *
+     * @return void
+     */
+    public function testItShouldAcceptConfigurationSource(): void
     {
         $content = ['key' => 'value'];
 
@@ -37,7 +70,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationSourceContents(): void
+    /**
+     * Test it should merge configuration source contents.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationSourceContents(): void
     {
         $source_1 = new ArrayConfig(['key' => 'value']);
         $source_2 = new ArrayConfig(['another_key' => 'another_value']);
@@ -55,7 +93,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationSourceContentsRecursively(): void
+    /**
+     * Test it should merge configuration source contents recursively.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationSourceContentsRecursively(): void
     {
         $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
         $source_2 = new ArrayConfig(['nested' => ['another_key' => 'another_value']]);
@@ -75,7 +118,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldReplaceIndexedArraysInConfigurationSSourceContents(): void
+    /**
+     * Test it should replace indexed arrays in configuration source contents.
+     *
+     * @return void
+     */
+    public function testItShouldReplaceIndexedArraysInConfigurationSourceContents(): void
     {
         $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
         $source_2 = new ArrayConfig(['key' => [1, 2]]);
@@ -92,7 +140,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeIndexedArraysInConfigurationSourceContents(): void
+    /**
+     * Test it should merge indexed arrays configuration source contents.
+     *
+     * @return void
+     */
+    public function testItShouldMergeIndexedArraysInConfigurationSourceContents(): void
     {
         $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
         $source_2 = new ArrayConfig(['key' => [3, 4, 5]]);
@@ -109,7 +162,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationSourceContentsAtKey(): void
+    /**
+     * Test it should merge configuration source contents array.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationSourceContentsAtKey(): void
     {
         $source_1 = new ArrayConfig(['key' => 'value']);
         $source_2 = new ArrayConfig(['another_key' => 'another_value']);
@@ -129,7 +187,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationSourceContentsAtNestedKey(): void
+    /**
+     * Test it should merge configuration source contents as nested key.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationSourceContentsAtNestedKey(): void
     {
         $source_1 = new ArrayConfig(['key' => 'value']);
         $source_2 = new ArrayConfig(['another_key' => 'another_value']);
@@ -151,7 +214,12 @@ class ConfigBuilderTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationSourceContentsAtExistingKey(): void
+    /**
+     * Test it should merge configuration source contents as existing key.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationSourceContentsAtExistingKey(): void
     {
         $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
         $source_2 = new ArrayConfig(['another_key' => 'another_value']);

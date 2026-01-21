@@ -14,9 +14,9 @@ declare(strict_types=1);
 
 namespace Omega\Support\Facades;
 
-use Omega\Database\DatabaseManager;
-use Omega\Database\ConnectionInterface;
 use Omega\Database\Connection;
+use Omega\Database\ConnectionInterface;
+use Omega\Database\DatabaseManager;
 use Omega\Database\Query\InnerQuery;
 use Omega\Database\Query\Table;
 

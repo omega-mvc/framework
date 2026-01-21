@@ -16,13 +16,13 @@ namespace Omega\Middleware;
 
 use Closure;
 use Exception;
+use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Omega\Application\Application;
-use Omega\Http\Exceptions\HttpException;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 

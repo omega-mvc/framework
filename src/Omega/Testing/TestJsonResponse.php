@@ -16,8 +16,8 @@ namespace Omega\Testing;
 
 use ArrayAccess;
 use Exception;
-use PHPUnit\Framework\Assert;
 use Omega\Http\Response;
+use PHPUnit\Framework\Assert;
 use ReturnTypeWillChange;
 
 use function array_key_exists;
@@ -34,16 +34,14 @@ use function Omega\Collection\data_get;
  * ```php
  * $response = new TestJsonResponse($response);
  * $response->assertEqual('data.key', 'value');
- * ```
  *
- * @category   Omega
- * @package    Testing
- * @subpackage Traits
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
+ * @category  Omega
+ * @package   Testing
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  *
  * @implements ArrayAccess<string, mixed>
  */

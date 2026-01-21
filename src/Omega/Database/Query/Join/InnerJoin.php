@@ -38,8 +38,6 @@ class InnerJoin extends AbstractJoin
      */
     protected function joinBuilder(): string
     {
-        $on = $this->splitJoin();
-
-        return "INNER JOIN {$this->getAlias()} ON {$on}";
+        return "INNER JOIN " . $this->getAlias() . " ON " . $this->splitJoin();
     }
 }

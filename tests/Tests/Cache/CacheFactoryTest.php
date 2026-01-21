@@ -63,7 +63,7 @@ class CacheFactoryTest extends TestCase
      */
     public function testFileFactory(): void
     {
-        $cache = new CacheFactory('array1', new File(['ttl' => 3_600, 'path' => '/cache']));
+        $cache = new CacheFactory('array1', new File(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array1'));
 
         $this->assertTrue($cache->getDriver('array1')->set('key1', 'value1'));

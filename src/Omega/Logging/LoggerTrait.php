@@ -14,8 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Logging;
 
-use Stringable;
 use Omega\Logging\Exceptions\LoggerArgumentException;
+use Stringable;
 
 /**
  * Logger trait.

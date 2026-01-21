@@ -231,7 +231,7 @@ class SeedCommand extends AbstractCommand
         $make->tabSize(4);
         $make->namespace('Database\Seeders');
         $make->use('Omega\Database\Seeder\AbstractSeeder');
-        $make->extend('Seeder');
+        $make->extend('AbstractSeeder');
         $make->setEndWithNewLine();
         /** @noinspection PhpRedundantOptionalArgumentInspection */
         $make->addMethod('run')

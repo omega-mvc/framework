@@ -38,8 +38,6 @@ class LeftJoin extends AbstractJoin
      */
     protected function joinBuilder(): string
     {
-        $on = $this->splitJoin();
-
-        return "LEFT JOIN {$this->getAlias()} ON {$on}";
+        return "LEFT JOIN " . $this->getAlias() . " ON " . $this->splitJoin();
     }
 }

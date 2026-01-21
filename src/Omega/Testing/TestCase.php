@@ -15,16 +15,17 @@ declare(strict_types=1);
 namespace Omega\Testing;
 
 use Exception;
+use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Omega\Application\Application;
-use Omega\Http\Http;
-use Omega\Container\Provider\AbstractServiceProvider;
 use Omega\Support\Facades\AbstractFacade;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Throwable;
 
@@ -38,14 +39,13 @@ use function array_key_exists;
  * Application instance and allows interaction with the Http kernel to simulate requests
  * in a controlled test environment.
  *
- * @category   Omega
- * @package    Testing
- * @subpackage Traits
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
+ * @category  Omega
+ * @package   Testing
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 class TestCase extends PhpUnitTestCase
 {
@@ -81,6 +81,7 @@ class TestCase extends PhpUnitTestCase
      * @param array|string $call The service method to call, can be a string or an array for object callables.
      * @param array<string, string> $params Parameters to pass to the method.
      * @return TestJsonResponse The response wrapped in a TestJsonResponse instance.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception If an error occurs during the service call.
      */
     protected function json(array|string $call, array $params = []): TestJsonResponse

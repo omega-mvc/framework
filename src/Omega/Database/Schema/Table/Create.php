@@ -15,10 +15,9 @@ declare(strict_types=1);
 namespace Omega\Database\Schema\Table;
 
 use Omega\Database\Schema\Query;
-use Omega\Database\Schema\Table\Attributes\DataType;
 use Omega\Database\Schema\SchemaConnectionInterface;
+use Omega\Database\Schema\Table\Attributes\DataType;
 
-use function array_map;
 use function array_merge;
 use function count;
 use function implode;

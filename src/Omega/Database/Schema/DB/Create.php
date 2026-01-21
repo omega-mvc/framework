@@ -15,8 +15,8 @@ declare(strict_types=1);
 namespace Omega\Database\Schema\DB;
 
 use Omega\Database\Schema\Query;
-use Omega\Database\Schema\Traits\ConditionTrait;
 use Omega\Database\Schema\SchemaConnectionInterface;
+use Omega\Database\Schema\Traits\ConditionTrait;
 
 /**
  * Class Create

@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Console\Style;
 
+use function constant;
+
 /**
  * Decorate color variant.
  *

@@ -18,8 +18,8 @@ use DateInvalidTimeZoneException;
 use DateMalformedStringException;
 use Omega\Support\Facades\DB;
 
-use function Omega\Time\now;
 use function json_encode;
+use function Omega\Time\now;
 
 /**
  * Class Log

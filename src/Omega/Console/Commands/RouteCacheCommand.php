@@ -14,8 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Console\AbstractCommand;
 use Omega\Application\Application;
+use Omega\Console\AbstractCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;

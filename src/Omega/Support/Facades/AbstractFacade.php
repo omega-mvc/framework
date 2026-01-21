@@ -19,6 +19,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Support\Facades\Exceptions\FacadeObjectNotSetException;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
 use function array_key_exists;
@@ -82,6 +83,7 @@ abstract class AbstractFacade implements FacadeInterface
      * @return mixed The resolved instance
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -97,6 +99,7 @@ abstract class AbstractFacade implements FacadeInterface
      * @return mixed The resolved instance
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -127,6 +130,7 @@ abstract class AbstractFacade implements FacadeInterface
      * @return mixed The method return value
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws FacadeObjectNotSetException
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.

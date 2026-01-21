@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Config Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Config;
@@ -18,22 +28,46 @@ class ConfigTest extends TestCase
 {
     private ConfigRepository $configuration;
 
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
     protected function setUp(): void
     {
         $this->configuration = new ConfigRepository();
     }
 
-    public function testShouldImplementConfigRepositoryInterface(): void
+    /**
+     * Test it should implement config repository interface.
+     *
+     * @return void
+     */
+    public function testItShouldImplementConfigRepositoryInterface(): void
     {
         $this->assertContains(ConfigRepositoryInterface::class, class_implements($this->configuration::class));
     }
 
-    public function testShouldBeEmptyByDefault(): void
+    /**
+     * Test it should be empty bu default.
+     *
+     * @return void
+     */
+    public function testItShouldBeEmptyByDefault(): void
     {
         $this->assertEmpty($this->configuration->getAll());
     }
 
-    public function testShouldAcceptStore(): void
+    /**
+     * Test it should accept store.
+     *
+     * @return void
+     */
+    public function testItShouldAcceptStore(): void
     {
         $store = ['key' => 'value'];
         $configuration = new ConfigRepository($store);
@@ -41,14 +75,24 @@ class ConfigTest extends TestCase
         $this->assertEquals($store, $configuration->getAll());
     }
 
-    public function testShouldReturnAllValues(): void
+    /**
+     * Test it should return all values.
+     *
+     * @return void
+     */
+    public function testItShouldReturnAllValues(): void
     {
         $this->configuration->set('key', 'value');
 
         $this->assertEquals(['key' => 'value'], $this->configuration->getAll());
     }
 
-    public function testShouldDetermineIfKeyHasValue(): void
+    /**
+     * Test it should determine if key has value.
+     *
+     * @return void
+     */
+    public function testItShouldDetermineIfKeyHasValue(): void
     {
         $this->assertFalse($this->configuration->has('key'));
 
@@ -57,7 +101,12 @@ class ConfigTest extends TestCase
         $this->assertTrue($this->configuration->has('key'));
     }
 
-    public function testShouldDetermineIfKeyHasNestedValue(): void
+    /**
+     * Test it should determine if key jas nested value.
+     *
+     * @return void
+     */
+    public function testItShouldDetermineIfKeyHasNestedValue(): void
     {
         $this->assertFalse($this->configuration->has('nested.key'));
 
@@ -66,50 +115,89 @@ class ConfigTest extends TestCase
         $this->assertTrue($this->configuration->has('nested.key'));
     }
 
-    public function testShouldReturnNullIfKeyNotFound(): void
+    /**
+     * Test it should return null if key not found.
+     *
+     * @return void
+     */
+    public function testItShouldReturnNullIfKeyNotFound(): void
     {
         $this->assertNull($this->configuration->get('key'));
     }
 
-    public function testShouldReturnNullIfNestedKeyNotFound(): void
+    /**
+     * Test it should return null if nested key not found.
+     *
+     * @return void
+     */
+    public function testItShouldReturnNullIfNestedKeyNotFound(): void
     {
         $this->assertNull($this->configuration->get('nested.key'));
     }
 
-    public function testShouldReturnDefaultValueIfProvided(): void
+    /**
+     * Test it should return default value if provided.
+     *
+     * @return void
+     */
+    public function testItShouldReturnDefaultValueIfProvided(): void
     {
         $this->assertEquals('test', $this->configuration->get('key', 'test'));
     }
 
-    public function testShouldReturnValueForKey(): void
+    /**
+     * Test it should return value for key.
+     *
+     * @return void
+     */
+    public function testItShouldReturnValueForKey(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
 
         $this->assertEquals('value', $configuration->get('key'));
     }
 
-    public function testShouldReturnValueForNestedKey(): void
+    /**
+     * Test it should return value for nested key.
+     *
+     * @return void
+     */
+    public function testItShouldReturnValueForNestedKey(): void
     {
         $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
 
         $this->assertEquals('value', $configuration->get('nested.key'));
     }
 
-    public function testShouldSetValueForKey(): void
+    /**
+     * Test it should set value for key.
+     *
+     * @return void
+     */
+    public function testItShouldSetValueForKey(): void
     {
         $this->configuration->set('key', 'value');
 
         $this->assertEquals('value', $this->configuration->get('key'));
     }
 
-    public function testShouldSetValueForNestedKey(): void
+    /**
+     * Test it should set value for nested key.
+     *
+     * @return void
+     */
+    public function testItShouldSetValueForNestedKey(): void
     {
         $this->configuration->set('nested.key', 'value');
 
         $this->assertEquals(['key' => 'value'], $this->configuration->get('nested'));
     }
-
-    public function testShouldRemoveValueForKey(): void
+    /**
+     * Test it should remove value for key.
+     *
+     * @return void
+     */
+    public function testItShouldRemoveValueForKey(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
         $configuration->remove('key');
@@ -120,7 +208,12 @@ class ConfigTest extends TestCase
         $this->configuration->remove('non_existing_key');
     }
 
-    public function testShouldRemoveValueForNestedKey(): void
+    /**
+     * Test it should remove value for nested key.
+     *
+     * @return void
+     */
+    public function testItShouldRemoveValueForNestedKey(): void
     {
         $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
         $configuration->remove('nested.key');
@@ -133,7 +226,12 @@ class ConfigTest extends TestCase
         $this->configuration->remove('nested.non_existing_key');
     }
 
-    public function testShouldClearAllValues(): void
+    /**
+     * Test it should clear all values.
+     *
+     * @return void
+     */
+    public function testItShouldClearAllValues(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
         $configuration->clear();
@@ -141,7 +239,12 @@ class ConfigTest extends TestCase
         $this->assertEmpty($configuration->getAll());
     }
 
-    public function testShouldMergeConfiguration(): void
+    /**
+     * Test it should merge configuration.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfiguration(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
         $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
@@ -157,7 +260,12 @@ class ConfigTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationAtKey(): void
+    /**
+     * Test it should merge configuration at key.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationAtKey(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
         $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
@@ -175,7 +283,12 @@ class ConfigTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationAtNestedKey(): void
+    /**
+     * Test it should mergee configuration at nested key.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationAtNestedKey(): void
     {
         $configuration = new ConfigRepository(['key' => 'value']);
         $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
@@ -195,7 +308,12 @@ class ConfigTest extends TestCase
         );
     }
 
-    public function testShouldMergeConfigurationAtExistingKey(): void
+    /**
+     * Test it should merge configuration at existing key.
+     *
+     * @return void
+     */
+    public function testItShouldMergeConfigurationAtExistingKey(): void
     {
         $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
         $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
@@ -215,7 +333,12 @@ class ConfigTest extends TestCase
         );
     }
 
-    public function testShouldMergeAssociativeArrays(): void
+    /**
+     * Test it should merge associative arrays.
+     *
+     * @return void
+     */
+    public function testItShouldMergeAssociativeArrays(): void
     {
         $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
         $anotherConfiguration = new ConfigRepository(['nested' => ['another_key' => 'another_value']]);
@@ -233,7 +356,12 @@ class ConfigTest extends TestCase
         );
     }
 
-    public function testShouldReplaceIndexedArrays(): void
+    /**
+     * Test it should replace indexed arrays.
+     *
+     * @return void
+     */
+    public function testItShouldReplaceIndexedArrays(): void
     {
         $configuration = new ConfigRepository(['indexed' => [1, 2, 3]]);
         $anotherConfiguration = new ConfigRepository(['indexed' => [1, 2]]);
@@ -243,7 +371,12 @@ class ConfigTest extends TestCase
         $this->assertEquals(['indexed' => [1, 2]], $configuration->getAll());
     }
 
-    public function testShouldMergeIndexedArrays(): void
+    /**
+     * Test it should merge indexed arrays.
+     *
+     * @return void
+     */
+    public function testItShouldMergeIndexedArrays(): void
     {
         $configuration = new ConfigRepository(['indexed' => [1, 2, 3]]);
         $anotherConfiguration = new ConfigRepository(['indexed' => [3, 4, 5]]);

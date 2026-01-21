@@ -16,8 +16,8 @@ namespace Omega\Support\Facades;
 
 use Closure;
 use DateInterval;
-use Omega\Cache\CacheInterface;
 use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheInterface;
 
 /**
  * Facade for the Cache service.

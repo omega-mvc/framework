@@ -17,8 +17,8 @@ declare(strict_types=1);
 namespace Omega\Database\Schema\Table;
 
 use Omega\Database\Schema\Query;
-use Omega\Database\Schema\Table\Attributes\Alter\DataType;
 use Omega\Database\Schema\SchemaConnectionInterface;
+use Omega\Database\Schema\Table\Attributes\Alter\DataType;
 
 use function array_merge;
 use function implode;

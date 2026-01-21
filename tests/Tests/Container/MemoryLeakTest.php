@@ -23,6 +23,7 @@ use stdClass;
 use Tests\Container\Fixtures\DependencyClass;
 
 use function count;
+use function getenv;
 
 /**
  * Class MemoryLeakTest
@@ -47,6 +48,35 @@ use function count;
 #[CoversClass(EntryNotFoundException::class)]
 class MemoryLeakTest extends AbstractTestContainer
 {
+	/**
+	 * Number of iterations to run for stress/memory-leak tests.
+	 *
+	 * This value is dynamically set in `setUp()` depending on the environment:
+	 * - In CI environments (e.g., GitHub Actions), it is reduced to a smaller number
+	 *   to speed up automated test execution.
+	 * - Locally, it defaults to a higher number for thorough stress testing.
+	 *
+	 * @var int
+	 */
+	private int $iterations;
+		
+	
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+	protected function setUp(): void
+	{
+		parent::setUp();
+
+		$this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
+	}
+	
     /**
      * Test leak repeated make on non-shared.
      *
@@ -63,7 +93,7 @@ class MemoryLeakTest extends AbstractTestContainer
         $initialAliasesCount   = count($this->getProtectedProperty('aliases'));
 
         // Make many non-shared instances of a simple class that is not bound
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < $this->iterations; $i++) {
             $this->container->make(stdClass::class);
         }
 
@@ -92,7 +122,7 @@ class MemoryLeakTest extends AbstractTestContainer
         };
 
         // Call many times to simulate heavy usage
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < $this->iterations; $i++) {
             $this->container->call($callable);
         }
 
@@ -121,7 +151,7 @@ class MemoryLeakTest extends AbstractTestContainer
         };
 
         // Call injectOn many times to simulate heavy usage
-        for ($i = 0; $i < 10000; $i++) {
+        for ($i = 0; $i < $this->iterations; $i++) {
             $this->container->injectOn($injectable);
         }
 
