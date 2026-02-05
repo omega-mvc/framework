@@ -18,6 +18,7 @@ use Omega\Config\Exceptions\MalformedJsonException;
 use Omega\Config\Source\JsonConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the JsonConfig source.
@@ -40,6 +41,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(JsonConfig::class)]
 class JsonTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it should return values.
      *
@@ -47,7 +50,7 @@ class JsonTest extends TestCase
      */
     public function testItShouldReturnValues(): void
     {
-        $source = new JsonConfig(slash(path: __DIR__ . '/fixtures/content.json'));
+        $source = new JsonConfig($this->fixturePath('/fixtures/config/content.json'));
 
         $this->assertEquals(['key' => 'value'], $source->fetch());
     }
@@ -61,7 +64,8 @@ class JsonTest extends TestCase
     {
         $this->expectException(MalformedJsonException::class);
 
-        $source = new JsonConfig(slash(path: __DIR__ . '/fixtures/malformed.json'));
+        $source = new JsonConfig($this->fixturePath('/fixtures/config/malformed.json'));
+
         $source->fetch();
     }
 }

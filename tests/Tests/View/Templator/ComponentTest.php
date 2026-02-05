@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 use Throwable;
 
 use function trim;
@@ -41,7 +41,7 @@ use function trim;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class ComponentTest extends TestCase
+final class ComponentTest extends AbstractViewPath
 {
     /**
      * Test it can render component scope.
@@ -51,8 +51,7 @@ final class ComponentTest extends TestCase
      */
     public function testItCanRenderComponentScope(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}'
         );
         $this->assertEquals('<html><head></head><body><main>core component</main></body></html>', trim($out));
@@ -66,8 +65,7 @@ final class ComponentTest extends TestCase
      */
     public function testItCanRenderNestedComponentScope(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% component(\'componentnested.template\') %}card with nest{% endcomponent %}'
         );
         $this->assertEquals(
@@ -86,8 +84,7 @@ final class ComponentTest extends TestCase
      */
     public function testItCanRenderComponentScopeMultiple(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% component(\'componentcard.template\') %}oke{% endcomponent %} '
             . '{% component(\'componentcard.template\') %}oke 2 {% endcomponent %}'
         );
@@ -108,9 +105,8 @@ final class ComponentTest extends TestCase
      */
     public function testItThrowWhenExtendNotFound(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
         try {
-            $templator->templates(
+            $this->getTemplator('templator/view/')->templates(
                 '{% component(\'notexits.template\') %}<main>core component</main>{% endcomponent %}'
             );
         } catch (Throwable $th) {
@@ -130,9 +126,8 @@ final class ComponentTest extends TestCase
      */
     public function testItThrowWhenExtendNotFoundYield(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
         try {
-            $templator->templates(
+            $this->getTemplator('templator/view/')->templates(
                 '{% component(\'componentyield.template\') %}<main>core component</main>{% endcomponent %}'
             );
         } catch (Throwable $th) {
@@ -148,8 +143,7 @@ final class ComponentTest extends TestCase
      */
     public function testItCanRenderComponentUsingNamedParameter(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% component(\'componentnamed.template\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
         );
         $this->assertEquals('<p class="bg-red md">inner text</p>', trim($out));
@@ -163,7 +157,7 @@ final class ComponentTest extends TestCase
      */
     public function testItCanRenderComponentOppAProcess(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
+        $templator = $this->getTemplator('templator/view/');
         $templator->setComponentNamespace('Tests\\View\\Templator\\');
         $out = $templator->templates(
             '{% component(\'TestClassComponent\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
@@ -179,8 +173,8 @@ final class ComponentTest extends TestCase
      */
     public function testItCanGetDependencyView(): void
     {
-        $finder    = new TemplatorFinder([__DIR__ . '/view/'], ['']);
-        $templator = new Templator($finder, __DIR__);
+        $finder    = new TemplatorFinder([$this->viewPath('templator/view/')], ['']);
+        $templator = new Templator($finder, $this->viewCache('templator'));
         $templator->templates(
             '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
             'test'

@@ -38,7 +38,7 @@ use function rtrim;
  * @version    2.0.0
  */
 #[CoversNothing]
-class TestConfigurationSource extends AbstractSource
+final class TestConfigurationSource extends AbstractSource
 {
     /**
      * {@inheritdoc}

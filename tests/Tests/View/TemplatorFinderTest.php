@@ -15,11 +15,8 @@ declare(strict_types=1);
 namespace Tests\View;
 
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\TemplatorFinder;
-
-use const DIRECTORY_SEPARATOR;
 
 /**
  * Test suite for the TemplatorFinder component.
@@ -38,7 +35,7 @@ use const DIRECTORY_SEPARATOR;
  */
 #[CoversClass(ViewFileNotFoundException::class)]
 #[CoversClass(TemplatorFinder::class)]
-class TemplatorFinderTest extends TestCase
+class TemplatorFinderTest extends AbstractViewPath
 {
     /**
      * Test it can find templator file location.
@@ -47,11 +44,14 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanFindTemplatorFileLocation(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $base = $this->viewPath('sample/Templators');
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+        $view = new TemplatorFinder([$base], ['.php']);
 
-        $this->assertEquals($loader . DIRECTORY_SEPARATOR . 'php.php', $view->find('php'));
+        $this->assertEquals(
+            $this->viewPath('sample/Templators/php.php'),
+            $view->find('php')
+        );
     }
 
     /**
@@ -62,7 +62,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanFindTemplatorFileLocationWillThrow(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -77,7 +77,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanCheckFIleExist(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php', '.component.php']);
 
@@ -93,14 +93,12 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanFindInPath(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
         $this->assertEquals(
-            $loader
-            . DIRECTORY_SEPARATOR
-            . 'php.php',
+            $this->viewPath('sample/Templators/php.php'),
             (fn () => $this->{'findInPath'}('php', [$loader]))->call($view)
         );
     }
@@ -113,7 +111,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanFindInPathWillThrowException(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -128,12 +126,12 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanAddPath(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([], ['.php']);
         $view->addPath($loader);
 
-        $this->assertEquals($loader . DIRECTORY_SEPARATOR . 'php.php', $view->find('php'));
+        $this->assertEquals($this->viewPath('sample/Templators/php.php'), $view->find('php'));
     }
 
     /**
@@ -143,7 +141,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanSetPath(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view  = new TemplatorFinder([], ['.php']);
         $paths = (fn () => $this->{'paths'})->call($view);
@@ -160,7 +158,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanNotAddMultiPath(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([], ['.php']);
         $view->addPath($loader);
@@ -177,12 +175,12 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanAddExtension(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader]);
         $view->addExtension('.php');
 
-        $this->assertEquals($loader . DIRECTORY_SEPARATOR . 'php.php', $view->find('php'));
+        $this->assertEquals($this->viewPath('sample/Templators/php.php'), $view->find('php'));
     }
 
     /**
@@ -192,7 +190,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanFlush(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -211,7 +209,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanGetPathsRegistered(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -225,7 +223,7 @@ class TemplatorFinderTest extends TestCase
      */
     public function testItCanGetExtensionsRegistered(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
+        $loader = $this->viewPath('sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 

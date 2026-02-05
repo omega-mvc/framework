@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the BreakTemplator within foreach loops.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class EachBreakTest extends TestCase
+final class EachBreakTest extends AbstractViewPath
 {
     /**
      * Test it can render each break.
@@ -47,8 +47,7 @@ final class EachBreakTest extends TestCase
      */
     public function testItCanRenderEachBreak(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body>{% foreach ($numbers as $number) %}{% break %}{% endforeach %}</body></html>'
         );
         $this->assertEquals(

@@ -66,7 +66,7 @@ use function ucfirst;
  */
 #[CoversClass(Collection::class)]
 #[CoversClass(CollectionImmutable::class)]
-class CollectionTest extends TestCase
+final class CollectionTest extends TestCase
 {
     /**
      * Test it can get getter setter.

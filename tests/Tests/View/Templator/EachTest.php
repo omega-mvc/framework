@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the ContinueTemplator within foreach loops.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class EachTest extends TestCase
+final class EachTest extends AbstractViewPath
 {
     /**
      * Test it can render each.
@@ -47,8 +47,7 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderEach(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
+        $out = $this->getTemplator()->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
             $out
@@ -63,8 +62,7 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderEachWithoutCurveBraces(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
+        $out = $this->getTemplator()->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
             $out
@@ -79,8 +77,7 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderEachWithKeyValue(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
+        $out = $this->getTemplator()->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $key => $number): ?>'
             . '<?php echo htmlspecialchars($number); ?>'
@@ -97,7 +94,6 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderNestedEach(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
         $template = '{% foreach ($categories as $category) %}{{ $category->name }}'
             . '{% foreach ($category->items as $item) %}{{ $item->name }}{% endforeach %}{% endforeach %}';
 
@@ -108,7 +104,7 @@ final class EachTest extends TestCase
             . '<?php endforeach; ?>'
             . '<?php endforeach; ?>';
 
-        $out = $templator->templates($template);
+        $out = $this->getTemplator()->templates($template);
         $this->assertEquals($expected, $out);
     }
 
@@ -120,7 +116,6 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderNestedEachWithKeyValue(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
         $template = '{% foreach ($data as $key => $values) %}{{ $key }}'
             . '{% foreach ($values as $index => $item) %}{{ $index }}: {{ $item }}'
             . '{% endforeach %}{% endforeach %}';
@@ -132,7 +127,7 @@ final class EachTest extends TestCase
             . '<?php endforeach; ?>'
             . '<?php endforeach; ?>';
 
-        $out = $templator->templates($template);
+        $out = $this->getTemplator()->templates($template);
         $this->assertEquals($expected, $out);
     }
 
@@ -144,7 +139,6 @@ final class EachTest extends TestCase
      */
     public function testItCanRenderMultipleForeachBlocks(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
         $template = '{% foreach ($users as $user) %}{{ $user->name }}{% endforeach %}'
             . '{% foreach ($products as $product) %}{{ $product->name }}{% endforeach %}';
         $expected = '<?php foreach ($users as $user): ?>'
@@ -154,7 +148,7 @@ final class EachTest extends TestCase
             . '<?php echo htmlspecialchars($product->name); ?>'
             . '<?php endforeach; ?>';
 
-        $out = $templator->templates($template);
+        $out = $this->getTemplator()->templates($template);
         $this->assertEquals($expected, $out);
     }
 }

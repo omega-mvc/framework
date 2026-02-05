@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the IfTemplator.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class IfTest extends TestCase
+final class IfTest extends AbstractViewPath
 {
     /**
      * Test it can render if.
@@ -47,8 +47,7 @@ final class IfTest extends TestCase
      */
     public function testItCanRenderIf(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__]), __DIR__);
-        $out = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>{% if ($true === true) %} show {% endif %}</h1>'
             . '<h1>{% if ($true === false) %} show {% endif %}</h1></body></html>'
         );
@@ -68,8 +67,7 @@ final class IfTest extends TestCase
      */
     public function testItCanRenderIfElse(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__]), __DIR__);
-        $out       = $templator->templates('<div>{% if ($condition) %}true case{% else %}false case{% endif %}</div>');
+        $out = $this->getTemplator()->templates('<div>{% if ($condition) %}true case{% else %}false case{% endif %}</div>');
         $this->assertEquals(
             '<div><?php if (($condition) ): ?>true case<?php else: ?>false case<?php endif; ?></div>',
             $out
@@ -84,13 +82,12 @@ final class IfTest extends TestCase
      */
     public function testItCanRenderNestedIf(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__]), __DIR__);
         $template  = '<div>{% if ($level1) %}Level 1 true{% if ($level2) %}Level 2 true{% endif %}{% endif %}</div>';
         $expected = '<div><?php if (($level1) ): ?>Level 1 true'
             . '<?php if (($level2) ): ?>Level 2 true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
-        $this->assertEquals($expected, $templator->templates($template));
+        $this->assertEquals($expected, $this->getTemplator()->templates($template));
     }
 
     /**
@@ -101,7 +98,6 @@ final class IfTest extends TestCase
      */
     public function testItCanRenderComplexNestedIfElse(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__]), __DIR__);
         $template = '<div>{% if ($level1) %}Level 1 true'
             . '{% if ($level2) %}Level 2 true{% else %}Level 2 false'
             . '{% if ($level3) %}Level 3 true inside level 2 false{% endif %}{% endif %}'
@@ -111,7 +107,7 @@ final class IfTest extends TestCase
             . '<?php else: ?>Level 1 false<?php if (($otherCondition) ): ?>Other condition true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
-        $this->assertEquals($expected, $templator->templates($template));
+        $this->assertEquals($expected, $this->getTemplator()->templates($template));
     }
 
     /**
@@ -122,7 +118,6 @@ final class IfTest extends TestCase
      */
     public function testItCanHandleMultipleIfBlocksWithNesting(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__]), __DIR__);
         $template = '<div>{% if ($block1) %}Block 1 content{% if ($nested1) %}Nested 1{% endif %}{% endif %}'
             . '{% if ($block2) %}Block 2 content{% if ($nested2) %}Nested 2'
             . '{% if ($deepnested) %}Deep nested{% endif %}{% endif %}'
@@ -133,6 +128,6 @@ final class IfTest extends TestCase
             . '<?php endif; ?>'
             . '</div>';
 
-        $this->assertEquals($expected, $templator->templates($template));
+        $this->assertEquals($expected, $this->getTemplator()->templates($template));
     }
 }

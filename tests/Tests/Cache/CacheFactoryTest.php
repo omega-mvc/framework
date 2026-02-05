@@ -52,7 +52,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CacheFactory::class)]
 #[CoversClass(File::class)]
 #[CoversClass(Memory::class)]
-class CacheFactoryTest extends TestCase
+final class CacheFactoryTest extends TestCase
 {
     /**
      * Test file factory.

@@ -44,7 +44,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ConfigBuilder::class)]
 #[CoversClass(MergeStrategy::class)]
 #[CoversClass(ArrayConfig::class)]
-class ConfigBuilderTest extends TestCase
+final class ConfigBuilderTest extends TestCase
 {
     /**
      * Instance of the ConfigBuilder used across test methods.

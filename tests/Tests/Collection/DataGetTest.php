@@ -40,7 +40,7 @@ use function Omega\Collection\data_get;
  * @version   2.0.0
  */
 #[CoversClass(Collection::class)]
-class DataGetTest extends TestCase
+final class DataGetTest extends TestCase
 {
     /**
      * Sample nested array for testing `data_get`.

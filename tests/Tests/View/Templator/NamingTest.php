@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the NameTemplator.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class NamingTest extends TestCase
+final class NamingTest extends AbstractViewPath
 {
     /**
      * Test it can render naming.
@@ -47,8 +47,7 @@ final class NamingTest extends TestCase
      */
     public function testItCanRenderNaming(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>your {{ $name }}, ages {{ $age }} </h1></body></html>'
         );
         $this->assertEquals(
@@ -66,8 +65,7 @@ final class NamingTest extends TestCase
      */
     public function testItCanRenderNamingWithoutEscape(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>your {!! $name !!}, '
             . 'ages {!! $age !!} </h1></body></html>'
         );
@@ -86,8 +84,7 @@ final class NamingTest extends TestCase
      */
     public function testItCanRenderNamingWithCallFunction(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>time: }{{ now()->timestamp }}</h1></body></html>'
         );
         $this->assertEquals(
@@ -104,8 +101,7 @@ final class NamingTest extends TestCase
      */
     public function testItCanRenderNamingTernary(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>your '
             . '{{ $name ?? \'nuno\' }}, ages '
             . '{{ $age ? 17 : 28 }} </h1></body></html>'
@@ -127,8 +123,7 @@ final class NamingTest extends TestCase
      */
     public function testItCanRenderNamingSkip(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>{{ $render }}, '
             . '{% raw %}your {{ name }}, ages {{ age }}{% endraw %}</h1></body></html>'
         );

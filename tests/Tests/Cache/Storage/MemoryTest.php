@@ -37,7 +37,7 @@ use function time;
  * @version    2.0.0
  */
 #[CoversClass(Memory::class)]
-class MemoryTest extends TestCase
+final class MemoryTest extends TestCase
 {
     /** @var Memory Memory storage instance. Used for temporary, in-memory storage operations. */
     protected Memory $storage;

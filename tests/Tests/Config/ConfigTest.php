@@ -46,7 +46,7 @@ use function class_implements;
  */
 #[CoversClass(ConfigRepository::class)]
 #[CoversClass(MergeStrategy::class)]
-class ConfigTest extends TestCase
+final class ConfigTest extends TestCase
 {
     /**
      * The ConfigRepository instance used within each test.

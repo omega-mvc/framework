@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the ContinueTemplator within foreach loops.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class EachContinueTest extends TestCase
+final class EachContinueTest extends AbstractViewPath
 {
     /**
      * Test it can render each continue.
@@ -47,8 +47,7 @@ final class EachContinueTest extends TestCase
      */
     public function testItCanRenderEachContinue(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates('{% foreach ($numbers as $number) %}{% continue %}{% endforeach %}');
+        $out = $this->getTemplator()->templates('{% foreach ($numbers as $number) %}{% continue %}{% endforeach %}');
         $this->assertEquals('<?php foreach ($numbers as $number): ?><?php continue ; ?><?php endforeach; ?>', $out);
     }
 }

@@ -16,10 +16,10 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the UseTemplator.
@@ -39,7 +39,7 @@ use Omega\View\TemplatorFinder;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class UseTest extends TestCase
+final class UseTest extends AbstractViewPath
 {
     /**
      * Test it can render use.
@@ -49,9 +49,8 @@ final class UseTest extends TestCase
      */
     public function testItCanRenderUse(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates("'<html>{% use ('Test\Test') %}</html>");
-        $match     = Str::contains($out, 'use Test\Test');
+        $out   = $this->getTemplator('templator/view/')->templates("'<html>{% use ('Test\Test') %}</html>");
+        $match = Str::contains($out, 'use Test\Test');
         $this->assertTrue($match);
     }
 
@@ -63,8 +62,7 @@ final class UseTest extends TestCase
      */
     public function testItCanRenderUseMultiTime(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out   = $this->getTemplator('templator/view/')->templates(
             "'<html>{% use ('Test\Test') %}{% use ('Test\Test as Test2') %}</html>"
         );
         $match     = Str::contains($out, 'use Test\Test');

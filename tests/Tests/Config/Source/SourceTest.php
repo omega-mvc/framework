@@ -16,6 +16,7 @@ namespace Tests\Config\Source;
 
 use Omega\Config\Exceptions\FileReadException;
 use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 use function compact;
 
@@ -36,8 +37,10 @@ use function compact;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-class AbstractSourceTest extends TestCase
+final class SourceTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it should fetch file content.
      *
@@ -45,10 +48,14 @@ class AbstractSourceTest extends TestCase
      */
     public function testItShouldFetchFileContent(): void
     {
-        $source  = new TestConfigurationSource(slash(path: __DIR__ . '/fixtures/content.txt'));
-        $content = "content";
+        $source = new TestConfigurationSource($this->fixturePath('/fixtures/config/content.txt'));
 
-        $this->assertEquals(compact('content'), $source->fetch());
+        $content = 'content';
+
+        $this->assertEquals(
+            compact('content'),
+            $source->fetch()
+        );
     }
 
     /**
@@ -60,6 +67,6 @@ class AbstractSourceTest extends TestCase
     {
         $this->expectException(FileReadException::class);
 
-        new TestConfigurationSource(slash(path: __DIR__ . '/fixtures/not-found.txt'))->fetch();
+        new TestConfigurationSource($this->fixturePath('/fixtures/config/not-found.txt'))->fetch();
     }
 }

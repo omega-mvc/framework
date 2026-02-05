@@ -41,7 +41,7 @@ use const DIRECTORY_SEPARATOR;
  */
 #[CoversClass(ViewFileNotFoundException::class)]
 #[CoversClass(View::class)]
-class RenderViewTest extends TestCase
+class RenderViewTest extends AbstractViewPath
 {
     /**
      * Test it can render using view classes.
@@ -50,8 +50,8 @@ class RenderViewTest extends TestCase
      */
     public function testItCanRenderUsingViewClasses(): void
     {
-        $testHtml  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'sample.html';
-        $testPhp   = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'sample.php';
+        $testHtml  = $this->viewPath('sample/sample.html');
+        $testPhp   = $this->viewPath('sample/sample.php' );
 
         ob_start();
         View::render($testHtml)->send();

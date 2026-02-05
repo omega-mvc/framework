@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
  * @version    2.0.0
  */
 #[CoversClass(ArrayConfig::class)]
-class ArrayTest extends TestCase
+final class ArrayTest extends TestCase
 {
     /**
      * Test it should return content.

@@ -16,7 +16,6 @@ namespace Tests\View;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
@@ -28,8 +27,6 @@ use function md5;
 use function substr_count;
 use function trim;
 use function unlink;
-
-use const DIRECTORY_SEPARATOR;
 
 /**
  * Test suite for the Templator rendering engine.
@@ -52,7 +49,7 @@ use const DIRECTORY_SEPARATOR;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-class TemplatorTest extends TestCase
+class TemplatorTest extends AbstractViewPath
 {
     /**
      * Tears down the environment after each test method.
@@ -66,7 +63,7 @@ class TemplatorTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $files = glob(__DIR__ . '/caches/*.php');
+        $files = glob($this->viewPath('caches/*.php'));
         foreach ($files as $file) {
             if (is_file($file)) {
                 unlink($file);
@@ -82,7 +79,6 @@ class TemplatorTest extends TestCase
      *
      * @param string $text The rendered output to inspect.
      * @param string $find The substring expected to be present.
-     *
      * @return void
      */
     private function assertSee(string $text, string $find): void
@@ -99,7 +95,6 @@ class TemplatorTest extends TestCase
      * @param string $text The rendered output to inspect.
      * @param string $find The substring that must not be present.
      * @return void
-     * @noinspection PhpSameParameterValueInspection
      */
     private function assertBlind(string $text, string $find): void
     {
@@ -114,8 +109,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderPhpTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('php.php', []);
@@ -135,8 +130,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderIncludeTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('include.php', []);
@@ -156,8 +151,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderIncludeNestingTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('nesting.include.php', []);
@@ -177,8 +172,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17]);
@@ -198,8 +193,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateWithTernary(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('naming-ternary.php', ['age' => false]);
@@ -219,8 +214,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateInSubFolder(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('Groups/nesting.php', ['name' => 'taylor', 'age' => 17]);
@@ -236,8 +231,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderIfTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('if.php', ['true' => true]);
@@ -257,8 +252,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderElseIfTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('else.php', ['true' => false]);
@@ -278,8 +273,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('each.php', ['numbers' => [1, 2, 3]]);
@@ -299,8 +294,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderSectionTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('slot.php', [
@@ -321,8 +316,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanThrowErrorSectionTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -345,8 +340,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $view->suffix = '.php';
@@ -369,8 +364,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderCommentTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('comment.php', []);
@@ -390,8 +385,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderRepeatTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('repeat.include.php', []);
@@ -411,14 +406,14 @@ class TemplatorTest extends TestCase
      */
     public function testItCanCompileTemplateFile(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches/');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->compile('include.php');
 
         $this->assertSee(trim($out), '<p>taylor</p>');
-        $this->assertFileExists($cache . DIRECTORY_SEPARATOR . md5('include.php') . '.php');
+        $this->assertFileExists($cache . md5('include.php') . '.php');
     }
 
     /**
@@ -429,8 +424,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanCompileSetTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->compile('set.php');
@@ -451,8 +446,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateWithRaw(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('namingskip.php', ['render' => 'oke']);
@@ -471,8 +466,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachBreakTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('eachbreak.php', ['numbers' => [1, 2, 3]]);
@@ -488,8 +483,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachContinueTemplate(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('eachcontinue.php', ['numbers' => [1, 2, 3]]);
@@ -505,8 +500,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanGetRawParameterData(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('parent-data.php', ['full.name' => 'taylor otwell']);
@@ -524,8 +519,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanCheckTemplateFileExist(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -541,8 +536,8 @@ class TemplatorTest extends TestCase
      */
     public function testItCanMakeTemplatorUsingString(): void
     {
-        $loader  = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache   = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
 
         $template = new Templator($loader, $cache);
         $this->assertInstanceOf(Templator::class, $template);
@@ -558,8 +553,9 @@ class TemplatorTest extends TestCase
      */
     public function testItCanSetNewFinder()
     {
-        $loader     = __DIR__ . DIRECTORY_SEPARATOR . 'sample' . DIRECTORY_SEPARATOR . 'Templators';
-        $cache      = __DIR__ . DIRECTORY_SEPARATOR . 'caches';
+        $loader = $this->viewPath('sample/Templators');
+        $cache  = $this->viewPath('caches');
+
         $finder     = new TemplatorFinder([$loader]);
         $templator  = new Templator(new TemplatorFinder([$loader], ['.php']), $cache);
         $get_finder = (fn () => $this->{'finder'})->call($templator);

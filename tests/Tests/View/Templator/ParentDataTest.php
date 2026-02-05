@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for parent data rendering in templates.
@@ -36,7 +36,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class ParentDataTest extends TestCase
+final class ParentDataTest extends AbstractViewPath
 {
     /**
      * Test it render parent data.
@@ -46,8 +46,7 @@ final class ParentDataTest extends TestCase
      */
     public function testItCanRenderParentData(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out = $templator->templates(
+        $out = $this->getTemplator()->templates(
             '<html><head></head><body><h1>my name is {{ $__[\'full.name\'] }} </h1></body></html>'
         );
         $this->assertEquals(

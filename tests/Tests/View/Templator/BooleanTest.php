@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 
 /**
  * Test suite for the BooleanTemplator.
@@ -37,7 +37,7 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class BooleanTest extends TestCase
+final class BooleanTest extends AbstractViewPath
 {
     /**
      * Test it can render boolean
@@ -47,8 +47,7 @@ final class BooleanTest extends TestCase
      */
     public function testItCanRenderBoolean(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__], ['']), __DIR__);
-        $out       = $templator->templates('<input x-enable="{% bool(1 == 1) %}">');
+        $out = $this->getTemplator()->templates('<input x-enable="{% bool(1 == 1) %}">');
         $this->assertEquals(
             '<input x-enable="<?= (1 == 1) ? \'true\' : \'false\' ?>">',
             $out

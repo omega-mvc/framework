@@ -62,7 +62,7 @@ use function str_contains;
  */
 #[CoversClass(CollectionImmutable::class)]
 #[CoversClass(ImmutableCollectionException::class)]
-class CollectionImmutableTest extends TestCase
+final class CollectionImmutableTest extends TestCase
 {
     /**
      * Test it collection immutable functional work properly.

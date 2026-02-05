@@ -16,9 +16,9 @@ namespace Tests\View\Templator;
 
 use Exception;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Tests\View\AbstractViewPath;
 use Throwable;
 
 use function trim;
@@ -51,7 +51,7 @@ use const PHP_EOL;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class SectionTest extends TestCase
+final class SectionTest extends AbstractViewPath
 {
     /**
      * Test it can render section scope.
@@ -61,8 +61,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderSectionScope(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
         );
         $this->assertEquals('<p><strong>taylor</strong></p>', trim($out));
@@ -77,9 +76,8 @@ final class SectionTest extends TestCase
      */
     public function testItThrowWhenExtendNotFound(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
         try {
-            $templator->templates(
+            $this->getTemplator('templator/view/')->templates(
                 '{% extend(\'section.html\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
             );
         } catch (Throwable $th) {
@@ -95,8 +93,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderSectionInline(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates('{% extend(\'section.template\') %} {% section(\'title\', \'taylor\') %}');
+        $out = $this->getTemplator('templator/view/')->templates('{% extend(\'section.template\') %} {% section(\'title\', \'taylor\') %}');
         $this->assertEquals('<p>taylor</p>', trim($out));
     }
 
@@ -108,8 +105,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderSectionInlineEscape(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates(
+        $out = $this->getTemplator('templator/view/')->templates(
             '{% extend(\'section.template\') %} {% section(\'title\', \'<script>alert(1)</script>\') %}'
         );
         $this->assertEquals('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>', trim($out));
@@ -123,8 +119,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderMultiSection(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates('
+        $out = $this->getTemplator('templator/view/')->templates('
             {% extend(\'section.template\') %}
 
             {% sections %}
@@ -142,8 +137,8 @@ final class SectionTest extends TestCase
      */
     public function testItCanGetDependencyView(): void
     {
-        $finder    = new TemplatorFinder([__DIR__ . '/view/'], ['']);
-        $templator = new Templator($finder, __DIR__);
+        $finder    = new TemplatorFinder([$this->viewPath('templator/view/')], ['']);
+        $templator = new Templator($finder, $this->viewCache('templator'));
         $templator->templates(
             '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}',
             'test'
@@ -161,8 +156,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderSectionScopeWithDefaultYield(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates('{% extend(\'sectiondefault.template\') %}');
+        $out = $this->getTemplator('templator/view/')->templates('{% extend(\'sectiondefault.template\') %}');
         $this->assertEquals('<p>nuno</p>', trim($out));
     }
 
@@ -174,8 +168,7 @@ final class SectionTest extends TestCase
      */
     public function testItCanRenderSectionWithMultiLine(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
-        $out       = $templator->templates('{% extend(\'sectiondefaultmultylines.template\') %}');
+        $out = $this->getTemplator('templator/view/')->templates('{% extend(\'sectiondefaultmultilines.template\') %}');
         $this->assertEquals(
             '<li>'
             . PHP_EOL
@@ -198,8 +191,7 @@ final class SectionTest extends TestCase
      */
     public function testItWillThrowErrorHaveTwoDefault(): void
     {
-        $templator = new Templator(new TemplatorFinder([__DIR__ . '/view/'], ['']), __DIR__);
         $this->expectExceptionMessage('The yield statement cannot have both a default value and content.');
-        $templator->templates('{% extend(\'sectiondefaultandmultylines.template\') %}');
+        $this->getTemplator('templator/view/')->templates('{% extend(\'sectiondefaultandmultilines.template\') %}');
     }
 }
