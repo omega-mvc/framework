@@ -21,19 +21,19 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\CircularA;
-use Tests\Container\Fixtures\ClassWithMissingDependency;
-use Tests\Container\Fixtures\ClassWithNullableUnionTypeConstructor;
-use Tests\Container\Fixtures\ClassWithUnionTypeConstructor;
-use Tests\Container\Fixtures\Dependant;
-use Tests\Container\Fixtures\Dependency;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\PrivateConstructorClass;
-use Tests\Container\Fixtures\ScalarConstructorClass;
-use Tests\Container\Fixtures\Service;
-use Tests\Container\Fixtures\TypedConstructorClass;
-use Tests\Container\Fixtures\UnionDependencyOne;
-use Tests\Container\Fixtures\UnionDependencyTwo;
+use Tests\Container\Support\CircularA;
+use Tests\Container\Support\ClassWithMissingDependency;
+use Tests\Container\Support\ClassWithNullableUnionTypeConstructor;
+use Tests\Container\Support\ClassWithUnionTypeConstructor;
+use Tests\Container\Support\Dependant;
+use Tests\Container\Support\Dependency;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\PrivateConstructorClass;
+use Tests\Container\Support\ScalarConstructorClass;
+use Tests\Container\Support\Service;
+use Tests\Container\Support\TypedConstructorClass;
+use Tests\Container\Support\UnionDependencyOne;
+use Tests\Container\Support\UnionDependencyTwo;
 
 /**
  * Tests the container's ability to construct objects.

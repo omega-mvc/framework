@@ -22,7 +22,7 @@ use PHPUnit\Framework\Attributes\Group;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\DependencyClass;
+use Tests\Container\Support\DependencyClass;
 
 use function count;
 use function getenv;

@@ -20,20 +20,20 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\AnotherService;
-use Tests\Container\Fixtures\Dependant;
-use Tests\Container\Fixtures\Dependency;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\InjectionUsingAttribute;
-use Tests\Container\Fixtures\InjectionUsingAttributeOnParameter;
-use Tests\Container\Fixtures\InjectionUsingAttributeOnProperty;
-use Tests\Container\Fixtures\MultipleSetterClass;
-use Tests\Container\Fixtures\NestedDependencyClass;
-use Tests\Container\Fixtures\NonSetterClass;
-use Tests\Container\Fixtures\ScalarSetterClass;
-use Tests\Container\Fixtures\SetterInjectionClass;
-use Tests\Container\Fixtures\StaticSetterClass;
-use Tests\Container\Fixtures\UnresolvableSetterClass;
+use Tests\Container\Support\AnotherService;
+use Tests\Container\Support\Dependant;
+use Tests\Container\Support\Dependency;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\InjectionUsingAttribute;
+use Tests\Container\Support\InjectionUsingAttributeOnParameter;
+use Tests\Container\Support\InjectionUsingAttributeOnProperty;
+use Tests\Container\Support\MultipleSetterClass;
+use Tests\Container\Support\NestedDependencyClass;
+use Tests\Container\Support\NonSetterClass;
+use Tests\Container\Support\ScalarSetterClass;
+use Tests\Container\Support\SetterInjectionClass;
+use Tests\Container\Support\StaticSetterClass;
+use Tests\Container\Support\UnresolvableSetterClass;
 
 /**
  * Class InjectOnTest

@@ -21,7 +21,7 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\Container\Fixtures\DummyClass;
+use Tests\Container\Support\DummyClass;
 
 /**
  * Tests the container aliasing system.

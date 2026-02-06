@@ -23,10 +23,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\AnotherService;
-use Tests\Container\Fixtures\ConcreteService;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\ServiceInterface;
+use Tests\Container\Support\AnotherService;
+use Tests\Container\Support\ConcreteService;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\ServiceInterface;
 
 /**
  * Tests the behavior of container bindings.

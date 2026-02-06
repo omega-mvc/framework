@@ -23,10 +23,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\Container\Fixtures\CallableClass;
-use Tests\Container\Fixtures\CallableNoDeps;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\InvokableInvokeClass;
+use Tests\Container\Support\CallableClass;
+use Tests\Container\Support\CallableNoDeps;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\InvokableInvokeClass;
 use TypeError;
 
 /**

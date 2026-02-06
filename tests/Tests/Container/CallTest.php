@@ -20,9 +20,9 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\DummyStaticClass;
-use Tests\Container\Fixtures\InvokableClass;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\DummyStaticClass;
+use Tests\Container\Support\InvokableClass;
 
 /**
  * Tests the container's ability to call functions, methods, and invokable classes.

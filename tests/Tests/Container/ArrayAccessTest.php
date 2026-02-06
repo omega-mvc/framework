@@ -19,7 +19,7 @@ namespace Tests\Container;
 use Omega\Container\Exceptions\AliasException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
-use Tests\Container\Fixtures\DummyClass;
+use Tests\Container\Support\DummyClass;
 
 /**
  * Tests the ArrayAccess implementation of the container.

@@ -28,11 +28,10 @@ use PhpParser\Builder\TraitUse;
 use PhpParser\Builder\TraitUseAdaptation;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 use function file_get_contents;
 use function str_replace;
-
-use const DIRECTORY_SEPARATOR;
 
 /**
  * Class BasicTemplateTest
@@ -75,6 +74,8 @@ use const DIRECTORY_SEPARATOR;
 #[CoversClass(NewProperty::class)]
 class BasicTemplateTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Retrieves the expected output fixture for comparison.
      *
@@ -87,11 +88,11 @@ class BasicTemplateTest extends TestCase
      */
     private function getExpected(string $expected): string
     {
-        $file_name = __DIR__ . DIRECTORY_SEPARATOR . 'expected' . DIRECTORY_SEPARATOR . $expected;
+        $fileName = $this->fixturePath('/fixtures/template/' . $expected);
 
-        $file_content = file_get_contents($file_name);
+        $fileContent = file_get_contents($fileName);
 
-        return str_replace("\r\n", "\n", $file_content);
+        return str_replace("\r\n", "\n", $fileContent);
     }
 
     /**

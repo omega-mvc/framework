@@ -22,12 +22,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\DeepA;
-use Tests\Container\Fixtures\DeepB;
-use Tests\Container\Fixtures\DeepC;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\Service;
-use Tests\Container\Fixtures\UnresolvableClass;
+use Tests\Container\Support\DeepA;
+use Tests\Container\Support\DeepB;
+use Tests\Container\Support\DeepC;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\Service;
+use Tests\Container\Support\UnresolvableClass;
 
 /**
  * Class ResolutionTest

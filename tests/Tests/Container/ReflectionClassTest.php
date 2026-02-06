@@ -22,15 +22,15 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionParameter;
 use stdClass;
-use Tests\Container\Fixtures\Attribute\MyClassAttribute;
-use Tests\Container\Fixtures\Attribute\MyMethodAttribute;
-use Tests\Container\Fixtures\Attribute\MyPropertyAttribute;
-use Tests\Container\Fixtures\ChildClass;
-use Tests\Container\Fixtures\ClassWithAttributes;
-use Tests\Container\Fixtures\ClassWithMethods;
-use Tests\Container\Fixtures\ClassWithProperties;
-use Tests\Container\Fixtures\MyService;
-use Tests\Container\Fixtures\Service;
+use Tests\Container\Support\Attribute\MyClassAttribute;
+use Tests\Container\Support\Attribute\MyMethodAttribute;
+use Tests\Container\Support\Attribute\MyPropertyAttribute;
+use Tests\Container\Support\ChildClass;
+use Tests\Container\Support\ClassWithAttributes;
+use Tests\Container\Support\ClassWithMethods;
+use Tests\Container\Support\ClassWithProperties;
+use Tests\Container\Support\MyService;
+use Tests\Container\Support\Service;
 
 /**
  * Class ReflectionClassTest
@@ -221,6 +221,6 @@ class ReflectionClassTest extends AbstractTestContainer
         // Ensure parent class is correctly identified
         $parentClassReflector = $reflector->getParentClass();
         $this->assertNotNull($parentClassReflector);
-        $this->assertEquals(Fixtures\ParentClass::class, $parentClassReflector->getName());
+        $this->assertEquals(Support\ParentClass::class, $parentClassReflector->getName());
     }
 }

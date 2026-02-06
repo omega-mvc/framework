@@ -24,9 +24,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use stdClass;
-use Tests\Container\Fixtures\CircularA;
-use Tests\Container\Fixtures\DependencyClass;
-use Tests\Container\Fixtures\TypedConstructorClass;
+use Tests\Container\Support\CircularA;
+use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\TypedConstructorClass;
 
 /**
  * Class ResolverTest
