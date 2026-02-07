@@ -1,6 +1,6 @@
 <?php
 
-use Tests\Support\Bootstrap\TestVendorServiceProvider;
+use Tests\Support\Bootstrap\Support\TestVendorServiceProvider;
 
 return [
     'omega-mvc/nexus' => [
