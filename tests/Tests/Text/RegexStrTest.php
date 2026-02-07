@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Text;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Text\Regex;
 use Omega\Text\Str;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test suite for validating predefined regular expressions.

@@ -23,7 +23,7 @@ use Tests\Container\Support\Attribute\MyPropertyAttribute;
  *
  * @category   Tests
  * @package    Container
- * @subpackage Fixtures
+ * @subpackage Support
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

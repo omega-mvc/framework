@@ -114,13 +114,13 @@ final class BasicCronTest extends TestCase
     }
 
     /**
-     * Test it corrects schedule class.
+     * Test it provides the correct schedule class.
      *
      * @return void
      * @throws DateInvalidTimeZoneException Thrown when a provided timezone is invalid.
      * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function testItCorrectsScheduleClass(): void
+    public function testItProvidesTheCorrectScheduleClass(): void
     {
         foreach ($this->sampleSchedules()->getPools() as $scheduleItem) {
             $this->assertInstanceOf(ScheduleTime::class, $scheduleItem, 'this is schedule time');

@@ -24,6 +24,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use Tests\FixturesPathTrait;
 
 /**
  * Class ConfigProvidersTest
@@ -54,6 +55,8 @@ use ReflectionException;
 #[CoversClass(EntryNotFoundException::class)]
 class ConfigProvidersTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it can load config from file.
      *
@@ -67,8 +70,8 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItCanLoadConfigFromFile(): void
     {
-        $app = new Application(basePath: __DIR__);
-        $app->set('path.config', slash(path: __DIR__ . '/fixtures/config/'));
+        $app = new Application($this->basePath());
+        $app->set('path.config', $this->fixturePath('/fixtures/application-read/config/'));
 
         new ConfigProviders()->bootstrap($app);
         $config = $app->get('config');
@@ -93,8 +96,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItCanLoadConfigFromCache(): void
     {
-        $app = new Application(basePath: __DIR__ . '/fixtures');
-
+        $app = new Application($this->fixturePath('/fixtures/application-read/'));
         new ConfigProviders()->bootstrap($app);
         $config = $app->get('config');
 

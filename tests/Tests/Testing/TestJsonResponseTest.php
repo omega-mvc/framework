@@ -48,10 +48,10 @@ use PHPUnit\Framework\TestCase;
 final class TestJsonResponseTest extends TestCase
 {
     /**
-     * Test it can response as array.
+     * Test it can respond as array.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAsArray(): void
     {
@@ -71,10 +71,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert.
+     * Test it can respond assert.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssert(): void
     {
@@ -92,10 +92,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert equal.
+     * Test it can respond assert equal.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertEqual(): void
     {
@@ -112,10 +112,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert true.
+     * Test it can respond assert true.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertTrue(): void
     {
@@ -132,10 +132,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert false.
+     * Test it can respond assert false.
      *
      * @return void
-     * @throws Exception
+     *@throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertFalse(): void
     {
@@ -152,10 +152,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert null.
+     * Test it can respond assert null.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertNull(): void
     {
@@ -172,10 +172,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert not null.
+     * Test it can respond assert not null.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertNotNull(): void
     {
@@ -194,10 +194,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert empty.
+     * Test it can respond assert empty.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertEmpty(): void
     {
@@ -212,10 +212,10 @@ final class TestJsonResponseTest extends TestCase
     }
 
     /**
-     * Test it can response assert not empty.
+     * Test it can respond assert not empty.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCantResponseAssertNotEmpty(): void
     {

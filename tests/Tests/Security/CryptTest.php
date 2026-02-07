@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Security;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Security\Algo;
 use Omega\Security\Crypt;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for the Crypt class.

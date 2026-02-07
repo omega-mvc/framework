@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Security\Hashing;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Security\Hashing\BcryptHasher;
 use Omega\Security\Hashing\HashManager;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Unit tests for the HashManager class.

@@ -14,9 +14,9 @@ declare(strict_types=1);
 
 namespace Tests\Text;
 
+use Omega\Text\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Text\Str;
 use Throwable;
 
 /**
@@ -156,7 +156,7 @@ final class StrTest extends TestCase
     }
 
     /**
-     * Test if can uppercase string.
+     * Test it can uppercase string.
      *
      * @return void
      */

@@ -15,11 +15,12 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the UseTemplator.
@@ -39,8 +40,38 @@ use Tests\View\AbstractViewPath;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class UseTest extends AbstractViewPath
+final class UseTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render use.
      *
@@ -49,7 +80,7 @@ final class UseTest extends AbstractViewPath
      */
     public function testItCanRenderUse(): void
     {
-        $out   = $this->getTemplator('templator/view/')->templates("'<html>{% use ('Test\Test') %}</html>");
+        $out   = $this->templator->templates("'<html>{% use ('Test\Test') %}</html>");
         $match = Str::contains($out, 'use Test\Test');
         $this->assertTrue($match);
     }
@@ -62,7 +93,7 @@ final class UseTest extends AbstractViewPath
      */
     public function testItCanRenderUseMultiTime(): void
     {
-        $out   = $this->getTemplator('templator/view/')->templates(
+        $out   = $this->templator->templates(
             "'<html>{% use ('Test\Test') %}{% use ('Test\Test as Test2') %}</html>"
         );
         $match     = Str::contains($out, 'use Test\Test');

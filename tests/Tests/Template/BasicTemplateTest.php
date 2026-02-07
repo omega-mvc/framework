@@ -72,7 +72,7 @@ use function str_replace;
 #[CoversClass(NewConst::class)]
 #[CoversClass(NewFunction::class)]
 #[CoversClass(NewProperty::class)]
-class BasicTemplateTest extends TestCase
+final class BasicTemplateTest extends TestCase
 {
     use FixturesPathTrait;
 
@@ -88,7 +88,7 @@ class BasicTemplateTest extends TestCase
      */
     private function getExpected(string $expected): string
     {
-        $fileName = $this->fixturePath('/fixtures/template/' . $expected);
+        $fileName = $this->fixturePath(slash(path: '/fixtures/template/') . $expected);
 
         $fileContent = file_get_contents($fileName);
 

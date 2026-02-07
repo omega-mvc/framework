@@ -20,6 +20,7 @@ use Omega\Collection\Collection;
 use Omega\Support\Facades\AbstractFacade;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 use Tests\Support\Facades\Sample\FacadesTestClass;
 use Throwable;
 
@@ -45,15 +46,17 @@ use Throwable;
 #[CoversClass(Collection::class)]
 final class FacadeTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it can call static.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     final public function testItCanCallStatic(): void
     {
-        $app = new Application(basePath: __DIR__);
+        $app = new Application($this->basePath());
         $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
         AbstractFacade::setFacadeBase($app);

@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the JsonTemplator.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class JsonTest extends AbstractViewPath
+final class JsonTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render JSON.
      *
@@ -47,7 +78,7 @@ final class JsonTest extends AbstractViewPath
      */
     public function testItCanRenderJson(): void
     {
-        $out = $this->getTemplator()->templates('<html><head></head><body>{% json($data) %}</body></html>');
+        $out = $this->templator->templates('<html><head></head><body>{% json($data) %}</body></html>');
         $this->assertEquals(
             '<html><head></head><body><?php echo json_encode('
             . '$data, 0 | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR, 512'
@@ -64,8 +95,7 @@ final class JsonTest extends AbstractViewPath
      */
     public function testItCanRenderJsonWithOptionalParam(): void
     {
-        $templator = new Templator(new TemplatorFinder([$this->viewPath('templator')], ['']), $this->viewCache('templator'));
-        $out       = $templator->templates('<html><head></head><body>{% json($data, 1, 500) %}</body></html>');
+        $out = $this->templator->templates('<html><head></head><body>{% json($data, 1, 500) %}</body></html>');
         $this->assertEquals(
             '<html><head></head><body><?php echo json_encode('
             . '$data, 1 | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_THROW_ON_ERROR, 500'

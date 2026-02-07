@@ -1,17 +1,51 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Support Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Support;
 
 use Exception;
+use Omega\Support\Vite;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Support\Vite;
+use Tests\FixturesPathTrait;
 
+/**
+ * Test suite for the Vite support class.
+ *
+ * This test class verifies the integration between the Vite helper and the
+ * filesystem-based fixtures, ensuring correct resolution of asset paths
+ * from the Vite manifest, proper handling of Hot Module Replacement (HMR),
+ * and correct generation of HTML tags for scripts, styles, and preload
+ * links.
+ *
+ * The tests cover both standard build mode and HMR mode, validate internal
+ * caching behavior, and ensure that generated URLs and HTML output match
+ * the expected Vite conventions.
+ *
+ * @category  Tests
+ * @package   Support
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(Vite::class)]
 final class ViteTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Tears down the environment after each test method.
      *
@@ -35,7 +69,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetFileResourceName(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $file = $asset->get('resources/css/app.css');
 
@@ -50,7 +84,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetFileResourceNames(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $files = $asset->gets([
             'resources/css/app.css',
@@ -70,7 +104,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanCheckRunningHRMExist(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertTrue($asset->isRunningHRM());
     }
@@ -82,7 +116,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanCheckRunningHRMDoestExist(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $this->assertFalse($asset->isRunningHRM());
     }
@@ -91,11 +125,11 @@ final class ViteTest extends TestCase
      * Test it can get hot file resource name.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanGetHotFileResourceName(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $file = $asset->get('resources/css/app.css');
 
@@ -106,11 +140,11 @@ final class ViteTest extends TestCase
      * Test it can get hot file resource names.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanGetHotFileResourceNames(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $files = $asset->gets([
             'resources/css/app.css',
@@ -127,11 +161,11 @@ final class ViteTest extends TestCase
      * Test it can use cache.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanUseCache(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
         $asset->get('resources/css/app.css');
 
         $this->assertCount(1, Vite::$cache);
@@ -141,11 +175,11 @@ final class ViteTest extends TestCase
      * Test it can get hot uri.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanGetHotUrl(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertEquals(
             'http://[::1]:5173/',
@@ -157,11 +191,11 @@ final class ViteTest extends TestCase
      * Test it can get hmr script.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanGetHmrScript(): void
     {
-        $asset = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertEquals(
             '<script type="module" src="http://[::1]:5173/@vite/client"></script>',
@@ -173,11 +207,11 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTag(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $headTag = $vite(
             'resources/css/app.css',
@@ -195,11 +229,11 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag with preload.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTagWithPreload(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'preload/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'preload/');
 
         $headTag = $vite('resources/js/app.js');
 
@@ -217,11 +251,11 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag in hrm mode.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw whenn a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTagInHrmMode(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/hot/public', 'build/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
 
         $headTags = $vite(
             'resources/css/app.css',

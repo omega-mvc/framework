@@ -49,7 +49,7 @@ use PHPUnit\Framework\TestCase;
 final class ResponseStatusTest extends TestCase
 {
     /**
-     * Test it can response assert ok.
+     * Test it can respond assert ok.
      *
      * @return void
      */
@@ -85,7 +85,7 @@ final class ResponseStatusTest extends TestCase
     }
 
     /**
-     * Test it can response assert bad request.
+     * Test it can respond assert bad request.
      *
      * @return void
      */

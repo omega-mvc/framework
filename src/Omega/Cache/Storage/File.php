@@ -90,7 +90,7 @@ class File extends AbstractStorage
             throw new CacheConfigurationException('The "path" option is required for File.');
         }
 
-        $this->path = $options['path'];
+        $this->path = slash($options['path']);
 
         if (!is_dir($this->path) && !mkdir($this->path, 0777, true)) {
             throw new CachePathException($this->path);

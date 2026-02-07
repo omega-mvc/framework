@@ -41,24 +41,30 @@ use const PHP_EOL;
  */
 final class PackageManifest
 {
-    /**
-     * @var array<string, array<string, array<int, string>>>|null Cached package manifest.
-     */
+    /** @var string $basePath The base path of the application. */
+    private readonly string $basePath;
+
+    /** @var string Path where cached package manifest is stored. */
+    private readonly string $applicationCachePath;
+
+    /** @var array<string, array<string, array<int, string>>>|null Cached package manifest. */
     public ?array $packageManifest = null;
 
     /**
      * Constructor for PackageManifest.
      *
-     * @param string $basePath The base path of the application.
-     * @param string $applicationCachePath Path where cached package manifest is stored.
-     * @param string|null $vendorPath Optional vendor path; defaults to '/vendor/composer/'.
+     * @param string      $basePath             The base path of the application.
+     * @param string      $applicationCachePath Path where cached package manifest is stored.
+     * @param string|null $vendorPath           Optional vendor path; defaults to '/vendor/composer/'.
      */
-    public function __construct(
-        private readonly string $basePath,
-        private readonly string $applicationCachePath,
-        private ?string $vendorPath = null,
-    ) {
-        $this->vendorPath ??= slash(path: '/vendor/composer/');
+    public function __construct(string $basePath, string $applicationCachePath, private ?string $vendorPath = null)
+    {
+        $this->basePath             = slash($basePath);
+        $this->applicationCachePath = slash($applicationCachePath);
+
+        $this->vendorPath = $vendorPath !== null
+            ? slash($vendorPath)
+            : slash('/vendor/composer/');
     }
 
     /**
@@ -77,7 +83,7 @@ final class PackageManifest
      * @param string $key The key to retrieve from each package configuration.
      * @return string[] Array of non-empty values for the given key.
      */
-    protected function config(string $key): array
+    private function config(string $key): array
     {
         $manifest = $this->getPackageManifest();
         $result   = [];
@@ -101,7 +107,7 @@ final class PackageManifest
      *
      * @return array<string, array<string, array<int, string>>> Cached package manifest.
      */
-    protected function getPackageManifest(): array
+    private function getPackageManifest(): array
     {
         if ($this->packageManifest) {
             return $this->packageManifest;

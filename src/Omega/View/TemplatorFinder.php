@@ -56,7 +56,11 @@ class TemplatorFinder
      */
     public function __construct(array $paths, ?array $extensions = null)
     {
-        $this->setPaths($paths);
+        $this->setPaths(array_map(
+            fn($path) => slash(path:  $path),
+            $paths
+        ));
+
         $this->extensions = $extensions ?? ['.template.php', '.php'];
     }
 

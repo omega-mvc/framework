@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Tests\Support\Helper;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Router\Router;
 use Omega\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Router::class)]
 #[CoversClass(TestResponse::class)]

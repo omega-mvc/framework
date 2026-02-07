@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the BooleanTemplator.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class BooleanTest extends AbstractViewPath
+final class BooleanTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render boolean
      *
@@ -47,7 +78,7 @@ final class BooleanTest extends AbstractViewPath
      */
     public function testItCanRenderBoolean(): void
     {
-        $out = $this->getTemplator()->templates('<input x-enable="{% bool(1 == 1) %}">');
+        $out = $this->templator->templates('<input x-enable="{% bool(1 == 1) %}">');
         $this->assertEquals(
             '<input x-enable="<?= (1 == 1) ? \'true\' : \'false\' ?>">',
             $out

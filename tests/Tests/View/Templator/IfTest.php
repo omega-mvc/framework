@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the IfTemplator.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class IfTest extends AbstractViewPath
+final class IfTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render if.
      *
@@ -47,7 +78,7 @@ final class IfTest extends AbstractViewPath
      */
     public function testItCanRenderIf(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>{% if ($true === true) %} show {% endif %}</h1>'
             . '<h1>{% if ($true === false) %} show {% endif %}</h1></body></html>'
         );
@@ -67,7 +98,7 @@ final class IfTest extends AbstractViewPath
      */
     public function testItCanRenderIfElse(): void
     {
-        $out = $this->getTemplator()->templates('<div>{% if ($condition) %}true case{% else %}false case{% endif %}</div>');
+        $out = $this->templator->templates('<div>{% if ($condition) %}true case{% else %}false case{% endif %}</div>');
         $this->assertEquals(
             '<div><?php if (($condition) ): ?>true case<?php else: ?>false case<?php endif; ?></div>',
             $out
@@ -87,7 +118,7 @@ final class IfTest extends AbstractViewPath
             . '<?php if (($level2) ): ?>Level 2 true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
-        $this->assertEquals($expected, $this->getTemplator()->templates($template));
+        $this->assertEquals($expected, $this->templator->templates($template));
     }
 
     /**
@@ -107,7 +138,7 @@ final class IfTest extends AbstractViewPath
             . '<?php else: ?>Level 1 false<?php if (($otherCondition) ): ?>Other condition true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
-        $this->assertEquals($expected, $this->getTemplator()->templates($template));
+        $this->assertEquals($expected, $this->templator->templates($template));
     }
 
     /**
@@ -128,6 +159,6 @@ final class IfTest extends AbstractViewPath
             . '<?php endif; ?>'
             . '</div>';
 
-        $this->assertEquals($expected, $this->getTemplator()->templates($template));
+        $this->assertEquals($expected, $this->templator->templates($template));
     }
 }

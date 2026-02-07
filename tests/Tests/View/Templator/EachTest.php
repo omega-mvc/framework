@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the ContinueTemplator within foreach loops.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class EachTest extends AbstractViewPath
+final class EachTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render each.
      *
@@ -47,7 +78,7 @@ final class EachTest extends AbstractViewPath
      */
     public function testItCanRenderEach(): void
     {
-        $out = $this->getTemplator()->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
+        $out = $this->templator->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
             $out
@@ -62,7 +93,7 @@ final class EachTest extends AbstractViewPath
      */
     public function testItCanRenderEachWithoutCurveBraces(): void
     {
-        $out = $this->getTemplator()->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
+        $out = $this->templator->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
             $out
@@ -77,7 +108,7 @@ final class EachTest extends AbstractViewPath
      */
     public function testItCanRenderEachWithKeyValue(): void
     {
-        $out = $this->getTemplator()->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
+        $out = $this->templator->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
         $this->assertEquals(
             '<?php foreach ($numbers as $key => $number): ?>'
             . '<?php echo htmlspecialchars($number); ?>'
@@ -104,7 +135,7 @@ final class EachTest extends AbstractViewPath
             . '<?php endforeach; ?>'
             . '<?php endforeach; ?>';
 
-        $out = $this->getTemplator()->templates($template);
+        $out = $this->templator->templates($template);
         $this->assertEquals($expected, $out);
     }
 
@@ -127,7 +158,7 @@ final class EachTest extends AbstractViewPath
             . '<?php endforeach; ?>'
             . '<?php endforeach; ?>';
 
-        $out = $this->getTemplator()->templates($template);
+        $out = $this->templator->templates($template);
         $this->assertEquals($expected, $out);
     }
 
@@ -148,7 +179,7 @@ final class EachTest extends AbstractViewPath
             . '<?php echo htmlspecialchars($product->name); ?>'
             . '<?php endforeach; ?>';
 
-        $out = $this->getTemplator()->templates($template);
+        $out = $this->templator->templates($template);
         $this->assertEquals($expected, $out);
     }
 }

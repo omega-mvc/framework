@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the NameTemplator.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class NamingTest extends AbstractViewPath
+final class NamingTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render naming.
      *
@@ -47,7 +78,7 @@ final class NamingTest extends AbstractViewPath
      */
     public function testItCanRenderNaming(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>your {{ $name }}, ages {{ $age }} </h1></body></html>'
         );
         $this->assertEquals(
@@ -65,7 +96,7 @@ final class NamingTest extends AbstractViewPath
      */
     public function testItCanRenderNamingWithoutEscape(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>your {!! $name !!}, '
             . 'ages {!! $age !!} </h1></body></html>'
         );
@@ -84,7 +115,7 @@ final class NamingTest extends AbstractViewPath
      */
     public function testItCanRenderNamingWithCallFunction(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>time: }{{ now()->timestamp }}</h1></body></html>'
         );
         $this->assertEquals(
@@ -101,7 +132,7 @@ final class NamingTest extends AbstractViewPath
      */
     public function testItCanRenderNamingTernary(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>your '
             . '{{ $name ?? \'nuno\' }}, ages '
             . '{{ $age ? 17 : 28 }} </h1></body></html>'
@@ -123,7 +154,7 @@ final class NamingTest extends AbstractViewPath
      */
     public function testItCanRenderNamingSkip(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body><h1>{{ $render }}, '
             . '{% raw %}your {{ name }}, ages {{ age }}{% endraw %}</h1></body></html>'
         );

@@ -21,7 +21,7 @@ use Attribute;
  *
  * @category   Tests
  * @package    Container
- * @subpackage Fixtures\Attribute
+ * @subpackage Support\Attribute
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

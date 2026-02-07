@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the IncludeTemplator.
@@ -37,8 +38,38 @@ use Tests\View\AbstractViewPath;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class IncludeTest extends AbstractViewPath
+final class IncludeTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render include.
      *
@@ -47,7 +78,7 @@ final class IncludeTest extends AbstractViewPath
      */
     public function testItCanRenderInclude(): void
     {
-        $out = $this->getTemplator()->templates(
+        $out = $this->templator->templates(
             '<html><head></head><body>{% include(\'/view/component.php\') %}</body></html>'
         );
         $this->assertEquals('<html><head></head><body><p>Call From Component</p></body></html>', $out);
@@ -61,8 +92,8 @@ final class IncludeTest extends AbstractViewPath
      */
     public function testItCanFetchDependencyView(): void
     {
-        $finder    = new TemplatorFinder([$this->viewPath('templator')], ['']);
-        $templator = new Templator($finder, $this->viewCache('templator'));
+        $finder    = new TemplatorFinder([$this->fixturePath('/fixtures/view/templator')], ['']);
+        $templator = new Templator($finder, $this->fixturePath('/fixtures/view/templator'));
         $templator->templates('<html><head></head><body>{% include(\'view/component.php\') %}</body></html>', 'test');
         $this->assertEquals([
             $finder->find('view/component.php') => 1,

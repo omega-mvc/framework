@@ -15,9 +15,9 @@ declare(strict_types=1);
 namespace Tests\Text;
 
 use Omega\Macroable\Exceptions\MacroNotFoundException;
+use Omega\Text\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Text\Str;
 
 /**
  * Unit tests for the string macro system implemented in the `Str` class.

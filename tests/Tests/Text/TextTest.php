@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Text;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Text\Str;
 use Omega\Text\Text;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 use function Omega\Text\string;
 use function Omega\Text\text;
@@ -43,7 +43,7 @@ use function Omega\Text\text;
  */
 #[CoversClass(Str::class)]
 #[CoversClass(Text::class)]
-class TextTest extends TestCase
+final class TextTest extends TestCase
 {
     /**
      * Test it can create new instance using helper.

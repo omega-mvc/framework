@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Support\Bootstrap\Support;
 
 use Omega\Exceptions\ExceptionHandler;
 use PHPUnit\Framework\Assert;
@@ -32,7 +32,7 @@ use Throwable;
  *
  * @category   Tests
  * @package    Support
- * @subpackage Bootstrap
+ * @subpackage Bootstrap\Support
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

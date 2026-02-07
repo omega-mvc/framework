@@ -58,7 +58,7 @@ final class TestCaseTest extends TestCase
      * dependencies, and preparing any state required by the test.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred.
      */
     protected function setUp(): void
     {

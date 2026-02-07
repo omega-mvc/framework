@@ -51,6 +51,8 @@ class View
      */
     public static function render(string $viewPath, array $portal = []): Response
     {
+        $viewPath = slash($viewPath);
+
         if (!file_exists($viewPath)) {
             throw new ViewFileNotFoundException($viewPath);
         }

@@ -14,10 +14,10 @@ declare(strict_types=1);
 
 namespace Tests\Text;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Text\Regex;
 use Omega\Text\Text;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Test suite for validating the Text API behavior.
@@ -43,7 +43,7 @@ use Omega\Text\Text;
  */
 #[CoversClass(Regex::class)]
 #[CoversClass(Text::class)]
-class TextAPITest extends TestCase
+final class TextAPITest extends TestCase
 {
     /**
      * Holds the Text instance under test.

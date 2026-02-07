@@ -62,6 +62,8 @@ use function time;
  * @version   2.0.0
  */
 #[CoversClass(Now::class)]
+#[CoversClass(PropertyNotExistException::class)]
+#[CoversClass(PropertyNotSettableException::class)]
 final class TimeTravelTest extends TestCase
 {
     /**
@@ -69,70 +71,6 @@ final class TimeTravelTest extends TestCase
      *
      * @return void
      */
-    /**public function testItSameWithCurrentTime(): void
-    {
-        $now = new Now();
-
-        $this->assertEquals(
-            time(),
-            $now->timestamp,
-            'Timestamp must equal'
-        );
-
-        $this->assertEquals(
-            date('Y'),
-            $now->year,
-            'Timestamp must equal'
-        );
-
-        $this->assertEquals(
-            date('n'),
-            $now->month,
-            'the time must same with this day'
-        );
-
-        $this->assertEquals(
-            date('d'),
-            $now->day,
-            'the time must same with this day'
-        );
-
-        $this->assertEquals(
-            date('D'),
-            $now->shortDay,
-            'the time must same with this short day'
-        );
-
-        $this->assertEquals(
-            date('H'),
-            $now->hour,
-            'the time must same with this hour'
-        );
-
-        $this->assertEquals(
-            date('i'),
-            $now->minute,
-            'the time must same with this minute'
-        );
-
-        $this->assertEquals(
-            date('s'),
-            $now->second,
-            'the time must same with this second'
-        );
-
-        $this->assertEquals(
-            date('l'),
-            $now->dayName,
-            'the time must same with this day name'
-        );
-
-        $this->assertEquals(
-            date('F'),
-            $now->monthName,
-            'the time must same with this day name'
-        );
-    }*/
     public function testItSameWithCurrentTime(): void
     {
         $timestamp = time();

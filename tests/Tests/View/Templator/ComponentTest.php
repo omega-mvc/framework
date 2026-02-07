@@ -15,10 +15,11 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\View\AbstractViewPath;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 use Throwable;
 
 use function trim;
@@ -41,8 +42,38 @@ use function trim;
  */
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-final class ComponentTest extends AbstractViewPath
+final class ComponentTest extends TestCase
 {
+    use FixturesPathTrait;
+
+    /**
+     * Instance of the Templator class used to render template strings
+     * for testing purposes. It wraps a TemplatorFinder that manages
+     * template paths and extensions.
+     *
+     * @var Templator
+     */
+    private Templator $templator;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->templator = new Templator(
+            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->fixturePath('/fixtures/view/templator/')
+        );
+    }
+
     /**
      * Test it can render component scope.
      *
@@ -51,7 +82,7 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanRenderComponentScope(): void
     {
-        $out = $this->getTemplator('templator/view/')->templates(
+        $out = $this->templator->templates(
             '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}'
         );
         $this->assertEquals('<html><head></head><body><main>core component</main></body></html>', trim($out));
@@ -65,7 +96,7 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanRenderNestedComponentScope(): void
     {
-        $out = $this->getTemplator('templator/view/')->templates(
+        $out = $this->templator->templates(
             '{% component(\'componentnested.template\') %}card with nest{% endcomponent %}'
         );
         $this->assertEquals(
@@ -84,7 +115,7 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanRenderComponentScopeMultiple(): void
     {
-        $out = $this->getTemplator('templator/view/')->templates(
+        $out = $this->templator->templates(
             '{% component(\'componentcard.template\') %}oke{% endcomponent %} '
             . '{% component(\'componentcard.template\') %}oke 2 {% endcomponent %}'
         );
@@ -106,7 +137,7 @@ final class ComponentTest extends AbstractViewPath
     public function testItThrowWhenExtendNotFound(): void
     {
         try {
-            $this->getTemplator('templator/view/')->templates(
+            $this->templator->templates(
                 '{% component(\'notexits.template\') %}<main>core component</main>{% endcomponent %}'
             );
         } catch (Throwable $th) {
@@ -127,7 +158,7 @@ final class ComponentTest extends AbstractViewPath
     public function testItThrowWhenExtendNotFoundYield(): void
     {
         try {
-            $this->getTemplator('templator/view/')->templates(
+            $this->templator->templates(
                 '{% component(\'componentyield.template\') %}<main>core component</main>{% endcomponent %}'
             );
         } catch (Throwable $th) {
@@ -143,7 +174,7 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanRenderComponentUsingNamedParameter(): void
     {
-        $out = $this->getTemplator('templator/view/')->templates(
+        $out = $this->templator->templates(
             '{% component(\'componentnamed.template\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
         );
         $this->assertEquals('<p class="bg-red md">inner text</p>', trim($out));
@@ -157,7 +188,7 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanRenderComponentOppAProcess(): void
     {
-        $templator = $this->getTemplator('templator/view/');
+        $templator = $this->templator;
         $templator->setComponentNamespace('Tests\\View\\Templator\\');
         $out = $templator->templates(
             '{% component(\'TestClassComponent\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
@@ -173,8 +204,8 @@ final class ComponentTest extends AbstractViewPath
      */
     public function testItCanGetDependencyView(): void
     {
-        $finder    = new TemplatorFinder([$this->viewPath('templator/view/')], ['']);
-        $templator = new Templator($finder, $this->viewCache('templator'));
+        $finder    = new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']);
+        $templator = new Templator($finder, $this->fixturePath('/fixtures/view/templator/'));
         $templator->templates(
             '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
             'test'

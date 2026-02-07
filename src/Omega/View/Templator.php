@@ -91,7 +91,7 @@ class Templator
     {
         // Backwards compatibility with templator finder.
         $this->finder   = is_string($finder) ? new TemplatorFinder([$finder]) : $finder;
-        $this->cacheDir = $cacheDir;
+        $this->cacheDir = slash($cacheDir);
     }
 
     /**

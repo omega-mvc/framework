@@ -1,17 +1,57 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Support Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Support;
 
 use Exception;
+use Omega\Support\Vite;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Support\Vite;
+use Tests\FixturesPathTrait;
 
+/**
+ * Test suite for the Vite tag generation functionality.
+ *
+ * This class verifies the behavior of the Vite helper in creating HTML tags
+ * for assets, including scripts, styles, and module preloads. It tests
+ * private helper methods such as URL escaping, CSS detection, attribute
+ * string building, and tag generation with custom attributes.
+ *
+ * The tests cover:
+ * - Proper escaping of URLs.
+ * - Correct identification of CSS files.
+ * - Generation of script, style, and preload HTML tags.
+ * - Handling of custom attributes for tags.
+ * - Integration with Vite manifests to resolve asset paths.
+ * - Combination of multiple entry points into valid HTML output.
+ *
+ * It ensures that both standard and manifest-driven assets are processed
+ * correctly and that the resulting HTML meets the expected structure.
+ *
+ * @category  Tests
+ * @package   Support
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(Vite::class)]
 final class ViteTagTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Tears down the environment after each test method.
      *
@@ -158,7 +198,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTags(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getTags(['resources/js/app.js', 'resources/css/app.css']);
         $this->assertEquals(
@@ -176,7 +216,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTagsAttributes(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getTags(
             entryPoints: [
@@ -203,7 +243,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTagsAttributesWithException(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'build/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getCustomTags(
             entryPoints: [
@@ -231,7 +271,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetPreloadTags(): void
     {
-        $vite = new Vite(__DIR__ . '/fixtures/manifest/public', 'preload/');
+        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'preload/');
 
         $tag = $vite->getPreloadTags(['resources/js/app.js']);
         $this->assertEquals(

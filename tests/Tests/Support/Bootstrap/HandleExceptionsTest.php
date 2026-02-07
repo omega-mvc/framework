@@ -25,7 +25,10 @@ use Omega\Http\Request;
 use Omega\Support\Bootstrap\HandleExceptions;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use Tests\Support\Bootstrap\Support\TestHandleExceptions;
+use Tests\Support\Bootstrap\Support\TestLog;
 use Throwable;
 
 /**
@@ -66,6 +69,7 @@ class HandleExceptionsTest extends TestCase
      * Test it can handle error.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception if a generic error occurred
      */
     public function testItCanHandleError(): void
@@ -87,6 +91,7 @@ class HandleExceptionsTest extends TestCase
      * Test it can handle error deprecation.
      *
      * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception if a generic error occurred
      */
     public function testItCanHandleErrorDeprecation(): void

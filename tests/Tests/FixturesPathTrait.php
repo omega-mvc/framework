@@ -50,7 +50,7 @@ trait FixturesPathTrait
      */
     protected function fixturePath(string $path = ''): string
     {
-        return __DIR__ . ($path !== '' ? slash(path: $path) : '');
+        return __DIR__ . ($path !== '' ? $path : '');
     }
 
     /**

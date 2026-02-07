@@ -77,16 +77,23 @@ class Vite
     /** @var string|null HMR (Hot Module Replacement) URL if running HMR server. */
     public static ?string $hot = null;
 
+    /** @var string Public path of the application. */
+    private readonly string $publicPath;
+
+    /** @var string Path where Vite build assets are stored. */
+    private readonly string $buildPath;
+
     /**
      * Constructor.
      *
      * @param string $publicPath Public path of the application.
      * @param string $buildPath Path where Vite build assets are stored.
      */
-    public function __construct(
-        private readonly string $publicPath,
-        private readonly string $buildPath,
-    ) {
+    public function __construct(string $publicPath, string $buildPath)
+    {
+        $this->publicPath   = slash($publicPath);
+        $this->buildPath    = slash($buildPath);
+
         $this->manifestName = 'manifest.json';
     }
 

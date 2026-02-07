@@ -1,0 +1,80 @@
+Basic Route
+It route can be render → "Its route can be rendered"
+It route can be render using group prefix → "Its route can be rendered using group prefix"
+It route can be render different method → "Its route can be rendered for different methods"
+It route is method not allowed → "Its route has method not allowed"
+It page is not found → "Its page is not found"
+It route has name → "Its route has a name"
+Collection
+It collection chain work great → "Collection chaining works correctly"
+It can acting like array → "It can act like an array"
+It can do like array → "It can behave like an array"
+Collection Immutable
+It collection immutable functional wor k properly → "Immutable collection functions work properly"
+It can acting like array → "It can act like an array"
+It can do like array → "It can behave like an array"
+Command Map
+It will throw error when fn is array but class not exist → "It will throw an error when fn is an array but class does not exist"
+It will throw error when class not exist → "It will throw an error when class does not exist"
+Crypt
+It can encrypt decrypt correctly → "It can encrypt and decrypt correctly"
+Data Get
+It can find item using dot keys but dont exist → "It can find an item using dot keys but doesn't exist"
+Directive
+It throw exception due directive not register → "It throws exception because directive is not registered"
+It can not register directive → "It cannot register directive"
+Each
+It can render each without curve braces → "It can render each without curly braces"
+Each Continue
+It can render each continue → "It can render each continue statement" (o più chiaro a seconda del contesto)
+Facade
+It throw error when application is not set → "It throws an error when application is not set"
+Json Response
+It can response as array → "It can respond as array"
+It can response assert → "It can assert response"
+It can response assert equal → "It can assert response equality"
+It can response assert true → "It can assert response is true"
+It can response assert false → "It can assert response is false"
+It can response assert null → "It can assert response is null"
+It can response assert not null → "It can assert response is not null"
+It can response assert empty → "It can assert response is empty"
+It cant response assert not empty → "It can't assert response is not empty"
+Macroable
+It throw when macro is not register → "It throws when macro is not registered"
+Named Parameter Route
+It route can be render → "Its route can be rendered"
+It make sure router name is not overwritten → "It makes sure router name is not overwritten"
+Rate Limiter
+It consume → "It consumes"
+It remaining → "It remains"
+Route Controller
+It route resource have name → "Its route resource has a name"
+It route resource have name with prefix → "Its route resource has a name with prefix"
+Schedule
+It can continue schedule event job fail → "It can continue schedule even if event job fails"
+It can run retry schedule → "It can run retry schedule" (ok, ma potrebbe essere più chiaro: "It can retry scheduled events")
+It can run retry condition schedule → "It can run retry conditional schedule"
+Section
+It throw when extend not found → "It throws when extend not found"
+It will throw error have two default → "It will throw an error if there are two defaults"
+Str
+It can splint string → "It can split string"
+It can uc first string → "It can uppercase first character of string"
+It can uc word string → "It can uppercase words in string"
+It can detect text contain with → "It can detect if text contains"
+It can detect fill string in the start → "It can detect fill string at the start"
+It can detect fill string in the end → "It can detect fill string at the end"
+It can get text after must return back → "It can get text after and must return it back"
+Text API
+It can return chart at → "It can return character at"
+It can return afet text → "It can return text after"
+Time Travel
+It same with current time → "It is the same as current time"
+It same with custom time → "It is the same with custom time"
+It calculates age as zero for today birthdate → "It calculates age as zero for today's birthdate"
+It throw when get undefined property → "It throws when getting undefined property"
+It can return formated time → "It can return formatted time"
+It can return formated time with standard time → "It can return formatted time in standard time"
+Vite
+It can check running h r m exist → "It can check if running HRM exists"
+It can check running h r m doest exist → "It can check if running HRM does not exist"

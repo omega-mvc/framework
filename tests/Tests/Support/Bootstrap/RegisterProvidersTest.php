@@ -23,7 +23,10 @@ use Omega\Container\Provider\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use Tests\FixturesPathTrait;
+use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
 
 /**
  * Class RegisterProvidersTest
@@ -51,19 +54,22 @@ use ReflectionException;
 #[CoversClass(EntryNotFoundException::class)]
 class RegisterProvidersTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test bootstrap.
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws Exception if a generic error occurred
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testBootstrap(): void
     {
-        $app = new Application(basePath: __DIR__ . '/fixtures/');
+        $app = new Application($this->fixturePath('/fixtures/application-read'));
         $app->register(TestRegisterServiceProvider::class);
         $app->bootstrapWith([BootProviders::class]);
 

@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Support\Bootstrap\Support;
 
 use Omega\Collection\Collection;
 use Omega\Support\Facades\AbstractFacade;
@@ -28,7 +28,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * @category   Tests
  * @package    Support
- * @subpackage Bootstrap
+ * @subpackage Bootstrap\Support
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -38,6 +38,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @method static bool has(string $key)
  */
 #[CoversClass(AbstractFacade::class)]
+#[CoversClass(Collection::class)]
 final class TestCollectionFacade extends AbstractFacade
 {
     /**

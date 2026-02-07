@@ -19,6 +19,7 @@ use PHPUnit\Framework\TestCase;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\View;
 
+use Tests\FixturesPathTrait;
 use function ob_get_clean;
 use function ob_start;
 use function str_replace;
@@ -41,8 +42,10 @@ use const DIRECTORY_SEPARATOR;
  */
 #[CoversClass(ViewFileNotFoundException::class)]
 #[CoversClass(View::class)]
-class RenderViewTest extends AbstractViewPath
+final class RenderViewTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it can render using view classes.
      *
@@ -50,8 +53,8 @@ class RenderViewTest extends AbstractViewPath
      */
     public function testItCanRenderUsingViewClasses(): void
     {
-        $testHtml  = $this->viewPath('sample/sample.html');
-        $testPhp   = $this->viewPath('sample/sample.php' );
+        $testHtml  = $this->fixturePath('/fixtures/view/sample/sample.html');
+        $testPhp   = $this->fixturePath('/fixtures/view/sample/sample.php' );
 
         ob_start();
         View::render($testHtml)->send();

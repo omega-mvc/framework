@@ -43,7 +43,7 @@ use PHPUnit\Framework\TestCase;
 final class TestResponseTest extends TestCase
 {
     /**
-     * Test it can response assert.
+     * Test it can respond assert.
      *
      * @return void
      */

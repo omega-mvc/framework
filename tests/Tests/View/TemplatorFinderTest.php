@@ -17,6 +17,8 @@ namespace Tests\View;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\TestCase;
+use Tests\FixturesPathTrait;
 
 /**
  * Test suite for the TemplatorFinder component.
@@ -35,8 +37,10 @@ use Omega\View\TemplatorFinder;
  */
 #[CoversClass(ViewFileNotFoundException::class)]
 #[CoversClass(TemplatorFinder::class)]
-class TemplatorFinderTest extends AbstractViewPath
+final class TemplatorFinderTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test it can find templator file location.
      *
@@ -44,12 +48,12 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanFindTemplatorFileLocation(): void
     {
-        $base = $this->viewPath('sample/Templators');
+        $base = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([$base], ['.php']);
 
         $this->assertEquals(
-            $this->viewPath('sample/Templators/php.php'),
+            $this->fixturePath('/fixtures/view/sample/Templators/php.php'),
             $view->find('php')
         );
     }
@@ -62,7 +66,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanFindTemplatorFileLocationWillThrow(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sampleTemplators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -77,7 +81,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanCheckFIleExist(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php', '.component.php']);
 
@@ -93,12 +97,12 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanFindInPath(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
         $this->assertEquals(
-            $this->viewPath('sample/Templators/php.php'),
+            $this->fixturePath('/fixtures/view/sample/Templators/php.php'),
             (fn () => $this->{'findInPath'}('php', [$loader]))->call($view)
         );
     }
@@ -111,7 +115,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanFindInPathWillThrowException(): void
     {
-        $loader = $this->viewPath('Templators');
+        $loader = $this->fixturePath('Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -126,12 +130,12 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanAddPath(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([], ['.php']);
         $view->addPath($loader);
 
-        $this->assertEquals($this->viewPath('sample/Templators/php.php'), $view->find('php'));
+        $this->assertEquals($this->fixturePath('/fixtures/view/sample/Templators/php.php'), $view->find('php'));
     }
 
     /**
@@ -141,7 +145,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanSetPath(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sampleTemplators');
 
         $view  = new TemplatorFinder([], ['.php']);
         $paths = (fn () => $this->{'paths'})->call($view);
@@ -158,7 +162,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanNotAddMultiPath(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sampleTemplators');
 
         $view = new TemplatorFinder([], ['.php']);
         $view->addPath($loader);
@@ -175,12 +179,12 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanAddExtension(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([$loader]);
         $view->addExtension('.php');
 
-        $this->assertEquals($this->viewPath('sample/Templators/php.php'), $view->find('php'));
+        $this->assertEquals($this->fixturePath('/fixtures/view/sample/Templators/php.php'), $view->find('php'));
     }
 
     /**
@@ -190,7 +194,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanFlush(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -209,7 +213,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanGetPathsRegistered(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sampleTemplators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -223,7 +227,7 @@ class TemplatorFinderTest extends AbstractViewPath
      */
     public function testItCanGetExtensionsRegistered(): void
     {
-        $loader = $this->viewPath('sample/Templators');
+        $loader = $this->fixturePath('/fixtures/view/sampleTemplators');
 
         $view = new TemplatorFinder([$loader], ['.php']);
 
