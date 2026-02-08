@@ -78,7 +78,7 @@ abstract class AbstractTestCommand extends TestCase
      *
      * @return void
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws Exception Throw if a genereic error occurred.
+     * @throws Exception Throw if a generic error occurred.
      */
     protected function setUp(): void
     {

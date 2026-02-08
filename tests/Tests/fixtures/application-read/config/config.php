@@ -44,7 +44,7 @@ return [
     'REDIS_PASS'            => '',
     'REDIS_PORT'            => 6379,
 
-    // memcahe
+    // memcahed
     'MEMCACHED_HOST'        => '127.0.0.1',
     'MEMCACHED_PASS'        => '',
     'MEMCACHED_PORT'        => 6379,

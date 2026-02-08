@@ -7,7 +7,10 @@ use Omega\Console\Prompt;
 require_once dirname(__DIR__, 4) . '/vendor/autoload.php';
 
 $command = new class($argv) extends AbstractCommand {
-  public function main(): void
+    /**
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function main(): void
   {    
     $prompt = new Prompt('test', [
       'test_1' => function () {
