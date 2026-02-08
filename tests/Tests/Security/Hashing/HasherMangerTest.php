@@ -38,7 +38,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(BcryptHasher::class)]
 #[CoversClass(HashManager::class)]
-class HasherMangerTest extends TestCase
+final class HasherMangerTest extends TestCase
 {
     /**
      * Test it can hash default hasher.

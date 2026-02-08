@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class UnresolvableSetterClass
+final class UnresolvableSetterClass
 {
     /** @var mixed Holds the injected dependency. */
     public $dependency;

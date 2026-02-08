@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class UnionTypeConstructorClass
+final class UnionTypeConstructorClass
 {
     /**
      * @param DependencyClass|AnotherService $dep Resolved union dependency.

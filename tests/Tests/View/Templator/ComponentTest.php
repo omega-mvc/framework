@@ -69,8 +69,8 @@ final class ComponentTest extends TestCase
         parent::setUp();
 
         $this->templator = new Templator(
-            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->fixturePath('/fixtures/view/templator/')
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
         );
     }
 
@@ -204,8 +204,8 @@ final class ComponentTest extends TestCase
      */
     public function testItCanGetDependencyView(): void
     {
-        $finder    = new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']);
-        $templator = new Templator($finder, $this->fixturePath('/fixtures/view/templator/'));
+        $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
+        $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator/'));
         $templator->templates(
             '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
             'test'

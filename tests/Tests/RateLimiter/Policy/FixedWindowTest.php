@@ -52,7 +52,7 @@ use function Omega\Time\now;
  */
 #[CoversClass(FixedWindow::class)]
 #[CoversClass(Memory::class)]
-class FixedWindowTest extends TestCase
+final class FixedWindowTest extends TestCase
 {
     /**
      * In-memory storage used by the rate limiter during testing.

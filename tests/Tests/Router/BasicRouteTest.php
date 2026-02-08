@@ -53,7 +53,7 @@ use function ob_start;
  * @version   2.0.0
  */
 #[CoversClass(Router::class)]
-class BasicRouteTest extends TestCase
+final class BasicRouteTest extends TestCase
 {
     /**
      * Register basic routes for testing.

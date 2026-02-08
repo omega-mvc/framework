@@ -33,7 +33,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class SetterInjectionClass
+final class SetterInjectionClass
 {
     /** @var mixed Injected dependency instance. */
     public mixed $dependency;

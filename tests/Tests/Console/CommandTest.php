@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console;
@@ -18,6 +28,25 @@ use function stream_isatty;
 
 use const STDOUT;
 
+/**
+ * Tests the behavior of console commands related to terminal capabilities
+ * and output handling.
+ *
+ * This test suite focuses on verifying how {@see AbstractCommand} determines
+ * terminal width, detects color support based on environment variables and
+ * stream capabilities, and interacts correctly with {@see OutputStream}.
+ *
+ * It also ensures that environment-dependent logic is isolated between tests
+ * by resetting relevant environment variables before each test execution.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(AbstractCommand::class)]
 #[CoversClass(OutputStream::class)]
 class CommandTest extends TestCase
@@ -36,6 +65,16 @@ class CommandTest extends TestCase
         $this->resetEnv();
     }
 
+    /**
+     * Resets console-related environment variables.
+     *
+     * This method clears all environment variables that may influence terminal
+     * behavior, such as color support detection and terminal type identification.
+     * It ensures each test starts from a clean and predictable environment state,
+     * avoiding side effects caused by previous tests or the execution context.
+     *
+     * @return void
+     */
     private function resetEnv(): void
     {
         foreach (['NO_COLOR', 'TERM', 'TERM_PROGRAM', 'COLORTERM', 'ANSICON', 'ConEmuANSI', 'MSYSTEM'] as $var) {

@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class MultipleSetterClass
+final class MultipleSetterClass
 {
     /** @var DependencyClass|null First injected dependency */
     public ?DependencyClass $dependency1 = null;

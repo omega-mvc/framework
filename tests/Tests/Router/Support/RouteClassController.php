@@ -34,7 +34,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class RouteClassController
+final class RouteClassController
 {
     /**
      * Handle the "index" action.

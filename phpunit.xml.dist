@@ -22,14 +22,14 @@
             <directory>src</directory>
         </include>
     </source>
-    <!--coverage pathCoverage="true">
+    <coverage pathCoverage="true">
         <report>
             <html outputDirectory="cache/coverage-report"/>
         </report>
     </coverage>
     <logging>
         <testdoxHtml outputFile="cache/coverage-report/testdox.html"/>
-    </logging-->
+    </logging>
     <php>
         <env name="APP_ENV" value="testing"/>
     </php>

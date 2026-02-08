@@ -35,7 +35,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class InjectionUsingAttribute
+final class InjectionUsingAttribute
 {
     /** @var string Injected dependency value */
     public string $dependency;

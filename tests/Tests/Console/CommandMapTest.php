@@ -14,9 +14,9 @@ declare(strict_types=1);
 
 namespace Tests\Console;
 
+use Omega\Console\CommandMap;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Console\CommandMap;
 use Throwable;
 
 /**
@@ -35,7 +35,7 @@ use Throwable;
  * @version   2.0.0
  */
 #[CoversClass(CommandMap::class)]
-class CommandMapTest extends TestCase
+final class CommandMapTest extends TestCase
 {
     /**
      * Test it can get cmd.

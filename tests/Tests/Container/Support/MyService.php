@@ -29,7 +29,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class MyService
+final class MyService
 {
     /**
      * Returns the provided service instance.

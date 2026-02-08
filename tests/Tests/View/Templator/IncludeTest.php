@@ -65,8 +65,8 @@ final class IncludeTest extends TestCase
         parent::setUp();
 
         $this->templator = new Templator(
-            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
-            $this->fixturePath('/fixtures/view/templator/')
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
         );
     }
 
@@ -92,8 +92,8 @@ final class IncludeTest extends TestCase
      */
     public function testItCanFetchDependencyView(): void
     {
-        $finder    = new TemplatorFinder([$this->fixturePath('/fixtures/view/templator')], ['']);
-        $templator = new Templator($finder, $this->fixturePath('/fixtures/view/templator'));
+        $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator')], ['']);
+        $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
         $templator->templates('<html><head></head><body>{% include(\'view/component.php\') %}</body></html>', 'test');
         $this->assertEquals([
             $finder->find('view/component.php') => 1,

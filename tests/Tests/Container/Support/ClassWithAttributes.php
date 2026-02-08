@@ -31,7 +31,7 @@ use Tests\Container\Support\Attribute\MyPropertyAttribute;
  * @version    2.0.0
  */
 #[MyClassAttribute]
-class ClassWithAttributes
+final class ClassWithAttributes
 {
     /** @var mixed Property annotated with a custom attribute for reflection testing purposes. */
     #[MyPropertyAttribute]

@@ -48,7 +48,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(Memory::class)]
 #[CoversClass(RateLimiterFactory::class)]
-class RateLimiterFactoryTest extends TestCase
+final class RateLimiterFactoryTest extends TestCase
 {
     /**
      * Test it can create rate limiter.

@@ -71,8 +71,8 @@ final class DirectiveTest extends TestCase
         parent::setUp();
 
         $this->templator = new Templator(
-            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->fixturePath('/fixtures/view/templator/')
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
         );
     }
 

@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 /** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
 
 declare(strict_types=1);
@@ -9,15 +19,37 @@ namespace Tests\Console;
 use function getenv;
 use function putenv;
 
+/**
+ * Provides utilities to isolate and control environment variables during tests.
+ *
+ * This trait allows test cases to safely backup, clear, modify, and restore
+ * environment variables without leaking state between tests. It ensures both
+ * `$_SERVER` and system-level environment variables accessed via `getenv()`
+ * remain synchronized and can be reliably asserted.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 trait EnvironmentIsolationTrait
 {
-    private array $originalEnvBackup    = [];
+    /** @var array<string, string> Backup of environment variables retrieved via getenv(). */
+    private array $originalEnvBackup = [];
+
+    /** @var array<string, string> Backup of environment variables stored in the $_SERVER superglobal. */
     private array $originalServerBackup = [];
 
     /**
-     * Environment variables yang akan di-backup dan restore.
+     * Returns the list of environment variables that must be isolated during tests.
      *
-     * @return array
+     * These variables are backed up, cleared, and restored to ensure predictable
+     * test behavior and prevent side effects between test cases.
+     *
+     * @return string[]
      */
     protected function getEnvironmentVariables(): array
     {
@@ -33,7 +65,10 @@ trait EnvironmentIsolationTrait
     }
 
     /**
-     * Backup current environment state.
+     * Stores the current state of configured environment variables.
+     *
+     * This method saves values from both `$_SERVER` and `getenv()` so they can
+     * later be restored to their original state after the test completes.
      *
      * @return void
      */
@@ -41,14 +76,12 @@ trait EnvironmentIsolationTrait
     {
         $envVars = $this->getEnvironmentVariables();
 
-        // Backup $_SERVER variables
         foreach ($envVars as $var) {
             if (isset($_SERVER[$var])) {
                 $this->originalServerBackup[$var] = $_SERVER[$var];
             }
         }
 
-        // Backup environment variables via getenv()
         foreach ($envVars as $var) {
             $value = getenv($var);
             if ($value !== false) {
@@ -58,7 +91,10 @@ trait EnvironmentIsolationTrait
     }
 
     /**
-     * Clear all environment variables for clean test state.
+     * Removes all configured environment variables.
+     *
+     * This method clears both `$_SERVER` and system environment variables to
+     * guarantee a clean and deterministic test environment.
      *
      * @return void
      */
@@ -66,47 +102,47 @@ trait EnvironmentIsolationTrait
     {
         $envVars = $this->getEnvironmentVariables();
 
-        // Clear $_SERVER variables
         foreach ($envVars as $var) {
             unset($_SERVER[$var]);
         }
 
-        // Clear environment variables
         foreach ($envVars as $var) {
             putenv("{$var}=");
         }
     }
 
     /**
-     * Restore original environment state.
+     * Restores environment variables to their previously backed up state.
+     *
+     * This method first clears the current environment and then reinstates
+     * all values captured by {@see backupEnvironment()}.
      *
      * @return void
      */
     protected function restoreEnvironment(): void
     {
-        // Clear current state first
         $this->clearEnvironment();
 
-        // Restore $_SERVER variables
         foreach ($this->originalServerBackup as $var => $value) {
             $_SERVER[$var] = $value;
         }
 
-        // Restore environment variables
         foreach ($this->originalEnvBackup as $var => $value) {
             putenv("{$var}={$value}");
         }
 
-        // Clear backup arrays
         $this->originalEnvBackup    = [];
         $this->originalServerBackup = [];
     }
 
     /**
-     * Set environment variable for testing (both $_SERVER and putenv).
+     * Sets a test environment variable.
      *
-     * @param string $key
-     * @param string $value
+     * The variable is assigned to both `$_SERVER` and system environment variables
+     * to ensure consistent access regardless of the retrieval method.
+     *
+     * @param string $key   Environment variable name.
+     * @param string $value Environment variable value.
      * @return void
      */
     protected function setTestEnvironment(string $key, string $value): void
@@ -116,9 +152,9 @@ trait EnvironmentIsolationTrait
     }
 
     /**
-     * Set multiple environment variables at once.
+     * Sets multiple test environment variables at once.
      *
-     * @param array $variables
+     * @param array<string, string> $variables Key-value pairs of environment variables.
      * @return void
      */
     protected function setTestEnvironments(array $variables): void
@@ -129,11 +165,14 @@ trait EnvironmentIsolationTrait
     }
 
     /**
-     * Assert environment variable has expected value.
+     * Asserts that an environment variable matches the expected value.
      *
-     * @param string $expected
-     * @param string $variable
-     * @param string $message
+     * The assertion verifies both `$_SERVER` and `getenv()` to guarantee
+     * environment consistency.
+     *
+     * @param string $expected Expected value.
+     * @param string $variable Environment variable name.
+     * @param string $message  Optional assertion message.
      * @return void
      */
     protected function assertEnvironmentEquals(string $expected, string $variable, string $message = ''): void
@@ -150,10 +189,13 @@ trait EnvironmentIsolationTrait
     }
 
     /**
-     * Assert environment variable is not set.
+     * Asserts that an environment variable is not defined.
      *
-     * @param string $variable
-     * @param string $message
+     * The assertion verifies both `$_SERVER` and `getenv()` to ensure the
+     * variable is completely unset.
+     *
+     * @param string $variable Environment variable name.
+     * @param string $message  Optional assertion message.
      * @return void
      */
     protected function assertEnvironmentNotSet(string $variable, string $message = ''): void

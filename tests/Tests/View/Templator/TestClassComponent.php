@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class TestClassComponent
+final class TestClassComponent
 {
     /** @var string CSS class for background color. */
     private string $bg;

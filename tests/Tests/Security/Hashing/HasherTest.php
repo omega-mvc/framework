@@ -42,7 +42,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ArgonHasher::class)]
 #[CoversClass(BcryptHasher::class)]
 #[CoversClass(DefaultHasher::class)]
-class HasherTest extends TestCase
+final class HasherTest extends TestCase
 {
     /**
      * Test it can hash default hasher.

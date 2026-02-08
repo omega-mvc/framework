@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ClassWithMethods
+final class ClassWithMethods
 {
     /**
      * Public method used to test reflection of public methods.

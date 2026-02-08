@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console;
@@ -11,6 +21,23 @@ use PHPUnit\Framework\TestCase;
 
 use function explode;
 
+/**
+ * Tests console command verbosity handling.
+ *
+ * This test suite verifies the correct parsing and behavior of verbosity
+ * levels for console commands, including default verbosity, explicit verbosity
+ * setting, and flag-based levels such as silent, quiet, verbose, very verbose,
+ * and debug. It also ensures that each verbosity level enables only the
+ * appropriate combination of flags.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[ CoversClass(AbstractCommand::class)]
 #[CoversClass(TestCommand::class)]
 class ConsoleVerboseTest extends TestCase

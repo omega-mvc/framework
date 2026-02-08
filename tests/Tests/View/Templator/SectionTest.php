@@ -79,8 +79,8 @@ final class SectionTest extends TestCase
         parent::setUp();
 
         $this->templator = new Templator(
-            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->fixturePath('/fixtures/view/templator/')
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
         );
     }
 
@@ -168,8 +168,8 @@ final class SectionTest extends TestCase
      */
     public function testItCanGetDependencyView(): void
     {
-        $finder    = new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/view/')], ['']);
-        $templator = new Templator($finder, $this->fixturePath('/fixtures/view/templator'));
+        $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
+        $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
         $templator->templates(
             '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}',
             'test'

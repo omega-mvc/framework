@@ -14,11 +14,11 @@ declare(strict_types=1);
 
 namespace Tests\Router;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Router\Route;
 use Omega\Router\Router;
 use Omega\Router\RouteUrlBuilder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 /**
  * Class UrlBuilderTest

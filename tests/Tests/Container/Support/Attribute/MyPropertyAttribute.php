@@ -29,6 +29,6 @@ use Attribute;
  * @version    2.0.0
  */
 #[Attribute(Attribute::TARGET_PROPERTY)]
-class MyPropertyAttribute
+final class MyPropertyAttribute
 {
 }

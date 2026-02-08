@@ -30,6 +30,7 @@ use Tests\Container\Support\ClassWithAttributes;
 use Tests\Container\Support\ClassWithMethods;
 use Tests\Container\Support\ClassWithProperties;
 use Tests\Container\Support\MyService;
+use Tests\Container\Support\ParentClass;
 use Tests\Container\Support\Service;
 
 /**
@@ -221,6 +222,6 @@ class ReflectionClassTest extends AbstractTestContainer
         // Ensure parent class is correctly identified
         $parentClassReflector = $reflector->getParentClass();
         $this->assertNotNull($parentClassReflector);
-        $this->assertEquals(Support\ParentClass::class, $parentClassReflector->getName());
+        $this->assertEquals(ParentClass::class, $parentClassReflector->getName());
     }
 }

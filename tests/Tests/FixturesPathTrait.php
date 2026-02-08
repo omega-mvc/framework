@@ -48,7 +48,7 @@ trait FixturesPathTrait
      * @param string $path Relative path from the fixtures root directory
      * @return string Full path to the fixture file
      */
-    protected function fixturePath(string $path = ''): string
+    protected function setFixturePath(string $path = ''): string
     {
         return __DIR__ . ($path !== '' ? $path : '');
     }
@@ -60,7 +60,7 @@ trait FixturesPathTrait
      *
      * @return string Full path to the test root directory
      */
-    protected function basePath(): string
+    protected function setFixtureBasePath(): string
     {
         return __DIR__;
     }

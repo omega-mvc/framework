@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ScalarConstructorClass
+final class ScalarConstructorClass
 {
     /**
      * @param string $name Non-resolvable scalar dependency.

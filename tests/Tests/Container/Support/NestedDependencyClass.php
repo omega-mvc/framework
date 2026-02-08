@@ -33,7 +33,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class NestedDependencyClass
+final class NestedDependencyClass
 {
     /** @var Dependant|null Injected dependant instance */
     public ?Dependant $dependant = null;

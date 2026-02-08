@@ -52,7 +52,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(FixedWindow::class)]
 #[CoversClass(Memory::class)]
 #[CoversClass(RateLimiter::class)]
-class RateLimiterTest extends TestCase
+final class RateLimiterTest extends TestCase
 {
     /**
      * Rate limiter instance used throughout the test suite.

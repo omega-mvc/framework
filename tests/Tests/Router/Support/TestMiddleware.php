@@ -38,7 +38,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class TestMiddleware
+final class TestMiddleware
 {
     /**
      * Tracks the number of times this middleware has been executed.

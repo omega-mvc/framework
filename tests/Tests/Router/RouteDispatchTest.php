@@ -14,11 +14,11 @@ declare(strict_types=1);
 
 namespace Tests\Router;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Router\Route;
 use Omega\Router\RouteDispatcher;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 use function call_user_func_array;
 
@@ -47,7 +47,7 @@ use function call_user_func_array;
 #[CoversClass(Route::class)]
 #[CoversClass(RouteDispatcher::class)]
 #[CoversClass(Router::class)]
-class RouteDispatchTest extends TestCase
+final class RouteDispatchTest extends TestCase
 {
     /**
      * Tears down the environment after each test method.

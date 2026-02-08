@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class DeepA
+final class DeepA
 {
     /**
      * @param DeepB $b Dependency injected via constructor.

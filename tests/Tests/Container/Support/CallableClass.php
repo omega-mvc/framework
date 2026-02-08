@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class CallableClass
+final class CallableClass
 {
     /**
      * Instance method used to test callable resolution with injected dependencies.

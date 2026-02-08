@@ -131,7 +131,7 @@ class Application extends AbstractApplication
      */
     public function isDownMaintenanceMode(): bool
     {
-        return file_exists(get_path('path.storage') . slash(path: 'app/maintenance.php'));
+        return file_exists(get_path('path.storage') . 'app/maintenance.php');
     }
 
     /**

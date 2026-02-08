@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class UnresolvableClass
+final class UnresolvableClass
 {
     /**
      * @param UnresolvableInterface $dependency Dependency that cannot be resolved.

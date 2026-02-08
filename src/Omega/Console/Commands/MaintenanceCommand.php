@@ -106,7 +106,7 @@ class MaintenanceCommand extends AbstractCommand
             return 1;
         }
 
-        if (false === file_exists($down = get_path('path.storage') . slash(path: 'app/down'))) {
+        if (false === file_exists($down = get_path('path.storage') . 'app/down')) {
             file_put_contents(
                 $down,
                 file_get_contents(slash(path: __DIR__ . '/stubs/down'))
@@ -114,10 +114,7 @@ class MaintenanceCommand extends AbstractCommand
         }
 
         file_put_contents(
-            get_path('path.storage')
-            . 'app'
-            . slash(path: '/')
-            . 'maintenance.php',
+            get_path('path.storage') . 'app/maintenance.php',
             file_get_contents(slash(path: __DIR__ . '/stubs/maintenance'))
         );
         success('Successfully, your application now in under maintenance.')->out();
@@ -146,7 +143,7 @@ class MaintenanceCommand extends AbstractCommand
             return 1;
         }
 
-        if (false === unlink($up = get_path('path.storage') . slash(path: 'app/maintenance.php'))) {
+        if (false === unlink($up = get_path('path.storage') . 'app/maintenance.php')) {
             warn('Application stil maintenance mode.')->out(false);
             info("Remove manually maintenance file in `$up`.")->out();
 

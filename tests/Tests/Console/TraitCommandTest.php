@@ -1,24 +1,62 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Style\Color\ForegroundColor;
 use Omega\Console\Traits\CommandTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
 
 use function chr;
 use function ob_get_clean;
 use function ob_start;
 use function sprintf;
 
+/**
+ * Tests for the CommandTrait text coloring helpers.
+ *
+ * This test case verifies that the CommandTrait correctly formats
+ * ANSI escape sequences when applying foreground colors to text.
+ *
+ * A lightweight anonymous command is used to expose trait methods
+ * and capture their output via output buffering.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(AbstractCommand::class)]
 #[CoversClass(ForegroundColor::class)]
+#[CoversTrait(CommandTrait::class)]
 final class TraitCommandTest extends TestCase
 {
+    /**
+     * Command instance used to test CommandTrait behavior.
+     *
+     * This is an anonymous class extending AbstractCommand and
+     * using CommandTrait, created specifically to expose and
+     * invoke trait methods during testing.
+     *
+     * @var AbstractCommand
+     */
     private $command;
 
     /**

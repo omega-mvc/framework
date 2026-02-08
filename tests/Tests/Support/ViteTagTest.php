@@ -198,7 +198,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTags(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getTags(['resources/js/app.js', 'resources/css/app.css']);
         $this->assertEquals(
@@ -216,7 +216,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTagsAttributes(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getTags(
             entryPoints: [
@@ -243,7 +243,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetTagsAttributesWithException(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $tag = $vite->getCustomTags(
             entryPoints: [
@@ -271,7 +271,7 @@ final class ViteTagTest extends TestCase
      */
     public function testGetPreloadTags(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'preload/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
 
         $tag = $vite->getPreloadTags(['resources/js/app.js']);
         $this->assertEquals(

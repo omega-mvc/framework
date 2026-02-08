@@ -34,7 +34,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ScalarSetterClass
+final class ScalarSetterClass
 {
     /** @var string Sample scalar property. */
     public string $name = 'default';

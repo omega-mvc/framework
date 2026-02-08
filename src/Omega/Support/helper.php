@@ -281,7 +281,7 @@ if (!function_exists('get_path')) {
             return array_map(fn ($v) => $v . $suffix_path, $value);
         }
 
-        return $value . $suffix_path;
+        return $value . slash(path: $suffix_path);
     }
 }
 

@@ -29,6 +29,6 @@ use Attribute;
  * @version    2.0.0
  */
 #[Attribute(Attribute::TARGET_METHOD)]
-class MyMethodAttribute
+final class MyMethodAttribute
 {
 }

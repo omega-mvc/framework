@@ -29,7 +29,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class DummyStaticClass
+final class DummyStaticClass
 {
     /**
      * Static method used to verify static callable resolution.

@@ -50,7 +50,7 @@ class JsonTest extends TestCase
      */
     public function testItShouldReturnValues(): void
     {
-        $source = new JsonConfig($this->fixturePath('/fixtures/config/content.json'));
+        $source = new JsonConfig($this->setFixturePath(slash(path: '/fixtures/config/content.json')));
 
         $this->assertEquals(['key' => 'value'], $source->fetch());
     }
@@ -64,7 +64,7 @@ class JsonTest extends TestCase
     {
         $this->expectException(MalformedJsonException::class);
 
-        $source = new JsonConfig($this->fixturePath('/fixtures/config/malformed.json'));
+        $source = new JsonConfig($this->setFixturePath(slash(path: '/fixtures/config/malformed.json')));
 
         $source->fetch();
     }

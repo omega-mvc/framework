@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class CallableNoDeps
+final class CallableNoDeps
 {
     /**
      * Simple method without parameters.

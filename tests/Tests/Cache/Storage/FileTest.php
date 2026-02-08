@@ -54,7 +54,7 @@ final class FileTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->storage = new File(['ttl' => 3600, 'path' => $this->fixturePath('/fixtures/cache')]);
+        $this->storage = new File(['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]);
     }
 
     /**
@@ -86,7 +86,7 @@ final class FileTest extends TestCase
     public function testSetWithTtl(): void
     {
         $storage = $this->getMockBuilder(File::class)
-            ->setConstructorArgs([['ttl' => 3600, 'path' => $this->fixturePath('/fixtures/cache')]])
+            ->setConstructorArgs([['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]])
             ->onlyMethods(['calculateExpirationTimestamp'])
             ->getMock();
 

@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class CircularA
+final class CircularA
 {
     /**
      * @param CircularB $b Dependency creating a circular reference.

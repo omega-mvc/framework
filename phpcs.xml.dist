@@ -9,10 +9,7 @@
     <arg name="colors" />
     <arg value="p" />
 
-    <exclude-pattern>./tests/Tests/Support/fixtures/**/*.php</exclude-pattern>
-    <exclude-pattern>./tests/Tests/Support/Helper/fixtures/**/*.php</exclude-pattern>
-    <exclude-pattern>./tests/Tests/View/sample/*.php</exclude-pattern>
-    <exclude-pattern>./tests/Tests/View/Templator/view/*.php</exclude-pattern>
+    <exclude-pattern>./tests/Tests/Support/fixtures</exclude-pattern>
 
     <rule ref="PSR12">
         <exclude name="PSR1.Methods.CamelCapsMethodName.NotCamelCaps" />

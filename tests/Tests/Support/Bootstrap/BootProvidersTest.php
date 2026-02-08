@@ -69,7 +69,7 @@ class BootProvidersTest extends TestCase
      */
     public function testBootstrap(): void
     {
-        $app = new Application($this->fixturePath('/fixtures/application-read/'));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->assertFalse($app->isBooted);
         $app->bootstrapWith([BootProviders::class]);

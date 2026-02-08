@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class NonSetterClass
+final class NonSetterClass
 {
     /** @var bool Indicates whether the method was called */
     public bool $called = false;

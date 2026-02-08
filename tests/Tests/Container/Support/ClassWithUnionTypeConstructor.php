@@ -31,7 +31,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ClassWithUnionTypeConstructor
+final class ClassWithUnionTypeConstructor
 {
     /** @var UnionDependencyOne|UnionDependencyTwo Holds the resolved union-typed dependency. */
     public UnionDependencyOne|UnionDependencyTwo $dependency;

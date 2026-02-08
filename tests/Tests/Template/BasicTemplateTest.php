@@ -88,7 +88,7 @@ final class BasicTemplateTest extends TestCase
      */
     private function getExpected(string $expected): string
     {
-        $fileName = $this->fixturePath(slash(path: '/fixtures/template/') . $expected);
+        $fileName = $this->setFixturePath(slash(path: '/fixtures/template/') . $expected);
 
         $fileContent = file_get_contents($fileName);
 

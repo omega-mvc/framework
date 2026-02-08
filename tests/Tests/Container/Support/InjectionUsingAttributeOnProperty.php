@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class InjectionUsingAttributeOnProperty
+final class InjectionUsingAttributeOnProperty
 {
     /** @var string Injected dependency value */
     #[Inject('db.host')]

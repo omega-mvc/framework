@@ -40,7 +40,7 @@ use Throwable;
  * @version    2.0.0
  */
 #[CoversClass(ExceptionHandler::class)]
-class TestHandleExceptions extends ExceptionHandler
+final class TestHandleExceptions extends ExceptionHandler
 {
     /**
      * Report exception.

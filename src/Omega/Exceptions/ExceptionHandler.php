@@ -222,8 +222,8 @@ class ExceptionHandler
      */
     public function registerViewPath(): Templator
     {
-        $view_paths   = array_map(fn ($path): string => $path . 'pages/', $this->app->get('paths.view'));
-        $view_paths[] = $this->app->get('path.view');
+        $view_paths   = array_map(fn ($path): string => $path . 'pages/', get_path('paths.view'));
+        $view_paths[] = get_path('path.view');
         /** @var TemplatorFinder $finder */
         $finder = $this->app->make(TemplatorFinder::class);
         $finder->setPaths($view_paths);

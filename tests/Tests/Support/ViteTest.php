@@ -69,7 +69,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetFileResourceName(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $file = $asset->get('resources/css/app.css');
 
@@ -84,7 +84,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetFileResourceNames(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $files = $asset->gets([
             'resources/css/app.css',
@@ -104,7 +104,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanCheckRunningHRMExist(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertTrue($asset->isRunningHRM());
     }
@@ -116,7 +116,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanCheckRunningHRMDoestExist(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $this->assertFalse($asset->isRunningHRM());
     }
@@ -129,7 +129,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetHotFileResourceName(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $file = $asset->get('resources/css/app.css');
 
@@ -144,7 +144,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetHotFileResourceNames(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $files = $asset->gets([
             'resources/css/app.css',
@@ -165,7 +165,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanUseCache(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
         $asset->get('resources/css/app.css');
 
         $this->assertCount(1, Vite::$cache);
@@ -179,7 +179,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetHotUrl(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertEquals(
             'http://[::1]:5173/',
@@ -195,7 +195,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanGetHmrScript(): void
     {
-        $asset = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $this->assertEquals(
             '<script type="module" src="http://[::1]:5173/@vite/client"></script>',
@@ -211,7 +211,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanRenderHeadHtmlTag(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $headTag = $vite(
             'resources/css/app.css',
@@ -233,7 +233,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanRenderHeadHtmlTagWithPreload(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/manifest/public'), 'preload/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
 
         $headTag = $vite('resources/js/app.js');
 
@@ -255,7 +255,7 @@ final class ViteTest extends TestCase
      */
     public function testItCanRenderHeadHtmlTagInHrmMode(): void
     {
-        $vite = new Vite($this->fixturePath('/fixtures/support/hot/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
 
         $headTags = $vite(
             'resources/css/app.css',

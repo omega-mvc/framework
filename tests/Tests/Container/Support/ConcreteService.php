@@ -31,6 +31,6 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ConcreteService implements ServiceInterface
+final class ConcreteService implements ServiceInterface
 {
 }

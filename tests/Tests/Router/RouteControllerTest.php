@@ -14,9 +14,9 @@ declare(strict_types=1);
 
 namespace Tests\Router;
 
+use Omega\Router\Router;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Router\Router;
 use Tests\Router\Support\DispatcherTrait;
 use Tests\Router\Support\EmptyRouteClassController;
 use Tests\Router\Support\RouteClassController;
@@ -46,7 +46,7 @@ use Tests\Router\Support\RouteClassController;
  * @version   2.0.0
  */
 #[CoversClass(Router::class)]
-class RouteControllerTest extends TestCase
+final class RouteControllerTest extends TestCase
 {
     use DispatcherTrait;
 

@@ -44,16 +44,16 @@ final class ViewTest extends TestCase
      */
     public function testItCanGetResponseFromContainer(): void
     {
-        $app = new Application($this->basePath());
+        $app = new Application($this->setFixtureBasePath());
 
         $app->set(
             TemplatorFinder::class,
-            fn () => new TemplatorFinder([$this->fixturePath('/fixtures/support/view')], ['.php'])
+            fn () => new TemplatorFinder([$this->setFixturePath('/fixtures/support/view')], ['.php'])
         );
 
         $app->set(
             'view.instance',
-            fn (TemplatorFinder $finder) => new Templator($finder, $this->fixturePath('/fixtures/support/cache'))
+            fn (TemplatorFinder $finder) => new Templator($finder, $this->setFixturePath('/fixtures/support/cache'))
         );
 
         $app->set(

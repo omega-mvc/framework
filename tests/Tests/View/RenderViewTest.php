@@ -18,8 +18,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\View;
-
 use Tests\FixturesPathTrait;
+
 use function ob_get_clean;
 use function ob_start;
 use function str_replace;
@@ -53,8 +53,8 @@ final class RenderViewTest extends TestCase
      */
     public function testItCanRenderUsingViewClasses(): void
     {
-        $testHtml  = $this->fixturePath('/fixtures/view/sample/sample.html');
-        $testPhp   = $this->fixturePath('/fixtures/view/sample/sample.php' );
+        $testHtml  = $this->setFixturePath('/fixtures/view/sample/sample.html');
+        $testPhp   = $this->setFixturePath('/fixtures/view/sample/sample.php');
 
         ob_start();
         View::render($testHtml)->send();

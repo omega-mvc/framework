@@ -69,7 +69,7 @@ class RegisterProvidersTest extends TestCase
      */
     public function testBootstrap(): void
     {
-        $app = new Application($this->fixturePath('/fixtures/application-read'));
+        $app = new Application($this->setFixturePath('/fixtures/application-read'));
         $app->register(TestRegisterServiceProvider::class);
         $app->bootstrapWith([BootProviders::class]);
 

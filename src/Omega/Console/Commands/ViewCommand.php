@@ -210,7 +210,7 @@ class ViewCommand extends AbstractCommand
     public function clear(): int
     {
         warn('Clear cache file in ' . get_path('path.compiled_view_path'))->out(false);
-        $files = $this->findFiles(get_path('path.compiled_view_path') . DIRECTORY_SEPARATOR, $this->prefix);
+        $files = $this->findFiles(get_path('path.compiled_view_path'), $this->prefix);
         //echo $files;
         if (0 === count($files)) {
             warn('No file cache clear.')->out();

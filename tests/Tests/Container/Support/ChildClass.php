@@ -30,7 +30,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ChildClass extends ParentClass
+final class ChildClass extends ParentClass
 {
     /**
      * Property defined in the child class.

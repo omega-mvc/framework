@@ -87,9 +87,9 @@ class PackageManifestTest extends TestCase
     {
         parent::setUp();
 
-        $this->basePath             = $this->fixturePath('/fixtures/application-read/');
-        $this->applicationCachePath = $this->fixturePath('/fixtures/application-write/bootstrap/cache/');
-        $this->packageManifest      = $this->fixturePath('/fixtures/application-write/bootstrap/cache/packages.php');
+        $this->basePath             = $this->setFixturePath('/fixtures/application-read/');
+        $this->applicationCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/');
+        $this->packageManifest      = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/packages.php');
     }
 
     /**

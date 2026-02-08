@@ -1,25 +1,70 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Style\Style;
 use Omega\Console\Traits\ValidateCommandTrait;
 use Omega\Text\Str;
 use Omega\Validator\Rule\ValidPool;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
 
 use function ob_get_clean;
 use function ob_start;
 
+/**
+ * Class ValidateTraitTest
+ *
+ * This test class is designed to verify the behavior of the
+ * ValidateCommandTrait when used in a command context. It uses
+ * an anonymous class extending AbstractCommand to expose and
+ * invoke trait methods, ensuring validation rules are applied
+ * correctly and validation messages are generated as expected.
+ *
+ * The tests focus on:
+ *  - Initializing the validation system with the command's
+ *    option mapper.
+ *  - Applying validation rules to fields.
+ *  - Checking that appropriate validation messages are
+ *    output for invalid input.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 #[CoversClass(AbstractCommand::class)]
 #[CoversClass(Style::class)]
 #[CoversClass(Str::class)]
+#[CoversTrait(ValidateCommandTrait::class)]
 final class ValidateTraitTest extends TestCase
 {
+    /**
+     * Command instance used to test CommandTrait behavior.
+     *
+     * This is an anonymous class extending AbstractCommand and
+     * using CommandTrait, created specifically to expose and
+     * invoke trait methods during testing.
+     *
+     * @var AbstractCommand
+     */
     private $command;
 
     /**

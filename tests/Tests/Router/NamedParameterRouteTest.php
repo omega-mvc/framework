@@ -16,10 +16,10 @@ declare(strict_types=1);
 
 namespace Tests\Router;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Router\Route;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 
 use function ob_get_clean;
 use function ob_start;
@@ -52,7 +52,7 @@ use function ob_start;
  */
 #[CoversClass(Route::class)]
 #[CoversClass(Router::class)]
-class NamedParameterRouteTest extends TestCase
+final class NamedParameterRouteTest extends TestCase
 {
     /**
      * Register basic routes for testing.

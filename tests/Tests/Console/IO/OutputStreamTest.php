@@ -1,19 +1,52 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console\IO;
 
 use Omega\Console\Exceptions\InvalidStreamException;
-use PHPUnit\Framework\TestCase;
 use Omega\Console\IO\OutputStream;
+use PHPUnit\Framework\TestCase;
 
 use function fclose;
 use function fopen;
 use function rewind;
 use function stream_get_contents;
 
-class OutputStreamTest extends TestCase
+/**
+ * Class OutputStreamTest
+ *
+ * Provides unit tests for the `OutputStream` class, verifying its behavior
+ * when handling different types of streams. Tests include:
+ *
+ * - Constructing with a valid writable stream
+ * - Handling invalid or non-writable streams with exceptions
+ * - Writing data to a stream and validating its contents
+ * - Checking whether the stream is interactive
+ *
+ * This test ensures that `OutputStream` correctly validates input streams
+ * and reliably writes output as expected.
+ *
+ * @category   Tests
+ * @package    Console
+ * @subpackage IO
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
+ * @version    2.0.0
+ */
+final class OutputStreamTest extends TestCase
 {
     /**
      * Test constructor with valid stream.

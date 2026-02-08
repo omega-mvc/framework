@@ -46,7 +46,7 @@ use const PHP_INT_MAX;
  * @version    2.0.0
  */
 #[CoversClass(NoLimiter::class)]
-class NoLimiterTest extends TestCase
+final class NoLimiterTest extends TestCase
 {
     /**
      * Test it can consume tokens within the limit.

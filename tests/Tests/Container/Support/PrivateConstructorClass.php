@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class PrivateConstructorClass
+final class PrivateConstructorClass
 {
     /**
      * Prevents direct instantiation.

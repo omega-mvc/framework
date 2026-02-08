@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
+use BadMethodCallException;
 use Exception;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Container;
@@ -34,7 +35,12 @@ use function assert;
 use function count;
 use function file_exists;
 use function in_array;
+use function rtrim;
+use function str_ends_with;
 use function str_replace;
+use function str_starts_with;
+use function strtolower;
+use function substr;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -122,6 +128,23 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      * {@inheritdoc}
      */
     abstract public function definitions(): array;
+
+    public function __call(string $name, array $arguments)
+    {
+        if (str_starts_with($name, 'get') && str_ends_with($name, 'Path')) {
+            $key      = 'path.' . strtolower(substr($name, 3, -4));
+            $basePath = $this->get($key);
+            $suffix   = $arguments[0] ?? null;
+
+            if ($suffix === null || $suffix === '') {
+                return rtrim($basePath, "/\\") . DIRECTORY_SEPARATOR;
+            }
+
+            return rtrim($basePath, "/\\") . slash($suffix);
+        }
+
+        throw new BadMethodCallException("Method $name does not exist.");
+    }
 
     /**
      * {@inheritdoc}
@@ -459,7 +482,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
             'template' => null,
         ];
 
-        if (false === file_exists($down = get_path('path.storage') . slash(path: 'app/down'))) {
+        if (false === file_exists($down = get_path('path.storage') . 'app/down')) {
             return $default;
         }
 

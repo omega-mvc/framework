@@ -70,8 +70,8 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItCanLoadConfigFromFile(): void
     {
-        $app = new Application($this->basePath());
-        $app->set('path.config', $this->fixturePath('/fixtures/application-read/config/'));
+        $app = new Application($this->setFixtureBasePath());
+        $app->set('path.config', $this->setFixturePath('/fixtures/application-read/config/'));
 
         new ConfigProviders()->bootstrap($app);
         $config = $app->get('config');
@@ -96,7 +96,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItCanLoadConfigFromCache(): void
     {
-        $app = new Application($this->fixturePath('/fixtures/application-read/'));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
         new ConfigProviders()->bootstrap($app);
         $config = $app->get('config');
 

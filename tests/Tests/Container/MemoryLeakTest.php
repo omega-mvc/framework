@@ -50,17 +50,17 @@ use function getenv;
 #[CoversClass(EntryNotFoundException::class)]
 class MemoryLeakTest extends AbstractTestContainer
 {
-	/**
-	 * Number of iterations to run for stress/memory-leak tests.
-	 *
-	 * This value is dynamically set in `setUp()` depending on the environment:
-	 * - In CI environments (e.g., GitHub Actions), it is reduced to a smaller number
-	 *   to speed up automated test execution.
-	 * - Locally, it defaults to a higher number for thorough stress testing.
-	 *
-	 * @var int
-	 */
-	private int $iterations;
+    /**
+     * Number of iterations to run for stress/memory-leak tests.
+     *
+     * This value is dynamically set in `setUp()` depending on the environment:
+     * - In CI environments (e.g., GitHub Actions), it is reduced to a smaller number
+     *   to speed up automated test execution.
+     * - Locally, it defaults to a higher number for thorough stress testing.
+     *
+     * @var int
+     */
+    private int $iterations;
 
     /**
      * Sets up the environment before each test method.
@@ -71,12 +71,12 @@ class MemoryLeakTest extends AbstractTestContainer
      *
      * @return void
      */
-	protected function setUp(): void
-	{
-		parent::setUp();
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-		$this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
-	}
+        $this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
+    }
 
     /**
      * Test leak repeated make on non-shared.

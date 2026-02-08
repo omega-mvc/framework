@@ -67,7 +67,7 @@ final class TemplatorTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $files = glob($this->fixturePath('/fixtures/view/caches/*.php'));
+        $files = glob($this->setFixturePath('/fixtures/view/caches/*.php'));
         foreach ($files as $file) {
             if (is_file($file)) {
                 unlink($file);
@@ -113,8 +113,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderPhpTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('php.php', []);
@@ -134,8 +134,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderIncludeTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('include.php', []);
@@ -155,8 +155,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderIncludeNestingTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('nesting.include.php', []);
@@ -176,8 +176,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17]);
@@ -197,8 +197,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateWithTernary(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('naming-ternary.php', ['age' => false]);
@@ -218,8 +218,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateInSubFolder(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('Groups/nesting.php', ['name' => 'taylor', 'age' => 17]);
@@ -235,8 +235,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderIfTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('if.php', ['true' => true]);
@@ -256,8 +256,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderElseIfTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('else.php', ['true' => false]);
@@ -277,8 +277,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('each.php', ['numbers' => [1, 2, 3]]);
@@ -298,8 +298,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderSectionTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('slot.php', [
@@ -320,8 +320,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanThrowErrorSectionTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -344,8 +344,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $view->suffix = '.php';
@@ -368,8 +368,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderCommentTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('comment.php', []);
@@ -389,8 +389,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderRepeatTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('repeat.include.php', []);
@@ -410,8 +410,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanCompileTemplateFile(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches/');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches/');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->compile('include.php');
@@ -428,8 +428,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanCompileSetTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->compile('set.php');
@@ -450,8 +450,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderNameTemplateWithRaw(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('namingskip.php', ['render' => 'oke']);
@@ -470,8 +470,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachBreakTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('eachbreak.php', ['numbers' => [1, 2, 3]]);
@@ -487,8 +487,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanRenderEachContinueTemplate(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('eachcontinue.php', ['numbers' => [1, 2, 3]]);
@@ -504,8 +504,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanGetRawParameterData(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
         $out  = $view->render('parent-data.php', ['full.name' => 'taylor otwell']);
@@ -523,8 +523,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanCheckTemplateFileExist(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -540,8 +540,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanMakeTemplatorUsingString(): void
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $template = new Templator($loader, $cache);
         $this->assertInstanceOf(Templator::class, $template);
@@ -557,8 +557,8 @@ final class TemplatorTest extends TestCase
      */
     public function testItCanSetNewFinder()
     {
-        $loader = $this->fixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->fixturePath('/fixtures/view/caches');
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
 
         $finder     = new TemplatorFinder([$loader]);
         $templator  = new Templator(new TemplatorFinder([$loader], ['.php']), $cache);

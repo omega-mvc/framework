@@ -1,12 +1,24 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console;
 
-use PHPUnit\Framework\TestCase;
 use Omega\Console\Test\TestCommand;
 use Omega\Console\Traits\CommandTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
+use PHPUnit\Framework\TestCase;
 
 use function chr;
 use function explode;
@@ -14,6 +26,25 @@ use function ob_get_clean;
 use function ob_start;
 use function sprintf;
 
+/**
+ * Tests the console command parser with object-style access.
+ *
+ * This test suite verifies that command-line input is correctly parsed into
+ * properties on the command object, covering command names, short and long
+ * options, default values, quoted arguments, grouped flags, aliases, counters,
+ * positional arguments, and JSON payloads. It also ensures that parsed commands
+ * can execute their main logic and interact properly with console traits.
+ *
+ * @category  Tests
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+#[CoversClass(TestCommand::class)]
+#[CoversTrait(CommandTrait::class)]
 class ConsoleParseTest extends TestCase
 {
     /**

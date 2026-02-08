@@ -15,11 +15,11 @@ declare(strict_types=1);
 namespace Tests\Router;
 
 use InvalidArgumentException;
+use Omega\Router\Route;
+use Omega\Router\RouteUrlBuilder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use Omega\Router\Route;
-use Omega\Router\RouteUrlBuilder;
 
 /**
  * Class UrlBuilderInvalidArgumentTest
@@ -39,7 +39,7 @@ use Omega\Router\RouteUrlBuilder;
  */
 #[CoversClass(Route::class)]
 #[CoversClass(RouteUrlBuilder::class)]
-class UrlBuilderInvalidArgumentTest extends TestCase
+final class UrlBuilderInvalidArgumentTest extends TestCase
 {
     /**
      * Provides a set of invalid argument cases for URL building.

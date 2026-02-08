@@ -32,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class StaticSetterClass
+final class StaticSetterClass
 {
     /** @var bool Flag indicating whether the static method was called. */
     public static bool $called = false;

@@ -29,7 +29,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class Service
+final class Service
 {
     /**
      * @param mixed $value Optional value used to verify constructor injection.

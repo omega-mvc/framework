@@ -1,14 +1,41 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console\Style;
 
+use Omega\Console\Style\Colors;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use Omega\Console\Style\Colors;
 use Throwable;
 
+/**
+ * Class ColorsTest
+ *
+ * This test class verifies the functionality of the Colors utility class,
+ * which provides methods to convert color representations (hexadecimal and RGB)
+ * into terminal-compatible color codes. It covers both text and background color conversions
+ * and ensures proper handling of valid and invalid input values.
+ *
+ * @category   Tests
+ * @package    Console
+ * @subpackage Style
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
+ * @version    2.0.0
+ */
 #[CoversClass(Colors::class)]
 final class ColorsTest extends TestCase
 {

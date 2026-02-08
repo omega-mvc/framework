@@ -56,7 +56,7 @@ final class FacadeTest extends TestCase
      */
     final public function testItCanCallStatic(): void
     {
-        $app = new Application($this->basePath());
+        $app = new Application($this->setFixtureBasePath());
         $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
         AbstractFacade::setFacadeBase($app);

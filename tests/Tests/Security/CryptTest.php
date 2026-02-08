@@ -36,7 +36,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(Algo::class)]
 #[CoversClass(Crypt::class)]
-class CryptTest extends TestCase
+final class CryptTest extends TestCase
 {
     /** @var Crypt Instance used for encrypting and decrypting test data. */
     private Crypt $crypt;

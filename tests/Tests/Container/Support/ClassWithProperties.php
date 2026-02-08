@@ -33,7 +33,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-class ClassWithProperties
+final class ClassWithProperties
 {
     /** @var string Public property used for reflection tests. */
     public string $publicProperty = 'value';

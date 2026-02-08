@@ -1,14 +1,24 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console\Style;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Console\IO\OutputStream;
 use Omega\Console\Style\Colors;
 use Omega\Console\Style\Style;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
 use Throwable;
 
 use function chr;
@@ -17,6 +27,31 @@ use function ob_start;
 use function Omega\Console\style;
 use function sprintf;
 
+/**
+ * Class StyleTest
+ *
+ * This test class verifies the functionality of the `Style` utility, which is responsible
+ * for rendering styled text and background colors in the terminal. The tests cover a wide
+ * range of features including:
+ * - Text and background color rendering using hex, RGB, and raw terminal codes.
+ * - Chaining multiple styles and resets.
+ * - Pushing and tapping styles between different text segments.
+ * - Conditional output, padding, tabs, new lines, and repeated characters.
+ * - Integration with output streams to validate actual terminal output.
+ *
+ * The goal of this test suite is to ensure that the `Style` class correctly generates
+ * ANSI escape sequences and properly applies decorations and colorization in all supported
+ * scenarios.
+ *
+ * @category   Tests
+ * @package    Console
+ * @subpackage Style
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
+ * @version    2.0.0
+ */
 #[CoversClass(OutputStream::class)]
 #[CoversClass(Colors::class)]
 #[CoversClass(Style::class)]

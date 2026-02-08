@@ -64,8 +64,8 @@ final class ParentDataTest extends TestCase
         parent::setUp();
 
         $this->templator = new Templator(
-            new TemplatorFinder([$this->fixturePath('/fixtures/view/templator/')], ['']),
-            $this->fixturePath('/fixtures/view/templator/')
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
         );
     }
 
