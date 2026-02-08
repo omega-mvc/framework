@@ -36,7 +36,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @version    2.0.0
  */
 #[CoversClass(AbstractCommand::class)]
-class RegisterHelpCommand extends AbstractCommand
+final class RegisterHelpCommand extends AbstractCommand
 {
     /**
      * Returns a description of the command, its options, and their relations.

@@ -49,7 +49,7 @@ use const STDOUT;
  */
 #[CoversClass(AbstractCommand::class)]
 #[CoversClass(OutputStream::class)]
-class CommandTest extends TestCase
+final class CommandTest extends TestCase
 {
     /**
      * Sets up the environment before each test method.

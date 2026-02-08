@@ -52,7 +52,7 @@ use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
 #[CoversClass(BootProviders::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
-class RegisterProvidersTest extends TestCase
+final class RegisterProvidersTest extends TestCase
 {
     use FixturesPathTrait;
 
@@ -69,7 +69,8 @@ class RegisterProvidersTest extends TestCase
      */
     public function testBootstrap(): void
     {
-        $app = new Application($this->setFixturePath('/fixtures/application-read'));
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+        //var_dump($app);
         $app->register(TestRegisterServiceProvider::class);
         $app->bootstrapWith([BootProviders::class]);
 

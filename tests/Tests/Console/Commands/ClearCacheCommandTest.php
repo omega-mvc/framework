@@ -24,8 +24,8 @@ use Omega\Console\Commands\ClearCacheCommand;
 use Omega\Container\Exceptions\CircularAliasException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-
 use Tests\FixturesPathTrait;
+
 use function ob_get_clean;
 use function ob_start;
 
@@ -61,7 +61,7 @@ use function ob_start;
 #[CoversClass(ClearCacheCommand::class)]
 #[CoversClass(Memory::class)]
 #[CoversClass(UnknownStorageException::class)]
-class ClearCacheCommandTest extends TestCase
+final class ClearCacheCommandTest extends TestCase
 {
     use FixturesPathTrait;
 
@@ -89,7 +89,7 @@ class ClearCacheCommandTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->app = new Application($this->setFixtureBasePath());
+        $this->app = new Application($this->setFixtureBasePath() . slash(path: '/fixtures/application-write'));
     }
 
     /**

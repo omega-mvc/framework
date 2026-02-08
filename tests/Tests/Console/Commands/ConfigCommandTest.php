@@ -55,7 +55,7 @@ use function unlink;
  */
 #[CoversClass(Application::class)]
 #[CoversClass(ConfigCommand::class)]
-class ConfigCommandTest extends TestCase
+final class ConfigCommandTest extends TestCase
 {
     use FixturesPathTrait;
 

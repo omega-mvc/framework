@@ -35,6 +35,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @version    2.0.0
  */
 #[CoversClass(AbstractServiceProvider::class)]
-class TestRegisterServiceProvider extends AbstractServiceProvider
+final class TestRegisterServiceProvider extends AbstractServiceProvider
 {
 }

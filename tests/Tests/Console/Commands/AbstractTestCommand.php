@@ -21,8 +21,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\Application\Application;
 use Omega\Text\Str;
-
 use Tests\FixturesPathTrait;
+
 use function explode;
 
 /**
@@ -92,7 +92,7 @@ abstract class AbstractTestCommand extends TestCase
         $this->app->set('path.config', __DIR__ . slash(path: '/fixtures/'));
         $this->app->set('path.migration', __DIR__ . slash(path: '/fixtures/migration/'));
         $this->app->set('path.seeder', __DIR__ . slash('/fixtures/seeders/'));
-        $this->app->set('path.storage', __DIR__ . slash(path: '/fixtures/storage/'));
+        $this->app->set('path.storage', $this->setFixturePath(slash(path: '/fixtures/application-write/storage/')));
     }
 
     /**

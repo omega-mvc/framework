@@ -40,7 +40,7 @@ use function explode;
  */
 #[ CoversClass(AbstractCommand::class)]
 #[CoversClass(TestCommand::class)]
-class ConsoleVerboseTest extends TestCase
+final class ConsoleVerboseTest extends TestCase
 {
     /**
      * Test it can get default verbosity.
