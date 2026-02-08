@@ -11,6 +11,7 @@
  */
 
 /** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
+/** @noinspection PhpUnusedLocalVariableInspection */
 
 declare(strict_types=1);
 

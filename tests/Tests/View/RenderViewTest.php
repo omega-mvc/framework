@@ -24,8 +24,6 @@ use function ob_get_clean;
 use function ob_start;
 use function str_replace;
 
-use const DIRECTORY_SEPARATOR;
-
 /**
  * Test suite for the View renderer.
  *

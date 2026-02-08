@@ -1,9 +1,20 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Console\Commands;
 
+use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Cron\InterpolateInterface;
 use Omega\Cron\Schedule;
 use Omega\Console\Commands\CronCommand;
@@ -13,11 +24,44 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use function ob_get_clean;
 use function ob_start;
 
+/**
+ * Test suite for cron-related console commands.
+ *
+ * This class validates the behavior of the cron command integration with the
+ * scheduling system. It ensures that cron commands can be executed, listed,
+ * and correctly populated using the Schedule facade.
+ *
+ * The tests focus on verifying:
+ * - Correct execution of the cron command entry points.
+ * - Proper registration of scheduled tasks via the facade layer.
+ * - Correct propagation of scheduling configuration, such as execution time,
+ *   from the application container into the command runtime.
+ *
+ * A controlled in-memory schedule instance is injected during setup to
+ * guarantee deterministic behavior and avoid side effects during test runs.
+ *
+ * @category   Tests
+ * @package    Console
+ * @subpackage Commands
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
+ * @version    2.0.0
+ */
 #[CoversClass(Schedule::class)]
 #[CoversClass(CronCommand::class)]
 #[CoversClass(FacadesSchedule::class)]
 final class CronCommandsTest extends AbstractTestCommand
 {
+    /**
+     * Default schedule execution time used for testing.
+     *
+     * This value represents the time configuration passed to the Schedule
+     * instance during test setup. It is later asserted to ensure that the
+     * cron command correctly receives and preserves the scheduling interval
+     * from the application container.
+     */
     private int $time;
 
     /**
@@ -28,6 +72,7 @@ final class CronCommandsTest extends AbstractTestCommand
      * dependencies, and preparing any state required by the test.
      *
      * @return void
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      */
     protected function setUp(): void
     {
@@ -62,6 +107,20 @@ final class CronCommandsTest extends AbstractTestCommand
         FacadesSchedule::flush();
     }
 
+    /**
+     * Creates a cron command instance with an isolated logger.
+     *
+     * This helper method returns an anonymous CronCommand implementation
+     * configured with a custom logger to suppress output and side effects
+     * during test execution. It allows tests to focus exclusively on command
+     * behavior without relying on external logging mechanisms.
+     *
+     * The command is initialized using a simulated CLI argument vector,
+     * ensuring consistency across all cron-related test cases.
+     *
+     * @param string $argv Command-line input string.
+     * @return CronCommand A fully initialized cron command instance.
+     */
     private function maker(string $argv): CronCommand
     {
         return new class ($this->argv('omega cron')) extends CronCommand {

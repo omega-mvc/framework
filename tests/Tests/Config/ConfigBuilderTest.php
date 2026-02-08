@@ -72,7 +72,7 @@ final class ConfigBuilderTest extends TestCase
     }
 
     /**
-     * Test it should roduce empty configuration object if no sources.
+     * Test it should produce empty configuration object if no sources.
      *
      * @return void
      */

@@ -84,7 +84,7 @@ final class ConfigTest extends TestCase
     }
 
     /**
-     * Test it should be empty bu default.
+     * Test it should be empty by default.
      *
      * @return void
      */

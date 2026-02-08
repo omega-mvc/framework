@@ -22,7 +22,7 @@ use function putenv;
 /**
  * Provides utilities to isolate and control environment variables during tests.
  *
- * This trait allows test cases to safely backup, clear, modify, and restore
+ * This trait allows test cases to safely back up, clear, modify, and restore
  * environment variables without leaking state between tests. It ensures both
  * `$_SERVER` and system-level environment variables accessed via `getenv()`
  * remain synchronized and can be reliably asserted.

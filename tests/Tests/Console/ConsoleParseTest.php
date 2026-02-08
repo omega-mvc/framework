@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpMissingReturnTypeInspection */
 
 /**
  * Part of Omega - Tests\Console Package.
@@ -154,7 +154,7 @@ class ConsoleParseTest extends TestCase
         $console = new class (['test', '--test', 'Oke']) extends TestCommand {
             use CommandTrait;
 
-            public function main()
+            public function main(): void
             {
                 echo $this->textGreen($this->name);
             }
@@ -184,6 +184,7 @@ class ConsoleParseTest extends TestCase
             'valid parse from long param with double quote'
         );
 
+        /** @noinspection PhpConditionAlreadyCheckedInspection */
         $this->assertEquals(
             'john',
             $cli->nick,

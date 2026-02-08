@@ -58,6 +58,7 @@ final class OutputStreamTest extends TestCase
         $stream       = fopen('php://memory', 'w+');
         $outputStream = new OutputStream($stream);
 
+        /** @noinspection PhpConditionAlreadyCheckedInspection */
         $this->assertInstanceOf(OutputStream::class, $outputStream);
         fclose($stream);
     }

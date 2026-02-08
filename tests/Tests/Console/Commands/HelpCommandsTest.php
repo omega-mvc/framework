@@ -20,6 +20,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
 use function ob_get_clean;
@@ -50,6 +51,22 @@ use function ob_start;
 #[CoversClass(HelpCommand::class)]
 final class HelpCommandsTest extends AbstractTestCommand
 {
+    /**
+     * Test suite for the console help command.
+     *
+     * This class verifies the behavior of the help system used by console commands.
+     * It ensures that help output, command listings, and command-specific help
+     * information are correctly generated based on the commands registered in
+     * the application configuration.
+     *
+     * The tests cover multiple registration scenarios, including:
+     * - Commands registered via configuration arrays.
+     * - Commands registered by providing a command class.
+     * - Mixed and legacy command registration formats.
+     *
+     * The suite also validates error handling when requesting help for unknown
+     * commands or when insufficient input is provided.
+     */
     private array $command = [];
 
     /**
@@ -92,10 +109,8 @@ final class HelpCommandsTest extends AbstractTestCommand
      * Test it can call help command main.
      *
      * @return void
-     */
-    /**
-     * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -123,6 +138,7 @@ final class HelpCommandsTest extends AbstractTestCommand
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -151,6 +167,7 @@ final class HelpCommandsTest extends AbstractTestCommand
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -218,6 +235,7 @@ final class HelpCommandsTest extends AbstractTestCommand
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -237,6 +255,7 @@ final class HelpCommandsTest extends AbstractTestCommand
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -256,6 +275,7 @@ final class HelpCommandsTest extends AbstractTestCommand
      *
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */

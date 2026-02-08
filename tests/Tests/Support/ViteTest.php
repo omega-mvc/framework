@@ -26,8 +26,7 @@ use Tests\FixturesPathTrait;
  * This test class verifies the integration between the Vite helper and the
  * filesystem-based fixtures, ensuring correct resolution of asset paths
  * from the Vite manifest, proper handling of Hot Module Replacement (HMR),
- * and correct generation of HTML tags for scripts, styles, and preload
- * links.
+ * and correct generation of HTML tags for scripts, styles, and preload.
  *
  * The tests cover both standard build mode and HMR mode, validate internal
  * caching behavior, and ensure that generated URLs and HTML output match
@@ -125,7 +124,7 @@ final class ViteTest extends TestCase
      * Test it can get hot file resource name.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanGetHotFileResourceName(): void
     {
@@ -140,7 +139,7 @@ final class ViteTest extends TestCase
      * Test it can get hot file resource names.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanGetHotFileResourceNames(): void
     {
@@ -161,7 +160,7 @@ final class ViteTest extends TestCase
      * Test it can use cache.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanUseCache(): void
     {
@@ -175,7 +174,7 @@ final class ViteTest extends TestCase
      * Test it can get hot uri.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanGetHotUrl(): void
     {
@@ -191,7 +190,7 @@ final class ViteTest extends TestCase
      * Test it can get hmr script.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanGetHmrScript(): void
     {
@@ -207,7 +206,7 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTag(): void
     {
@@ -229,7 +228,7 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag with preload.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTagWithPreload(): void
     {
@@ -251,7 +250,7 @@ final class ViteTest extends TestCase
      * Test it can render head HTML tag in hrm mode.
      *
      * @return void
-     * @throws Exception Throw whenn a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanRenderHeadHtmlTagInHrmMode(): void
     {
