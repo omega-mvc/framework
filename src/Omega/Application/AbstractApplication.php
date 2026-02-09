@@ -538,6 +538,11 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     protected function getMergeProviders(): array
     {
-        return [...$this->providers, ...$this->make(PackageManifest::class)->providers()];
+        $packageProviders = $this->make(PackageManifest::class)->providers() ?? [];
+
+        return [
+            ...$this->providers,
+            ...$packageProviders,
+        ];
     }
 }

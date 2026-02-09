@@ -84,14 +84,13 @@ abstract class AbstractTestCommand extends TestCase
     {
         $this->app = new Application($this->setFixtureBasePath());
 
-        $this->app->set('path.view', __DIR__ . slash(path: '/fixtures/'));
-        $this->app->set('path.controller', __DIR__ . slash(path: '/fixtures/'));
-        $this->app->set('path.services', __DIR__ . slash(path: '/fixtures/'));
-        $this->app->set('path.model', slash(path: '/fixtures/'));
-        $this->app->set('path.command', __DIR__ . slash(path: '/fixtures/'));
-        $this->app->set('path.config', __DIR__ . slash(path: '/fixtures/'));
-        $this->app->set('path.migration', __DIR__ . slash(path: '/fixtures/migration/'));
-        $this->app->set('path.seeder', __DIR__ . slash('/fixtures/seeders/'));
+        $this->app->set('path.view', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.controller', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.model', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.command', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.config', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.migration', $this->setFixturePath(slash(path: '/fixtures/application-write/console/database/migration/')));
+        $this->app->set('path.seeder', $this->setFixturePath(slash('/fixtures/application-write/console/database/seeders/')));
         $this->app->set('path.storage', $this->setFixturePath(slash(path: '/fixtures/application-write/storage/')));
     }
 
