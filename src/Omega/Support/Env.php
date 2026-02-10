@@ -15,7 +15,6 @@ declare(strict_types=1);
 namespace Omega\Support;
 
 use Dotenv\Dotenv;
-use Omega\Environment\Dotenv\Dotenv;
 
 use function is_numeric;
 use function strtolower;
