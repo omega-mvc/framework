@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\Container\Support\Attribute;
 
 use Attribute;
+use PHPUnit\Framework\Attributes\CoversNothing;
 
 /**
  * Marker attribute used to tag a property for reflection and attribute handling tests.
@@ -28,6 +29,7 @@ use Attribute;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
+#[CoversNothing]
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class MyPropertyAttribute
 {

@@ -16,6 +16,7 @@ namespace Tests\Support\Facades\Sample;
 
 use Omega\Collection\Collection;
 use Omega\Support\Facades\AbstractFacade;
+use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
  * Test facade used to validate the facade resolution mechanism.
@@ -35,6 +36,8 @@ use Omega\Support\Facades\AbstractFacade;
  *
  * @method static bool has(string $key)
  */
+#[CoversClass(AbstractFacade::class)]
+#[CoversClass(Collection::class)]
 final class FacadesTestClass extends AbstractFacade
 {
     /**

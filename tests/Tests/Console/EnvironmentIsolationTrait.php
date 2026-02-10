@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Tests\Console;
 
+use PHPUnit\Framework\Attributes\CoversNothing;
 use function getenv;
 use function putenv;
 
@@ -35,6 +36,7 @@ use function putenv;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
+#[CoversNothing]
 trait EnvironmentIsolationTrait
 {
     /** @var array<string, string> Backup of environment variables retrieved via getenv(). */
