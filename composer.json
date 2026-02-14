@@ -22,8 +22,6 @@
     ],
     "require": {
         "php": "^8.4",
-        "ext-apcu": "*",
-        "ext-http": "*",
         "ext-iconv": "*",
         "ext-mbstring": "*",
         "ext-openssl": "*",
@@ -34,7 +32,6 @@
         "ext-simplexml": "*",
         "omega-mvc/serializable-closure":  "^2.0.0",
         "omega-mvc/validator": "^2.0.0",
-        "psr/cache": "^3.0",
         "psr/container": "^2.0",
         "psr/simple-cache": "^3.0",
         "vlucas/phpdotenv": "^5.6"
@@ -66,21 +63,36 @@
         }
     },
     "scripts": {
-        "lint": "php-cs-fixer fix -v",
-        "test:lint": "php-cs-fixer fix -v --dry-run --diff",
+        "phpcs": "vendor/bin/phpcs --standard=PSR12 src/ tests/",
+        "lint": "composer run phpcs",
+        "phpcbf": "vendor/bin/phpcbf --standard=PSR12 src/ tests/",
+        "fix": "composer run phpcbf",
+        "test:phpunit": "vendor/bin/phpunit tests",
         "test:facade": "php ./bin/facade.php facade:update --from-file /resources/facades.php --debug --dry-run",
         "test:facade:update": "php ./bin/facade.php facade:update --from-file /resources/facades.php --debug",
         "test:dev": [
-            "@test:lint",
             "@test:facade"
         ],
         "test": [
-            "php-cs-fixer fix -v --dry-run",
-            "php ./bin/facade.php facade:update --from-file /resources/facades.php --dry-run"
+            "composer run lint",
+            "composer run test:phpunit",
+            "composer run test:facade"
+        ],
+        "check": "composer run test",
+        "ci": [
+            "composer run fix",
+            "composer run test"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ]
     },
     "suggest": {
-		"ext-apache": "If you wanto to use apache extension"
+        "ext-apache": "If you want to use apache extension",
+        "ext-apcu": "If you want to use APCu for faster in-memory caching",
+        "ext-memcached": "If you want to use Memcached as a cache backend",
+        "ext-redis": "If you want to use Redis as a cache backend or for session storage",
+        "ext-http": "If you want to use HTTP extension features"
     },
     "minimum-stability": "stable",
     "prefer-stable": true
