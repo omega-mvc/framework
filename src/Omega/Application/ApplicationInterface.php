@@ -202,6 +202,17 @@ interface ApplicationInterface
     public function register(string $provider): AbstractServiceProvider;
 
     /**
+     * Registers a callback to be executed when the application terminates.
+     *
+     * This method allows you to add one or more terminating callbacks that
+     * will be called after the application finishes handling a request.
+     *
+     * @param callable $terminateCallback The callback to execute on termination.
+     * @return $this Returns the application instance for method chaining.
+     */
+    public function registerTerminate(callable $terminateCallback): self;
+
+    /**
      * Terminate the application.
      *
      * @return void

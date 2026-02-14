@@ -67,11 +67,13 @@ use const JSON_THROW_ON_ERROR;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  *
- * @method Validator    validate(?Closure $rule = null, ?Closure $filter = null)
- * @method UploadFile upload(array $fileName)
+ * @method Validator  validate(?Closure $rule = null, ?Closure $filter = null)
+ * @method UploadFile upload(array|string $fileName)
  *
  * @implements ArrayAccess<string, string>
  * @implements IteratorAggregate<string, string>
+ *
+ * @property string|null $query_1
  */
 class Request implements ArrayAccess, IteratorAggregate
 {
@@ -128,16 +130,16 @@ class Request implements ArrayAccess, IteratorAggregate
     /**
      * Initialize a new HTTP request.
      *
-     * @param string                $url           The requested URL.
-     * @param array<string, string> $query         Query parameters ($_GET).
-     * @param array<string, string> $post          POST parameters ($_POST).
-     * @param array<string, string> $attributes    Custom attributes.
-     * @param array<string, string> $cookies       Cookies ($_COOKIE).
-     * @param array<string, string> $files         Uploaded files ($_FILES).
-     * @param array<string, string> $headers       HTTP headers.
-     * @param string                $method        HTTP method, default 'GET'.
-     * @param string                $remoteAddress Client IP address, default '::1'.
-     * @param string|null           $rawBody       Raw request body.
+     * @param string                                         $url           The requested URL.
+     * @param array<string, string>                          $query         Query parameters ($_GET).
+     * @param array<string, string>                          $post          POST parameters ($_POST).
+     * @param array<string, string>                          $attributes    Custom attributes.
+     * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
+     * @param array<string, string|array<string,int|string>> $files         Uploaded files ($_FILES)
+     * @param array<string, string>                          $headers       HTTP headers.
+     * @param string                                         $method        HTTP method, default 'GET'.
+     * @param string                                         $remoteAddress Client IP address, default '::1'.
+     * @param string|null                                    $rawBody       Raw request body.
      * @return void
      */
     public function __construct(
@@ -171,16 +173,16 @@ class Request implements ArrayAccess, IteratorAggregate
      *
      * This method allows re-initializing all request data after construction.
      *
-     * @param string                $url           The requested URL.
-     * @param array<string, string> $query         Query parameters ($_GET).
-     * @param array<string, string> $post          POST parameters ($_POST).
-     * @param array<string, string> $attributes    Custom attributes.
-     * @param array<string, string> $cookies       Cookies ($_COOKIE).
-     * @param array<string, string> $files         Uploaded files ($_FILES).
-     * @param array<string, string> $headers       HTTP headers.
-     * @param string                $method        HTTP method.
-     * @param string                $remoteAddress Client IP address.
-     * @param string|null           $rawBody       Raw request body.
+     * @param string                                         $url           The requested URL.
+     * @param array<string, string>                          $query         Query parameters ($_GET).
+     * @param array<string, string>                          $post          POST parameters ($_POST).
+     * @param array<string, string>                          $attributes    Custom attributes.
+     * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
+     * @param array<string, string|array<string,int|string>> $files         Uploaded files ($_FILES)
+     * @param array<string, string>                          $headers       HTTP headers.
+     * @param string                                         $method        HTTP method, default 'GET'.
+     * @param string                                         $remoteAddress Client IP address, default '::1'.
+     * @param string|null                                    $rawBody       Raw request body.
      * @return self Returns the request instance.
      */
     public function initialize(

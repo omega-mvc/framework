@@ -16,7 +16,7 @@ namespace Tests\Console\Commands;
 
 use Exception;
 use Omega\Application\Application;
-use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheManager;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Cache\Storage\File;
 use Omega\Cache\Storage\Memory;
@@ -56,7 +56,7 @@ use function ob_start;
  * @version    2.0.0
  */
 #[CoversClass(Application::class)]
-#[CoversClass(CacheFactory::class)]
+#[CoversClass(CacheManager::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(ClearCacheCommand::class)]
 #[CoversClass(Memory::class)]
@@ -136,7 +136,7 @@ final class ClearCacheCommandTest extends TestCase
      */
     public function testItCanClearDefaultDriver(): void
     {
-        $this->app->set('cache', fn () => new CacheFactory('file', new File([
+        $this->app->set('cache', fn () => new CacheManager('file', new File([
             'ttl'  => 3_600,
             'path' => get_path('path.cache')
         ])));
@@ -159,7 +159,7 @@ final class ClearCacheCommandTest extends TestCase
      */
     public function testItCanAllDriver(): void
     {
-        $cacheManager = new CacheFactory('memory', new Memory(['ttl' => 3_600]));
+        $cacheManager = new CacheManager('memory', new Memory(['ttl' => 3_600]));
         $this->app->set('cache', fn () => $cacheManager);
         $command = new ClearCacheCommand(['omega', 'clear:cache', '--all'], ['all' => true]);
 
@@ -168,7 +168,7 @@ final class ClearCacheCommandTest extends TestCase
         $out  = ob_get_clean();
 
         $this->assertEquals(0, $code);
-        $this->assertStringContainsString("Clear 'memory' driver.", $out);
+        $this->assertStringContainsString("Cleared 'memory' driver.", $out);
     }
 
     /**
@@ -180,7 +180,7 @@ final class ClearCacheCommandTest extends TestCase
      */
     public function testItCanSpecificDriver(): void
     {
-        $cacheManager = new CacheFactory('memory', new Memory(['ttl' => 3_600]));
+        $cacheManager = new CacheManager('memory', new Memory(['ttl' => 3_600]));
         $this->app->set('cache', fn () => $cacheManager);
         $command = new ClearCacheCommand(['omega', 'clear:cache', '--drivers memory'], ['drivers' => 'memory']);
 
@@ -189,6 +189,6 @@ final class ClearCacheCommandTest extends TestCase
         $out  = ob_get_clean();
 
         $this->assertEquals(0, $code);
-        $this->assertStringContainsString("Clear 'memory' driver.", $out);
+        $this->assertStringContainsString("Cleared 'memory' driver.", $out);
     }
 }

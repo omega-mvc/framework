@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Application\Application;
-use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheManager;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Traits\CommandTrait;
@@ -110,7 +110,7 @@ class ClearCacheCommand extends AbstractCommand
             return 1;
         }
 
-        /** @var CacheFactory|null $cache */
+        /** @var CacheManager|null $cache */
         $cache = $app['cache'];
 
         /** @var string[]|null $drivers */
@@ -136,9 +136,16 @@ class ClearCacheCommand extends AbstractCommand
             return 0;
         }
 
-        foreach ($drivers as $driver) {
-            $cache->getDriver($driver)->clear();
-            info("Clear '$driver' driver.")->out(false);
+        foreach ($drivers as $driverName) {
+            $driver = $cache->getDriver($driverName);
+
+            if (method_exists($driver, 'isSupported') && !$driver->isSupported()) {
+                info("Skipping '$driverName' driver: not supported.")->out(false);
+                continue;
+            }
+
+            $driver->clear();
+            info("Cleared '$driverName' driver.")->out(false);
         }
 
         return 0;

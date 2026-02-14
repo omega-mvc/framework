@@ -18,9 +18,11 @@ use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use FilesystemIterator;
+use Omega\Cache\AbstractCache;
 use Omega\Cache\Exceptions\CacheConfigurationException;
 use Omega\Cache\Exceptions\CachePathException;
 use Omega\Cache\Exceptions\InvalidValueIncrementException;
+use Omega\Cache\Traits\CacheTimeTrait;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
@@ -63,8 +65,10 @@ use const LOCK_EX;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-class File extends AbstractStorage
+class File extends AbstractCache
 {
+    use CacheTimeTrait;
+
     /** @var string The directory path where cache files are stored. */
     protected string $path;
 
@@ -95,26 +99,6 @@ class File extends AbstractStorage
         if (!is_dir($this->path) && !mkdir($this->path, 0777, true)) {
             throw new CachePathException($this->path);
         }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getInfo(string $key): array
-    {
-        $filePath = $this->makePath($key);
-
-        if (false === file_exists($filePath)) {
-            return [];
-        }
-
-        $data = file_get_contents($filePath);
-
-        if (false === $data) {
-            return [];
-        }
-
-        return unserialize($data);
     }
 
     /**
@@ -261,6 +245,26 @@ class File extends AbstractStorage
     /**
      * {@inheritdoc}
      */
+    public function getInfo(string $key): array
+    {
+        $filePath = $this->makePath($key);
+
+        if (false === file_exists($filePath)) {
+            return [];
+        }
+
+        $data = file_get_contents($filePath);
+
+        if (false === $data) {
+            return [];
+        }
+
+        return unserialize($data);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function calculateExpirationTimestamp(int|DateInterval|DateTimeInterface|null $ttl): int
     {
         if ($ttl instanceof DateInterval) {
@@ -274,6 +278,14 @@ class File extends AbstractStorage
         $ttl ??= $this->defaultTTL;
 
         return time() + $ttl;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function isSupported(): bool
+    {
+        return true;
     }
 
     /**

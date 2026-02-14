@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\RateLimiter;
 
-use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheManager;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -72,7 +72,7 @@ class RateLimiterServiceProvider extends AbstractServiceProvider
      */
     protected function registerRateLimiterResolver(): void
     {
-        /** @var CacheFactory $cache */
+        /** @var CacheManager $cache */
         $cache = $this->app->get('cache');
         $rate  = new RateLimiterFactory($cache);
 

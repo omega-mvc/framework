@@ -16,7 +16,7 @@ namespace Omega\Support\Facades;
 
 use Closure;
 use DateInterval;
-use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheManager;
 use Omega\Cache\CacheInterface;
 
 /**
@@ -39,8 +39,8 @@ use Omega\Cache\CacheInterface;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  *
- * @method static CacheFactory   setDefaultDriver(CacheInterface $driver)
- * @method static CacheFactory   setDriver(string $driver_name, $driver)
+ * @method static CacheManager   setDefaultDriver(CacheInterface $driver)
+ * @method static CacheManager   setDriver(string $driver_name, $driver)
  * @method static CacheInterface driver(?string $driver_name = null)
  * @method static mixed          get(string $key, mixed $default = null)
  * @method static bool           set(string $key, mixed $value, DateInterval|int|null $ttl = null)
@@ -54,7 +54,7 @@ use Omega\Cache\CacheInterface;
  * @method static int            decrement(string $key, int $value)
  * @method static mixed          remember(string $key, Closure $callback, DateInterval|int|null $ttl)
  *
- * @see CacheFactory
+ * @see CacheManager
  */
 final class Cache extends AbstractFacade
 {

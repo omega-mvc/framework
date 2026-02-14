@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Cache;
 
-use Omega\Cache\CacheFactory;
+use Omega\Cache\CacheManager;
 use Omega\Cache\CacheInterface;
 use Omega\Cache\Exceptions\CachePathException;
 use Omega\Cache\Exceptions\UnknownStorageException;
@@ -49,7 +49,7 @@ use PHPUnit\Framework\TestCase;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-#[CoversClass(CacheFactory::class)]
+#[CoversClass(CacheManager::class)]
 #[CoversClass(File::class)]
 #[CoversClass(Memory::class)]
 final class CacheFactoryTest extends TestCase
@@ -63,7 +63,7 @@ final class CacheFactoryTest extends TestCase
      */
     public function testFileFactory(): void
     {
-        $cache = new CacheFactory('array1', new File(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
+        $cache = new CacheManager('array1', new File(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array1'));
 
         $this->assertTrue($cache->getDriver('array1')->set('key1', 'value1'));
@@ -78,7 +78,7 @@ final class CacheFactoryTest extends TestCase
      */
     public function testMemoryFactory(): void
     {
-        $cache = new CacheFactory('array2', new Memory(['ttl' => 3_600]));
+        $cache = new CacheManager('array2', new Memory(['ttl' => 3_600]));
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array2'));
 
         $this->assertTrue($cache->getDriver('array2')->set('key1', 'value1'));

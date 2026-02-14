@@ -11,7 +11,7 @@ declare(strict_types=1);
  * }>
  */
 return [
-    'Cache'    => 'Omega\\Cache\\CacheFactory',
+    'Cache'    => 'Omega\\Cache\\CacheManager',
     'Config'   => 'Omega\\Config\\ConfigRepository',
     'DB'       => [
         'accessor' => 'Omega\\Database\\DatabaseManager',

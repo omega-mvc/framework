@@ -40,16 +40,6 @@ use DateTimeInterface;
 interface StorageInterface
 {
     /**
-     * Calculates a precise timestamp including microseconds based on the current time.
-     *
-     * This value is primarily used to track the creation or modification time
-     * of cache items, allowing for more accurate expiration and profiling data.
-     *
-     * @return float Returns the calculated timestamp with millisecond precision.
-     */
-    public function createMtime(): float;
-
-    /**
      * Retrieves metadata information about a specific cache entry.
      *
      * Implementations should return an associative array that includes at least
@@ -89,4 +79,15 @@ interface StorageInterface
      * @return int Returns the UNIX timestamp representing the expiration time.
      */
     public function calculateExpirationTimestamp(int|DateInterval|DateTimeInterface|null $ttl): int;
+
+    /**
+     * Determines whether the current cache backend is supported in
+     * the running environment.
+     *
+     * This method allows conditional usage of cache pools depending
+     * on platform capabilities or extension availability.
+     *
+     * @return bool True if the cache backend is supported, false otherwise.
+     */
+    public static function isSupported(): bool;
 }

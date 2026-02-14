@@ -16,20 +16,28 @@ namespace Omega\Cache;
 
 use Closure;
 use DateInterval;
+use Psr\SimpleCache\CacheInterface as PsrCacheInterface;
 
 /**
  * Interface CacheInterface
  *
- * Defines a common contract for cache implementations within the Omega framework.
+ * Defines a common contract for cache implementations within the Omega framework,
+ * fully compatible with PSR-16 "Simple Cache" standard.
  *
- * This interface provides methods to read, write, delete, and manage cached data.
- * It is inspired by the PSR-16 "Simple Cache" standard, but includes additional
- * helper methods such as `increment`, `decrement`, and `remember` to simplify
- * common caching operations in applications.
+ * This interface extends {@see PsrCacheInterface} and adds
+ * additional convenience methods such as `increment`, `decrement`, and `remember`
+ * to simplify common caching operations in applications.
  *
- * Implementations of this interface should be **safe**, **efficient**, and **driver-agnostic**,
- * supporting different backends (e.g. file, array, Redis, Memcached, database) via
- * a consistent API.
+ * Implementations should be **safe**, **efficient**, and **driver-agnostic**,
+ * supporting various backends like File, Memory, Redis, Memcached, or custom storages
+ * through a unified API.
+ *
+ * Key features:
+ * - Standard PSR-16 operations (get, set, delete, clear, etc.)
+ * - Multi-key operations (getMultiple, setMultiple, deleteMultiple)
+ * - Numeric increment/decrement operations
+ * - Lazy value computation and storage (`remember`)
+ * - Fully compatible with Omega's cache management system and `CacheFactory`
  *
  * @category  Omega
  * @package   Cache
@@ -39,7 +47,7 @@ use DateInterval;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-interface CacheInterface
+interface CacheInterface extends PsrCacheInterface
 {
     /**
      * Retrieve a value from the cache by its key.

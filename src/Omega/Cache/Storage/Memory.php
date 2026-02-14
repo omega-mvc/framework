@@ -17,6 +17,8 @@ namespace Omega\Cache\Storage;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
+use Omega\Cache\AbstractCache;
+use Omega\Cache\Traits\CacheTimeTrait;
 
 use function array_key_exists;
 use function time;
@@ -40,8 +42,10 @@ use function time;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-class Memory extends AbstractStorage
+class Memory extends AbstractCache
 {
+    use CacheTimeTrait;
+
     /**
      * Internal array holding cached items and their metadata.
      *
@@ -74,14 +78,6 @@ class Memory extends AbstractStorage
     public function __construct(array $options)
     {
         parent::__construct($options);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getInfo(string $key): array
-    {
-        return $this->storage[$key] ?? [];
     }
 
     /**
@@ -183,6 +179,14 @@ class Memory extends AbstractStorage
     /**
      * {@inheritdoc}
      */
+    public function getInfo(string $key): array
+    {
+        return $this->storage[$key] ?? [];
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function calculateExpirationTimestamp(int|DateInterval|DateTimeInterface|null $ttl): int
     {
         if ($ttl instanceof DateInterval) {
@@ -196,6 +200,14 @@ class Memory extends AbstractStorage
         $ttl ??= $this->defaultTTL;
 
         return new DateTimeImmutable()->add(new DateInterval("PT{$ttl}S"))->getTimestamp();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function isSupported(): bool
+    {
+        return true;
     }
 
     /**

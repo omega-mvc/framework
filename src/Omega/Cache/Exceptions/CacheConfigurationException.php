@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\Cache\Exceptions;
 
 use InvalidArgumentException;
+use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInterface;
 
 /**
  * Class CacheConfigurationException
@@ -32,6 +33,6 @@ use InvalidArgumentException;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-class CacheConfigurationException extends InvalidArgumentException implements CacheExceptionInterface
+class CacheConfigurationException extends InvalidArgumentException implements PsrInvalidArgumentExceptionInterface
 {
 }

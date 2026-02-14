@@ -22,6 +22,7 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Provider\AbstractServiceProvider;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use RuntimeException;
 
 /**
  * Bootstraps the cache system and registers available cache drivers.
@@ -55,39 +56,80 @@ class CacheServiceProvider extends AbstractServiceProvider
     /**
      * {@inheritdoc}
      *
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
      */
     public function boot(): void
     {
-        $config         = $this->app->get('config');
-        $default        = $config['cache.default'];
-        $storages       = $config['cache.storage'];
+        $config   = $this->app->get('config')['cache'];
+        $default  = $config['default'];
+        $adapters = $config['storage'];
 
-        $options        = $storages[$default];
+        // Registrazione di tutti i driver
+        foreach ($adapters as $name => $options) {
+            $this->app->set("cache.$name", function () use ($name, $options) {
+                return match ($name) {
+                    //'apcu'      => new Apcu($options),
+                    'file'      => new File($options),
+                    'memory'    => new Memory($options),
+                    //'memcached' => $this->createMemcachedAdapter($options),
+                    //'redis'     => $this->createRedisAdapter($options),
+                    default     => throw new RuntimeException("Unknown cache adapter: $name"),
+                };
+            });
+        }
 
-        $this->app->set('cache.options', $options);
+        // CacheManager principale con driver di default
+        $this->app->set('cache', function () use ($default, $adapters) {
+            $manager = new CacheManager($default, $this->app["cache.$default"]);
 
-        $cache = match ($default) {
-            'memory' => 'cache.memory',
-            default  => 'cache.file',
-        };
+            // Registriamo tutti gli altri driver
+            foreach (array_keys($adapters) as $driver) {
+                if ($driver !== $default) {
+                    $manager->setDriver($driver, $this->app["cache.$driver"]);
+                }
+            }
 
-        $this->app->set(
-            'cache.file',
-            fn(): File => new File($this->app->get('cache.options'))
-        );
-
-        $this->app->set(
-            'cache.memory',
-            fn(): Memory => new Memory($this->app->get('cache.options'))
-        );
-
-        $this->app->set('cache', function () use ($cache, $default): CacheFactory {
-            return new CacheFactory($default, $this->app[$cache]);
+            return $manager;
         });
+    }
+
+    /**
+     * Crea l'adapter Memcached con oggetto Memcached già configurato.
+     */
+    protected function createMemcachedAdapter(array $options): Memcached
+    {
+        $memcached = new PhpMemcached();
+        $host = $options['host'] ?? '127.0.0.1';
+        $port = $options['port'] ?? 11211;
+        $memcached->addServer($host, $port);
+
+        return new Memcached($memcached, $options);
+    }
+
+    // Dentro CacheServiceProvider
+
+    protected function createRedisAdapter(array $options): Redis
+    {
+        $client = new PhpRedis();
+
+        $host = $options['host'] ?? '127.0.0.1';
+        $port = $options['port'] ?? 6379;
+        $timeout = $options['timeout'] ?? 0.0;
+
+        $client->connect($host, $port, $timeout);
+
+        if (!empty($options['password'])) {
+            $client->auth($options['password']);
+        }
+
+        if (!empty($options['database'])) {
+            $client->select((int) $options['database']);
+        }
+
+        return new Redis($client, $options);
     }
 }
