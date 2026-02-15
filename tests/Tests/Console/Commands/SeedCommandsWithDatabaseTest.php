@@ -105,7 +105,7 @@ final class SeedCommandsWithDatabaseTest extends AbstractTestDatabase
         require_once slash(path: $seederPath . 'CustomNamespaceSeeder.php');
 
         $this->app = new Application($this->setFixtureBasePath());
-        $this->app->set('path.seeder', $seederPath );
+        $this->app->set('path.seeder', $seederPath);
         $this->app->set('environment', 'dev');
         new Schema($this->app);
         new FacadesPDO($this->app);

@@ -25,8 +25,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-
 use Tests\FixturesPathTrait;
+
 use function file_put_contents;
 use function md5;
 use function ob_get_clean;

@@ -15,6 +15,9 @@ declare(strict_types=1);
 namespace Tests\Middleware;
 
 use Omega\Cache\Storage\Memory;
+use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Container\Exceptions\CircularAliasException;
+use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Middleware\ThrottleMiddleware;
@@ -22,6 +25,8 @@ use Omega\RateLimiter\Policy\FixedWindow;
 use Omega\RateLimiter\RateLimiter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerExceptionInterface;
+use ReflectionException;
 
 /**
  * Test suite for ThrottleMiddleware.
@@ -39,6 +44,9 @@ use PHPUnit\Framework\TestCase;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
 #[CoversClass(Memory::class)]
 #[CoversClass(Request::class)]
 #[CoversClass(Response::class)]
@@ -47,16 +55,43 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RateLimiter::class)]
 final class ThrottleMiddlewareTest extends TestCase
 {
+    private RateLimiter $limiter;
+    private int $ttl;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Use longer TTL for Android/Termux environments to avoid premature expiration
+        $this->ttl = omega_local_override() ? 86_400 : 3_600; // 1 day vs 1 hour
+
+        // Always create a fresh memory instance for isolation
+        $memory = new Memory(['ttl' => $this->ttl]);
+        $memory->clear();
+        $this->limiter = new RateLimiter(new FixedWindow($memory, 60, 1));
+    }
+
+    protected function tearDown(): void
+    {
+        // Ensure memory is cleared to avoid cross-test contamination
+        //$this->limiter->reset();
+        parent::tearDown();
+    }
+
     /**
      * Test it can throttle request.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItCanThrottleRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl' => 3_600]), 60, 1));
-        $middleware = new ThrottleMiddleware($limiter);
-        $request    = new Request('/');
+        $middleware = new ThrottleMiddleware($this->limiter);
+        $request = new Request('/');
 
         // Simulate 60 requests to trigger throttling
         for ($i = 0; $i < 60; $i++) {
@@ -75,12 +110,16 @@ final class ThrottleMiddlewareTest extends TestCase
      * Test it can pass request.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testItCanPassRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl'  => 3_600]), 60, 1));
-        $middleware = new ThrottleMiddleware($limiter);
-        $request    = new Request('/');
+        $middleware = new ThrottleMiddleware($this->limiter);
+        $request = new Request('/');
 
         // Simulate 59 requests, so one remaining
         for ($i = 0; $i < 58; $i++) {

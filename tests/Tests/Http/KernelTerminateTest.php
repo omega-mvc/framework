@@ -87,8 +87,7 @@ final class KernelTerminateTest extends TestCase
         /**
          * Anonymous Http subclass used in this test to override middleware behavior.
          */
-        $this->http = new class($this->app) extends Http {
-
+        $this->http = new class ($this->app) extends Http {
             /**
              * Handles an incoming HTTP request.
              *
@@ -156,4 +155,3 @@ final class KernelTerminateTest extends TestCase
         $this->assertEquals('/testokterminated.', $out);
     }
 }
-

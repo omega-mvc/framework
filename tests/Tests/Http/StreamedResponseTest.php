@@ -55,7 +55,9 @@ final class StreamedResponseTest extends TestCase
      */
     public function testItCanUseConstructor(): void
     {
-        $response = new StreamedResponse(function () { echo 'php'; }, 200, ['Content-Type' => 'text/plain']);
+        $response = new StreamedResponse(function () {
+            echo 'php';
+        }, 200, ['Content-Type' => 'text/plain']);
         $this->assertEquals(200, $response->getStatusCode());
         $this->assertEquals('text/plain', $response->getHeaders()['Content-Type']);
     }
@@ -67,7 +69,9 @@ final class StreamedResponseTest extends TestCase
      */
     public function testItCanCreateStreamResponseUsingRequest(): void
     {
-        $response = new StreamedResponse(function () { echo 'php'; }, 200, ['Content-Type' => 'application/json']);
+        $response = new StreamedResponse(function () {
+            echo 'php';
+        }, 200, ['Content-Type' => 'application/json']);
         $request  = new Request('', [], [], [], [], [], ['Content-Type' => 'text/plain'], 'HEAD');
         $response->followRequest($request, ['Content-Type']);
 
@@ -84,7 +88,9 @@ final class StreamedResponseTest extends TestCase
     {
         $called = 0;
 
-        $response = new StreamedResponse(function () use (&$called) { $called++; });
+        $response = new StreamedResponse(function () use (&$called) {
+            $called++;
+        });
 
         (fn () => $this->{'sendContent'}())->call($response);
         $this->assertEquals(1, $called);

@@ -16,8 +16,8 @@ namespace Tests\Console\Support;
 
 use Omega\Application\Application;
 use Omega\Console\AbstractCommand;
-
 use PHPUnit\Framework\Attributes\CoversNothing;
+
 use function Omega\Console\style;
 
 /**

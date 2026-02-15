@@ -255,7 +255,8 @@ final class RequestTest extends TestCase
     {
         $this->assertEquals(
             ['response' => 'ok'],
-            $this->request->getJsonBody());
+            $this->request->getJsonBody()
+        );
     }
 
     /**

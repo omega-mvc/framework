@@ -80,7 +80,8 @@ final class MakeCommandsTest extends AbstractTestCommand
 
         $commandConfig = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/command.php'));
         if (!file_exists($commandConfig)) {
-            file_put_contents($commandConfig,
+            file_put_contents(
+                $commandConfig,
                 '<?php return \array_merge(
                     // more command here
                 );'

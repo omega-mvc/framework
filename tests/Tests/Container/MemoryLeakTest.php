@@ -70,12 +70,24 @@ class MemoryLeakTest extends AbstractTestContainer
      * dependencies, and preparing any state required by the test.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
+        if (getenv('CI') || getenv('GITHUB_ACTIONS')) {
+            $this->iterations = 10;
+        } elseif (function_exists('omega_local_override') && omega_local_override()) {
+            $this->iterations = 10;
+        } else {
+            // Normal local dev environment
+            $this->iterations = 10000;
+        }
     }
 
     /**

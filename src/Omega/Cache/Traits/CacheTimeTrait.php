@@ -18,7 +18,6 @@ use function microtime;
 use function round;
 use function time;
 
-
 /**
  * Trait CacheTimeTrait
  *

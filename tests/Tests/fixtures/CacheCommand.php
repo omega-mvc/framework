@@ -6,6 +6,7 @@ namespace App\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Traits\PrinterTrait;
+
 use function Omega\Console\style;
 
 class CacheCommand extends AbstractCommand
@@ -30,13 +31,13 @@ class CacheCommand extends AbstractCommand
      * @return array<string, array<string, string|string[]>>
      */
     public function printHelp(): array
-      {
+    {
           return [
               'commands' => [],
               'options'  => [],
               'relation' => [],
           ];
-      }
+    }
 
     public function main(): int
     {

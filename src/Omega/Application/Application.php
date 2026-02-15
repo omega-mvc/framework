@@ -84,6 +84,7 @@ class Application extends AbstractApplication
             'path.storage'            => $this->basePath . set_path('storage'),
             'path.public'             => $this->basePath . set_path('public'),
             'path.migration'          => $this->basePath . set_path('database.migration'),
+            'path.tests'              => $this->basePath . set_path('vendor.omega-mvc.framework.tests.Tests.fixtures'),
             'path.seeder'             => $this->basePath . set_path('database.seeders'),
             'path.compiled_view_path' => $this->basePath . set_path('storage.app.view'),
             'path.database'           => $this->basePath . set_path('database'),

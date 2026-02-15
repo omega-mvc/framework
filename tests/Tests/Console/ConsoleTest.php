@@ -241,7 +241,7 @@ final class ConsoleTest extends TestCase
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    public function testItCanCallCommandUsingMatchCommand():void
+    public function testItCanCallCommandUsingMatchCommand(): void
     {
         $kernel = new NormalCommand($this->app);
         ob_start();

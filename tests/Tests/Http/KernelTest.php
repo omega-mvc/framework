@@ -117,4 +117,3 @@ final class KernelTest extends TestCase
         $this->assertTrue($this->app->bootstrapped);
     }
 }
-

@@ -326,3 +326,56 @@ if (!function_exists('slash')) {
         return str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 }
+
+if (!function_exists('omega_local_override')) {
+    /**
+     * Determines whether local development overrides should be enabled.
+     *
+     * This helper checks for the presence of a special marker file inside
+     * the configured test fixtures directory (`path.tests`).
+     *
+     * Why this exists:
+     * ----------------
+     * When running the test suite on Android (Termux environment),
+     * filesystem performance and memory handling behave differently
+     * compared to standard desktop environments.
+     *
+     * In particular:
+     * - Memory leak detection thresholds that are acceptable on CI
+     *   (e.g. 100 or 1000 iterations) are not sustainable on Android.
+     * - Coverage generation and heavy I/O operations are significantly slower.
+     *
+     * To avoid polluting the repository with platform-specific conditionals,
+     * a local marker file (e.g. `.android`) can be created in the fixtures' path.
+     * This file is intentionally excluded from version control.
+     *
+     * If the marker file exists, the application can:
+     * - Lower memory thresholds
+     * - Adjust test behavior
+     * - Disable expensive runtime checks
+     *
+     * This approach keeps:
+     * - CI behavior deterministic
+     * - Repository clean
+     * - Local development flexible
+     *
+     * The path is resolved via the container (`path.tests`) to avoid hardcoded
+     * filesystem assumptions.
+     *
+     * @return bool True if local development overrides are active.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occurred.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    function omega_local_override(): bool
+    {
+        $app = new Application(dirname(__DIR__, 6));
+
+        $path = $app->get('path.tests');
+
+        return $path && is_file($path . '.android');
+    }
+}
