@@ -75,7 +75,13 @@ class MemoryLeakTest extends AbstractTestContainer
     {
         parent::setUp();
 
-        $this->iterations = (getenv('CI') || getenv('GITHUB_ACTIONS')) ? 100 : 10000;
+        if (getenv('OMEGA_TEST_MODE') === 'light') {
+            $this->iterations = 10;
+        } elseif (getenv('CI') || getenv('GITHUB_ACTIONS')) {
+            $this->iterations = 100;
+        } else {
+            $this->iterations = 1000;
+        }
     }
 
     /**

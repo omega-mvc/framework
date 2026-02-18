@@ -32,5 +32,6 @@
     </logging>
     <php>
         <env name="APP_ENV" value="testing"/>
+        <env name="OMEGA_TEST_MODE" value="normal"/>
     </php>
 </phpunit>

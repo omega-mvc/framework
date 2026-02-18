@@ -13,6 +13,6 @@ return [
         }),
     ],
     'down' => [
-        Schema::drop()->table('users2'),
+        Schema::drop()->table('users'),
     ],
 ];

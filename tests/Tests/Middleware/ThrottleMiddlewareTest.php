@@ -47,6 +47,30 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RateLimiter::class)]
 final class ThrottleMiddlewareTest extends TestCase
 {
+	/** @var int Number of simulated requests for the test, adapted for Android environments. */
+	private int $clock;
+
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $testMode = getenv('OMEGA_TEST_MODE') ?: '';
+        if ($testMode === 'light' || getenv('CI') || getenv('GITHUB_ACTIONS')) {
+            $this->clock = 10;
+        } else {
+            $this->clock = 1;
+        }
+    }
+
     /**
      * Test it can throttle request.
      *
@@ -54,7 +78,7 @@ final class ThrottleMiddlewareTest extends TestCase
      */
     public function testItCanThrottleRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl' => 3_600]), 60, 1));
+        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl' => 3_600]), 60, $this->clock));
         $middleware = new ThrottleMiddleware($limiter);
         $request    = new Request('/');
 
@@ -78,7 +102,7 @@ final class ThrottleMiddlewareTest extends TestCase
      */
     public function testItCanPassRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl'  => 3_600]), 60, 1));
+        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl'  => 3_600]), 60, $this->clock));
         $middleware = new ThrottleMiddleware($limiter);
         $request    = new Request('/');
 

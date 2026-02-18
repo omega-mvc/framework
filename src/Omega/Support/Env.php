@@ -65,11 +65,16 @@ class Env
      *
      * @param string $key The environment variable key to retrieve.
      * @param mixed $default The default value to return if the key is not found.
-     * @return mixed The value of the environment variable, casted if applicable, or $default.
+     * @return mixed The value of the environment variable, cast if applicable, or $default.
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        $value = self::$values[$key] ?? getenv($key) ?: $default;
+        if (array_key_exists($key, self::$values)) {
+            $value = self::$values[$key];
+        } else {
+            $envValue = getenv($key);
+            $value = ($envValue !== false) ? $envValue : $default;
+        }
 
         if (is_string($value)) {
             $lower = strtolower($value);
