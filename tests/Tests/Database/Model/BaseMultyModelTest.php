@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Model;
+namespace Tests\Database\Model;
 
-use System\Database\MyModel\Model;
-use System\Database\MyQuery;
-use System\Database\MyQuery\Insert;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Model\Model;
+use Omega\Database\Query\Query;
+use Omega\Database\Query\Insert;
+use Tests\Database\AbstractTestDatabase;
+use Tests\Database\Support\User;
 
-final class BaseMultyModelTest extends TestDatabase
+final class BaseMultyModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -43,7 +44,7 @@ final class BaseMultyModelTest extends TestDatabase
     public function users(bool $read = true): User
     {
         $user = new User($this->pdo, []);
-        $user->indentifer()->equal('user', 'taylor');
+        $user->identifier()->equal('user', 'taylor');
         if ($read) {
             $user->read();
         }
@@ -97,7 +98,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanReadData()
+    public function testItCanReadData()
     {
         $user = new User($this->pdo, [[]], ['user' => ['taylor']]);
 
@@ -109,7 +110,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateData()
+    public function testItCanUpdateData()
     {
         $user = $this->users();
 
@@ -123,7 +124,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanDeleteData()
+    public function testItCanDeleteData()
     {
         $user = $this->users();
         $this->assertTrue($user->delete());
@@ -134,7 +135,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetFirst()
+    public function testItCanGetFirst()
     {
         $users = $this->users();
 
@@ -149,7 +150,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetHasOne()
+    public function testItCanGetHasOne()
     {
         // profile
         $profile = [
@@ -169,7 +170,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetHasOneUsingMagicGetter()
+    public function testItCanGetHasOneUsingMagicGetter()
     {
         // profile
         $profile = [
@@ -189,7 +190,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetHasMany()
+    public function testItCanGetHasMany()
     {
         // order
         $order = [
@@ -218,7 +219,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckisClean()
+    public function testItCanCheckisClean()
     {
         $user = $this->users();
         $this->assertTrue($user->isClean(), 'Check all column');
@@ -230,7 +231,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckisDirty()
+    public function testItCanCheckisDirty()
     {
         $user = $this->users();
         $user->setter('stat', 75);
@@ -243,7 +244,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetChangeColumn()
+    public function testItCanGetChangeColumn()
     {
         $user = $this->users();
         $this->assertEquals([], $user->changes(), 'original fresh data');
@@ -259,7 +260,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanHiddeColumn()
+    public function testItCanHiddeColumn()
     {
         $user = $this->users();
 
@@ -271,7 +272,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanConvertToArray()
+    public function testItCanConvertToArray()
     {
         $user = $this->users();
 
@@ -291,7 +292,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetUsingGetterInColumn()
+    public function testItCanGetUsingGetterInColumn()
     {
         $user = $this->users();
 
@@ -304,7 +305,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSetUsingSetterterInColumn()
+    public function testItCanSetUsingSetterterInColumn()
     {
         $user = $this->users();
 
@@ -318,7 +319,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckExist()
+    public function testItCanCheckExist()
     {
         $user = $this->users();
 
@@ -330,7 +331,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetUsingMagicGetterInColumn()
+    public function testItCanGetUsingMagicGetterInColumn()
     {
         $user = $this->users();
 
@@ -343,7 +344,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSetUsingMagicSetterterInColumn()
+    public function testItCanSetUsingMagicSetterterInColumn()
     {
         $user = $this->users();
 
@@ -359,7 +360,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetUsingArray()
+    public function testItCanGetUsingArray()
     {
         $user = $this->users();
 
@@ -372,7 +373,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSetUsingArray()
+    public function testItCanSetUsingArray()
     {
         $user = $this->users();
 
@@ -386,7 +387,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckUsingMagicIsset()
+    public function testItCanCheckUsingMagicIsset()
     {
         $user = $this->users();
         $this->assertTrue(isset($user['user']));
@@ -399,7 +400,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUnsetUsingArray()
+    public function testItCanUnsetUsingArray()
     {
         $user = $this->users();
 
@@ -415,7 +416,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetCollection()
+    public function testItCanGetCollection()
     {
         $user = $this->users();
 
@@ -437,7 +438,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindUsingId()
+    public function testItCanFindUsingId()
     {
         $user = User::find('taylor', $this->pdo);
 
@@ -449,7 +450,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindUsingWhere()
+    public function testItCanFindUsingWhere()
     {
         $user = User::where('user = :user', [
             'user' => 'taylor',
@@ -463,7 +464,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindUsingEqual()
+    public function testItCanFindUsingEqual()
     {
         $user = User::equal('user', 'taylor', $this->pdo);
 
@@ -475,9 +476,9 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindAll()
+    public function testItCanFindAll()
     {
-        $users   = MyQuery::from('users', $this->pdo)->select()->get()->toArray();
+        $users   = Query::from('users', $this->pdo)->select()->get()->toArray();
         $models  = User::all($this->pdo);
 
         $map = array_map(fn (Model $model) => $model->toArray()[0], $models->toArray());
@@ -492,7 +493,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindOrCreate()
+    public function testItCanFindOrCreate()
     {
         $user = User::findOrCreate('taylor', [
             'user'     => 'taylor',
@@ -509,7 +510,7 @@ final class BaseMultyModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFindOrCreateButNotExits()
+    public function testItCanFindOrCreateButNotExits()
     {
         $user = User::findOrCreate('pradana2', [
             'user'     => 'pradana2',

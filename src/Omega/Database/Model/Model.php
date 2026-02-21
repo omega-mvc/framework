@@ -680,7 +680,7 @@ class Model implements ArrayAccess, IteratorAggregate
     {
         $order = 0 === $orderUsing ? 'ASC' : 'DESC';
         $belongTo ??= $this->tableName;
-        $res = $belongTo . $columnName;
+        $res = sprintf('%s.%s', $belongTo, $columnName);
 
         $this->sortOrder[$res] = $order;
 
@@ -904,7 +904,7 @@ class Model implements ArrayAccess, IteratorAggregate
     {
         return [
             (fn () => $this->{'builder'}())->call($query),
-            (fn () => $this->{'_binds'})->call($query),
+            (fn () => $this->{'binds'})->call($query),
         ];
     }
 

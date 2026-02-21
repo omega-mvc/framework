@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query\Schema\Table;
+namespace Tests\Database\Query\Schema\Table;
 
-use System\Database\MySchema\Table\Drop;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Schema\Table\Drop;
+use Tests\Database\TestDatabaseQuery;
 
 final class DropTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
-        $schema = new Drop('testing_db', 'test', $this->pdo_schame);
+        $schema = new Drop('testing_db', 'test', $this->pdoSchema);
 
         $this->assertEquals(
             'DROP TABLE testing_db.test;',
@@ -21,9 +21,9 @@ final class DropTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfExists()
+    public function testItCanGenerateCreateDatabaseIfExists()
     {
-        $schema = new Drop('testing_db', 'test', $this->pdo_schame);
+        $schema = new Drop('testing_db', 'test', $this->pdoSchema);
 
         $this->assertEquals(
             'DROP TABLE IF EXISTS testing_db.test;',
@@ -32,9 +32,9 @@ final class DropTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfExistsFalse()
     {
-        $schema = new Drop('testing_db', 'test', $this->pdo_schame);
+        $schema = new Drop('testing_db', 'test', $this->pdoSchema);
 
         $this->assertEquals(
             'DROP TABLE IF NOT EXISTS testing_db.test;',
@@ -43,9 +43,9 @@ final class DropTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfNotExists()
+    public function testItCanGenerateCreateDatabaseIfNotExists()
     {
-        $schema = new Drop('testing_db', 'test', $this->pdo_schame);
+        $schema = new Drop('testing_db', 'test', $this->pdoSchema);
 
         $this->assertEquals(
             'DROP TABLE IF NOT EXISTS testing_db.test;',
@@ -54,9 +54,9 @@ final class DropTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfNotExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfNotExistsFalse()
     {
-        $schema = new Drop('testing_db', 'test', $this->pdo_schame);
+        $schema = new Drop('testing_db', 'test', $this->pdoSchema);
 
         $this->assertEquals(
             'DROP TABLE IF EXISTS testing_db.test;',

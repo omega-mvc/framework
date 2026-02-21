@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\Table;
+namespace Tests\Database\RealDatabase\Schema\Table;
 
-use System\Database\MySchema\Table\Create;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\Table\Create;
+use Tests\Database\AbstractTestDatabase;
 
-final class DataTypesTest extends TestDatabase
+final class DataTypesTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class DataTypesTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExecuteQueryNumericDataTypes(): void
+    public function testItCanExecuteQueryNumericDataTypes(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -46,7 +46,7 @@ final class DataTypesTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExecuteQueryStringDataTypes(): void
+    public function testItCanExecuteQueryStringDataTypes(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -66,7 +66,7 @@ final class DataTypesTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExecuteQueryDateTimeDataTypes(): void
+    public function testItCanExecuteQueryDateTimeDataTypes(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 

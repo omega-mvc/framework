@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\PDO;
+namespace Tests\Database\PDO;
 
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class LogsTest extends TestDatabase
+final class LogsTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -58,7 +58,7 @@ final class LogsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetLogExcutionConnention()
+    public function testItCanGetLogExcutionConnention()
     {
         $this->pdo->flushLogs();
         $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->resultset();
@@ -89,7 +89,7 @@ final class LogsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQuery()
+    public function testItCanSelectQuery()
     {
         $this->assertNotEmpty($this->pdo->getLogs());
         foreach ($this->pdo->getLogs() as $key => $log) {
@@ -105,7 +105,7 @@ final class LogsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFlush()
+    public function testItCanFlush()
     {
         $this->assertNotEmpty($this->pdo->getLogs());
         $this->pdo->flushLogs();
@@ -117,7 +117,7 @@ final class LogsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanEmptyLogsGetLogs()
+    public function testItCanEmptyLogsGetLogs()
     {
         $this->pdo->flushLogs();
         $this->assertEmpty($this->pdo->getLogs()); // Should not throw error
@@ -128,7 +128,7 @@ final class LogsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetMultipleGetLogsCalls()
+    public function testItCanGetMultipleGetLogsCalls()
     {
         $this->pdo->flushLogs();
         $this->pdo->query('SELECT 1')->execute();

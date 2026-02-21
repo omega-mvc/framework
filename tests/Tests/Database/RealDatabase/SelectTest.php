@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery;
-use System\Database\MyQuery\Join\InnerJoin;
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\Query;
+use Omega\Database\Query\Join\InnerJoin;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class SelectTest extends TestDatabase
+final class SelectTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -60,9 +60,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQuery()
+    public function testItCanSelectQuery()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->all()
         ;
@@ -77,9 +77,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryOnlyuser()
+    public function testItCanSelectQueryOnlyuser()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select(['user'])
             ->all()
         ;
@@ -94,9 +94,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithBetween()
+    public function testItCanSelectQueryWithBetween()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->between('stat', 0, 100)
             ->all()
@@ -110,9 +110,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithCompare()
+    public function testItCanSelectQueryWithCompare()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->compare('user', '=', 'taylor')
             ->all()
@@ -126,9 +126,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithEqual()
+    public function testItCanSelectQueryWithEqual()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->equal('user', 'taylor')
             ->all()
@@ -142,9 +142,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithIn()
+    public function testItCanSelectQueryWithIn()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->in('user', ['taylor'])
             ->all()
@@ -158,9 +158,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithLike()
+    public function testItCanSelectQueryWithLike()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->like('user', 'tay%')
             ->all()
@@ -174,9 +174,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithWhere()
+    public function testItCanSelectQueryWithWhere()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->where('user = :user', [
                 [':user', 'taylor'],
@@ -192,9 +192,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithMultyCondition()
+    public function testItCanSelectQueryWithMultyCondition()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->compare('stat', '>', 1)
             ->where('user = :user', [
@@ -211,9 +211,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithLimit()
+    public function testItCanSelectQueryWithLimit()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->limit(0, 1)
             ->all()
@@ -229,9 +229,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithOffset()
+    public function testItCanSelectQueryWithOffset()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->limitStart(0)
             ->offset(1)
@@ -248,9 +248,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithLimitOffset()
+    public function testItCanSelectQueryWithLimitOffset()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->limitOffset(0, 10)
             ->all()
@@ -266,9 +266,9 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectQueryWithStritMode()
+    public function testItCanSelectQueryWithStritMode()
     {
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->equal('user', 'taylor')
             ->equal('stat', 99)
@@ -284,11 +284,11 @@ final class SelectTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectJoin()
+    public function testItCanSelectJoin()
     {
         $this->profileFactory();
 
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select()
             ->equal('user', 'taylor')
             ->join(InnerJoin::ref('profiles', 'user '))

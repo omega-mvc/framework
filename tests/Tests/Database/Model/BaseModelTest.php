@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Model;
+namespace Tests\Database\Model;
 
-use System\Database\MyModel\Model;
-use System\Database\MyQuery\Insert;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Model\Model;
+use Omega\Database\Query\Insert;
+use Tests\Database\Support\User;
+use Tests\Database\AbstractTestDatabase;
 
-final class BaseModelTest extends TestDatabase
+final class BaseModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -31,7 +32,7 @@ final class BaseModelTest extends TestDatabase
     public function user(bool $read = true): User
     {
         $user = new User($this->pdo, []);
-        $user->indentifer()->equal('user', 'taylor');
+        $user->identifier()->equal('user', 'taylor');
         if ($read) {
             $user->read();
         }
@@ -39,53 +40,48 @@ final class BaseModelTest extends TestDatabase
         return $user;
     }
 
-    private function createProfileSchema(): bool
+    private function createProfileSchema(): void
     {
-        return $this
-           ->pdo
-           ->query('CREATE TABLE profiles (
+        $this
+            ->pdo
+            ->query('CREATE TABLE profiles (
                 user      varchar(32)  NOT NULL,
                 name      varchar(100) NOT NULL,
                 gender    varchar(10) NOT NULL,
                 PRIMARY KEY (user)
             )')
-           ->execute();
+            ->execute();
     }
 
-    private function createProfiles($profiles): bool
+    private function createProfiles($profiles): void
     {
-        return (new Insert('profiles', $this->pdo))
+        new Insert('profiles', $this->pdo)
             ->rows($profiles)
             ->execute();
     }
 
-    private function createOrderSchema(): bool
+    private function createOrderSchema(): void
     {
-        return $this
-           ->pdo
-           ->query('CREATE TABLE orders (
+        $this
+            ->pdo
+            ->query('CREATE TABLE orders (
                 id   varchar(3)  NOT NULL,
                 user varchar(32)  NOT NULL,
                 name varchar(100) NOT NULL,
                 type varchar(30) NOT NULL,
                 PRIMARY KEY (id)
             )')
-           ->execute();
+            ->execute();
     }
 
-    private function createOrders($orders): bool
+    private function createOrders($orders): void
     {
-        return (new Insert('orders', $this->pdo))
+        new Insert('orders', $this->pdo)
             ->rows($orders)
             ->execute();
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCreateData()
+    public function testItCanCreateData()
     {
         $user = new User($this->pdo, [
             [
@@ -98,24 +94,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertTrue($user->insert());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanReadData()
+    public function testItCanReadData()
     {
         $user = new User($this->pdo, []);
 
         $this->assertTrue($user->read());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanUpdateData()
+    public function testItCanUpdateData()
     {
         $user = $this->user();
 
@@ -124,23 +110,13 @@ final class BaseModelTest extends TestDatabase
         $this->assertTrue($user->update());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanDeleteData()
+    public function testItCanDeleteData()
     {
         $user = $this->user();
         $this->assertTrue($user->delete());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetFirst()
+    public function testItCanGetFirst()
     {
         $users = $this->user();
 
@@ -150,12 +126,7 @@ final class BaseModelTest extends TestDatabase
         ], $users->first());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasOne()
+    public function testItCanGetHasOne()
     {
         // profile
         $profile = [
@@ -171,12 +142,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($profile, $result->first());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasOneUsingMagicGetter()
+    public function testItCanGetHasOneUsingMagicGetter()
     {
         // profile
         $profile = [
@@ -191,12 +157,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($profile, $user->profile);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasOneWithTableName()
+    public function testItCanGetHasOneWithTableName()
     {
         // profile
         $profile = [
@@ -212,12 +173,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($profile, $result->first());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasMany()
+    public function testItCanGetHasMany()
     {
         // order
         $order = [
@@ -241,12 +197,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($order, $result->toArrayArray());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasManyWithMagicGetter()
+    public function testItCanGetHasManyWithMagicGetter()
     {
         // order
         $order = [
@@ -269,12 +220,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($order, $user->orders);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetHasManyWithTableName()
+    public function testItCanGetHasManyWithTableName()
     {
         // order
         $order = [
@@ -298,24 +244,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($order, $result->toArrayArray());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCheckisCleanWith()
+    public function testItCanCheckisCleanWith()
     {
         $user = $this->user();
         $this->assertTrue($user->isClean(), 'Check all column');
         $this->assertTrue($user->isClean('stat'), 'Check spesifik column');
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCheckisDirty()
+    public function testItCanCheckisDirty()
     {
         $user = $this->user();
         $user->setter('stat', 75);
@@ -323,24 +259,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertTrue($user->isDirty('stat'), 'Check spesifik column');
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCheckColumnIsExist()
+    public function testItCanCheckColumnIsExist()
     {
         $user = $this->user();
 
         $this->assertTrue($user->isExist());
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetChangeColumn()
+    public function testItCanGetChangeColumn()
     {
         $user = $this->user();
         $this->assertEquals([], $user->changes(), 'original fresh data');
@@ -351,24 +277,14 @@ final class BaseModelTest extends TestDatabase
         ], $user->changes(), 'change first column');
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanHiddeColumn()
+    public function testItCanHiddeColumn()
     {
         $user = $this->user();
 
         $this->assertArrayNotHasKey('password', $user->first(), 'password must hidden by stash');
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanConvertToArray()
+    public function testItCanConvertToArray()
     {
         $user = $this->user();
 
@@ -381,26 +297,16 @@ final class BaseModelTest extends TestDatabase
         $this->assertIsIterable($user);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetFirstPrimeryKey()
+    public function testItCanGetFirstPrimaryKey()
     {
         $user = $this->user();
 
-        $this->assertEquals('taylor', $user->getPrimeryKey());
+        $this->assertEquals('taylor', $user->getPrimaryKey());
     }
 
     // getter setter - should return firts query
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetUsingGetterInColumn()
+    public function testItCanGetUsingGetterInColumn()
     {
         $user = $this->user();
 
@@ -408,12 +314,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($columns[0]['stat'], $user->getter('stat', 0));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanSetUsingSetterterInColumn()
+    public function testItCanSetUsingSetterterInColumn()
     {
         $user = $this->user();
 
@@ -422,24 +323,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCheckExist()
+    public function testItCanCheckExist()
     {
         $user = $this->user();
 
         $this->assertTrue($user->has('user'));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetUsingMagicGetterInColumn()
+    public function testItCanGetUsingMagicGetterInColumn()
     {
         $user = $this->user();
 
@@ -447,12 +338,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($columns[0]['stat'], $user->stat);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanSetUsingMagicSetterterInColumn()
+    public function testItCanSetUsingMagicSetterterInColumn()
     {
         $user = $this->user();
 
@@ -461,14 +347,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    // array access
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetUsingArray()
+    public function testItCanGetUsingArray()
     {
         $user = $this->user();
 
@@ -476,12 +355,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($columns[0]['stat'], $user['stat']);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanSetUsingArray()
+    public function testItCanSetUsingArray()
     {
         $user = $this->user();
 
@@ -490,25 +364,13 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanCheckUsingMagicIsset()
+    public function testItCanCheckUsingMagicIsset()
     {
         $user = $this->user();
         $this->assertTrue(isset($user['user']));
     }
 
-    /**
-     * Unset is not perform anythink.
-     *
-     * @test
-     *
-     * @group database
-     */
-    public function itCanUnsetUsingArray()
+    public function testItCanUnsetUsingArray()
     {
         $user = $this->user();
 
@@ -517,14 +379,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals(100, $columns[0]['stat']);
     }
 
-    // still can get collection
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanGetCollection()
+    public function testItCanGetCollection()
     {
         $user = $this->user();
 
@@ -539,26 +394,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($columns, $arr);
     }
 
-    // find user by some condition (static)
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindUsingId()
+    public function testItCanFindUsingId()
     {
         $user = User::find('taylor', $this->pdo);
 
         $this->assertTrue($user->has('user'));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindUsingWhere()
+    public function testItCanFindUsingWhere()
     {
         $user = User::where('user = :user', [
             'user' => 'taylor',
@@ -567,24 +410,14 @@ final class BaseModelTest extends TestDatabase
         $this->assertTrue($user->has('user'));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindUsingEqual()
+    public function testItCanFindUsingEqual()
     {
         $user = User::equal('user', 'taylor', $this->pdo);
 
         $this->assertTrue($user->has('user'));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindAll()
+    public function testItCanFindAll()
     {
         $columns = (fn () => $this->{'columns'})->call($this->user());
         $models  = User::all($this->pdo)->toArray();
@@ -597,12 +430,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals($columns, $arr);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindOrCreate()
+    public function testItCanFindOrCreate()
     {
         $user = User::findOrCreate('taylor', [
             'user'     => 'taylor',
@@ -614,12 +442,7 @@ final class BaseModelTest extends TestDatabase
         $this->assertEquals('taylor', $user->getter('user', 'nuno'));
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function itCanFindOrCreateButNotExits()
+    public function testItCanFindOrCreateButNotExits()
     {
         $user = User::findOrCreate('pradana', [
             'user'     => 'pradana',
@@ -632,25 +455,9 @@ final class BaseModelTest extends TestDatabase
     }
 }
 
-class User extends Model
-{
-    protected string $table_name  = 'users';
-    protected string $primery_key = 'user';
-    /** @var string[] Hide from shoing column */
-    protected $stash = ['password'];
 
-    public function profile()
-    {
-        return $this->hasOne(Profile::class, 'user');
-    }
-
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'user');
-    }
-}
 
 class Order extends Model
 {
-    protected string $table_name = 'orders';
+    protected string $tableName = 'orders';
 }

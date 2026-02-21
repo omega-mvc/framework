@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery;
-use System\Database\MyQuery\Join\InnerJoin;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\Query;
+use Omega\Database\Query\Join\InnerJoin;
+use Tests\Database\AbstractTestDatabase;
 
-final class JoinTest extends TestDatabase
+final class JoinTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -94,14 +94,14 @@ final class JoinTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanJoinInSelectQuery()
+    public function testItCanJoinInSelectQuery()
     {
         $this->createUsersSchema();
         $this->createRolesSchema();
         $this->createLogsSchema();
         $this->factory();
 
-        $users = MyQuery::from('users', $this->pdo)
+        $users = Query::from('users', $this->pdo)
             ->select(['users.name', 'roles.role_name'])
             ->join(InnerJoin::ref('roles', 'role_id', 'id'))
             ->get();
@@ -115,14 +115,14 @@ final class JoinTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanJoinInUpdateQuery()
+    public function testItCanJoinInUpdateQuery()
     {
         $this->createUsersSchema();
         $this->createRolesSchema();
         $this->createLogsSchema();
         $this->factory();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('name', 'Eve')
             ->join(InnerJoin::ref('roles', 'role_id', 'id'))
@@ -147,7 +147,7 @@ final class JoinTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanJoinInDeleteQuery(): void
+    public function testItCanJoinInDeleteQuery(): void
     {
         $this->createUsersSchema();
         $this->createRolesSchema();
@@ -155,14 +155,14 @@ final class JoinTest extends TestDatabase
         $this->factory();
 
         // Delete related logs first
-        MyQuery::from('logs', $this->pdo)
+        Query::from('logs', $this->pdo)
             ->delete()
             ->alias('l')
             ->join(InnerJoin::ref('users', 'user_id', 'id'))
             ->equal('users.role_id', 1) // Assuming role_id 1 is for 'Admin'
             ->execute();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->delete()
             ->alias('u')
             ->join(InnerJoin::ref('roles', 'role_id', 'id'))

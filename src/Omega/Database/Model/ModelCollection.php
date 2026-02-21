@@ -102,9 +102,9 @@ class ModelCollection extends Collection
      */
     public function update(array $values): bool
     {
-        $tableName  = (fn () => $this->{'table_name'})->call($this->model);
+        $tableName  = (fn () => $this->{'tableName'})->call($this->model);
         $pdo        = (fn () => $this->{'pdo'})->call($this->model);
-        $primaryKey = (fn () => $this->{'primary_key'})->call($this->model);
+        $primaryKey = (fn () => $this->{'primaryKey'})->call($this->model);
         $update     = new Update($tableName, $pdo);
 
         $update->values($values)->in($primaryKey, $this->getPrimaryKey());
@@ -120,9 +120,9 @@ class ModelCollection extends Collection
      */
     public function delete(): bool
     {
-        $tableName  = (fn () => $this->{'table_name'})->call($this->model);
+        $tableName  = (fn () => $this->{'tableName'})->call($this->model);
         $pdo        = (fn () => $this->{'pdo'})->call($this->model);
-        $primaryKey = (fn () => $this->{'primary_key'})->call($this->model);
+        $primaryKey = (fn () => $this->{'primaryKey'})->call($this->model);
         $delete     = new Delete($tableName, $pdo);
 
         $delete->in($primaryKey, $this->getPrimaryKey());

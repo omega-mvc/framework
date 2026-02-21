@@ -119,7 +119,7 @@ final class Select extends AbstractFetch
         $refTable->table($this->subQuery->getAlias());
 
         $this->join[] = $refTable->stringJoin();
-        $binds        = (fn () => $this->{'sub_query'})->call($refTable);
+        $binds        = (fn () => $this->{'subQuery'})->call($refTable);
 
         if (null !== $binds) {
             $this->binds = array_merge($this->binds, $binds->getBind());

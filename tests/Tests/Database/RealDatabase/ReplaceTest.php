@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery;
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\Query;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class ReplaceTest extends TestDatabase
+final class ReplaceTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -35,9 +35,9 @@ final class ReplaceTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanReplaceOnNewData()
+    public function testItCanReplaceOnNewData()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->replace()
             ->values([
                 'user'      => 'sony',
@@ -54,9 +54,9 @@ final class ReplaceTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanReplaceOnExistData()
+    public function testItCanReplaceOnExistData()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -65,7 +65,7 @@ final class ReplaceTest extends TestDatabase
             ])
             ->execute();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->replace()
             ->values([
                 'user'      => 'sony',
@@ -82,9 +82,9 @@ final class ReplaceTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateInsertusingOneQuery()
+    public function testItCanUpdateInsertusingOneQuery()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -93,7 +93,7 @@ final class ReplaceTest extends TestDatabase
             ])
             ->execute();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->replace()
             ->rows([
                 [

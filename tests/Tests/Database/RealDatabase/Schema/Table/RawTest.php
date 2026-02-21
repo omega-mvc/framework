@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\Table;
+namespace Tests\Database\RealDatabase\Schema\Table;
 
-use System\Database\MySchema\Table\Raw;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\Table\Raw;
+use Tests\Database\AbstractTestDatabase;
 
-final class RawTest extends TestDatabase
+final class RawTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class RawTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
         $schema = new Raw('CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )', $this->pdo_schema);
 

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\Table;
+namespace Tests\Database\RealDatabase\Schema\Table;
 
-use System\Database\MySchema\Table\Drop;
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\Table\Drop;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class DropTest extends TestDatabase
+final class DropTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -35,7 +35,7 @@ final class DropTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateDropDatabase()
+    public function testItCanGenerateDropDatabase()
     {
         $schema = new Drop($this->env['database'], 'users', $this->pdo_schema);
 

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\DB;
+namespace Tests\Database\RealDatabase\Schema\DB;
 
-use System\Database\MySchema\DB\Drop;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\DB\Drop;
+use Tests\Database\AbstractTestDatabase;
 
-final class DropTest extends TestDatabase
+final class DropTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class DropTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
         $schema = new Drop($this->env['database'], $this->pdo_schema);
 

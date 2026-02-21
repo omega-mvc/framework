@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query;
+namespace Tests\Database\Query;
 
-use System\Database\MyQuery;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Query\Query;
+use Tests\Database\TestDatabaseQuery;
 
 final class ReplaceTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCorrectInsert(): void
+    public function testItCorrectInsert(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->replace()
             ->value('a', 1)
         ;
@@ -29,9 +29,9 @@ final class ReplaceTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertValues(): void
+    public function testItCorrectInsertValues(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->replace()
             ->values([
                 'a' => 'b',
@@ -52,9 +52,9 @@ final class ReplaceTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertQueryMultyValues(): void
+    public function testItCorrectInsertQueryMultyValues(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->replace()
             ->values([
                 'a' => 'b',
@@ -76,9 +76,9 @@ final class ReplaceTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertQueryMultyRaws(): void
+    public function testItCorrectInsertQueryMultyRaws(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->replace()
             ->rows([
                 [

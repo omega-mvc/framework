@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Model;
+namespace Tests\Database\Model;
 
-use System\Database\MyModel\Model;
-use System\Database\MyQuery;
-use System\Database\MyQuery\Insert;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Model\Model;
+use Omega\Database\Query\Query;
+use Omega\Database\Query\Insert;
+use Tests\Database\AbstractTestDatabase;
 
-final class CostumeModelTest extends TestDatabase
+final class CostumeModelTest extends AbstractTestDatabase
 {
     private $profiles = [
         'taylor' => [
@@ -83,7 +83,7 @@ final class CostumeModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFilterModel(): void
+    public function testItCanFilterModel(): void
     {
         $profiles = $this->profiles();
         $profiles->filterGender('male');
@@ -101,7 +101,7 @@ final class CostumeModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanFilterModelChain(): void
+    public function testItCanFilterModelChain(): void
     {
         $profiles = $this->profiles();
         $profiles->filterGender('male');
@@ -119,7 +119,7 @@ final class CostumeModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanlimitOrder(): void
+    public function testItCanlimitOrder(): void
     {
         $profiles = $this->profiles();
         $profiles->limitEnd(2);
@@ -133,7 +133,7 @@ final class CostumeModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanlimitOffset(): void
+    public function testItCanlimitOffset(): void
     {
         $profiles = $this->profiles();
         $profiles->limitOffset(1, 2);
@@ -147,11 +147,11 @@ final class CostumeModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanShortOrder(): void
+    public function testItCanShortOrder(): void
     {
         $profiles = $this->profiles();
 
-        $profiles->order('user', MyQuery::ORDER_ASC);
+        $profiles->order('user', Query::ORDER_ASC);
         $profiles->read();
         $this->assertEquals([
             'user'   => 'jesica',
@@ -164,8 +164,8 @@ final class CostumeModelTest extends TestDatabase
 
 class Profile extends Model
 {
-    protected string $table_name  = 'profiles';
-    protected string $primery_key = 'user';
+    protected string $tableName  = 'profiles';
+    protected string $primaryKey = 'user';
 
     public function filterGender(string $gender): static
     {

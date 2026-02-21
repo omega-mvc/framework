@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\Table;
+namespace Tests\Database\RealDatabase\Schema\Table;
 
-use System\Database\MySchema\Table\Create;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\Table\Create;
+use Tests\Database\AbstractTestDatabase;
 
-final class CreateTest extends TestDatabase
+final class CreateTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -41,7 +41,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExecuteQueryWithMultyPrimeryKey()
+    public function testItCanExecuteQueryWithMultyPrimeryKey()
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -60,7 +60,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExecuteQueryWithMultyUniqe()
+    public function testItCanExecuteQueryWithMultyUniqe()
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -78,7 +78,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateCreateDatabaseWithEngine()
+    public function testItCanGenerateCreateDatabaseWithEngine()
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
 
@@ -97,7 +97,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateDefaultConstraint()
+    public function testItCanGenerateDefaultConstraint()
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
         $schema('PersonID')->int()->unsigned()->default(1);
@@ -113,7 +113,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateQueryWithComment(): void
+    public function testItCanGenerateQueryWithComment(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdo_schema);
         $schema('PersonID')->int();

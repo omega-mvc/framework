@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\DB;
+namespace Tests\Database\RealDatabase\Schema\DB;
 
-use System\Database\MySchema\DB\Create;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\DB\Create;
+use Tests\Database\AbstractTestDatabase;
 
-final class CreateTest extends TestDatabase
+final class CreateTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class CreateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
         // need clean up
         $this->tearDown();

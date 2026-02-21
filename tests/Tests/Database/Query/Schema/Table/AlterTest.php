@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query\Schema\Table;
+namespace Tests\Database\Query\Schema\Table;
 
-use System\Database\MySchema\Table\Alter;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Schema\Table\Alter;
+use Tests\Database\TestDatabaseQuery;
 
 final class AlterTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCanGenerateQueryUsingModifyColumn()
+    public function testItCanGenerateQueryUsingModifyColumn()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->column('create_add')->int(17);
         $schema('update_add')->int(17);
 
@@ -23,9 +23,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingAddColumn()
+    public function testItCanGenerateQueryUsingAddColumn()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->add('PersonID')->int();
         $schema->add('LastName')->varchar(255);
 
@@ -36,9 +36,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingDropColumn()
+    public function testItCanGenerateQueryUsingDropColumn()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->drop('PersonID');
         $schema->drop('LastName');
 
@@ -49,9 +49,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingRenameColumn()
+    public function testItCanGenerateQueryUsingRenameColumn()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->rename('PersonID', 'person_id');
 
         $this->assertEquals(
@@ -61,9 +61,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingRenameColumnMultyple()
+    public function testItCanGenerateQueryUsingRenameColumnMultyple()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->rename('PersonID', 'person');
         $schema->rename('PersonID', 'person_id');
 
@@ -75,9 +75,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingAltersColumn()
+    public function testItCanGenerateQueryUsingAltersColumn()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->add('PersonID')->int(4);
         $schema->drop('LastName');
         $schema->column('create_add')->int(17);
@@ -89,9 +89,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingModifyColumnAndOrderit()
+    public function testItCanGenerateQueryUsingModifyColumnAndOrderit()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->column('uuid')->int(17)->first();
         $schema->column('create_add')->after('id');
 
@@ -102,9 +102,9 @@ final class AlterTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateQueryUsingAddColumnAndOrderit()
+    public function testItCanGenerateQueryUsingAddColumnAndOrderit()
     {
-        $schema = new Alter('testing_db', 'test', $this->pdo_schame);
+        $schema = new Alter('testing_db', 'test', $this->pdoSchema);
         $schema->add('uuid')->int(17)->first();
         $schema->add('create_add')->int(17)->after('id');
 

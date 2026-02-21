@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query;
+namespace Tests\Database\Query;
 
-use System\Database\MyQuery;
-use System\Database\MyQuery\InnerQuery;
-use System\Database\MyQuery\Join\CrossJoin;
-use System\Database\MyQuery\Join\FullJoin;
-use System\Database\MyQuery\Join\InnerJoin;
-use System\Database\MyQuery\Join\LeftJoin;
-use System\Database\MyQuery\Join\RightJoin;
-use System\Database\MyQuery\Select;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Query\Query;
+use Omega\Database\Query\InnerQuery;
+use Omega\Database\Query\Join\CrossJoin;
+use Omega\Database\Query\Join\FullJoin;
+use Omega\Database\Query\Join\InnerJoin;
+use Omega\Database\Query\Join\LeftJoin;
+use Omega\Database\Query\Join\RightJoin;
+use Omega\Database\Query\Select;
+use Tests\Database\TestDatabaseQuery;
 
 final class JoinTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCanGenerateInnerJoin()
+    public function testItCanGenerateInnerJoin()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(InnerJoin::ref('join_table', 'base_id', 'join_id'))
         ;
@@ -36,9 +36,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateLeftJoin()
+    public function testItCanGenerateLeftJoin()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(LeftJoin::ref('join_table', 'base_id', 'join_id'))
         ;
@@ -55,9 +55,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateRightJoin()
+    public function testItCanGenerateRightJoin()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(RightJoin::ref('join_table', 'base_id', 'join_id'))
         ;
@@ -74,9 +74,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateFullJoin()
+    public function testItCanGenerateFullJoin()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(FullJoin::ref('join_table', 'base_id', 'join_id'))
         ;
@@ -93,9 +93,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCrossJoin()
+    public function testItCanGenerateCrossJoin()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(CrossJoin::ref('join_table', 'base_id', 'join_id'))
         ;
@@ -112,9 +112,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanJoinMultyple()
+    public function testItCanJoinMultyple()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(InnerJoin::ref('join_table_1', 'base_id', 'join_id'))
             ->join(InnerJoin::ref('join_table_2', 'base_id', 'join_id'))
@@ -132,9 +132,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanJoinWithCondition()
+    public function testItCanJoinWithCondition()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->equal('a', 1)
             ->join(InnerJoin::ref('join_table_1', 'base_id', 'join_id'))
@@ -152,9 +152,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateInnerJoinWithSubQuery()
+    public function testItCanGenerateInnerJoinWithSubQuery()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->select()
             ->join(InnerJoin::ref(
                 new InnerQuery(
@@ -179,9 +179,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateInnerJoinInDeleteClausa()
+    public function testItCanGenerateInnerJoinInDeleteClausa()
     {
-        $join = MyQuery::from('base_table', $this->pdo)
+        $join = Query::from('base_table', $this->pdo)
             ->delete()
             ->alias('bt')
             ->join(InnerJoin::ref('join_table', 'base_id', 'join_id'))
@@ -200,9 +200,9 @@ final class JoinTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateInnerJoinInUpdateClausa()
+    public function testItCanGenerateInnerJoinInUpdateClausa()
     {
-        $update = MyQuery::from('test', $this->pdo)
+        $update = Query::from('test', $this->pdo)
             ->update()
             ->value('a', 'b')
             ->join(InnerJoin::ref('join_table', 'base_id', 'join_id'))

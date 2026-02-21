@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery;
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\Query;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class UpdateTest extends TestDatabase
+final class UpdateTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -35,9 +35,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdate()
+    public function testItCanUpdate()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->execute()
@@ -51,9 +51,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithBetween()
+    public function testItCanUpdateWithBetween()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->between('stat', 0, 100)
@@ -68,9 +68,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithCompare()
+    public function testItCanUpdateWithCompare()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->compare('user', '=', 'taylor')
@@ -85,9 +85,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithEqual()
+    public function testItCanUpdateWithEqual()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->equal('user', 'taylor')
@@ -102,9 +102,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithIn()
+    public function testItCanUpdateWithIn()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->in('user', ['taylor'])
@@ -119,9 +119,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithLike()
+    public function testItCanUpdateWithLike()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->like('user', 'tay%')
@@ -136,9 +136,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithWhere()
+    public function testItCanUpdateWithWhere()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->where('user = :user', [
@@ -155,9 +155,9 @@ final class UpdateTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateWithMultyCondition()
+    public function testItCanUpdateWithMultyCondition()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->update()
             ->value('stat', 0)
             ->compare('stat', '>', 1)

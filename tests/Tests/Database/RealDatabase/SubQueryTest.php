@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery\InnerQuery;
-use System\Database\MyQuery\Join\InnerJoin;
-use System\Database\MyQuery\Select;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\InnerQuery;
+use Omega\Database\Query\Join\InnerJoin;
+use Omega\Database\Query\Select;
+use Tests\Database\AbstractTestDatabase;
 
-final class SubQueryTest extends TestDatabase
+final class SubQueryTest extends AbstractTestDatabase
 {
     // scehema
 
@@ -182,7 +182,7 @@ final class SubQueryTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectSubQueryUsingWhere()
+    public function testItCanSelectSubQueryUsingWhere()
     {
         $this->createUserSchema();
         $this->createOrderSchema();
@@ -205,7 +205,7 @@ final class SubQueryTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectSubQueryUsingFrom()
+    public function testItCanSelectSubQueryUsingFrom()
     {
         $this->createUserSchema();
         $this->createOrderSchema();
@@ -239,7 +239,7 @@ final class SubQueryTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanSelectSubQueryUsingJoin(): void
+    public function testItCanSelectSubQueryUsingJoin(): void
     {
         $this->createCustomerSchema();
         $this->createTransactionSchema();

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase\Schema\Table;
+namespace Tests\Database\RealDatabase\Schema\Table;
 
-use System\Database\MySchema\Table\Alter;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Schema\Table\Alter;
+use Tests\Database\AbstractTestDatabase;
 
-final class AlterTest extends TestDatabase
+final class AlterTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -35,7 +35,7 @@ final class AlterTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExcuteQueryUsingModifyColumn()
+    public function testItCanExcuteQueryUsingModifyColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -52,7 +52,7 @@ final class AlterTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExcuteQueryUsingAddColumn()
+    public function testItCanExcuteQueryUsingAddColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -70,7 +70,7 @@ final class AlterTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExcuteQueryUsingDropColumn()
+    public function testItCanExcuteQueryUsingDropColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -89,7 +89,7 @@ final class AlterTest extends TestDatabase
      * @group database
      * @group not-for-mysql5.7
      */
-    public function itCanExcuteQueryUsingRenameColumn()
+    public function testItCanExcuteQueryUsingRenameColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -107,7 +107,7 @@ final class AlterTest extends TestDatabase
      * @group database
      * @group not-for-mysql5.7
      */
-    public function itCanExcuteQueryUsingRenamesColumn()
+    public function testItCanExcuteQueryUsingRenamesColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -126,7 +126,7 @@ final class AlterTest extends TestDatabase
      * @group database
      * @group not-for-mysql5.7
      */
-    public function itCanExcuteQueryUsingAlterColumn()
+    public function testItCanExcuteQueryUsingAlterColumn()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -146,7 +146,7 @@ final class AlterTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExcuteQueryUsingModifyAddWithOrder()
+    public function testItCanExcuteQueryUsingModifyAddWithOrder()
     {
         $schema = new Alter(
             $this->env['database'],
@@ -164,7 +164,7 @@ final class AlterTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanExcuteQueryUsingModifyColumnWithOrder()
+    public function testItCanExcuteQueryUsingModifyColumnWithOrder()
     {
         $schema = new Alter(
             $this->env['database'],

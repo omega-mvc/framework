@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\PDO;
+namespace Tests\Database\PDO;
 
-use System\Database\Exceptions\InvalidConfigurationException;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Exceptions\InvalidConfigurationException;
+use Tests\Database\AbstractTestDatabase;
 
-final class ConfigsTest extends TestDatabase
+final class ConfigsTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetConfig()
+    public function testItCanGetConfig()
     {
         $config = $this->pdo->configs();
         unset($config['options']);
@@ -36,7 +36,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithAllParameters()
+    public function testItCanCreateMysqlDsnWithAllParameters()
     {
         $config = [
             'driver'   => 'mysql',
@@ -55,7 +55,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithMinimalParameters()
+    public function testItCanCreateMysqlDsnWithMinimalParameters()
     {
         $config = [
             'driver' => 'mysql',
@@ -71,7 +71,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithCustomPort()
+    public function testItCanCreateMysqlDsnWithCustomPort()
     {
         $config = [
             'driver'   => 'mysql',
@@ -89,7 +89,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithCustomCharset()
+    public function testItCanCreateMysqlDsnWithCustomCharset()
     {
         $config = [
             'driver'   => 'mysql',
@@ -107,7 +107,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithoutDatabase()
+    public function testItCanCreateMysqlDsnWithoutDatabase()
     {
         $config = [
             'driver' => 'mysql',
@@ -124,7 +124,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreateMysqlDsnThrowsExceptionWhenHostMissing()
     {
         $config = [
             'driver'   => 'mysql',
@@ -143,7 +143,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMariadbDsnWithAllParameters()
+    public function testItCanCreateMariadbDsnWithAllParameters()
     {
         $config = [
             'driver'   => 'mariadb',
@@ -162,7 +162,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMariadbDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreateMariadbDsnThrowsExceptionWhenHostMissing()
     {
         $config = [
             'driver'   => 'mariadb',
@@ -181,7 +181,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithAllParameters()
+    public function testItCanCreatePgsqlDsnWithAllParameters()
     {
         $config = [
             'driver'   => 'pgsql',
@@ -200,7 +200,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithMinimalParameters()
+    public function testItCanCreatePgsqlDsnWithMinimalParameters()
     {
         $config = [
             'driver' => 'pgsql',
@@ -216,7 +216,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithCustomPort()
+    public function testItCanCreatePgsqlDsnWithCustomPort()
     {
         $config = [
             'driver'   => 'pgsql',
@@ -234,7 +234,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithCustomEncoding()
+    public function testItCanCreatePgsqlDsnWithCustomEncoding()
     {
         $config = [
             'driver'   => 'pgsql',
@@ -252,7 +252,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithoutDatabase()
+    public function testItCanCreatePgsqlDsnWithoutDatabase()
     {
         $config = [
             'driver'   => 'pgsql',
@@ -270,7 +270,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreatePgsqlDsnThrowsExceptionWhenHostMissing()
     {
         $config = [
             'driver'   => 'pgsql',
@@ -290,7 +290,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateSqliteDsnWithMemoryDatabase()
+    public function testItCanCreateSqliteDsnWithMemoryDatabase()
     {
         $config = [
             'driver'   => 'sqlite',
@@ -306,7 +306,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateSqliteDsnWithMemoryModeQuery()
+    public function testItCanCreateSqliteDsnWithMemoryModeQuery()
     {
         $config = [
             'driver'   => 'sqlite',
@@ -322,7 +322,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateSqliteDsnWithMemoryModeQueryAmpersand()
+    public function testItCanCreateSqliteDsnWithMemoryModeQueryAmpersand()
     {
         $config = [
             'driver'   => 'sqlite',
@@ -338,7 +338,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateSqliteDsnThrowsExceptionWhenDatabaseMissing()
+    public function testItCanCreateSqliteDsnThrowsExceptionWhenDatabaseMissing()
     {
         $config = [
             'driver' => 'sqlite',
@@ -355,7 +355,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateSqliteDsnThrowsExceptionForInvalidPath()
+    public function testItCanCreateSqliteDsnThrowsExceptionForInvalidPath()
     {
         $config = [
             'driver'   => 'sqlite',
@@ -374,7 +374,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateGetDsnWithUnsupportedDriver()
+    public function testItCanCreateGetDsnWithUnsupportedDriver()
     {
         $config = [
             'driver' => 'oracle',
@@ -391,7 +391,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithZeroPort()
+    public function testItCanCreateMysqlDsnWithZeroPort()
     {
         $config = [
             'driver' => 'mysql',
@@ -408,7 +408,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithZeroPort()
+    public function testItCanCreatePgsqlDsnWithZeroPort()
     {
         $config = [
             'driver' => 'pgsql',
@@ -425,7 +425,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreateMysqlDsnWithNullValues()
+    public function testItCanCreateMysqlDsnWithNullValues()
     {
         $config = [
             'driver'   => 'mysql',
@@ -444,7 +444,7 @@ final class ConfigsTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCreatePgsqlDsnWithNullValues()
+    public function testItCanCreatePgsqlDsnWithNullValues()
     {
         $config = [
             'driver'   => 'pgsql',

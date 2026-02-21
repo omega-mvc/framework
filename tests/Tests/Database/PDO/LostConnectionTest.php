@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\PDO;
+namespace Tests\Database\PDO;
 
-use System\Test\Database\TestDatabase;
+use Tests\Database\AbstractTestDatabase;
 
-final class LostConnectionTest extends TestDatabase
+final class LostConnectionTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -25,7 +25,7 @@ final class LostConnectionTest extends TestDatabase
      *
      * @dataProvider lostConnectionErrorProvider
      */
-    public function itThrowExceptionCausedByLostConnectionReturnsTrue(string $errorMessage): void
+    public function testItThrowExceptionCausedByLostConnectionReturnsTrue(string $errorMessage): void
     {
         $exception = new \PDOException($errorMessage);
 
@@ -40,7 +40,7 @@ final class LostConnectionTest extends TestDatabase
      *
      * @dataProvider nonLostConnectionErrorProvider
      */
-    public function itThrowExceptionCausedByLostConnectionReturnsFalse(string $errorMessage): void
+    public function testItThrowExceptionCausedByLostConnectionReturnsFalse(string $errorMessage): void
     {
         $exception = new \PDOException($errorMessage);
 
@@ -105,7 +105,7 @@ final class LostConnectionTest extends TestDatabase
      *
      * @group database
      */
-    public function itThrowExceptionCausedByLostConnectionWithNonPDOException(): void
+    public function testItThrowExceptionCausedByLostConnectionWithNonPDOException(): void
     {
         $exception = new \Exception('Some generic error');
 
@@ -118,7 +118,7 @@ final class LostConnectionTest extends TestDatabase
      *
      * @group database
      */
-    public function itThrowExceptionCausedByLostConnectionWithRuntimeException(): void
+    public function testItThrowExceptionCausedByLostConnectionWithRuntimeException(): void
     {
         $exception = new \RuntimeException('server has gone away');
 
@@ -131,7 +131,7 @@ final class LostConnectionTest extends TestDatabase
      *
      * @group database
      */
-    public function itThrowExceptionCausedByLostConnectionWithLongMessage(): void
+    public function testItThrowExceptionCausedByLostConnectionWithLongMessage(): void
     {
         $longMessage = str_repeat('Some long error message ', 100) . 'MySQL server has gone away' . str_repeat(' with more details', 50);
         $exception   = new \PDOException($longMessage);

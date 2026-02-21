@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\RealDatabase;
+namespace Tests\Database\RealDatabase;
 
-use System\Database\MyQuery;
-use System\Test\Database\Asserts\UserTrait;
-use System\Test\Database\TestDatabase;
+use Omega\Database\Query\Query;
+use Tests\Database\Asserts\UserTrait;
+use Tests\Database\AbstractTestDatabase;
 
-final class InsertTest extends TestDatabase
+final class InsertTest extends AbstractTestDatabase
 {
     use UserTrait;
 
@@ -35,9 +35,9 @@ final class InsertTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanInsertData()
+    public function testItCanInsertData()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -54,9 +54,9 @@ final class InsertTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanInsertMultyRaw()
+    public function testItCanInsertMultyRaw()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->rows([
                 [
@@ -80,9 +80,9 @@ final class InsertTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanReplaceOnExistData()
+    public function testItCanReplaceOnExistData()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -91,7 +91,7 @@ final class InsertTest extends TestDatabase
             ])
             ->execute();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -109,9 +109,9 @@ final class InsertTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateInsertusingOneQuery()
+    public function testItCanUpdateInsertusingOneQuery()
     {
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->values([
                 'user'      => 'sony',
@@ -120,7 +120,7 @@ final class InsertTest extends TestDatabase
             ])
             ->execute();
 
-        MyQuery::from('users', $this->pdo)
+        Query::from('users', $this->pdo)
             ->insert()
             ->rows([
                 [

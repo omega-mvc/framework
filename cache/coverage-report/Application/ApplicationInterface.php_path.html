@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <title>Code Coverage for /home/morpheus/www/omega/vendor/omega-mvc/framework/src/Omega/Application/ApplicationInterface.php</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="../_css/bootstrap.min.css?v=13.0.1" rel="stylesheet" type="text/css">
+  <link href="../_css/octicons.css?v=13.0.1" rel="stylesheet" type="text/css">
+  <link href="../_css/style.css?v=13.0.1" rel="stylesheet" type="text/css">
+  <link href="../_css/custom.css" rel="stylesheet" type="text/css">
+ </head>
+ <body>
+  <header>
+   <div class="container-fluid">
+    <div class="row">
+     <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+       <ol class="breadcrumb">
+         <li class="breadcrumb-item"><a href="../index.html">/home/morpheus/www/omega/vendor/omega-mvc/framework/src/Omega</a></li>
+         <li class="breadcrumb-item"><a href="index.html">Application</a></li>
+         <li class="breadcrumb-item active">ApplicationInterface.php</li>
+
+       </ol>
+      </nav>
+     </div>
+    </div>
+   </div>
+  </header>
+  <div class="container-fluid">
+   <div class="table-responsive">
+    <table class="table table-bordered">
+     <thead>
+      <tr>
+       <td>&nbsp;</td>
+       <td colspan="16"><div align="center"><strong>Code Coverage</strong></div></td>
+      </tr>
+      <tr>
+       <td>&nbsp;</td>
+       <td colspan="3"><div align="center"><strong>Lines</strong></div></td>
+       <td colspan="3"><div align="center"><strong>Branches</strong></div></td>
+       <td colspan="3"><div align="center"><strong>Paths</strong></div></td>
+       <td colspan="4"><div align="center"><strong>Functions and Methods</strong></div></td>
+       <td colspan="3"><div align="center"><strong>Classes and Traits</strong></div></td>
+      </tr>
+     </thead>
+     <tbody>
+      <tr>
+       <td class="">Total</td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+       <td class=" small"><abbr title="Change Risk Anti-Patterns (CRAP) Index">CRAP</abbr></td>
+       <td class=" big"></td>
+       <td class=" small"><div align="right">n/a</div></td>
+       <td class=" small"><div align="right">0&nbsp;/&nbsp;0</div></td>
+      </tr>
+
+
+     </tbody>
+    </table>
+   </div>
+<table id="code" class="table table-borderless table-condensed">
+<tbody>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="1" href="#1">1</a></td><td class="col-11 codeLine"><span class="default">&lt;?php</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="2" href="#2">2</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="3" href="#3">3</a></td><td class="col-11 codeLine"><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="4" href="#4">4</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;Part&nbsp;of&nbsp;Omega&nbsp;-&nbsp;Application&nbsp;Package.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="5" href="#5">5</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="6" href="#6">6</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@link&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;https://omega-mvc.github.io</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="7" href="#7">7</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@author&nbsp;&nbsp;&nbsp;&nbsp;Adriano&nbsp;Giovannini&nbsp;&lt;agisoftt@gmail.com&gt;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="8" href="#8">8</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@copyright&nbsp;Copyright&nbsp;(c)&nbsp;2025&nbsp;-&nbsp;2026&nbsp;Adriano&nbsp;Giovannini&nbsp;(https://omega-mvc.github.io)</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="9" href="#9">9</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@license&nbsp;&nbsp;&nbsp;https://www.gnu.org/licenses/gpl-3.0-standalone.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPL&nbsp;V3.0+</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="10" href="#10">10</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@version&nbsp;&nbsp;&nbsp;2.0.0</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="11" href="#11">11</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="12" href="#12">12</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="13" href="#13">13</a></td><td class="col-11 codeLine"><span class="keyword">declare</span><span class="keyword">(</span><span class="default">strict_types</span><span class="keyword">=</span><span class="default">1</span><span class="keyword">)</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="14" href="#14">14</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="15" href="#15">15</a></td><td class="col-11 codeLine"><span class="keyword">namespace</span><span class="default">&nbsp;</span><span class="default">Omega\Application</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="16" href="#16">16</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="17" href="#17">17</a></td><td class="col-11 codeLine"><span class="keyword">use</span><span class="default">&nbsp;</span><span class="default">Omega\Config\ConfigRepository</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="18" href="#18">18</a></td><td class="col-11 codeLine"><span class="keyword">use</span><span class="default">&nbsp;</span><span class="default">Omega\Container\Provider\AbstractServiceProvider</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="19" href="#19">19</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="20" href="#20">20</a></td><td class="col-11 codeLine"><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="21" href="#21">21</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;Defines&nbsp;the&nbsp;contract&nbsp;for&nbsp;an&nbsp;application&nbsp;instance.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="22" href="#22">22</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="23" href="#23">23</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;The&nbsp;ApplicationInterface&nbsp;represents&nbsp;the&nbsp;core&nbsp;entry&nbsp;point&nbsp;of&nbsp;the&nbsp;framework</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="24" href="#24">24</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;and&nbsp;coordinates&nbsp;configuration&nbsp;loading,&nbsp;environment&nbsp;detection,&nbsp;service</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="25" href="#25">25</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;provider&nbsp;registration,&nbsp;bootstrapping,&nbsp;and&nbsp;application&nbsp;lifecycle&nbsp;management.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="26" href="#26">26</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="27" href="#27">27</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;This&nbsp;interface&nbsp;is&nbsp;intentionally&nbsp;decoupled&nbsp;from&nbsp;any&nbsp;specific&nbsp;container</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="28" href="#28">28</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;implementation&nbsp;or&nbsp;container-related&nbsp;exceptions,&nbsp;allowing&nbsp;developers&nbsp;to</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="29" href="#29">29</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;provide&nbsp;custom&nbsp;Application&nbsp;implementations&nbsp;or&nbsp;extend&nbsp;the&nbsp;default&nbsp;one</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="30" href="#30">30</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;without&nbsp;being&nbsp;forced&nbsp;to&nbsp;depend&nbsp;on&nbsp;a&nbsp;particular&nbsp;container&nbsp;behavior.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="31" href="#31">31</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="32" href="#32">32</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;Implementations&nbsp;are&nbsp;expected&nbsp;to&nbsp;manage:</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="33" href="#33">33</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;-&nbsp;Application&nbsp;configuration&nbsp;and&nbsp;environment</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="34" href="#34">34</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;-&nbsp;Service&nbsp;provider&nbsp;registration&nbsp;and&nbsp;booting</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="35" href="#35">35</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;-&nbsp;Application&nbsp;bootstrapping&nbsp;lifecycle</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="36" href="#36">36</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;-&nbsp;Maintenance&nbsp;and&nbsp;termination&nbsp;handling</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="37" href="#37">37</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;-&nbsp;Global&nbsp;application&nbsp;state&nbsp;access&nbsp;(singleton-style,&nbsp;if&nbsp;desired)</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="38" href="#38">38</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="39" href="#39">39</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@category&nbsp;&nbsp;Omega</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="40" href="#40">40</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@package&nbsp;&nbsp;&nbsp;Application</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="41" href="#41">41</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@link&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;https://omega-mvc.github.io</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="42" href="#42">42</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@author&nbsp;&nbsp;&nbsp;&nbsp;Adriano&nbsp;Giovannini&nbsp;&lt;agisoftt@gmail.com&gt;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="43" href="#43">43</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@copyright&nbsp;Copyright&nbsp;(c)&nbsp;2025&nbsp;-&nbsp;2026&nbsp;Adriano&nbsp;Giovannini&nbsp;(https://omega-mvc.github.io)</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="44" href="#44">44</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@license&nbsp;&nbsp;&nbsp;https://www.gnu.org/licenses/gpl-3.0-standalone.html&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;GPL&nbsp;V3.0+</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="45" href="#45">45</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*&nbsp;@version&nbsp;&nbsp;&nbsp;2.0.0</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="46" href="#46">46</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="47" href="#47">47</a></td><td class="col-11 codeLine"><span class="keyword">interface</span><span class="default">&nbsp;</span><span class="default">ApplicationInterface</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="48" href="#48">48</a></td><td class="col-11 codeLine"><span class="keyword">{</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="49" href="#49">49</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="50" href="#50">50</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Default&nbsp;application&nbsp;version&nbsp;identifier.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="51" href="#51">51</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="52" href="#52">52</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;This&nbsp;constant&nbsp;represents&nbsp;the&nbsp;fallback&nbsp;version&nbsp;of&nbsp;the&nbsp;application&nbsp;and&nbsp;is</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="53" href="#53">53</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;returned&nbsp;when&nbsp;no&nbsp;explicit&nbsp;version&nbsp;string&nbsp;is&nbsp;provided&nbsp;at&nbsp;runtime.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="54" href="#54">54</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="55" href="#55">55</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Implementations&nbsp;may&nbsp;override&nbsp;or&nbsp;dynamically&nbsp;replace&nbsp;this&nbsp;value&nbsp;when</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="56" href="#56">56</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;exposing&nbsp;the&nbsp;application&nbsp;version.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="57" href="#57">57</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="58" href="#58">58</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">const</span><span class="default">&nbsp;</span><span class="default">string</span><span class="default">&nbsp;</span><span class="default">VERSION</span><span class="default">&nbsp;</span><span class="keyword">=</span><span class="default">&nbsp;</span><span class="default">'1.0.0'</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="59" href="#59">59</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="60" href="#60">60</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="61" href="#61">61</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Get&nbsp;the&nbsp;application&nbsp;version&nbsp;string.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="62" href="#62">62</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="63" href="#63">63</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;If&nbsp;a&nbsp;version&nbsp;string&nbsp;is&nbsp;explicitly&nbsp;provided,&nbsp;it&nbsp;will&nbsp;be&nbsp;returned&nbsp;as-is.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="64" href="#64">64</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Otherwise,&nbsp;the&nbsp;method&nbsp;falls&nbsp;back&nbsp;to&nbsp;the&nbsp;default&nbsp;application&nbsp;version</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="65" href="#65">65</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;defined&nbsp;by&nbsp;the&nbsp;VERSION&nbsp;constant.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="66" href="#66">66</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="67" href="#67">67</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;This&nbsp;allows&nbsp;consumers&nbsp;to&nbsp;dynamically&nbsp;override&nbsp;the&nbsp;application&nbsp;version</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="68" href="#68">68</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;(e.g.&nbsp;during&nbsp;runtime,&nbsp;build,&nbsp;or&nbsp;release&nbsp;phases)&nbsp;without&nbsp;modifying</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="69" href="#69">69</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;the&nbsp;underlying&nbsp;application&nbsp;state.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="70" href="#70">70</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="71" href="#71">71</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;string|null&nbsp;$version&nbsp;Optional&nbsp;version&nbsp;override.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="72" href="#72">72</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;string&nbsp;The&nbsp;resolved&nbsp;application&nbsp;version.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="73" href="#73">73</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="74" href="#74">74</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">getVersion</span><span class="keyword">(</span><span class="keyword">?</span><span class="default">string</span><span class="default">&nbsp;</span><span class="default">$version</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">string</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="75" href="#75">75</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="76" href="#76">76</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="77" href="#77">77</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Get&nbsp;the&nbsp;default&nbsp;application&nbsp;bindings&nbsp;and&nbsp;path&nbsp;definitions.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="78" href="#78">78</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="79" href="#79">79</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;array&lt;string,&nbsp;mixed&gt;&nbsp;Key-value&nbsp;pairs&nbsp;defining&nbsp;paths,&nbsp;environment,&nbsp;and&nbsp;core&nbsp;settings.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="80" href="#80">80</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="81" href="#81">81</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">definitions</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="keyword">array</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="82" href="#82">82</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="83" href="#83">83</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="84" href="#84">84</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Define&nbsp;and&nbsp;register&nbsp;the&nbsp;configuration&nbsp;directory&nbsp;path&nbsp;for&nbsp;the&nbsp;application.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="85" href="#85">85</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="86" href="#86">86</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;This&nbsp;method&nbsp;is&nbsp;responsible&nbsp;for&nbsp;setting&nbsp;the&nbsp;container&nbsp;binding&nbsp;that&nbsp;represents</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="87" href="#87">87</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;the&nbsp;base&nbsp;configuration&nbsp;path&nbsp;(typically&nbsp;`path.config`).</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="88" href="#88">88</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="89" href="#89">89</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Concrete&nbsp;application&nbsp;implementations&nbsp;must&nbsp;define&nbsp;where&nbsp;configuration&nbsp;files</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="90" href="#90">90</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;are&nbsp;located&nbsp;and&nbsp;how&nbsp;the&nbsp;path&nbsp;is&nbsp;resolved.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="91" href="#91">91</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="92" href="#92">92</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;This&nbsp;method&nbsp;is&nbsp;invoked&nbsp;during&nbsp;application&nbsp;initialization&nbsp;and&nbsp;may&nbsp;override</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="93" href="#93">93</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;the&nbsp;default&nbsp;configuration&nbsp;path&nbsp;resolution.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="94" href="#94">94</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="95" href="#95">95</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="96" href="#96">96</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="97" href="#97">97</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">setConfigPath</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="98" href="#98">98</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="99" href="#99">99</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="100" href="#100">100</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Get&nbsp;instance&nbsp;Application&nbsp;container.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="101" href="#101">101</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="102" href="#102">102</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;Application|null&nbsp;Return&nbsp;instance&nbsp;Application&nbsp;container.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="103" href="#103">103</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="104" href="#104">104</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">static</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">getInstance</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="keyword">?</span><span class="default">Application</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="105" href="#105">105</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="106" href="#106">106</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="107" href="#107">107</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Load&nbsp;and&nbsp;set&nbsp;Configuration&nbsp;to&nbsp;application.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="108" href="#108">108</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="109" href="#109">109</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;ConfigRepository&nbsp;$configs&nbsp;ConfigRepository&nbsp;object.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="110" href="#110">110</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="111" href="#111">111</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="112" href="#112">112</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">loadConfig</span><span class="keyword">(</span><span class="default">ConfigRepository</span><span class="default">&nbsp;</span><span class="default">$configs</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="113" href="#113">113</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="114" href="#114">114</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="115" href="#115">115</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Get&nbsp;application&nbsp;(bootstrapper)&nbsp;cache&nbsp;path.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="116" href="#116">116</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="117" href="#117">117</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;default&nbsp;'./boostrap/cache/'.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="118" href="#118">118</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="119" href="#119">119</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;string&nbsp;Absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;application&nbsp;bootstrap&nbsp;cache&nbsp;directory.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="120" href="#120">120</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="121" href="#121">121</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">getApplicationCachePath</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">string</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="122" href="#122">122</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="123" href="#123">123</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="124" href="#124">124</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Detect&nbsp;application&nbsp;environment.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="125" href="#125">125</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="126" href="#126">126</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;string&nbsp;Current&nbsp;application&nbsp;environment&nbsp;(e.g.&nbsp;&quot;dev&quot;,&nbsp;&quot;prod&quot;).</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="127" href="#127">127</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="128" href="#128">128</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">getEnvironment</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">string</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="129" href="#129">129</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="130" href="#130">130</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="131" href="#131">131</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Detect&nbsp;application&nbsp;debug&nbsp;enable.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="132" href="#132">132</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="133" href="#133">133</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;bool&nbsp;True&nbsp;when&nbsp;application&nbsp;debug&nbsp;mode&nbsp;is&nbsp;enabled.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="134" href="#134">134</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="135" href="#135">135</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">isDebugMode</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">bool</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="136" href="#136">136</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="137" href="#137">137</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="138" href="#138">138</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Detect&nbsp;application&nbsp;production&nbsp;mode.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="139" href="#139">139</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="140" href="#140">140</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;bool&nbsp;True&nbsp;when&nbsp;the&nbsp;application&nbsp;is&nbsp;running&nbsp;in&nbsp;production&nbsp;environment.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="141" href="#141">141</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="142" href="#142">142</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">isProduction</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">bool</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="143" href="#143">143</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="144" href="#144">144</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="145" href="#145">145</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Detect&nbsp;application&nbsp;development&nbsp;mode.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="146" href="#146">146</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="147" href="#147">147</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;bool&nbsp;True&nbsp;when&nbsp;the&nbsp;application&nbsp;is&nbsp;running&nbsp;in&nbsp;development&nbsp;environment.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="148" href="#148">148</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="149" href="#149">149</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">isDev</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">bool</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="150" href="#150">150</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="151" href="#151">151</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="152" href="#152">152</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Bootstrap&nbsp;the&nbsp;application&nbsp;using&nbsp;the&nbsp;given&nbsp;bootstrapper&nbsp;classes.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="153" href="#153">153</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="154" href="#154">154</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;array&lt;int,&nbsp;class-string&gt;&nbsp;$bootstrappers&nbsp;List&nbsp;of&nbsp;bootstrapper&nbsp;class&nbsp;names.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="155" href="#155">155</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="156" href="#156">156</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="157" href="#157">157</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">bootstrapWith</span><span class="keyword">(</span><span class="keyword">array</span><span class="default">&nbsp;</span><span class="default">$bootstrappers</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="158" href="#158">158</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="159" href="#159">159</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="160" href="#160">160</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Boot&nbsp;service&nbsp;provider.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="161" href="#161">161</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="162" href="#162">162</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="163" href="#163">163</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="164" href="#164">164</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">bootProvider</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="165" href="#165">165</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="166" href="#166">166</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="167" href="#167">167</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Register&nbsp;service&nbsp;providers.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="168" href="#168">168</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="169" href="#169">169</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="170" href="#170">170</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="171" href="#171">171</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">registerProvider</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="172" href="#172">172</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="173" href="#173">173</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="174" href="#174">174</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Call&nbsp;the&nbsp;registered&nbsp;booting&nbsp;callbacks.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="175" href="#175">175</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="176" href="#176">176</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;callable[]&nbsp;$bootCallBacks&nbsp;Callbacks&nbsp;executed&nbsp;during&nbsp;the&nbsp;booting&nbsp;phase.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="177" href="#177">177</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="178" href="#178">178</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="179" href="#179">179</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">callBootCallbacks</span><span class="keyword">(</span><span class="keyword">array</span><span class="default">&nbsp;</span><span class="default">$bootCallBacks</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="180" href="#180">180</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="181" href="#181">181</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="182" href="#182">182</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Add&nbsp;booted&nbsp;call&nbsp;back,&nbsp;call&nbsp;after&nbsp;boot&nbsp;is&nbsp;called.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="183" href="#183">183</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="184" href="#184">184</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;callable&nbsp;$callback&nbsp;Callback&nbsp;executed&nbsp;after&nbsp;the&nbsp;application&nbsp;has&nbsp;booted.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="185" href="#185">185</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="186" href="#186">186</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="187" href="#187">187</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">bootedCallback</span><span class="keyword">(</span><span class="keyword">callable</span><span class="default">&nbsp;</span><span class="default">$callback</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="188" href="#188">188</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="189" href="#189">189</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="190" href="#190">190</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Flush&nbsp;or&nbsp;reset&nbsp;application&nbsp;(static).</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="191" href="#191">191</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="192" href="#192">192</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="193" href="#193">193</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="194" href="#194">194</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">flush</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="195" href="#195">195</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="196" href="#196">196</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="197" href="#197">197</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Register&nbsp;service&nbsp;provider.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="198" href="#198">198</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="199" href="#199">199</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;string&nbsp;$provider&nbsp;Class-name&nbsp;service&nbsp;provider</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="200" href="#200">200</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;AbstractServiceProvider&nbsp;The&nbsp;instantiated&nbsp;and&nbsp;registered&nbsp;service&nbsp;provider.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="201" href="#201">201</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="202" href="#202">202</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">register</span><span class="keyword">(</span><span class="default">string</span><span class="default">&nbsp;</span><span class="default">$provider</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">AbstractServiceProvider</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="203" href="#203">203</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="204" href="#204">204</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="205" href="#205">205</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Registers&nbsp;a&nbsp;callback&nbsp;to&nbsp;be&nbsp;executed&nbsp;when&nbsp;the&nbsp;application&nbsp;terminates.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="206" href="#206">206</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="207" href="#207">207</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;This&nbsp;method&nbsp;allows&nbsp;you&nbsp;to&nbsp;add&nbsp;one&nbsp;or&nbsp;more&nbsp;terminating&nbsp;callbacks&nbsp;that</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="208" href="#208">208</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;will&nbsp;be&nbsp;called&nbsp;after&nbsp;the&nbsp;application&nbsp;finishes&nbsp;handling&nbsp;a&nbsp;request.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="209" href="#209">209</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="210" href="#210">210</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;callable&nbsp;$terminateCallback&nbsp;The&nbsp;callback&nbsp;to&nbsp;execute&nbsp;on&nbsp;termination.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="211" href="#211">211</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;$this&nbsp;Returns&nbsp;the&nbsp;application&nbsp;instance&nbsp;for&nbsp;method&nbsp;chaining.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="212" href="#212">212</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="213" href="#213">213</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">registerTerminate</span><span class="keyword">(</span><span class="keyword">callable</span><span class="default">&nbsp;</span><span class="default">$terminateCallback</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">self</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="214" href="#214">214</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="215" href="#215">215</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="216" href="#216">216</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Terminate&nbsp;the&nbsp;application.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="217" href="#217">217</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="218" href="#218">218</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="219" href="#219">219</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="220" href="#220">220</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">terminate</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="221" href="#221">221</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="222" href="#222">222</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="223" href="#223">223</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Determinate&nbsp;application&nbsp;maintenance&nbsp;mode.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="224" href="#224">224</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="225" href="#225">225</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;bool&nbsp;True&nbsp;if&nbsp;the&nbsp;application&nbsp;is&nbsp;currently&nbsp;in&nbsp;maintenance&nbsp;mode.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="226" href="#226">226</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="227" href="#227">227</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">isDownMaintenanceMode</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">bool</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="228" href="#228">228</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="229" href="#229">229</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="230" href="#230">230</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Get&nbsp;down&nbsp;maintenance&nbsp;file&nbsp;config.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="231" href="#231">231</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="232" href="#232">232</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;array&lt;string,&nbsp;string|int|null&gt;&nbsp;Maintenance&nbsp;mode&nbsp;configuration&nbsp;data.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="233" href="#233">233</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="234" href="#234">234</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">getDownData</span><span class="keyword">(</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="keyword">array</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="235" href="#235">235</a></td><td class="col-11 codeLine"></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="236" href="#236">236</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="comment">/**</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="237" href="#237">237</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;Abort&nbsp;application&nbsp;to&nbsp;http&nbsp;exception.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="238" href="#238">238</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="239" href="#239">239</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;int&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$code&nbsp;&nbsp;&nbsp;&nbsp;HTTP&nbsp;status&nbsp;code.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="240" href="#240">240</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;string&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$message&nbsp;Exception&nbsp;message.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="241" href="#241">241</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@param&nbsp;array&lt;string,&nbsp;string&gt;&nbsp;$headers&nbsp;HTTP&nbsp;response&nbsp;headers.</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="242" href="#242">242</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;@return&nbsp;void</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="243" href="#243">243</a></td><td class="col-11 codeLine"><span class="comment">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="244" href="#244">244</a></td><td class="col-11 codeLine"><span class="default">&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="keyword">public</span><span class="default">&nbsp;</span><span class="keyword">function</span><span class="default">&nbsp;</span><span class="default">abort</span><span class="keyword">(</span><span class="default">int</span><span class="default">&nbsp;</span><span class="default">$code</span><span class="keyword">,</span><span class="default">&nbsp;</span><span class="default">string</span><span class="default">&nbsp;</span><span class="default">$message</span><span class="default">&nbsp;</span><span class="keyword">=</span><span class="default">&nbsp;</span><span class="default">''</span><span class="keyword">,</span><span class="default">&nbsp;</span><span class="keyword">array</span><span class="default">&nbsp;</span><span class="default">$headers</span><span class="default">&nbsp;</span><span class="keyword">=</span><span class="default">&nbsp;</span><span class="keyword">[</span><span class="keyword">]</span><span class="keyword">)</span><span class="keyword">:</span><span class="default">&nbsp;</span><span class="default">void</span><span class="keyword">;</span></td></tr>
+    <tr class=" d-flex"><td  class="col-1 text-end"><a id="245" href="#245">245</a></td><td class="col-11 codeLine"><span class="keyword">}</span></td></tr>
+
+</tbody>
+</table>
+
+<hr/>
+<h4>Paths</h4>
+<p>
+    Below are the source code lines that represent each code path as identified by Xdebug. Please note a path is not
+    necessarily coterminous with a line, a line may contain multiple paths and therefore show up more than once.
+    Please also be aware that some paths may include implicit rather than explicit branches, e.g. an <code>if</code> statement
+    <i>always</i> has an <code>else</code> as part of its logical flow even if you didn't write one.
+</p>
+
+
+   <footer>
+    <hr/>
+    <h4>Legend</h4>
+    <p><span class="success"><strong>Fully covered</strong></span><span class="warning"><strong>Partially covered</strong></span><span class="danger"><strong>Not covered</strong></span></p>
+    <p>
+     <small>Generated by <a href="https://github.com/sebastianbergmann/php-code-coverage" target="_top">php-code-coverage 13.0.1</a> using <a href="https://www.php.net/" target="_top">PHP 8.4.18</a> and <a href="https://phpunit.de/">PHPUnit 13.0.5</a> at Sat Feb 21 21:03:15 UTC 2026.</small>
+    </p>
+    <a title="Back to the top" id="toplink" href="#">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="16" viewBox="0 0 12 16"><path fill-rule="evenodd" d="M12 11L6 5l-6 6h12z"/></svg>
+    </a>
+   </footer>
+  </div>
+  <script src="../_js/jquery.min.js?v=13.0.1" type="text/javascript"></script>
+  <script src="../_js/bootstrap.bundle.min.js?v=13.0.1" type="text/javascript"></script>
+  <script src="../_js/file.js?v=13.0.1" type="text/javascript"></script>
+ </body>
+</html>

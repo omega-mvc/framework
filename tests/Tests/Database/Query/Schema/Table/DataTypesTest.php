@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Tests\DataBase\Query\Schema\Table;
 
-use System\Database\MySchema\Table\Create;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Schema\Table\Create;
+use Tests\Database\TestDatabaseQuery;
 
 final class DataTypesTest extends TestDatabaseQuery
 {
     /**
      * @test
      */
-    public function itCanGenerateNumericDataTypes(): void
+    public function testItCanGenerateNumericDataTypes(): void
     {
-        $schema = new Create('testing_db', 'test_numeric', $this->pdo_schame);
+        $schema = new Create('testing_db', 'test_numeric', $this->pdoSchema);
 
         $schema('col_int')->int();
         $schema('col_int_len')->int(11);
@@ -33,9 +33,9 @@ final class DataTypesTest extends TestDatabaseQuery
     /**
      * @test
      */
-    public function itCanGenerateStringDataTypes(): void
+    public function testItCanGenerateStringDataTypes(): void
     {
-        $schema = new Create('testing_db', 'test_string', $this->pdo_schame);
+        $schema = new Create('testing_db', 'test_string', $this->pdoSchema);
 
         $schema('col_char')->char();
         $schema('col_char_len')->char(10);
@@ -52,9 +52,9 @@ final class DataTypesTest extends TestDatabaseQuery
     /**
      * @test
      */
-    public function itCanGenerateDateTimeDataTypes(): void
+    public function testItCanGenerateDateTimeDataTypes(): void
     {
-        $schema = new Create('testing_db', 'test_datetime', $this->pdo_schame);
+        $schema = new Create('testing_db', 'test_datetime', $this->pdoSchema);
 
         $schema('col_time')->time();
         $schema('col_time_len')->time(4);

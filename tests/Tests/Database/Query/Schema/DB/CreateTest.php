@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query\Schema\DB;
+namespace Tests\Database\Query\Schema\DB;
 
-use System\Database\MySchema\DB\Create;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Schema\DB\Create;
+use Tests\Database\TestDatabaseQuery;
 
 final class CreateTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase()
     {
-        $schema = new Create('test', $this->pdo_schame);
+        $schema = new Create('test', $this->pdoSchema);
 
         $this->assertEquals(
             'CREATE DATABASE test;',
@@ -21,9 +21,9 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfExists()
+    public function testItCanGenerateCreateDatabaseIfExists()
     {
-        $schema = new Create('test', $this->pdo_schame);
+        $schema = new Create('test', $this->pdoSchema);
 
         $this->assertEquals(
             'CREATE DATABASE IF EXISTS test;',
@@ -32,9 +32,9 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfExistsFalse()
     {
-        $schema = new Create('test', $this->pdo_schame);
+        $schema = new Create('test', $this->pdoSchema);
 
         $this->assertEquals(
             'CREATE DATABASE IF NOT EXISTS test;',
@@ -43,9 +43,9 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfNotExists()
+    public function testItCanGenerateCreateDatabaseIfNotExists()
     {
-        $schema = new Create('test', $this->pdo_schame);
+        $schema = new Create('test', $this->pdoSchema);
 
         $this->assertEquals(
             'CREATE DATABASE IF NOT EXISTS test;',
@@ -54,9 +54,9 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCanGenerateCreateDatabaseIfNotExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfNotExistsFalse()
     {
-        $schema = new Create('test', $this->pdo_schame);
+        $schema = new Create('test', $this->pdoSchema);
 
         $this->assertEquals(
             'CREATE DATABASE IF EXISTS test;',

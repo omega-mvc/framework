@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Query;
+namespace Tests\Database\Query;
 
-use System\Database\MyQuery;
-use System\Test\Database\TestDatabaseQuery;
+use Omega\Database\Query\Query;
+use Tests\Database\TestDatabaseQuery;
 
 final class InsertTest extends TestDatabaseQuery
 {
     /** @test */
-    public function itCorrectInsert(): void
+    public function testItCorrectInsert(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->insert()
             ->value('a', 1)
         ;
@@ -29,9 +29,9 @@ final class InsertTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertValues(): void
+    public function testItCorrectInsertValues(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->insert()
             ->values([
                 'a' => 'b',
@@ -52,9 +52,9 @@ final class InsertTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertQueryMultyValues(): void
+    public function testItCorrectInsertQueryMultyValues(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->insert()
             ->values([
                 'a' => 'b',
@@ -76,9 +76,9 @@ final class InsertTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertQueryMultyRaws(): void
+    public function testItCorrectInsertQueryMultyRaws(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->insert()
             ->rows([
                 [
@@ -104,9 +104,9 @@ final class InsertTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function itCorrectInsertOnDuplicateKeyUpdate(): void
+    public function testItCorrectInsertOnDuplicateKeyUpdate(): void
     {
-        $insert = MyQuery::from('test', $this->pdo)
+        $insert = Query::from('test', $this->pdo)
             ->insert()
             ->value('a', 1)
             ->on('a')

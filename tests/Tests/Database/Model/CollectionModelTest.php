@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\Model;
+namespace Tests\Database\Model;
 
-use System\Test\Database\TestDatabase;
+use Tests\Database\AbstractTestDatabase;
+use Tests\Database\Support\User;
 
-final class CollectionModelTest extends TestDatabase
+final class CollectionModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -65,11 +66,11 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanGetAllIds()
+    public function testItCanGetAllIds()
     {
         $users = $this->users()->get();
 
-        $this->assertEqualsCanonicalizing(['nuno', 'taylor', 'pradana'], $users->getPrimeryKey());
+        $this->assertEqualsCanonicalizing(['nuno', 'taylor', 'pradana'], $users->getPrimaryKey());
     }
 
     /**
@@ -77,7 +78,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckIsClean()
+    public function testItCanCheckIsClean()
     {
         $users = $this->users();
 
@@ -89,7 +90,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCheckIsDirty()
+    public function testItCanCheckIsDirty()
     {
         $users = $this->users();
 
@@ -103,7 +104,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanReadData()
+    public function testItCanReadData()
     {
         $users = $this->users();
 
@@ -117,7 +118,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateData()
+    public function testItCanUpdateData()
     {
         $users = $this->users();
 
@@ -132,7 +133,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanDeleteData()
+    public function testItCanDeleteData()
     {
         $users = $this->users();
 
@@ -148,7 +149,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanUpdateAllWithSingleQuery()
+    public function testItCanUpdateAllWithSingleQuery()
     {
         $update = $this->users()->get()->update([
             'stat' => 0,
@@ -162,7 +163,7 @@ final class CollectionModelTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanDeleteAllWithSingleQuery()
+    public function testItCanDeleteAllWithSingleQuery()
     {
         $delete = $this->users()->get()->delete();
 

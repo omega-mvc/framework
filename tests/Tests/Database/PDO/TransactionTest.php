@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Database\PDO;
+namespace Tests\Database\PDO;
 
-use System\Test\Database\TestDatabase;
+use Tests\Database\AbstractTestDatabase;
 
-final class TransactionTest extends TestDatabase
+final class TransactionTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {
@@ -24,7 +24,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanRollbackTransaction()
+    public function testItCanRollbackTransaction()
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -48,7 +48,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCommitTransaction()
+    public function testItCanCommitTransaction()
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -72,7 +72,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCommitTransactionUsingClosure(): void
+    public function testItCanCommitTransactionUsingClosure(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -103,7 +103,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanCommitTransactionUsingClosureParameter(): void
+    public function testItCanCommitTransactionUsingClosureParameter(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -134,7 +134,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanRollbackTransactionUsingCloser(): void
+    public function testItCanRollbackTransactionUsingCloser(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -169,7 +169,7 @@ final class TransactionTest extends TestDatabase
      *
      * @group database
      */
-    public function itCanRollbackTransactionUsingCloserWithThrow(): void
+    public function testItCanRollbackTransactionUsingCloserWithThrow(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
