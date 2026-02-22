@@ -15,6 +15,11 @@ declare(strict_types=1);
 namespace Omega\Database\Schema\Table\Attributes;
 
 use Exception;
+use InvalidArgumentException;
+
+use function str_replace;
+use function strlen;
+use function trim;
 
 /**
  * Class Constraint
@@ -54,6 +59,9 @@ class Constraint
     /** @var string Raw SQL appended to column definition */
     protected string $raw;
 
+    /** @var string */
+    protected string $comment;
+
     /**
      * @param string $data_type Column data type
      */
@@ -66,6 +74,7 @@ class Constraint
         $this->raw           = '';
         $this->order         = '';
         $this->unsigned      = '';
+        $this->comment       = '';
     }
 
     /**
@@ -93,6 +102,7 @@ class Constraint
             $this->autoIncrement,
             $this->raw,
             $this->order,
+            $this->comment,
         ];
 
         return implode(' ', array_filter($column, fn ($item) => $item !== ''));
@@ -183,6 +193,27 @@ class Constraint
             throw new Exception('Cant use UNSIGNED not integer datatype.');
         }
         $this->unsigned = 'UNSIGNED';
+
+        return $this;
+    }
+
+    /**
+     * Adds a comment to the column when creating it.
+     * Note: Comments are not supported for PRIMARY KEY, FOREIGN KEY, or UNIQUE constraints.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function comment(string $comment): self
+    {
+        if ('' === trim($comment)) {
+            return $this;
+        }
+
+        if (strlen($comment) > 1024) {
+            throw new InvalidArgumentException('Comment too long (max 1024 chracters).');
+        }
+
+        $this->comment = "COMMENT '" . str_replace("'", "''", $comment) . "'";
 
         return $this;
     }

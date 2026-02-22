@@ -40,7 +40,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->column('user')->varchar(15);
 
@@ -57,7 +57,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->add('PersonID')->int();
         $schema->add('LastName')->varchar(255);
@@ -75,7 +75,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->drop('create_at');
         $schema->drop('update_at');
@@ -94,7 +94,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->rename('stat', 'take');
 
@@ -112,7 +112,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->rename('stat', 'take');
         $schema->rename('update_at', 'modify_at');
@@ -131,7 +131,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->column('user')->varchar(15);
         $schema->add('PersonID')->int();
@@ -151,7 +151,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema->add('uuid')->varchar(15)->first();
         $schema->add('last_name')->varchar(32)->after('name');
@@ -169,7 +169,7 @@ final class AlterTest extends AbstractTestDatabase
         $schema = new Alter(
             $this->env['database'],
             'profiles',
-            $this->pdo_schema
+            $this->pdoSchema
         );
         $schema('create_at')->varchar(15)->after('user');
         $schema->column('update_at')->varchar(15)->after('user');

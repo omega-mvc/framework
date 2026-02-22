@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Database\PDO;
+namespace Tests\Database\Pdo;
 
 use Tests\Database\AbstractTestDatabase;
 

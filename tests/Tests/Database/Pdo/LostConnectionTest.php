@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Tests\Database\PDO;
+namespace Tests\Database\Pdo;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\AbstractTestDatabase;
 
 final class LostConnectionTest extends AbstractTestDatabase
@@ -18,13 +19,7 @@ final class LostConnectionTest extends AbstractTestDatabase
         $this->dropConnection();
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     *
-     * @dataProvider lostConnectionErrorProvider
-     */
+    #[DataProvider('lostConnectionErrorProvider')]
     public function testItThrowExceptionCausedByLostConnectionReturnsTrue(string $errorMessage): void
     {
         $exception = new \PDOException($errorMessage);
@@ -33,13 +28,7 @@ final class LostConnectionTest extends AbstractTestDatabase
         $this->assertTrue($connection);
     }
 
-    /**
-     * @test
-     *
-     * @group database
-     *
-     * @dataProvider nonLostConnectionErrorProvider
-     */
+    #[DataProvider('nonLostConnectionErrorProvider')]
     public function testItThrowExceptionCausedByLostConnectionReturnsFalse(string $errorMessage): void
     {
         $exception = new \PDOException($errorMessage);
@@ -48,7 +37,7 @@ final class LostConnectionTest extends AbstractTestDatabase
         $this->assertFalse($connection);
     }
 
-    public function lostConnectionErrorProvider(): array
+    public static function lostConnectionErrorProvider(): array
     {
         return [
             // MySQL/MariaDB
@@ -77,7 +66,7 @@ final class LostConnectionTest extends AbstractTestDatabase
         ];
     }
 
-    public function nonLostConnectionErrorProvider(): array
+    public static function nonLostConnectionErrorProvider(): array
     {
         return [
             // Authentication errors

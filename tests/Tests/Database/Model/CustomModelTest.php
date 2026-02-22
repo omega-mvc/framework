@@ -9,7 +9,7 @@ use Omega\Database\Query\Query;
 use Omega\Database\Query\Insert;
 use Tests\Database\AbstractTestDatabase;
 
-final class CostumeModelTest extends AbstractTestDatabase
+final class CustomModelTest extends AbstractTestDatabase
 {
     private $profiles = [
         'taylor' => [

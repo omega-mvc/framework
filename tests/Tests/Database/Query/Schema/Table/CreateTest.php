@@ -85,9 +85,9 @@ final class CreateTest extends TestDatabaseQuery
     public function testItCanGenerateQueryUsingColumns()
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
-        $schema->collumns([
-            (new Column())->raw('PersonID int'),
-            (new Column())->raw('LastName varchar(255)'),
+        $schema->columns([
+            new Column()->raw('PersonID int'),
+            new Column()->raw('LastName varchar(255)'),
         ]);
         $schema->primaryKey('PersonID');
 

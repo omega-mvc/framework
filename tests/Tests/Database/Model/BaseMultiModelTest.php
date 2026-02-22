@@ -10,7 +10,7 @@ use Omega\Database\Query\Insert;
 use Tests\Database\AbstractTestDatabase;
 use Tests\Database\Support\User;
 
-final class BaseMultyModelTest extends AbstractTestDatabase
+final class BaseMultiModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
     {

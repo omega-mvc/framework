@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Database\PDO;
+namespace Tests\Database\Pdo;
 
 use Omega\Database\Exceptions\InvalidConfigurationException;
 use Tests\Database\AbstractTestDatabase;
@@ -279,7 +279,7 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('pgsql driver require `host`.');
+        $this->expectExceptionMessage('pgsql driver require `host` and `dbname`.');
         $this->pdo->getDsn($config);
     }
 

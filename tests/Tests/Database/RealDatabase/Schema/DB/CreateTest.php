@@ -28,7 +28,7 @@ final class CreateTest extends AbstractTestDatabase
     {
         // need clean up
         $this->tearDown();
-        $schema = new Create($this->env['database'], $this->pdo_schema);
+        $schema = new Create($this->env['database'], $this->pdoSchema);
 
         $this->assertTrue($schema->execute());
     }

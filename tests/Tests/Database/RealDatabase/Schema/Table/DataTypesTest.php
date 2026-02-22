@@ -26,7 +26,7 @@ final class DataTypesTest extends AbstractTestDatabase
      */
     public function testItCanExecuteQueryNumericDataTypes(): void
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('col_int')->int();
         $schema('col_int_len')->int(11);
@@ -48,7 +48,7 @@ final class DataTypesTest extends AbstractTestDatabase
      */
     public function testItCanExecuteQueryStringDataTypes(): void
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('col_char')->char();
         $schema('col_char_len')->char(10);
@@ -68,7 +68,7 @@ final class DataTypesTest extends AbstractTestDatabase
      */
     public function testItCanExecuteQueryDateTimeDataTypes(): void
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('col_time')->time();
         $schema('col_time_len')->time(4);

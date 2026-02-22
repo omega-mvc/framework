@@ -26,7 +26,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanGenerateCreateDatabase()
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('id')->int(3)->notNull();
         $schema('name')->varchar(32)->notNull();
@@ -43,7 +43,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanExecuteQueryWithMultyPrimeryKey()
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('id')->int(3)->notNull();
         $schema('xid')->int(3)->notNull();
@@ -62,7 +62,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanExecuteQueryWithMultyUniqe()
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('id')->int(3)->notNull();
         $schema('name')->varchar(32)->notNull();
@@ -80,7 +80,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanGenerateCreateDatabaseWithEngine()
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
         $schema('id')->int(3)->notNull();
         $schema('name')->varchar(32)->notNull();
@@ -99,7 +99,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanGenerateDefaultConstraint()
     {
-        $schema = new Create($this->env['database'], 'profiles', $this->pdo_schema);
+        $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
         $schema('PersonID')->int()->unsigned()->default(1);
         $schema('LastName')->varchar(255)->default('-');
         $schema('sufix')->varchar(15)->defaultNull();
@@ -115,7 +115,7 @@ final class CreateTest extends AbstractTestDatabase
      */
     public function testItCanGenerateQueryWithComment(): void
     {
-        $schema = new Create('testing_db', 'test', $this->pdo_schema);
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema('PersonID')->int();
         $schema('LastName')->varchar(255)->comment('The last name of the person associated with this ID');
         $schema->primaryKey('PersonID');
