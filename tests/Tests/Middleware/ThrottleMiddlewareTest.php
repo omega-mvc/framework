@@ -65,7 +65,7 @@ final class ThrottleMiddlewareTest extends TestCase
 
         $testMode = getenv('OMEGA_TEST_MODE') ?: '';
         if ($testMode === 'light' || getenv('CI') || getenv('GITHUB_ACTIONS')) {
-            $this->clock = 10;
+            $this->clock = 60;
         } else {
             $this->clock = 1;
         }

@@ -179,6 +179,21 @@ interface ApplicationInterface
     public function callBootCallbacks(array $bootCallBacks): void;
 
     /**
+     * Register a callback to be executed before the application boot process starts.
+     *
+     * The given callback will be invoked when the application is about to boot,
+     * allowing pre-boot logic to be executed (e.g. preparing state, modifying
+     * configuration, or performing early initialization).
+     *
+     * @param callable $callback A callable that will be executed before the boot
+     *                           process begins. The callback may optionally accept
+     *                           the Application instance as its first argument.
+     *
+     * @return void
+     */
+    public function bootingCallback(callable $callback): void;
+
+    /**
      * Add booted call back, call after boot is called.
      *
      * @param callable $callback Callback executed after the application has booted.

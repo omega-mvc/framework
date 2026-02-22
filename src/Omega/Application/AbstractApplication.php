@@ -129,23 +129,6 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     abstract public function definitions(): array;
 
-    public function __call(string $name, array $arguments)
-    {
-        if (str_starts_with($name, 'get') && str_ends_with($name, 'Path')) {
-            $key      = 'path.' . strtolower(substr($name, 3, -4));
-            $basePath = $this->get($key);
-            $suffix   = $arguments[0] ?? null;
-
-            if ($suffix === null || $suffix === '') {
-                return rtrim($basePath, "/\\") . DIRECTORY_SEPARATOR;
-            }
-
-            return rtrim($basePath, "/\\") . slash($suffix);
-        }
-
-        throw new BadMethodCallException("Method $name does not exist.");
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -376,6 +359,14 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
             $index++;
         }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function bootingCallback(callable $callback): void
+    {
+        $this->bootingCallbacks[] = $callback;
     }
 
     /**

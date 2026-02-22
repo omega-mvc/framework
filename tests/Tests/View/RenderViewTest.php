@@ -85,6 +85,6 @@ final class RenderViewTest extends TestCase
     public function testItThrowWhenFileNotFound(): void
     {
         $this->expectException(ViewFileNotFoundException::class);
-        View::render('unknow');
+        View::render('unknown');
     }
 }

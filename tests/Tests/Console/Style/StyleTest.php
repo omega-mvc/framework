@@ -18,6 +18,7 @@ use Omega\Console\IO\OutputStream;
 use Omega\Console\Style\Colors;
 use Omega\Console\Style\Style;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use Throwable;
 
@@ -55,6 +56,7 @@ use function sprintf;
 #[CoversClass(OutputStream::class)]
 #[CoversClass(Colors::class)]
 #[CoversClass(Style::class)]
+#[CoversFunction('Omega\Console\style')]
 final class StyleTest extends TestCase
 {
     /**

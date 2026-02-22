@@ -16,6 +16,7 @@ namespace Tests\Console\Commands;
 
 use Omega\Config\ConfigRepository;
 use Omega\Console\Commands\HelpCommand;
+use Omega\Console\Commands\ServeCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -49,6 +50,7 @@ use function ob_start;
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
 #[CoversClass(HelpCommand::class)]
+#[CoversClass(ServeCommand::class)]
 final class HelpCommandsTest extends AbstractTestCommand
 {
     /**

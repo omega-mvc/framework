@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Console;
 
+use Omega\Console\Prompt;
 use Omega\Text\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -49,6 +50,7 @@ use function stream_get_contents;
  * @version   2.0.0
  */
 #[CoversClass(Str::class)]
+#[CoversClass(Prompt::class)]
 final class PromptTest extends TestCase
 {
     /**

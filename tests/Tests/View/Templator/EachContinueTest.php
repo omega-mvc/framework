@@ -16,6 +16,7 @@ namespace Tests\View\Templator;
 
 use Exception;
 use Omega\View\Templator;
+use Omega\View\Templator\ContinueTemplator;
 use Omega\View\Templator\EachTemplator;
 use Omega\View\TemplatorFinder;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -37,6 +38,7 @@ use Tests\FixturesPathTrait;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
+#[CoversClass(ContinueTemplator::class)]
 #[CoversClass(EachTemplator::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]

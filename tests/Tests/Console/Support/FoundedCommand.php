@@ -17,7 +17,7 @@ namespace Tests\Console\Support;
 use Omega\Application\Application;
 use Omega\Console\AbstractCommand;
 
-use PHPUnit\Framework\Attributes\CoversNothing;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use function Omega\Console\style;
 
 /**
@@ -45,7 +45,7 @@ use function Omega\Console\style;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
  * @version    2.0.0
  */
-#[CoversNothing]
+#[CoversFunction('Omega\Console\style')]
 class FoundedCommand extends AbstractCommand
 {
     /**
