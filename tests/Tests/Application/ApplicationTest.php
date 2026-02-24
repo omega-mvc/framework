@@ -64,7 +64,7 @@ use Tests\Support\Bootstrap\Support\TestServiceProvider;
  */
 #[CoversClass(Application::class)]
 #[CoversClass(ApplicationNotAvailableException::class)]
-#[CoversClass(BindingResolutionException::git add .class)]
+#[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
 #[CoversClass(HttpException::class)]
