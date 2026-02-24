@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Create;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass((Create::class))]
 final class DataTypesTest extends AbstractTestDatabase
 {
     protected function setUp(): void

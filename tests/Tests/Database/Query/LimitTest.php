@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\Query;
 
 use Omega\Database\Query\Query;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Query::class)]
 final class LimitTest extends TestDatabaseQuery
 {
     /** @test */

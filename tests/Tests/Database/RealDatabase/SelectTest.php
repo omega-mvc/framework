@@ -6,9 +6,12 @@ namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Join\InnerJoin;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\Asserts\UserTrait;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(InnerJoin::class)]
+#[CoversClass(Query::class)]
 final class SelectTest extends AbstractTestDatabase
 {
     use UserTrait;

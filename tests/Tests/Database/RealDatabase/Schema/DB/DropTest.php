@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\DB;
 
 use Omega\Database\Schema\DB\Drop;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(Drop::class)]
 final class DropTest extends AbstractTestDatabase
 {
     protected function setUp(): void

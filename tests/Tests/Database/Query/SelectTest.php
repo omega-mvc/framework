@@ -7,8 +7,12 @@ namespace Tests\Database\Query;
 use Omega\Database\Query\Query;
 use Omega\Database\Query\InnerQuery;
 use Omega\Database\Query\Select;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Query::class)]
+#[CoversClass(InnerQuery::class)]
+#[CoversClass(Select::class)]
 final class SelectTest extends TestDatabaseQuery
 {
     /** @test */

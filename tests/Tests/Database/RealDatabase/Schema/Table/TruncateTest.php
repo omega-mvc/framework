@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Truncate;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\Asserts\UserTrait;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(Truncate::class)]
 final class TruncateTest extends AbstractTestDatabase
 {
     use UserTrait;

@@ -12,8 +12,17 @@ use Omega\Database\Query\Join\InnerJoin;
 use Omega\Database\Query\Join\LeftJoin;
 use Omega\Database\Query\Join\RightJoin;
 use Omega\Database\Query\Select;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Query::class)]
+#[CoversClass(InnerQuery::class)]
+#[CoversClass(CrossJoin::class)]
+#[CoversClass(FullJoin::class)]
+#[CoversClass(InnerJoin::class)]
+#[CoversClass(LeftJoin::class)]
+#[CoversClass(RightJoin::class)]
+#[CoversClass(Select::class)]
 final class JoinTest extends TestDatabaseQuery
 {
     /** @test */

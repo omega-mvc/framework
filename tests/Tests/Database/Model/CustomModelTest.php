@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Database\Model;
 
-use Omega\Database\Model\Model;
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Insert;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
+use Tests\Database\Support\Profile;
 
+#[CoversClass(Query::class)]
+#[CoversClass(Insert::class)]
 final class CustomModelTest extends AbstractTestDatabase
 {
     private $profiles = [
@@ -159,25 +162,5 @@ final class CustomModelTest extends AbstractTestDatabase
             'gender' => 'female',
             'age'    => 38,
         ], $profiles->first());
-    }
-}
-
-class Profile extends Model
-{
-    protected string $tableName  = 'profiles';
-    protected string $primaryKey = 'user';
-
-    public function filterGender(string $gender): static
-    {
-        $this->where->equal('gender', $gender);
-
-        return $this;
-    }
-
-    public function filterAge(int $greade_that): static
-    {
-        $this->where->compare('age', '>', $greade_that);
-
-        return $this;
     }
 }

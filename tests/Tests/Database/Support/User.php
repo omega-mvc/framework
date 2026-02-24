@@ -6,9 +6,9 @@ namespace Tests\Database\Support;
 
 use Omega\Database\Model\Model;
 use Omega\Database\Model\ModelCollection;
-use Tests\Database\Model\Order;
-use Tests\Database\Model\Profile;
+use PHPUnit\Framework\Attributes\CoversClass;
 
+#[CoversClass(Model::class)]
 class User extends Model
 {
     protected string $tableName  = 'users';

@@ -6,8 +6,11 @@ namespace Tests\Database\Query\Schema\Table;
 
 use Omega\Database\Schema\Table\Column;
 use Omega\Database\Schema\Table\Create;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Column::class)]
+#[CoversClass(Create::class)]
 final class CreateTest extends TestDatabaseQuery
 {
     /** @test */

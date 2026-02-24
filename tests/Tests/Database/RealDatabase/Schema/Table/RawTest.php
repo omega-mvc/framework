@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Raw;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(Raw::class)]
 final class RawTest extends AbstractTestDatabase
 {
     protected function setUp(): void

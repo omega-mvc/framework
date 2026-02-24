@@ -6,9 +6,15 @@ namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\InnerQuery;
 use Omega\Database\Query\Join\InnerJoin;
+use Omega\Database\Query\Query;
 use Omega\Database\Query\Select;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(InnerQuery::class)]
+#[CoversClass(InnerJoin::class)]
+#[CoversClass(Query::class)]
+#[CoversClass(Select::class)]
 final class SubQueryTest extends AbstractTestDatabase
 {
     // scehema

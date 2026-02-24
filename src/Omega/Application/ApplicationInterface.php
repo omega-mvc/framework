@@ -55,7 +55,7 @@ interface ApplicationInterface
      * Implementations may override or dynamically replace this value when
      * exposing the application version.
      */
-    public const string VERSION = '1.0.0';
+    public const string VERSION = '2.0.0';
 
     /**
      * Get the application version string.

@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Database\Pdo;
 
+use Exception;
+use PDOException;
 use PHPUnit\Framework\Attributes\DataProvider;
+use RuntimeException;
 use Tests\Database\AbstractTestDatabase;
 
 final class LostConnectionTest extends AbstractTestDatabase
@@ -22,7 +25,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     #[DataProvider('lostConnectionErrorProvider')]
     public function testItThrowExceptionCausedByLostConnectionReturnsTrue(string $errorMessage): void
     {
-        $exception = new \PDOException($errorMessage);
+        $exception = new PDOException($errorMessage);
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
         $this->assertTrue($connection);
@@ -31,7 +34,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     #[DataProvider('nonLostConnectionErrorProvider')]
     public function testItThrowExceptionCausedByLostConnectionReturnsFalse(string $errorMessage): void
     {
-        $exception = new \PDOException($errorMessage);
+        $exception = new PDOException($errorMessage);
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
         $this->assertFalse($connection);
@@ -96,7 +99,7 @@ final class LostConnectionTest extends AbstractTestDatabase
      */
     public function testItThrowExceptionCausedByLostConnectionWithNonPDOException(): void
     {
-        $exception = new \Exception('Some generic error');
+        $exception = new Exception('Some generic error');
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
         $this->assertFalse($connection);
@@ -109,7 +112,7 @@ final class LostConnectionTest extends AbstractTestDatabase
      */
     public function testItThrowExceptionCausedByLostConnectionWithRuntimeException(): void
     {
-        $exception = new \RuntimeException('server has gone away');
+        $exception = new RuntimeException('server has gone away');
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
         $this->assertTrue($connection);
@@ -123,7 +126,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     public function testItThrowExceptionCausedByLostConnectionWithLongMessage(): void
     {
         $longMessage = str_repeat('Some long error message ', 100) . 'MySQL server has gone away' . str_repeat(' with more details', 50);
-        $exception   = new \PDOException($longMessage);
+        $exception   = new PDOException($longMessage);
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
         $this->assertTrue($connection);

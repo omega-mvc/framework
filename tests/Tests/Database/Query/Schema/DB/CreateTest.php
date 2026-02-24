@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\Query\Schema\DB;
 
 use Omega\Database\Schema\DB\Create;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Create::class)]
 final class CreateTest extends TestDatabaseQuery
 {
     /** @test */

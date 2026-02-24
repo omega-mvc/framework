@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\Query\Schema\Table;
 
 use Omega\Database\Schema\Table\Raw;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Raw::class)]
 final class RawTest extends TestDatabaseQuery
 {
     /** @test */

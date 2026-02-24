@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\Pdo;
 
 use Omega\Database\Exceptions\InvalidConfigurationException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(InvalidConfigurationException::class)]
 final class ConfigsTest extends AbstractTestDatabase
 {
     protected function setUp(): void

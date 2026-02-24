@@ -29,7 +29,7 @@ final class LogsTest extends AbstractTestDatabase
         $this->dropConnection();
     }
 
-    private function profileFactory()
+    private function profileFactory(): void
     {
         // factory
         $this->pdo

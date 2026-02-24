@@ -7,9 +7,14 @@ namespace Tests\Database\Model;
 use Omega\Database\Model\Model;
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Insert;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\AbstractTestDatabase;
+use Tests\Database\Support\Order;
 use Tests\Database\Support\User;
 
+#[CoversClass(Model::class)]
+#[CoversClass(Query::class)]
+#[CoversClass(Insert::class)]
 final class BaseMultiModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
@@ -52,43 +57,43 @@ final class BaseMultiModelTest extends AbstractTestDatabase
         return $user;
     }
 
-    private function createProfileSchema(): bool
+    private function createProfileSchema(): void
     {
-        return $this
-           ->pdo
-           ->query('CREATE TABLE profiles (
+        $this
+            ->pdo
+            ->query('CREATE TABLE profiles (
                 user      varchar(32)  NOT NULL,
                 name      varchar(100) NOT NULL,
                 gender    varchar(10) NOT NULL,
                 PRIMARY KEY (user)
             )')
-           ->execute();
+            ->execute();
     }
 
-    private function createProfiles($profiles): bool
+    private function createProfiles($profiles): void
     {
-        return (new Insert('profiles', $this->pdo))
+        (new Insert('profiles', $this->pdo))
             ->rows($profiles)
             ->execute();
     }
 
-    private function createOrderSchema(): bool
+    private function createOrderSchema(): void
     {
-        return $this
-           ->pdo
-           ->query('CREATE TABLE orders (
+        $this
+            ->pdo
+            ->query('CREATE TABLE orders (
                 id   varchar(3)  NOT NULL,
                 user varchar(32)  NOT NULL,
                 name varchar(100) NOT NULL,
                 type varchar(30) NOT NULL,
                 PRIMARY KEY (id)
             )')
-           ->execute();
+            ->execute();
     }
 
-    private function createOrders($orders): bool
+    private function createOrders($orders): void
     {
-        return (new Insert('orders', $this->pdo))
+        (new Insert('orders', $this->pdo))
             ->rows($orders)
             ->execute();
     }

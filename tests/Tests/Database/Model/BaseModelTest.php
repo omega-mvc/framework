@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Database\Model;
 
-use Omega\Database\Model\Model;
 use Omega\Database\Query\Insert;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\Database\Support\Order;
+use Tests\Database\Support\Profile;
 use Tests\Database\Support\User;
 use Tests\Database\AbstractTestDatabase;
 
+#[CoversClass(Insert::class)]
 final class BaseModelTest extends AbstractTestDatabase
 {
     protected function setUp(): void
@@ -453,11 +456,4 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertTrue($user->isExist());
         $this->assertEquals('pradana', $user->getter('user', 'nuno'));
     }
-}
-
-
-
-class Order extends Model
-{
-    protected string $tableName = 'orders';
 }

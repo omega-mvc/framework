@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Database\Pdo;
 
+use PDOException;
 use Tests\Database\AbstractTestDatabase;
 
 final class TransactionTest extends AbstractTestDatabase
@@ -183,9 +184,7 @@ final class TransactionTest extends AbstractTestDatabase
                ->bind(':user', 'test_user')
                ->execute();
 
-            throw new \PDOException('Test Exception');
-
-            return true;
+            throw new PDOException('Test Exception');
         };
 
         $transaction =  $this->pdo->transaction($test);

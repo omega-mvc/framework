@@ -7,6 +7,7 @@ namespace Tests\Database\Query\Schema\Table;
 use Omega\Database\Schema\Table\Alter;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Alter::class)]
 final class AlterTest extends TestDatabaseQuery
 {
     /** @test */

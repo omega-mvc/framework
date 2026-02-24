@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Tests\Database\Query\Schema\Table;
 
 use Omega\Database\Schema\Table\Drop;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\TestDatabaseQuery;
 
+#[CoversClass(Drop::class)]
 final class DropTest extends TestDatabaseQuery
 {
     /** @test */
