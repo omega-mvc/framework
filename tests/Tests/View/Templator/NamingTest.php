@@ -103,8 +103,8 @@ final class NamingTest extends TestCase
             . 'ages {!! $age !!} </h1></body></html>'
         );
         $this->assertEquals(
-            '<html><head></head><body><h1>your <?php echo $name ; ?>, '
-            . 'ages <?php echo $age ; ?> </h1></body></html>',
+            '<html><head></head><body><h1>your <?php echo $name; ?>, '
+            . 'ages <?php echo $age; ?> </h1></body></html>',
             $out
         );
     }
@@ -165,5 +165,44 @@ final class NamingTest extends TestCase
             . 'your {{ name }}, ages {{ age }}</h1></body></html>',
             $out
         );
+    }
+
+    /**
+     * Test it handles empty template without any variables.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItHandlesEmptyTemplate(): void
+    {
+        $out = $this->templator->templates('');
+        $this->assertSame('', $out);
+    }
+
+    /**
+     * Test it handles template with only raw blocks.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItHandlesOnlyRawBlocks(): void
+    {
+        $template = '{% raw %}RAW_CONTENT{% endraw %}';
+        $out = $this->templator->templates($template);
+        $this->assertSame('RAW_CONTENT', $out);
+    }
+
+    /**
+     * Test it handles multiple raw blocks and variables together.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItHandlesMultipleRawAndVariables(): void
+    {
+        $template = '{% raw %}BLOCK1{% endraw %} {{ $var }} {% raw %}BLOCK2{% endraw %}';
+        $out = $this->templator->templates($template);
+        $expected = 'BLOCK1 <?php echo htmlspecialchars($var); ?> BLOCK2';
+        $this->assertSame($expected, $out);
     }
 }

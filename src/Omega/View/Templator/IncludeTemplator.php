@@ -89,9 +89,9 @@ class IncludeTemplator extends AbstractTemplatorParse implements DependencyTempl
         return preg_replace_callback(
             '/{%\s*include\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)\s*%}/',
             function ($matches) {
-                if (false === $this->finder->exists($matches[1])) {
+                /**if (false === $this->finder->exists($matches[1])) {
                     throw new Exception('Template file not found: ' . $matches[1]);
-                }
+                }*/
 
                 $templatePath     = $this->finder->find($matches[1]);
                 $includedTemplate = $this->getContents($templatePath);

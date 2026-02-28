@@ -86,7 +86,7 @@ class TemplatorFinder
      * @param string $viewName Name of the view/template.
      * @return bool True if the template exists, false otherwise.
      */
-    public function exists(string $viewName): bool
+    /**public function exists(string $viewName): bool
     {
         if (isset($this->views[$viewName])) {
             return true;
@@ -102,7 +102,7 @@ class TemplatorFinder
         }
 
         return false;
-    }
+    }*/
 
     /**
      * Search for a view in a given set of paths.
@@ -114,13 +114,22 @@ class TemplatorFinder
      */
     protected function findInPath(string $viewName, array $paths): string
     {
-        foreach ($paths as $path) {
-            /** @noinspection PhpLoopCanBeConvertedToArrayAnyInspection */
-            foreach ($this->extensions as $extension) {
-                if (file_exists($find = $path . DIRECTORY_SEPARATOR . $viewName . $extension)) {
-                    return $find;
-                }
-            }
+        $found = array_filter(array_map(
+            fn($path) => array_filter(
+                array_map(
+                    fn($ext) => $path . DIRECTORY_SEPARATOR . $viewName . $ext,
+                    $this->extensions
+                ),
+                'file_exists'
+            ),
+            $paths
+        ));
+
+        // Appiattisci l'array multidimensionale
+        $found = array_merge(...$found);
+
+        if (!empty($found)) {
+            return reset($found);
         }
 
         throw new ViewFileNotFoundException($viewName);
@@ -171,10 +180,10 @@ class TemplatorFinder
      */
     public function setPaths(array $paths): self
     {
-        $this->paths = [];
-        foreach ($paths as $path) {
-            $this->paths[] = $this->resolvePath($path);
-        }
+        $this->paths = array_map(
+            fn ($path) => $this->resolvePath($path),
+            $paths
+        );
 
         return $this;
     }

@@ -78,13 +78,13 @@ class TestCase extends PhpUnitTestCase
     /**
      * Call a service method and return a TestJsonResponse.
      *
-     * @param array|string $call The service method to call, can be a string or an array for object callables.
+     * @param array|string|callable $call The service method to call, can be a string or an array for object callables.
      * @param array<string, string> $params Parameters to pass to the method.
      * @return TestJsonResponse The response wrapped in a TestJsonResponse instance.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception If an error occurs during the service call.
      */
-    protected function json(array|string $call, array $params = []): TestJsonResponse
+    protected function json(array|string|callable $call, array $params = []): TestJsonResponse
     {
         $data     = $this->app->call($call, $params);
         $response = new Response($data);

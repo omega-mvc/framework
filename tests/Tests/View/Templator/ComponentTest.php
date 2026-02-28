@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
+use Omega\View\Exceptions\YeldSectionNotFoundException;
 use Omega\View\Templator;
 use Omega\View\Templator\ComponentTemplator;
 use Omega\View\TemplatorFinder;
@@ -44,6 +45,7 @@ use function trim;
 #[CoversClass(ComponentTemplator::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
+#[CoversClass(YeldSectionNotFoundException::class)]
 final class ComponentTest extends TestCase
 {
     use FixturesPathTrait;
@@ -215,5 +217,24 @@ final class ComponentTest extends TestCase
         $this->assertEquals([
             $finder->find('component.template') => 1,
         ], $templator->getDependency('test'));
+    }
+
+    public function testExtractComponentAndParamsWithPositionalParam(): void
+    {
+        $reflection = new \ReflectionClass($this->templator);
+        $property   = $reflection->getProperty('finder');
+        $property->setAccessible(true);
+        $finder     = $property->getValue($this->templator);
+
+        // Istanzio ComponentTemplator usando lo stesso finder e la stessa cacheDir
+        $componentTemplator = new \Omega\View\Templator\ComponentTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+
+        $method = new \ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
+        $method->setAccessible(true);
+
+        [$name, $params] = $method->invoke($componentTemplator, "'MyComp', 'simple'");
+
+        $this->assertEquals('MyComp', $name);
+        $this->assertEquals(['simple'], $params);
     }
 }

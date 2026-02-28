@@ -16,7 +16,6 @@ namespace Omega\View\Templator;
 
 use Omega\View\AbstractTemplatorParse;
 
-use function preg_replace;
 use function preg_replace_callback;
 
 /**
@@ -41,24 +40,26 @@ class NameTemplator extends AbstractTemplatorParse
      */
     public function parse(string $template): string
     {
-        $rawBlocks = [];
-        $template  = preg_replace_callback('/{% raw %}(.*?){% endraw %}/s', function ($matches) use (&$rawBlocks) {
-            $rawBlocks[] = $matches[1];
+        $pattern = '/{%\s*raw\s*%}(.*?){%\s*endraw\s*%}|{!!\s*(.*?)\s*!!}|{{\s*(.*?)\s*}}/s';
 
-            return '##RAW_BLOCK##';
+        return preg_replace_callback($pattern, function ($matches) {
+
+            // RAW
+            if (isset($matches[1]) && $matches[1] !== '') {
+                return $matches[1];
+            }
+
+            // Unescaped
+            if (isset($matches[2]) && $matches[2] !== '') {
+                return "<?php echo {$matches[2]}; ?>";
+            }
+
+            // Escaped
+            if (isset($matches[3]) && $matches[3] !== '') {
+                $content = trim($matches[3]);
+                return "<?php echo htmlspecialchars({$content}); ?>";
+            }
+
         }, $template);
-
-        $template = preg_replace('/{!!\s*([^}]+)\s*!!}/', '<?php echo $1; ?>', $template);
-        $template = preg_replace_callback(
-            '/{{\s*(.*?)\s*}}/s',
-            fn($m) => '<?php echo htmlspecialchars(' . trim($m[1]) . '); ?>',
-            $template
-        );
-
-        foreach ($rawBlocks as $rawBlock) {
-            $template = preg_replace('/##RAW_BLOCK##/', $rawBlock, $template, 1);
-        }
-
-        return $template;
     }
 }

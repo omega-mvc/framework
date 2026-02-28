@@ -17,7 +17,9 @@ namespace Tests\View;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\View\Exceptions\ViewFileNotFoundException;
+use Omega\View\Portal;
 use Omega\View\View;
+use ReflectionClass;
 use Tests\FixturesPathTrait;
 
 use function ob_get_clean;
@@ -38,6 +40,7 @@ use function str_replace;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
+#[CoversClass(Portal::class)]
 #[CoversClass(ViewFileNotFoundException::class)]
 #[CoversClass(View::class)]
 final class RenderViewTest extends TestCase
@@ -86,5 +89,43 @@ final class RenderViewTest extends TestCase
     {
         $this->expectException(ViewFileNotFoundException::class);
         View::render('unknown');
+    }
+
+    /**
+     * Test the has() method of Portal via View rendering.
+     *
+     * @return void
+     */
+    public function testPortalHasMethod(): void
+    {
+        $data = [
+            'auth' => ['user' => 'admin'],
+            'meta' => ['title' => 'Home'],
+            'contents' => ['say' => 'hello'],
+        ];
+
+        $viewPath = $this->setFixturePath('/fixtures/view/sample/sample.php');
+
+        // Otteniamo il Response
+        $response = View::render($viewPath, $data);
+
+        // Recuperiamo i Portal interni usando reflection
+        $reflection = new ReflectionClass(View::class);
+        $authProp = $reflection->getMethod('render')->getStaticVariables()['auth'] ?? null;
+
+        // In alternativa, possiamo testare direttamente Portal
+        $authPortal = new Portal($data['auth']);
+        $metaPortal = new Portal($data['meta']);
+        $contentPortal = new Portal($data['contents']);
+
+        // Test has() su Portal
+        $this->assertTrue($authPortal->has('user'));
+        $this->assertFalse($authPortal->has('unknown'));
+
+        $this->assertTrue($metaPortal->has('title'));
+        $this->assertFalse($metaPortal->has('unknown'));
+
+        $this->assertTrue($contentPortal->has('say'));
+        $this->assertFalse($contentPortal->has('other'));
     }
 }

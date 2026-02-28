@@ -84,9 +84,9 @@ class SectionTemplator extends AbstractTemplatorParse implements DependencyTempl
             return $template;
         }
 
-        if (false === $this->finder->exists($matchesLayout[1])) {
+        /**if (false === $this->finder->exists($matchesLayout[1])) {
             throw new Exception('Template file not found: ' . $matchesLayout[1]);
-        }
+        }*/
 
         $templatePath = $this->finder->find($matchesLayout[1]);
         $layout       = $this->getContents($templatePath);

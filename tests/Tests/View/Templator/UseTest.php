@@ -103,4 +103,24 @@ final class UseTest extends TestCase
         $match     = Str::contains($out, 'use Test\Test as Test2');
         $this->assertTrue($match);
     }
+
+    /**
+     * Test it returns template unchanged if no use directive is present.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItReturnsTemplateIfNoUseDirective(): void
+    {
+        $templator = new \Omega\View\Templator\UseTemplator(
+            new \Omega\View\TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+            $this->setFixturePath('/fixtures/view/templator/')
+        );
+
+        $template = "<html><body>No use here</body></html>";
+
+        $out = $templator->parse($template);
+
+        $this->assertEquals($template, $out);
+    }
 }

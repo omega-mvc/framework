@@ -139,8 +139,8 @@ final class ResponseStatusTest extends TestCase
      */
     public function testItCanTestResponseAssertNotAllowed(): void
     {
-        $response = new TestResponse(new Response('', 404, []));
+        $response = new TestResponse(new Response('', 405, []));
 
-        $response->assertNotFound();
+        $response->assertNotAllowed();
     }
 }

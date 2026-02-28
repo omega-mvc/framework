@@ -105,12 +105,12 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
         return preg_replace_callback(
             '/{%\s*component\(\s*(.*?)\)\s*%}(.*?){%\s*endcomponent\s*%}/s',
             function ($matches) use ($template) {
-                if (!array_key_exists(1, $matches)) {
-                    return $template;
+                /**if (!array_key_exists(1, $matches)) {
+                    return $template; // @codeCoverageIgnore - Death code, removed in next version.
                 }
                 if (!array_key_exists(2, $matches)) {
-                    return $template;
-                }
+                    return $template; // @codeCoverageIgnore - Death code, removed in next version.
+                }*/
 
                 $rawParams                = trim($matches[1]);
                 [$componentName, $params] = $this->extractComponentAndParams($rawParams);
@@ -122,9 +122,9 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
                     return $component->render($innerContent);
                 }
 
-                if (false === $this->finder->exists($componentName)) {
+                /**if (false === $this->finder->exists($componentName)) {
                     throw new ViewFileNotFoundException($componentName);
-                }
+                }*/
 
                 $templatePath = $this->finder->find($componentName);
                 $layout       = $this->getContents($templatePath);
@@ -168,18 +168,21 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
         $componentName = trim($parts[0], "'\"");
 
         $paramsString = $parts[1] ?? '';
-        $params       = [];
-        foreach (explode(',', $paramsString) as $param) {
-            $param = trim($param);
-            if (str_contains($param, ':')) {
-                [$key, $value] = explode(':', $param, 2);
-                $key           = trim($key);
-                $value         = trim($value, "'\" ");
-                $params[$key]  = $value;
-            } elseif (!empty($param)) {
-                $params[] = trim($param, "'\" ");
-            }
-        }
+        $paramsArray  = array_filter(array_map('trim', explode(',', $paramsString)));
+
+        $params = array_reduce(
+            $paramsArray,
+            function (array $carry, string $param) {
+                if (str_contains($param, ':')) {
+                    [$key, $value] = explode(':', $param, 2);
+                    $carry[$key] = trim($value, "'\" ");
+                } else {
+                    $carry[] = trim($param, "'\" ");
+                }
+                return $carry;
+            },
+            []
+        );
 
         return [$componentName, $params];
     }

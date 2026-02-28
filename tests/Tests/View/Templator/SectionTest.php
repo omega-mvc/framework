@@ -114,7 +114,7 @@ final class SectionTest extends TestCase
                 '{% extend(\'section.html\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
             );
         } catch (Throwable $th) {
-            $this->assertEquals('Template file not found: section.html', $th->getMessage());
+            $this->assertEquals('View file not found: `section.html`', $th->getMessage());
         }
     }
 
@@ -226,5 +226,45 @@ final class SectionTest extends TestCase
     {
         $this->expectExceptionMessage('The yield statement cannot have both a default value and content.');
         $this->templator->templates('{% extend(\'sectiondefaultandmultilines.template\') %}');
+    }
+
+    /**
+     * Test it returns the original template when no extend directive is present.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItReturnsTemplateIfNoExtend(): void
+    {
+        $template = '<p>no extend here</p>';
+        $out      = $this->templator->templates($template);
+
+        $this->assertEquals('<p>no extend here</p>', $out);
+    }
+
+    /**
+     * Test it throws when a required yield section is missing in the child template.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItThrowsWhenRequiredYieldSectionMissing(): void
+    {
+        $this->expectExceptionMessage("Slot with extends 'sectionwithmissingyield.template' required 'missing_section'");
+
+        $childTemplate  = '{% extend(\'sectionwithmissingyield.template\') %}';
+        $this->templator->templates($childTemplate);
+    }
+
+    public function testItReturnsEmptyStringWhenYieldNotDefined(): void
+    {
+        $layoutPath = $this->setFixturePath('/fixtures/view/templator/view/sectionempty.template');
+
+        // Yield senza argomento
+        file_put_contents($layoutPath, '{% yield %}');
+
+        $out = $this->templator->templates('{% extend("sectionempty.template") %}');
+
+        $this->assertSame('', trim($out));
     }
 }

@@ -38,12 +38,15 @@ use PHPUnit\Framework\Assert;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-class TestResponse
+class TestResponse implements \ArrayAccess
 {
     use ResponseStatusTrait;
 
     /** @var Response The underlying HTTP response being tested. */
     protected Response $response;
+
+    /** @var array Decoded response content (associativo). */
+    protected array $decoded = [];
 
     /**
      * Create a new TestResponse wrapper instance.
@@ -53,6 +56,16 @@ class TestResponse
     public function __construct(Response $response)
     {
         $this->response = $response;
+
+        $content = $response->getContent();
+
+        // Se è array lo prendiamo così, altrimenti proviamo a decodificare JSON
+        if (is_array($content)) {
+            $this->decoded = $content;
+        } else {
+            $decoded = json_decode((string)$content, true);
+            $this->decoded = is_array($decoded) ? $decoded : [];
+        }
     }
 
     /**
@@ -62,7 +75,8 @@ class TestResponse
      */
     public function getContent(): string
     {
-        return $this->response->getContent();
+        $content = $this->response->getContent();
+        return is_string($content) ? $content : json_encode($content);
     }
 
     /**
@@ -75,7 +89,7 @@ class TestResponse
      */
     public function assertSee(string $text, string $message = ''): void
     {
-        Assert::assertStringContainsString($text, $this->response->getContent(), $message);
+        Assert::assertStringContainsString($text, $this->getContent(), $message);
     }
 
     /**
@@ -89,5 +103,37 @@ class TestResponse
     public function assertStatusCode(int $code, string $message = ''): void
     {
         Assert::assertSame($code, $this->response->getStatusCode(), $message);
+    }
+
+    /** ------------------- ArrayAccess ------------------- */
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->decoded[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        return $this->decoded[$offset] ?? null;
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        throw new \LogicException('TestResponse is read-only.');
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        throw new \LogicException('TestResponse is read-only.');
+    }
+
+    /**
+     * Retrieve the underlying Response instance.
+     *
+     * @return Response
+     */
+    public function getResponse(): Response
+    {
+        return $this->response;
     }
 }

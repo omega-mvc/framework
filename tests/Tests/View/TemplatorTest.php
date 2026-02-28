@@ -15,11 +15,14 @@ declare(strict_types=1);
 namespace Tests\View;
 
 use Exception;
+use Omega\View\Templator\IncludeTemplator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\Text\Str;
+use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Tests\FixturesPathTrait;
 use Throwable;
 
@@ -51,6 +54,7 @@ use function unlink;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
+#[CoversClass(ViewFileNotFoundException::class)]
 final class TemplatorTest extends TestCase
 {
     use FixturesPathTrait;
@@ -522,15 +526,16 @@ final class TemplatorTest extends TestCase
      * @return void
      */
     public function testItCanCheckTemplateFileExist(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+	{
+	    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+	    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+	    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
-        $this->assertTrue($view->viewExist('php.php'));
-        $this->assertFalse($view->viewExist('notexist.php'));
-    }
+	    // file esistente
+	    $this->assertTrue($view->viewExist('php.php'));
+	    $this->assertFalse($view->viewExist('notexist.php'));
+	}
 
     /**
      * Test it can make templator using string.
@@ -568,5 +573,45 @@ final class TemplatorTest extends TestCase
         $templator->setFinder($finder);
         $get_finder = (fn () => $this->{'finder'})->call($templator);
         $this->assertSame($finder, $get_finder);
+    }
+
+    public function testPrependDependencyWithExistingChild(): void
+    {
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+        $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+        // imposta dipendenza esistente
+        $parent = 'parent.php';
+        $child  = 'child.php';
+        $templator->addDependency($parent, $child, 1);
+
+        // ora prepend con profondità maggiore
+        $templator->prependDependency($parent, [$child => 5]);
+
+        $dependencies = (fn() => $this->{'dependency'})->call($templator);
+        $this->assertEquals(5, $dependencies[$parent][$child]);
+    }
+
+    public function testGetViewCleansBufferOnThrowable(): void
+    {
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+        // Prepariamo un template che lancia eccezione
+        $badTemplate = $loader . '/bad.php';
+        file_put_contents($badTemplate, '<?php throw new RuntimeException("boom");');
+
+        try {
+            $this->expectException(RuntimeException::class);
+            $this->expectExceptionMessage('boom');
+
+            $view->render('bad.php', []);
+        } finally {
+            unlink($badTemplate);
+        }
     }
 }

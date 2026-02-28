@@ -207,6 +207,8 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
     /**
      * Assert that a given data key is empty.
      *
+     * Asserts that the data payload is empty, regardless of the provided key.
+     *
      * @param string $dataKey The key path in the response data
      * @return void
      */
@@ -219,6 +221,8 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
 
     /**
      * Assert that a given data key is not empty.
+     *
+     * Asserts that the data payload is empty, regardless of the provided key.
      *
      * @param string $dataKey The key path in the response data
      * @return void

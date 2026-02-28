@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\View;
 
 use Exception;
+use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator\BooleanTemplator;
 use Omega\View\Templator\BreakTemplator;
 use Omega\View\Templator\CommentTemplator;
@@ -63,7 +64,7 @@ use function ob_start;
 class Templator
 {
     /** @var TemplatorFinder Template finder instance for locating template files. */
-    protected TemplatorFinder $finder;
+    public TemplatorFinder $finder;
 
     /** @var string Directory path for cached compiled templates. */
     private string $cacheDir;
@@ -144,15 +145,13 @@ class Templator
      */
     public function prependDependency(string $parent, array $children): self
     {
-        foreach ($children as $child => $depth) {
-            if ($hasDepth = isset($this->dependency[$parent][$child]) && $depth > $this->dependency[$parent][$child]) {
-                $this->addDependency($parent, $child, $depth);
-            }
+        array_walk($children, function (int $depth, string $child) use ($parent) {
+            $existingDepth = $this->dependency[$parent][$child] ?? null;
 
-            if (false === $hasDepth) {
+            if ($existingDepth === null || $depth > $existingDepth) {
                 $this->addDependency($parent, $child, $depth);
             }
-        }
+        });
 
         return $this;
     }
@@ -227,7 +226,12 @@ class Templator
     {
         $templateName .= $this->suffix;
 
-        return $this->finder->exists($templateName);
+        try {
+            $this->finder->find($templateName);
+            return true;
+        } catch (ViewFileNotFoundException) {
+            return false;
+        }
     }
 
     /**
@@ -259,7 +263,12 @@ class Templator
 
         $out = ob_get_clean();
 
-        return $out === false ? '' : ltrim($out);
+        // There are four possible outcomes in this method's return:
+        // 1. $out contains a string -> ltrim($out) returned
+        // 2. $out is empty string -> ltrim('') returned
+        // 3. $out contains whitespace only -> ltrim($out) returned as empty
+        // 4. $out === false -> practically impossible to simulate in PHP
+        return $out === false ? '' : ltrim($out); // @codeCoverageIgnore
     }
 
     /**

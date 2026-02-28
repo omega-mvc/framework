@@ -85,8 +85,8 @@ final class IfTest extends TestCase
             . '<h1>{% if ($true === false) %} show {% endif %}</h1></body></html>'
         );
         $this->assertEquals(
-            '<html><head></head><body><h1><?php if (($true === true) ): ?> show <?php endif; ?></h1>'
-            . '<h1><?php if (($true === false) ): ?> show <?php endif; ?></h1>'
+            '<html><head></head><body><h1><?php if (($true === true)): ?> show <?php endif; ?></h1>'
+            . '<h1><?php if (($true === false)): ?> show <?php endif; ?></h1>'
             . '</body></html>',
             $out
         );
@@ -102,7 +102,7 @@ final class IfTest extends TestCase
     {
         $out = $this->templator->templates('<div>{% if ($condition) %}true case{% else %}false case{% endif %}</div>');
         $this->assertEquals(
-            '<div><?php if (($condition) ): ?>true case<?php else: ?>false case<?php endif; ?></div>',
+            '<div><?php if (($condition)): ?>true case<?php else: ?>false case<?php endif; ?></div>',
             $out
         );
     }
@@ -116,8 +116,8 @@ final class IfTest extends TestCase
     public function testItCanRenderNestedIf(): void
     {
         $template  = '<div>{% if ($level1) %}Level 1 true{% if ($level2) %}Level 2 true{% endif %}{% endif %}</div>';
-        $expected = '<div><?php if (($level1) ): ?>Level 1 true'
-            . '<?php if (($level2) ): ?>Level 2 true<?php endif; ?>'
+        $expected = '<div><?php if (($level1)): ?>Level 1 true'
+            . '<?php if (($level2)): ?>Level 2 true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
         $this->assertEquals($expected, $this->templator->templates($template));
@@ -135,9 +135,9 @@ final class IfTest extends TestCase
             . '{% if ($level2) %}Level 2 true{% else %}Level 2 false'
             . '{% if ($level3) %}Level 3 true inside level 2 false{% endif %}{% endif %}'
             . '{% else %}Level 1 false{% if ($otherCondition) %}Other condition true{% endif %}{% endif %}</div>';
-        $expected = '<div><?php if (($level1) ): ?>Level 1 true<?php if (($level2) ): ?>Level 2 true<?php else: ?>'
-            . 'Level 2 false<?php if (($level3) ): ?>Level 3 true inside level 2 false<?php endif; ?><?php endif; ?>'
-            . '<?php else: ?>Level 1 false<?php if (($otherCondition) ): ?>Other condition true<?php endif; ?>'
+        $expected = '<div><?php if (($level1)): ?>Level 1 true<?php if (($level2)): ?>Level 2 true<?php else: ?>'
+            . 'Level 2 false<?php if (($level3)): ?>Level 3 true inside level 2 false<?php endif; ?><?php endif; ?>'
+            . '<?php else: ?>Level 1 false<?php if (($otherCondition)): ?>Other condition true<?php endif; ?>'
             . '<?php endif; ?></div>';
 
         $this->assertEquals($expected, $this->templator->templates($template));
@@ -155,9 +155,9 @@ final class IfTest extends TestCase
             . '{% if ($block2) %}Block 2 content{% if ($nested2) %}Nested 2'
             . '{% if ($deepnested) %}Deep nested{% endif %}{% endif %}'
             . '{% endif %}</div>';
-        $expected = '<div><?php if (($block1) ): ?>Block 1 content<?php if (($nested1) ): ?>Nested 1<?php endif; ?>'
-            . '<?php endif; ?><?php if (($block2) ): ?>Block 2 content<?php if (($nested2) ): ?>Nested 2'
-            . '<?php if (($deepnested) ): ?>Deep nested<?php endif; ?><?php endif; ?>'
+        $expected = '<div><?php if (($block1)): ?>Block 1 content<?php if (($nested1)): ?>Nested 1<?php endif; ?>'
+            . '<?php endif; ?><?php if (($block2)): ?>Block 2 content<?php if (($nested2)): ?>Nested 2'
+            . '<?php if (($deepnested)): ?>Deep nested<?php endif; ?><?php endif; ?>'
             . '<?php endif; ?>'
             . '</div>';
 

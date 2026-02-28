@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\View\Templator;
 
 use Exception;
+use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator;
 use Omega\View\Templator\IncludeTemplator;
 use Omega\View\TemplatorFinder;
@@ -40,6 +41,7 @@ use Tests\FixturesPathTrait;
 #[CoversClass(IncludeTemplator::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
+#[CoversClass(ViewFileNotFoundException::class)]
 final class IncludeTest extends TestCase
 {
     use FixturesPathTrait;
@@ -100,5 +102,45 @@ final class IncludeTest extends TestCase
         $this->assertEquals([
             $finder->find('view/component.php') => 1,
         ], $templator->getDependency('test'));
+    }
+
+    /**
+     * Test it throws an exception when the included template does not exist.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItThrowsExceptionWhenIncludeNotFound(): void
+    {
+        $this->expectException(ViewFileNotFoundException::class);
+        $this->expectExceptionMessage('View file not found: `nonexistent.php`');
+
+        $this->templator->templates(
+            '<html>{% include(\'nonexistent.php\') %}</html>'
+        );
+    }
+
+    /**
+     * Test it returns included template immediately when makeDept is 0.
+     *
+     * @return void
+     * @throws Exception
+     */
+    public function testItReturnsIncludedTemplateWhenDepthZero(): void
+    {
+        // Recupero direttamente l'IncludeTemplator
+        $reflection = new \ReflectionClass($this->templator);
+        $property = $reflection->getProperty('finder');
+        $property->setAccessible(true);
+        $finder = $property->getValue($this->templator);
+
+        $includeTemplator = new \Omega\View\Templator\IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+        $includeTemplator->maksDept(0);
+
+        $template = "{% include('view/component.php') %}";
+        $out      = $includeTemplator->parse($template);
+
+        // Qui il return diretto viene eseguito senza decrementare makeDept
+        $this->assertStringContainsString('<p>Call From Component</p>', $out);
     }
 }

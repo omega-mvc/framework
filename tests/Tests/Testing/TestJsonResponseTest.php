@@ -230,4 +230,48 @@ final class TestJsonResponseTest extends TestCase
 
         $response->assertNotEmpty('error');
     }
+
+    public function testConstructorThrowsExceptionIfContentIsNotArray(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Response body is not Array.');
+
+        new TestJsonResponse(new Response('not-an-array'));
+    }
+
+    public function testSetResponseData(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'data' => [],
+        ]));
+
+        $response->setResponseData([
+            'data' => ['changed' => true],
+        ]);
+
+        $this->assertEquals(['changed' => true], $response->getData());
+    }
+
+    public function testOffsetExists(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
+
+        $this->assertTrue(isset($response['status']));
+        $this->assertFalse(isset($response['missing']));
+    }
+
+    public function testOffsetUnset(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
+
+        unset($response['status']);
+
+        $this->assertFalse(isset($response['status']));
+    }
 }

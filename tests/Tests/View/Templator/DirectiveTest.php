@@ -126,4 +126,20 @@ final class DirectiveTest extends TestCase
         DirectiveTemplator::register('sum', fn ($a, $b): int => $a + $b);
         $this->assertEquals(2, DirectiveTemplator::call('sum', 1, 1));
     }
+
+    /**
+     * Test is skis reserved directive in parse.
+     *
+     * @return void
+     */
+    public function testItSkipsReservedDirectiveInParse(): void
+    {
+        $finder = new TemplatorFinder([]);
+        $directive = new DirectiveTemplator($finder, '/tmp');
+
+        $template = '{% include("file") %}';
+        $out = $directive->parse($template);
+
+        $this->assertSame('{% include("file") %}', $out);
+    }
 }

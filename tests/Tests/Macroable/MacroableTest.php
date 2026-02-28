@@ -16,6 +16,7 @@ namespace Tests\Macroable;
 
 use Omega\Macroable\Exceptions\MacroNotFoundException;
 use Omega\Macroable\MacroableTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\TestCase;
 
@@ -34,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * @version   2.0.0
  */
 #[CoversTrait(MacroableTrait::class)]
+#[CoversClass(MacroNotFoundException::class)]
 final class MacroableTest extends TestCase
 {
     /**
@@ -107,7 +109,7 @@ final class MacroableTest extends TestCase
      *
      * @return void
      */
-    public function itCanCheckMacro(): void
+    public function testItCanCheckMacro(): void
     {
         $this->mockClass->macro('test', fn (): bool => true);
 
@@ -125,5 +127,97 @@ final class MacroableTest extends TestCase
         $this->expectException(MacroNotFoundException::class);
 
         $this->mockClass->test();
+    }
+
+    /**
+     * Test instance macro binds this.
+     *
+     * @return void
+     */
+    public function testInstanceMacroBindsThis(): void
+    {
+        $this->mockClass->macro('whoAmI', function () {
+            return $this;
+        });
+
+        $result = $this->mockClass->whoAmI();
+
+        $this->assertSame($this->mockClass, $result);
+    }
+
+    /**
+     * Test static macro binds to class.
+     *
+     * @return void
+     */
+    public function testStaticMacroBindsToClass(): void
+    {
+        $this->mockClass->macro('className', function () {
+            return static::class;
+        });
+
+        $this->assertSame(
+            get_class($this->mockClass),
+            $this->mockClass::className()
+        );
+    }
+
+    /**
+     * Test non closure callable macro.
+     *
+     * @return void
+     */
+    public function testNonClosureCallableMacro(): void
+    {
+        $this->mockClass->macro('upper', 'strtoupper');
+
+        $this->assertSame('CIAO', $this->mockClass->upper('ciao'));
+        $this->assertSame('CIAO', $this->mockClass::upper('ciao'));
+    }
+
+    /**
+     * Test macros are shared across instances.
+     *
+     * @return void
+     */
+    public function testMacrosAreSharedAcrossInstancesOfSameClass(): void
+    {
+        $class = new class {
+            use MacroableTrait;
+        };
+
+        $class::macro('foo', fn() => 'bar');
+
+        $instance = new $class;
+
+        $this->assertTrue($instance::hasMacro('foo'));
+    }
+
+    /**
+     * Test reset macro clears all.
+     *
+     * @return void
+     */
+    public function testResetMacroClearsAll(): void
+    {
+        $this->mockClass::macro('foo', fn() => true);
+
+        $this->assertTrue($this->mockClass::hasMacro('foo'));
+
+        $this->mockClass::resetMacro();
+
+        $this->assertFalse($this->mockClass::hasMacro('foo'));
+    }
+
+    /**
+     * Test static call throws when macro missing.
+     *
+     * @return void
+     */
+    public function testStaticCallThrowsWhenMacroMissing(): void
+    {
+        $this->expectException(MacroNotFoundException::class);
+
+        $this->mockClass::missing();
     }
 }
