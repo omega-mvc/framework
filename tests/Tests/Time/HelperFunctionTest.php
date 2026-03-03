@@ -10,6 +10,8 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpConditionAlreadyCheckedInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Time;
@@ -18,10 +20,10 @@ use DateInvalidTimeZoneException;
 use DateMalformedStringException;
 use Omega\Time\Now;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 
 use function Omega\Time\now;
-use function time;
 
 /**
  * Test suite for helper functions provided by the date/time component.
@@ -38,6 +40,7 @@ use function time;
  * @version   2.0.0
  */
 #[CoversClass(Now::class)]
+#[CoversFunction('Omega\Time\now')]
 final class HelperFunctionTest extends TestCase
 {
     /**
@@ -52,6 +55,9 @@ final class HelperFunctionTest extends TestCase
      */
     public function testItCanUseFunctionHelper(): void
     {
-        $this->assertEquals(time(), now()->timestamp);
+        $instance = now('2020-01-01', 'UTC');
+
+        $this->assertInstanceOf(Now::class, $instance);
+        $this->assertSame(2020, $instance->getYear());
     }
 }

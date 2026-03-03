@@ -150,6 +150,6 @@ final class EnvTest extends TestCase
     {
         putenv('SYSTEM_VAR=hello');
         $this->assertSame('hello', Env::get('SYSTEM_VAR'));
-        putenv('SYSTEM_VAR'); // Pulisce l'ambiente
+        putenv('SYSTEM_VAR');
     }
 }

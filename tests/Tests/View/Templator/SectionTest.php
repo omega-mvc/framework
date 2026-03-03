@@ -256,11 +256,16 @@ final class SectionTest extends TestCase
         $this->templator->templates($childTemplate);
     }
 
+    /**
+     * Test it returns empty string when yield not defined.
+     *
+     * @return void
+     * @throws Exception
+     */
     public function testItReturnsEmptyStringWhenYieldNotDefined(): void
     {
         $layoutPath = $this->setFixturePath('/fixtures/view/templator/view/sectionempty.template');
 
-        // Yield senza argomento
         file_put_contents($layoutPath, '{% yield %}');
 
         $out = $this->templator->templates('{% extend("sectionempty.template") %}');

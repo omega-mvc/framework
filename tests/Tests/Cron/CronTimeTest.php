@@ -108,7 +108,7 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyJustInTime(): void
     {
-        $anonymously = new Schedule(now()->timestamp, $this->logger);
+        $anonymously = new Schedule(now()->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->justInTime()
@@ -128,8 +128,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyEveryTenMinute(): void
     {
-        $timeTravel  = new Now('09/07/2021 00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->everyTenMinute()
@@ -149,8 +149,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyEveryThirtyMinutes(): void
     {
-        $timeTravel  = new Now('09/07/2021 00:30:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 00:30:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->everyThirtyMinutes()
@@ -170,8 +170,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyEveryTwoHour(): void
     {
-        $timeTravel  = new Now('09/07/2021 02:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 02:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->everyTwoHour()
@@ -191,8 +191,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyEveryTwelveHour(): void
     {
-        $timeTravel  = new Now('09/07/2021 12:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 12:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->everyTwelveHour()
@@ -212,8 +212,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyHourly(): void
     {
-        $timeTravel  = new Now('09/07/2021 00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->hourly()
@@ -233,8 +233,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyHourlyAt(): void
     {
-        $timeTravel  = new Now('09/07/2021 05:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 05:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->hourlyAt(5)
@@ -254,8 +254,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyDaily(): void
     {
-        $timeTravel  = new Now('00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->daily()
@@ -263,7 +263,6 @@ final class CronTimeTest extends TestCase
 
         foreach ($anonymously->getPools() as $scheduleItem) {
             if ($scheduleItem instanceof ScheduleTime) {
-                // die(var_dump($scheduleItem->getTimeExpect()));
                 $this->assertTrue($scheduleItem->isDue());
             }
         }
@@ -276,8 +275,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyDailyAt(): void
     {
-        $timeTravel  = new Now('12/12/2012 00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('12/12/2012 00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->dailyAt(12)
@@ -297,8 +296,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyWeekly(): void
     {
-        $timeTravel  = new Now('12/16/2012 00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('12/16/2012 00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->weekly()
@@ -306,7 +305,6 @@ final class CronTimeTest extends TestCase
 
         foreach ($anonymously->getPools() as $scheduleItem) {
             if ($scheduleItem instanceof ScheduleTime) {
-                // die(var_dump($scheduleItem->getTimeExpect()));
                 $this->assertTrue($scheduleItem->isDue());
             }
         }
@@ -319,8 +317,8 @@ final class CronTimeTest extends TestCase
      */
     public function testItRunOnlyMonthly(): void
     {
-        $timeTravel  = new Now('1/1/2012 00:00:00');
-        $anonymously = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('1/1/2012 00:00:00');
+        $anonymously = new Schedule($now->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'due time')
             ->monthly()

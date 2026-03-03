@@ -16,10 +16,13 @@ namespace Omega\View;
 
 use Omega\View\Exceptions\ViewFileNotFoundException;
 
+use function array_filter;
+use function array_map;
+use function array_merge;
 use function array_unshift;
-use function file_exists;
 use function in_array;
 use function realpath;
+use function reset;
 
 /**
  * Class TemplatorFinder
@@ -81,30 +84,6 @@ class TemplatorFinder
     }
 
     /**
-     * Check if a view exists in any registered path.
-     *
-     * @param string $viewName Name of the view/template.
-     * @return bool True if the template exists, false otherwise.
-     */
-    /**public function exists(string $viewName): bool
-    {
-        if (isset($this->views[$viewName])) {
-            return true;
-        }
-
-        foreach ($this->paths as $path) {
-            foreach ($this->extensions as $extension) {
-                if (file_exists($file = $path . DIRECTORY_SEPARATOR . $viewName . $extension)) {
-                    $this->views[$viewName] = $file;
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }*/
-
-    /**
      * Search for a view in a given set of paths.
      *
      * @param string   $viewName Name of the view/template.
@@ -117,7 +96,7 @@ class TemplatorFinder
         $found = array_filter(array_map(
             fn($path) => array_filter(
                 array_map(
-                    fn($ext) => $path . DIRECTORY_SEPARATOR . $viewName . $ext,
+                    fn($ext) => $path . slash(path: '/'  . $viewName) . $ext,
                     $this->extensions
                 ),
                 'file_exists'
@@ -125,7 +104,6 @@ class TemplatorFinder
             $paths
         ));
 
-        // Appiattisci l'array multidimensionale
         $found = array_merge(...$found);
 
         if (!empty($found)) {

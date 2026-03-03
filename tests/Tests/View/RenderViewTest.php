@@ -65,14 +65,12 @@ final class RenderViewTest extends TestCase
         View::render($testPhp, ['contents' => ['say' => 'hay']])->send();
         $renderPhp = ob_get_clean();
 
-        // view: view-html
         $this->assertEquals(
             "<html><head></head><body></body></html>\n",
             str_replace("\r\n", "\n", $renderHtml),
             'it must same output with template html'
         );
 
-        // view: view-php
         $this->assertEquals(
             "<html><head></head><body><h1>hay</h1></body></html>\n",
             str_replace("\r\n", "\n", $renderPhp),
@@ -106,19 +104,15 @@ final class RenderViewTest extends TestCase
 
         $viewPath = $this->setFixturePath('/fixtures/view/sample/sample.php');
 
-        // Otteniamo il Response
         $response = View::render($viewPath, $data);
 
-        // Recuperiamo i Portal interni usando reflection
         $reflection = new ReflectionClass(View::class);
         $authProp = $reflection->getMethod('render')->getStaticVariables()['auth'] ?? null;
 
-        // In alternativa, possiamo testare direttamente Portal
         $authPortal = new Portal($data['auth']);
         $metaPortal = new Portal($data['meta']);
         $contentPortal = new Portal($data['contents']);
 
-        // Test has() su Portal
         $this->assertTrue($authPortal->has('user'));
         $this->assertFalse($authPortal->has('unknown'));
 

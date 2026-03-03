@@ -89,7 +89,7 @@ readonly class RateLimiter implements RateLimiterInterface
             return 0;
         }
 
-        return max(0, $result->getRetryAfter()->getTimestamp() - now()->timestamp);
+        return max(0, $result->getRetryAfter()->getTimestamp() - now()->getTimestamp());
     }
 
     /**

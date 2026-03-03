@@ -37,8 +37,6 @@ class IfTemplator extends AbstractTemplatorParse
      */
     public function parse(string $template): string
     {
-        // Regex unificata: cattura 'if', 'else' o 'endif' in un colpo solo
-        // Usiamo i named groups (?<name>) per rendere il codice leggibile
         $pattern = '/{%\s*(?<type>if|else|endif)(?:\s+(?<condition>[^%]+))?\s*%}/';
 
         return preg_replace_callback($pattern, function ($matches) {

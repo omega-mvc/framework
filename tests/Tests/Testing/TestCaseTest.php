@@ -10,18 +10,28 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpExpressionResultUnusedInspection */
+/** @noinspection PhpConditionAlreadyCheckedInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Testing;
 
 use Exception;
 use Omega\Application\Application;
+use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Container\Exceptions\CircularAliasException;
+use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Http;
 use Omega\Http\Response;
 use Omega\Testing\TestCase;
 use Omega\Testing\TestJsonResponse;
 use Omega\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Psr\Container\ContainerExceptionInterface;
+use ReflectionClass;
+use ReflectionException;
+use Throwable;
 
 use function dirname;
 
@@ -49,10 +59,27 @@ use function dirname;
  * @version   2.0.0
  */
 #[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
 #[CoversClass(Http::class)]
+#[CoversClass(Response::class)]
 #[CoversClass(TestCase::class)]
+#[CoversClass(TestJsonResponse::class)]
+#[CoversClass(TestResponse::class)]
 final class TestCaseTest extends TestCase
 {
+    /**
+     * Sets up the environment before each test method.
+     *
+     * This method is called automatically by PHPUnit before each test runs.
+     * It is responsible for initializing the application instance, setting up
+     * dependencies, and preparing any state required by the test.
+     *
+     * @return void
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws Exception Throw if a generic error occurred.
+     */
     protected function setUp(): void
     {
         $this->app = new Application(basePath: dirname(__DIR__));
@@ -61,6 +88,12 @@ final class TestCaseTest extends TestCase
         parent::setUp();
     }
 
+    /**
+     * Test json method return test json response.
+     *
+     * @return void
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     */
     public function testJsonMethodReturnsTestJsonResponse(): void
     {
         $data = ['status' => 'ok', 'data' => ['foo' => 'bar']];
@@ -72,6 +105,18 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('bar', $response['data']['foo']);
     }
 
+    /**
+     * Test call method return test response.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
+     */
     public function testCallMethodReturnsTestResponse(): void
     {
         $this->app->set(Http::class, fn() => new class($this->app) extends Http {
@@ -86,9 +131,21 @@ final class TestCaseTest extends TestCase
         $response = $this->call('/dummy-url');
 
         $this->assertInstanceOf(TestResponse::class, $response);
-        $this->assertEquals(true, $response['ok']);
+        $this->assertTrue($response['ok']);
     }
 
+    /**
+     * Test get method.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
+     */
     public function testGetMethod(): void
     {
         $this->app->set(Http::class, fn() => new class($this->app) extends Http {
@@ -105,6 +162,18 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('GET', $response['method']);
     }
 
+    /**
+     * Test post method.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
+     */
     public function testPostMethod(): void
     {
         $this->app->set(Http::class, fn() => new class($this->app) extends Http {
@@ -121,6 +190,18 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('POST', $response['method']);
     }
 
+    /**
+     * Test put merhod.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
+     */
     public function testPutMethod(): void
     {
         $this->app->set(Http::class, fn() => new class($this->app) extends Http {
@@ -137,6 +218,18 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('PUT', $response['method']);
     }
 
+    /**
+     * Test delete method.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
+     */
     public function testDeleteMethod(): void
     {
         $this->app->set(Http::class, fn() => new class($this->app) extends Http {
@@ -153,6 +246,13 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('DELETE', $response['method']);
     }
 
+    /**
+     * Test json method sets response code and headers.
+     *
+     * @return void
+     * @throws ContainerExceptionInterface
+     * @throws ReflectionException
+     */
     public function testJsonMethodSetsResponseCodeAndHeaders(): void
     {
         $data = [
@@ -165,13 +265,11 @@ final class TestCaseTest extends TestCase
 
         $this->assertInstanceOf(TestJsonResponse::class, $response);
 
-        // Verifica che il contenuto sia corretto
         $this->assertEquals('ok', $response['status']);
 
-        // Verifica che il Response interno abbia il code e header settati
-        $internalResponse = (new \ReflectionClass($response))->getProperty('response');
+        $internalResponse = new ReflectionClass($response)->getProperty('response');
         $internalResponse->setAccessible(true);
-        /** @var \Omega\Http\Response $resp */
+        /** @var Response $resp */
         $resp = $internalResponse->getValue($response);
 
         $this->assertSame(201, $resp->getStatusCode());
@@ -179,9 +277,15 @@ final class TestCaseTest extends TestCase
         $this->assertSame('value', $resp->getHeaders()['X-Test']);
     }
 
+    /**
+     * Test json method handles code and headers.
+     *
+     * @return void
+     * @throws ContainerExceptionInterface
+     * @throws ReflectionException
+     */
     public function testJsonMethodHandlesCodeAndHeaders(): void
     {
-        // Caso 1: array senza 'code' e 'headers' → branch "false"
         $dataWithoutExtras = ['status' => 'ok', 'data' => ['foo' => 'bar']];
         $response1 = $this->json(fn() => $dataWithoutExtras);
 
@@ -189,23 +293,18 @@ final class TestCaseTest extends TestCase
         $this->assertEquals('ok', $response1['status']);
         $this->assertEquals('bar', $response1['data']['foo']);
 
-        // Recuperiamo l'oggetto Response interno solo per completezza
-        $internalResponse1 = (new \ReflectionClass($response1))->getProperty('response');
+        $internalResponse1 = new ReflectionClass($response1)->getProperty('response');
         $internalResponse1->setAccessible(true);
-        /** @var \Omega\Http\Response $resp1 */
+        /** @var Response $resp1 */
         $resp1 = $internalResponse1->getValue($response1);
 
-        // Verifica che code e headers siano quelli di default
         $this->assertSame(200, $resp1->getStatusCode());
         $this->assertEmpty($resp1->getHeaders());
 
-        // Caso 2: array con solo 'code'
         $this->json(fn() => ['status' => 'ok', 'code' => 202]);
 
-        // Caso 3: array con solo 'headers'
         $this->json(fn() => ['status' => 'ok', 'headers' => ['X-Test' => 'value']]);
 
-        // Caso 4: array con 'code' e 'headers'
         $dataWithExtras = [
             'status'  => 'ok',
             'code'    => 201,
@@ -216,9 +315,9 @@ final class TestCaseTest extends TestCase
         $this->assertInstanceOf(TestJsonResponse::class, $response2);
         $this->assertEquals('ok', $response2['status']);
 
-        $internalResponse2 = (new \ReflectionClass($response2))->getProperty('response');
+        $internalResponse2 = new ReflectionClass($response2)->getProperty('response');
         $internalResponse2->setAccessible(true);
-        /** @var \Omega\Http\Response $resp2 */
+        /** @var Response $resp2 */
         $resp2 = $internalResponse2->getValue($response2);
 
         $this->assertSame(201, $resp2->getStatusCode());

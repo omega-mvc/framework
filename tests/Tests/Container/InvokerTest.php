@@ -72,7 +72,6 @@ final class InvokerTest extends TestCase
     {
         parent::setUp();
 
-        // Container reale
         $this->container = new Container();
         $this->invoker   = new Invoker($this->container);
     }

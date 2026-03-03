@@ -104,8 +104,8 @@ final class ScheduleTest extends TestCase
      */
     public function testItCanContinueScheduleEventJobFail()
     {
-        $timeTravel = new Now('09/07/2021 00:30:00');
-        $schedule   = new Schedule($timeTravel->timestamp, $this->logger);
+        $now = new Now('09/07/2021 00:30:00');
+        $schedule   = new Schedule($now->getTimestamp(), $this->logger);
 
         $schedule
             ->call(function () {
@@ -135,8 +135,8 @@ final class ScheduleTest extends TestCase
      */
     public function testItCanRunRetrySchedule()
     {
-        $timeTravel = new Now('09/07/2021 00:30:00');
-        $schedule   = new Schedule($timeTravel->timestamp, $this->logger);
+        $now = new Now('09/07/2021 00:30:00');
+        $schedule   = new Schedule($now->getTimestamp(), $this->logger);
 
         $schedule
             ->call(function () {
@@ -167,8 +167,8 @@ final class ScheduleTest extends TestCase
      */
     public function testItCanRunRetryConditionSchedule()
     {
-        $timeTravel = new Now('09/07/2021 00:30:00');
-        $schedule   = new Schedule($timeTravel->timestamp, $this->logger);
+        $now = new Now('09/07/2021 00:30:00');
+        $schedule   = new Schedule($now->getTimestamp(), $this->logger);
 
         $test = 1;
 
@@ -193,8 +193,8 @@ final class ScheduleTest extends TestCase
      */
     public function testItCanLogCronExpectWhateverCondition()
     {
-        $timeTravel = new Now('09/07/2021 00:30:00');
-        $schedule   = new Schedule($timeTravel->timestamp, $this->logger);
+        $now = new Now('09/07/2021 00:30:00');
+        $schedule   = new Schedule($now->getTimestamp(), $this->logger);
 
         $schedule
             ->call(function () {
@@ -219,8 +219,8 @@ final class ScheduleTest extends TestCase
      */
     public function testItCanSkipScheduleEventIsDue()
     {
-        $timeTravel  = new Now('09/07/2021 00:30:00');
-        $schedule    = new Schedule($timeTravel->timestamp, $this->logger);
+        $now  = new Now('09/07/2021 00:30:00');
+        $schedule    = new Schedule($now->getTimestamp(), $this->logger);
         $alwaysFalse = false;
 
         $schedule

@@ -145,7 +145,7 @@ readonly class FixedWindow implements PolicyInterface
      */
     private function getWindowKey(string $key): string
     {
-        $windowStart = floor(now()->timestamp / $this->windowSeconds);
+        $windowStart = floor(now()->getTimestamp() / $this->windowSeconds);
 
         return "{$key}:fw:{$windowStart}";
     }
@@ -159,7 +159,7 @@ readonly class FixedWindow implements PolicyInterface
      */
     private function getNextWindowStart(): DateTime
     {
-        $currentWindow   = floor(now()->timestamp / $this->windowSeconds);
+        $currentWindow   = floor(now()->getTimestamp() / $this->windowSeconds);
         $nextWindowStart = ($currentWindow + 1) * $this->windowSeconds;
 
         return new DateTime("@{$nextWindowStart}");

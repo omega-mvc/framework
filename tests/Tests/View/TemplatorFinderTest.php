@@ -75,22 +75,6 @@ final class TemplatorFinderTest extends TestCase
     }
 
     /**
-     * Test it can chack file exists.
-     *
-     * @return void
-     */
-    /**public function testItCanCheckFIleExist(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-
-        $view = new TemplatorFinder([$loader], ['.php', '.component.php']);
-
-        $this->assertTrue($view->exists('php'));
-        $this->assertTrue($view->exists('repeat'));
-        $this->assertFalse($view->exists('index.blade'));
-    }*/
-
-    /**
      * Test it can find in path.
      *
      * @return void
@@ -179,11 +163,9 @@ final class TemplatorFinderTest extends TestCase
     {
         $view = new TemplatorFinder([], ['.php']);
 
-        // Passiamo un array con un elemento qualsiasi, non importa se reale
         $dummyPath = __DIR__;
         $view->setPaths([$dummyPath]);
 
-        // Verifichiamo che il percorso sia stato aggiunto
         $paths = (fn() => $this->{'paths'})->call($view);
         $this->assertEquals([realpath($dummyPath)], $paths);
     }

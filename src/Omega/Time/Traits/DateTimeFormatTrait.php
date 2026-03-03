@@ -87,7 +87,7 @@ trait DateTimeFormatTrait
      */
     public function formatRFC850(): string
     {
-        return $this->format(DateTimeInterface::RFC822);
+        return $this->format(DateTimeInterface::RFC850);
     }
 
     /**
@@ -99,7 +99,7 @@ trait DateTimeFormatTrait
      */
     public function formatRFC1036(): string
     {
-        return $this->format(DateTimeInterface::RFC822);
+        return $this->format(DateTimeInterface::RFC1036);
     }
 
     /**
@@ -144,12 +144,12 @@ trait DateTimeFormatTrait
      * By default, uses the standard RFC3339 format (Y-m-d\TH:i:sP).
      * If $expanded is true, uses RFC3339_EXTENDED (Y-m-d\TH:i:s.vP) with milliseconds.
      *
-     * @param bool $expanded Use extended format with milliseconds.
+     * @param bool $extended Use extended format with milliseconds.
      * @return string Formatted date/time.
      */
-    public function formatRFC3339(bool $expanded = false): string
+    public function formatRFC3339(bool $extended = false): string
     {
-        return $this->format($expanded ? DateTimeInterface::RFC3339_EXTENDED : DateTimeInterface::RFC3339);
+        return $this->format($extended ? DateTimeInterface::RFC3339_EXTENDED : DateTimeInterface::RFC3339);
     }
 
     /**

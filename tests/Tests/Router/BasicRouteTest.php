@@ -314,54 +314,11 @@ final class BasicRouteTest extends TestCase
      *
      * @return void
      */
-    /**public function testItRouteIsMethodNotAllowed(): void
-    {
-        $this->registerRouterMethodNotAllowed();
-
-        $get     = $this->getResponse('post', '/get');
-        $post    = $this->getResponse('get', '/post');
-        $put     = $this->getResponse('get', '/put');
-        $patch   = $this->getResponse('get', '/patch');
-        $delete  = $this->getResponse('get', '/delete');
-        $options = $this->getResponse('get', '/options');
-        $this->assertEquals(
-            'method not allowed',
-            $get,
-            'method not allowed'
-        );
-        $this->assertEquals(
-            'method not allowed',
-            $post,
-            'method not allowed'
-        );
-        $this->assertEquals(
-            'method not allowed',
-            $put,
-            'method not allowed'
-        );
-        $this->assertEquals(
-            'method not allowed',
-            $patch,
-            'method not allowed'
-        );
-        $this->assertEquals(
-            'method not allowed',
-            $delete,
-            'method not allowed'
-        );
-        $this->assertEquals(
-            'method not allowed',
-            $options,
-            'method not allowed'
-        );
-    }*/
     public function testItRouteIsMethodNotAllowed(): void
     {
-        // Assicurati che il fallback sia registrato PRIMA di qualsiasi getResponse()
         $this->registerRouterMethodNotAllowed();
-        $this->registerRouterNotFound(); // facoltativo, ma utile per sicurezza
+        $this->registerRouterNotFound();
 
-        // Ora chiama getResponse() per i vari metodi
         $get     = $this->getResponse('post', '/get');
         $post    = $this->getResponse('get', '/post');
         $put     = $this->getResponse('get', '/put');

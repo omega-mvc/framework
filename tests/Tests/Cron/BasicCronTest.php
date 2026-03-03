@@ -105,7 +105,7 @@ final class BasicCronTest extends TestCase
      */
     private function sampleSchedules(): Schedule
     {
-        $schedule = new Schedule(now()->timestamp, $this->logger);
+        $schedule = new Schedule(now()->getTimestamp(), $this->logger);
         $schedule
             ->call(fn (): string => 'test')
             ->justInTime();
@@ -136,7 +136,7 @@ final class BasicCronTest extends TestCase
      */
     public function testItSchedulesRunAnonymously(): void
     {
-        $anonymously = new Schedule(now()->timestamp, $this->logger);
+        $anonymously = new Schedule(now()->getTimestamp(), $this->logger);
         $anonymously
             ->call(fn (): string => 'is run anonymously')
             ->justInTime()
@@ -165,9 +165,9 @@ final class BasicCronTest extends TestCase
      */
     public function testItCanAddSchedule(): void
     {
-        $cron1 = new Schedule(now()->timestamp, $this->logger);
+        $cron1 = new Schedule(now()->getTimestamp(), $this->logger);
         $cron1->call(fn (): bool => true)->eventName('from1');
-        $cron2 = new Schedule(now()->timestamp, $this->logger);
+        $cron2 = new Schedule(now()->getTimestamp(), $this->logger);
         $cron2->call(fn (): bool => true)->eventName('from2');
         $cron1->add($cron2);
 
@@ -184,7 +184,7 @@ final class BasicCronTest extends TestCase
      */
     public function testItCanFlush(): void
     {
-        $cron = new Schedule(now()->timestamp, $this->logger);
+        $cron = new Schedule(now()->getTimestamp(), $this->logger);
         $cron->call(fn (): bool => true)->eventName('one');
         $cron->call(fn (): bool => true)->eventName('two');
 

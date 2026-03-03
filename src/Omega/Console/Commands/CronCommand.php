@@ -185,11 +185,11 @@ class CronCommand extends AbstractCommand
         while (true) {
             $clock = new Now();
             $print = new Style();
-            $time  = $clock->year . '-' . $clock->month . '-' . $clock->day;
+            $time  = $clock->getYear() . '-' . $clock->getMonth() . '-' . $clock->getDay();
 
             $print
                 ->push('Run cron at - ' . $time)->textDim()
-                ->push(' ' . $clock->hour . ':' . $clock->minute . ':' . $clock->second);
+                ->push(' ' . $clock->getHour() . ':' . $clock->getMinute() . ':' . $clock->getSecond());
 
             $watchStart = microtime(true);
 

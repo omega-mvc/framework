@@ -41,7 +41,7 @@ use function is_string;
 use function ltrim;
 use function md5;
 use function ob_end_clean;
-use function ob_get_clean;
+//use function ob_get_clean;
 use function ob_get_level;
 use function ob_start;
 
@@ -263,12 +263,7 @@ class Templator
 
         $out = ob_get_clean();
 
-        // There are four possible outcomes in this method's return:
-        // 1. $out contains a string -> ltrim($out) returned
-        // 2. $out is empty string -> ltrim('') returned
-        // 3. $out contains whitespace only -> ltrim($out) returned as empty
-        // 4. $out === false -> practically impossible to simulate in PHP
-        return $out === false ? '' : ltrim($out); // @codeCoverageIgnore
+        return $out === false ? '' : ltrim($out);
     }
 
     /**

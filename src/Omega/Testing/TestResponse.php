@@ -14,6 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Testing;
 
+use ArrayAccess;
+use LogicException;
 use Omega\Http\Response;
 use Omega\Testing\Traits\ResponseStatusTrait;
 use PHPUnit\Framework\Assert;
@@ -38,7 +40,7 @@ use PHPUnit\Framework\Assert;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-class TestResponse implements \ArrayAccess
+class TestResponse implements ArrayAccess
 {
     use ResponseStatusTrait;
 
@@ -59,11 +61,10 @@ class TestResponse implements \ArrayAccess
 
         $content = $response->getContent();
 
-        // Se è array lo prendiamo così, altrimenti proviamo a decodificare JSON
         if (is_array($content)) {
             $this->decoded = $content;
         } else {
-            $decoded = json_decode((string)$content, true);
+            $decoded = json_decode($content, true);
             $this->decoded = is_array($decoded) ? $decoded : [];
         }
     }
@@ -105,26 +106,66 @@ class TestResponse implements \ArrayAccess
         Assert::assertSame($code, $this->response->getStatusCode(), $message);
     }
 
-    /** ------------------- ArrayAccess ------------------- */
-
+    /**
+     * Determine if the given key exists in the decoded response data.
+     *
+     * Part of the ArrayAccess implementation. Allows checking if a key is
+     * present in the decoded response array via isset($testResponse[$key]).
+     *
+     * @param mixed $offset The key to check for existence.
+     * @return bool True if the key exists, false otherwise.
+     */
     public function offsetExists(mixed $offset): bool
     {
         return isset($this->decoded[$offset]);
     }
 
+    /**
+     * Retrieve a value from the decoded response data by key.
+     *
+     * Part of the ArrayAccess implementation. Allows accessing values
+     * like an array: $value = $testResponse[$key]. Returns null if
+     * the key does not exist.
+     *
+     * @param mixed $offset The key to retrieve.
+     * @return mixed The value associated with the key, or null if not set.
+     */
     public function offsetGet(mixed $offset): mixed
     {
         return $this->decoded[$offset] ?? null;
     }
 
+    /**
+     * Disallow setting values via array access.
+     *
+     * Part of the ArrayAccess implementation. TestResponse is read-only,
+     * so attempting to assign a value with $testResponse[$key] = $value
+     * will throw a LogicException.
+     *
+     * @param mixed $offset The key to set.
+     * @param mixed $value  The value to assign.
+     * @return void
+     * @throws LogicException Always, as the response is immutable via array access.
+     */
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        throw new \LogicException('TestResponse is read-only.');
+        throw new LogicException('TestResponse is read-only.');
     }
 
+    /**
+     * Disallow unsetting values via array access.
+     *
+     * Part of the ArrayAccess implementation. TestResponse is read-only,
+     * so attempting to unset a key with unset($testResponse[$key])
+     * will throw a LogicException.
+     *
+     * @param mixed $offset The key to unset.
+     * @return void
+     * @throws LogicException Always, as the response is immutable via array access.
+     */
     public function offsetUnset(mixed $offset): void
     {
-        throw new \LogicException('TestResponse is read-only.');
+        throw new LogicException('TestResponse is read-only.');
     }
 
     /**

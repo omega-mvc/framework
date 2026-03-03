@@ -145,7 +145,7 @@ final class FixedWindowTest extends TestCase
     {
         $limiter = new FixedWindow($this->cache, 5, 60);
 
-        $this->cache->set('test_key:fw:' .  floor(now()->timestamp / 60), 3);
+        $this->cache->set('test_key:fw:' .  floor(now()->getTimestamp() / 60), 3);
 
         $rateLimit = $limiter->peek('test_key');
 

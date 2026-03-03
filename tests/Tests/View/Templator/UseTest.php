@@ -112,8 +112,8 @@ final class UseTest extends TestCase
      */
     public function testItReturnsTemplateIfNoUseDirective(): void
     {
-        $templator = new \Omega\View\Templator\UseTemplator(
-            new \Omega\View\TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+        $templator = new UseTemplator(
+            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
             $this->setFixturePath('/fixtures/view/templator/')
         );
 

@@ -65,7 +65,7 @@ class Log implements InterpolateInterface
             ->values([
                 'message'     => $message,
                 'context'     => json_encode($context),
-                'date_create' => now()->timestamp,
+                'date_create' => now()->getTimestamp(),
             ])
             ->execute();
     }

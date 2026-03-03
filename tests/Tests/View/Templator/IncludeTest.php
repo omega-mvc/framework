@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpExpressionResultUnusedInspection */
 
 /**
  * Part of Omega - Tests\View Package.
@@ -21,6 +21,7 @@ use Omega\View\Templator\IncludeTemplator;
 use Omega\View\TemplatorFinder;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 use Tests\FixturesPathTrait;
 
 /**
@@ -128,19 +129,17 @@ final class IncludeTest extends TestCase
      */
     public function testItReturnsIncludedTemplateWhenDepthZero(): void
     {
-        // Recupero direttamente l'IncludeTemplator
-        $reflection = new \ReflectionClass($this->templator);
+        $reflection = new ReflectionClass($this->templator);
         $property = $reflection->getProperty('finder');
         $property->setAccessible(true);
         $finder = $property->getValue($this->templator);
 
-        $includeTemplator = new \Omega\View\Templator\IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+        $includeTemplator = new IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
         $includeTemplator->maksDept(0);
 
         $template = "{% include('view/component.php') %}";
         $out      = $includeTemplator->parse($template);
 
-        // Qui il return diretto viene eseguito senza decrementare makeDept
         $this->assertStringContainsString('<p>Call From Component</p>', $out);
     }
 }

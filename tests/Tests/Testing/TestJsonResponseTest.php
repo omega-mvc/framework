@@ -135,7 +135,7 @@ final class TestJsonResponseTest extends TestCase
      * Test it can respond assert false.
      *
      * @return void
-     *@throws Exception Throw when a generic error occurred.
+     * @throws Exception Throw when a generic error occurred.
      */
     public function testItCanResponseAssertFalse(): void
     {
@@ -231,6 +231,12 @@ final class TestJsonResponseTest extends TestCase
         $response->assertNotEmpty('error');
     }
 
+    /**
+     * Test constructor throws exception if content is not array.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testConstructorThrowsExceptionIfContentIsNotArray(): void
     {
         $this->expectException(Exception::class);
@@ -239,6 +245,12 @@ final class TestJsonResponseTest extends TestCase
         new TestJsonResponse(new Response('not-an-array'));
     }
 
+    /**
+     * Test set response data.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testSetResponseData(): void
     {
         $response = new TestJsonResponse(new Response([
@@ -252,6 +264,12 @@ final class TestJsonResponseTest extends TestCase
         $this->assertEquals(['changed' => true], $response->getData());
     }
 
+    /**
+     * Test offset exists.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testOffsetExists(): void
     {
         $response = new TestJsonResponse(new Response([
@@ -263,6 +281,12 @@ final class TestJsonResponseTest extends TestCase
         $this->assertFalse(isset($response['missing']));
     }
 
+    /**
+     * Test offset unset.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testOffsetUnset(): void
     {
         $response = new TestJsonResponse(new Response([

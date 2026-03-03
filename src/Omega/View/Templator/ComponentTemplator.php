@@ -105,13 +105,6 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
         return preg_replace_callback(
             '/{%\s*component\(\s*(.*?)\)\s*%}(.*?){%\s*endcomponent\s*%}/s',
             function ($matches) use ($template) {
-                /**if (!array_key_exists(1, $matches)) {
-                    return $template; // @codeCoverageIgnore - Death code, removed in next version.
-                }
-                if (!array_key_exists(2, $matches)) {
-                    return $template; // @codeCoverageIgnore - Death code, removed in next version.
-                }*/
-
                 $rawParams                = trim($matches[1]);
                 [$componentName, $params] = $this->extractComponentAndParams($rawParams);
                 $innerContent             = $matches[2];
@@ -121,10 +114,6 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
 
                     return $component->render($innerContent);
                 }
-
-                /**if (false === $this->finder->exists($componentName)) {
-                    throw new ViewFileNotFoundException($componentName);
-                }*/
 
                 $templatePath = $this->finder->find($componentName);
                 $layout       = $this->getContents($templatePath);

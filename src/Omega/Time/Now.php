@@ -21,50 +21,44 @@ namespace Omega\Time;
 
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
-use DateTime;
+use DateTimeImmutable;
 use DateTimeZone;
-use Omega\Time\Exceptions\PropertyNotExistException;
-use Omega\Time\Exceptions\PropertyNotSettableException;
 use Omega\Time\Traits\DateTimeFormatTrait;
 
-use function floor;
-use function implode;
-use function max;
-use function method_exists;
-use function property_exists;
-use function strtotime;
-use function time;
-
 /**
- * Now class - represents a specific point in time with convenient access to date and time components.
+ * Now class - represents a precise point in time with easy access to date/time components.
  *
- * This class wraps a DateTime object and exposes properties like year, month, day, hour, minute,
- * second, as well as formatted names for month and day. It also provides helper methods to check
- * if the current instance matches specific time conditions (e.g., isNextMonth(), isSaturday()).
+ * This immutable class wraps a DateTimeImmutable object and exposes:
+ * - Year, month, day, hour, minute, second
+ * - Full month/day names and 3-letter day abbreviations
+ * - Day of week as integer (1=Monday, 7=Sunday)
+ * - Timezone identifier and Unix timestamp
+ * - Age calculated from this date until now
  *
- * It is used throughout Omega Time package to manipulate, format, and inspect dates easily.
+ * Provides fluent setters (year(), month(), day(), etc.) that return a new instance
+ * and helper methods to check temporal conditions (isNextMonth(), isMonday(), etc.).
  *
  * @category  Omega
  * @package   Time
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
  * @version   2.0.0
  *
- * @property int    $timestamp         The Unix timestamp of the current time.
- * @property int    $year              The year of the current date.
- * @property int    $month             The month number (1-12) of the current date.
- * @property int    $day               The day of the month (1-31) of the current date.
- * @property int    $hour              The hour (0-23) of the current time.
- * @property int    $minute            The minute (0-59) of the current time.
- * @property int    $second            The second (0-59) of the current time.
- * @property string $monthName         The full month name (e.g., "January").
- * @property string $dayName           The full day name (e.g., "Monday").
- * @property string $shortDay          The abbreviated day name (e.g., "Mon").
- * @property string $timeZone          The timezone identifier (e.g., "UTC", "Europe/Rome").
- * @property int    $age               The calculated age in years from this timestamp until now.
- * @property mixed  $notExistProperty  Placeholder to demonstrate exception when property does not exist.
+ * @property int    $timestamp         Unix timestamp of this date-time.
+ * @property int    $year              Year of the date.
+ * @property int    $month             Month number (1-12).
+ * @property int    $day               Day of the month (1-31).
+ * @property int    $hour              Hour (0-23).
+ * @property int    $minute            Minute (0-59).
+ * @property int    $second            Second (0-59).
+ * @property string $monthName         Full month name (e.g., "January").
+ * @property string $dayName           Full day name (e.g., "Monday").
+ * @property string $shortDay          3-letter day abbreviation (e.g., "Mon").
+ * @property int    $dayOfWeek         Day of the week as integer, 1=Monday, 7=Sunday.
+ * @property string $timeZone          Timezone identifier (e.g., "UTC", "Europe/Rome").
+ * @property int    $age               Age in years from this date until now.
  */
 class Now
 {
@@ -73,8 +67,8 @@ class Now
     /** @var int|false Current Unix timestamp of the object. */
     private int|false $timestamp;
 
-    /** @var DateTime The internal DateTime instance representing the current time. */
-    private DateTime $date;
+    /** @var DateTimeImmutable The internal immutable DateTime instance. */
+    private DateTimeImmutable $date;
 
     /** @var int Year of the date. */
     private int $year;
@@ -109,6 +103,9 @@ class Now
     /** @var int Age in years relative to the timestamp. */
     private int $age;
 
+    /** @var int Day of the week as integer, 1=Monday, 7=Sunday */
+    private int $dayOfWeek;
+
     /**
      * Constructs a new Now instance with a specific date and optional timezone.
      *
@@ -122,11 +119,8 @@ class Now
      */
     public function __construct(string $dateFormat = 'now', ?string $timeZone = null)
     {
-        if (null !== $timeZone) {
-            $timeZone = new DateTimeZone($timeZone);
-        }
-        $this->date = new DateTime($dateFormat, $timeZone);
-
+        $tz = $timeZone ? new DateTimeZone($timeZone) : null;
+        $this->date = new DateTimeImmutable($dateFormat, $tz);
         $this->refresh();
     }
 
@@ -139,46 +133,7 @@ class Now
      */
     public function __toString(): string
     {
-        return implode('T', [
-            $this->date->format('Y-m-d'),
-            $this->date->format('H:i:s'),
-        ]);
-    }
-
-    /**
-     * Retrieves a private property by name.
-     *
-     * @param string $name The property name to get.
-     * @return mixed The value of the property.
-     * @throws PropertyNotExistException If the property does not exist in the class.
-     */
-    public function __get(string $name): mixed
-    {
-        if (property_exists($this, $name)) {
-            return $this->{$name};
-        }
-
-        throw new PropertyNotExistException($name);
-    }
-
-    /**
-     * Sets a property using the corresponding setter method.
-     *
-     * Only properties with dedicated setter methods can be set.
-     *
-     * @param string $name  The property name to set.
-     * @param mixed  $value The value to assign.
-     * @return void
-     * @throws PropertyNotSettableException If the property cannot be set.
-     */
-    public function __set(string $name, mixed $value): void
-    {
-        if (method_exists($this, $name) && property_exists($this, $name)) {
-            $this->{$name}($value);
-            return;
-        }
-
-        throw new PropertyNotSettableException($name);
+        return $this->date->format('Y-m-d\TH:i:s');
     }
 
     /**
@@ -187,36 +142,27 @@ class Now
      * Updates timestamp, year, month, day, hour, minute, second, month/day names, timezone, and age.
      *
      * @return void
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
     private function refresh(): void
     {
-        $this->timestamp = $this->date->getTimestamp();
-        $this->year      = (int) $this->date->format('Y');
-        $this->month     = (int) $this->date->format('n');
-        $this->day       = (int) $this->date->format('d');
-        $this->hour      = (int) $this->date->format('H');
-        $this->minute    = (int) $this->date->format('i');
-        $this->second    = (int) $this->date->format('s');
+        $parts = explode('|', $this->date->format('Y|n|d|H|i|s|F|l|D|e|U|N'));
 
-        $this->monthName = $this->date->format('F');
-        $this->dayName   = $this->date->format('l');
-        $this->timeZone  = $this->date->format('e');
-        $this->shortDay  = $this->date->format('D');
+        $this->year      = (int)$parts[0];
+        $this->month     = (int)$parts[1];
+        $this->day       = (int)$parts[2];
+        $this->hour      = (int)$parts[3];
+        $this->minute    = (int)$parts[4];
+        $this->second    = (int)$parts[5];
+        $this->monthName = $parts[6];
+        $this->dayName   = $parts[7];
+        $this->shortDay  = $parts[8];
+        $this->timeZone  = $parts[9];
+        $this->timestamp = (int)$parts[10];
+        $this->dayOfWeek = (int)$parts[11];
 
-        $this->age = max(0, (int) floor((time() - $this->timestamp) / (365.25 * 24 * 60 * 60)));
-    }
-
-    /**
-     * Returns a formatted string for a given timestamp.
-     *
-     * @param string $format    The date format (compatible with DateTime::format).
-     * @param int    $timestamp The Unix timestamp to format.
-     * @return string The formatted date-time string.
-     */
-    private function current(string $format, int $timestamp): string
-    {
-        $date = $this->date;
-        return $date->setTimestamp($timestamp)->format($format);
+        $today = new DateTimeImmutable('now', $this->date->getTimezone());
+        $this->age = ($this->timestamp > $today->getTimestamp()) ? 0 : $this->date->diff($today)->y;
     }
 
     /**
@@ -231,19 +177,151 @@ class Now
     }
 
     /**
+     * Get the year of the date.
+     *
+     * @return int Year value (e.g., 2026)
+     */
+    public function getYear(): int
+    {
+        return $this->year;
+    }
+
+    /**
+     * Get the month number of the date.
+     *
+     * @return int Month value (1-12)
+     */
+    public function getMonth(): int
+    {
+        return $this->month;
+    }
+
+    /**
+     * Get the day of the month.
+     *
+     * @return int Day value (1-31)
+     */
+    public function getDay(): int
+    {
+        return $this->day;
+    }
+
+    /**
+     * Get the hour of the time.
+     *
+     * @return int Hour value (0-23)
+     */
+    public function getHour(): int
+    {
+        return $this->hour;
+    }
+
+    /**
+     * Get the minute of the time.
+     *
+     * @return int Minute value (0-59)
+     */
+    public function getMinute(): int
+    {
+        return $this->minute;
+    }
+
+    /**
+     * Get the second of the time.
+     *
+     * @return int Second value (0-59)
+     */
+    public function getSecond(): int
+    {
+        return $this->second;
+    }
+
+    /**
+     * Get the full name of the month.
+     *
+     * @return string Month name (e.g., "January")
+     */
+    public function getMonthName(): string
+    {
+        return $this->monthName;
+    }
+
+    /**
+     * Get the full name of the day.
+     *
+     * @return string Day name (e.g., "Monday")
+     */
+    public function getDayName(): string
+    {
+        return $this->dayName;
+    }
+
+    /**
+     * Get the abbreviated 3-letter name of the day.
+     *
+     * @return string Short day name (e.g., "Mon")
+     */
+    public function getShortDay(): string
+    {
+        return $this->shortDay;
+    }
+
+    /**
+     * Get the timezone identifier of the date-time.
+     *
+     * @return string Timezone (e.g., "UTC", "Europe/Rome")
+     */
+    public function getTimeZone(): string
+    {
+        return $this->timeZone;
+    }
+
+    /**
+     * Get the Unix timestamp of the date-time.
+     *
+     * @return int Unix timestamp
+     */
+    public function getTimestamp(): int
+    {
+        return $this->timestamp;
+    }
+
+    /**
+     * Get the day of the week as an integer.
+     *
+     * @return int Day of week (1=Monday, 7=Sunday)
+     */
+    public function getDayOfWeek(): int
+    {
+        return $this->dayOfWeek;
+    }
+
+    /**
+     * Get the age in years relative to the current date.
+     *
+     * @return int Age in years
+     */
+    public function getAge(): int
+    {
+        return $this->age;
+    }
+
+    /**
      * Sets the year for the current date-time and refreshes all properties.
      *
      * @param int $year The year to set (e.g., 2025).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function year(int $year): self
+    public function setYear(int $year): self
     {
-        $this->date->setDate($year, $this->month, $this->day)
-            ->setTime($this->hour, $this->minute, $this->second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setDate($year, $this->month, $this->day);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -251,15 +329,17 @@ class Now
      *
      * @param int $month The month to set (1-12).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function month(int $month): self
+    public function setMonth(int $month): self
     {
-        $this->date->setDate($this->year, $month, $this->day)
-            ->setTime($this->hour, $this->minute, $this->second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setDate($this->year, $month, $this->day);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -267,15 +347,17 @@ class Now
      *
      * @param int $day The day of the month to set (1-31).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function day(int $day): self
+    public function setDay(int $day): self
     {
-        $this->date->setDate($this->year, $this->month, $day)
-            ->setTime($this->hour, $this->minute, $this->second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setDate($this->year, $this->month, $day);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -283,15 +365,17 @@ class Now
      *
      * @param int $hour The hour to set (0-23).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function hour(int $hour): self
+    public function setHour(int $hour): self
     {
-        $this->date->setDate($this->year, $this->month, $this->day)
-            ->setTime($hour, $this->minute, $this->second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setTime($hour, $this->minute, $this->second);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -299,15 +383,17 @@ class Now
      *
      * @param int $minute The minute to set (0-59).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function minute(int $minute): self
+    public function setMinute(int $minute): self
     {
-        $this->date->setDate($this->year, $this->month, $this->day)
-            ->setTime($this->hour, $minute, $this->second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setTime($this->hour, $minute, $this->second);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -315,15 +401,17 @@ class Now
      *
      * @param int $second The second to set (0-59).
      * @return self The current instance for method chaining.
+     * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      */
-    public function second(int $second): self
+    public function setSecond(int $second): self
     {
-        $this->date->setDate($this->year, $this->month, $this->day)
-            ->setTime($this->hour, $this->minute, $second);
+        $new = clone $this;
 
-        $this->refresh();
+        $new->date = $this->date->setTime($this->hour, $this->minute, $second);
 
-        return $this;
+        $new->refresh();
+
+        return $new;
     }
 
     /**
@@ -333,7 +421,7 @@ class Now
      */
     public function isJan(): bool
     {
-        return $this->date->format('M') === 'Jan';
+        return $this->month === 1;
     }
 
     /**
@@ -343,7 +431,7 @@ class Now
      */
     public function isFeb(): bool
     {
-        return $this->date->format('M') === 'Feb';
+        return $this->month === 2;
     }
 
     /**
@@ -353,7 +441,7 @@ class Now
      */
     public function isMar(): bool
     {
-        return $this->date->format('M') === 'Mar';
+        return $this->month === 3;
     }
 
     /**
@@ -363,7 +451,7 @@ class Now
      */
     public function isApr(): bool
     {
-        return $this->date->format('M') === 'Apr';
+        return $this->month === 4;
     }
 
     /**
@@ -373,7 +461,7 @@ class Now
      */
     public function isMay(): bool
     {
-        return $this->date->format('M') === 'May';
+        return $this->month === 5;
     }
 
     /**
@@ -383,7 +471,7 @@ class Now
      */
     public function isJun(): bool
     {
-        return $this->date->format('M') === 'Jun';
+        return $this->month === 6;
     }
 
     /**
@@ -393,7 +481,7 @@ class Now
      */
     public function isJul(): bool
     {
-        return $this->date->format('M') === 'Jul';
+        return $this->month === 7;
     }
 
     /**
@@ -403,7 +491,7 @@ class Now
      */
     public function isAug(): bool
     {
-        return $this->date->format('M') === 'Aug';
+        return $this->month === 8;
     }
 
     /**
@@ -413,7 +501,7 @@ class Now
      */
     public function isSep(): bool
     {
-        return $this->date->format('M') === 'Sep';
+        return $this->month === 9;
     }
 
     /**
@@ -423,7 +511,7 @@ class Now
      */
     public function isOct(): bool
     {
-        return $this->date->format('M') === 'Oct';
+        return $this->month === 10;
     }
 
     /**
@@ -433,7 +521,7 @@ class Now
      */
     public function isNov(): bool
     {
-        return $this->date->format('M') === 'Nov';
+        return $this->month === 11;
     }
 
     /**
@@ -443,7 +531,7 @@ class Now
      */
     public function isDec(): bool
     {
-        return $this->date->format('M') === 'Dec';
+        return $this->month === 12;
     }
 
     /**
@@ -453,7 +541,7 @@ class Now
      */
     public function isMonday(): bool
     {
-        return $this->date->format('D') === 'Mon';
+        return $this->dayOfWeek === 1;
     }
 
     /**
@@ -463,7 +551,7 @@ class Now
      */
     public function isTuesday(): bool
     {
-        return $this->date->format('D') === 'Tue';
+        return $this->dayOfWeek === 2;
     }
 
     /**
@@ -473,7 +561,7 @@ class Now
      */
     public function isWednesday(): bool
     {
-        return $this->date->format('D') === 'Wed';
+        return $this->dayOfWeek === 3;
     }
 
     /**
@@ -483,7 +571,7 @@ class Now
      */
     public function isThursday(): bool
     {
-        return $this->date->format('D') === 'Thu';
+        return $this->dayOfWeek === 4;
     }
 
     /**
@@ -493,7 +581,7 @@ class Now
      */
     public function isFriday(): bool
     {
-        return $this->date->format('D') === 'Fri';
+        return $this->dayOfWeek === 5;
     }
 
     /**
@@ -503,7 +591,7 @@ class Now
      */
     public function isSaturday(): bool
     {
-        return $this->date->format('D') === 'Sat';
+        return $this->dayOfWeek === 6;
     }
 
     /**
@@ -513,7 +601,7 @@ class Now
      */
     public function isSunday(): bool
     {
-        return $this->date->format('D') === 'Sun';
+        return $this->dayOfWeek === 7;
     }
 
     /**
@@ -523,8 +611,7 @@ class Now
      */
     public function isNextYear(): bool
     {
-        $time = strtotime('next year');
-        return $this->current('Y', $time) == $this->year;
+        return $this->year === (int)date('Y') + 1;
     }
 
     /**
@@ -534,8 +621,9 @@ class Now
      */
     public function isNextMonth(): bool
     {
-        $time = strtotime('next month');
-        return $this->current('n', $time) == $this->month;
+        $nextMonth = new DateTimeImmutable('first day of next month');
+
+        return $this->date->format('Y-m') === $nextMonth->format('Y-m');
     }
 
     /**
@@ -545,8 +633,9 @@ class Now
      */
     public function isNextDay(): bool
     {
-        $time = strtotime('next day');
-        return $this->current('d', $time) == $this->day;
+        $tomorrow = new DateTimeImmutable('tomorrow');
+
+        return $this->date->format('Y-m-d') === $tomorrow->format('Y-m-d');
     }
 
     /**
@@ -556,8 +645,9 @@ class Now
      */
     public function isNextHour(): bool
     {
-        $time = strtotime('next hour');
-        return $this->current('H', $time) == $this->hour;
+        $nextHour = new DateTimeImmutable('+1 hour');
+
+        return $this->date->format('Y-m-d H') === $nextHour->format('Y-m-d H');
     }
 
     /**
@@ -567,8 +657,9 @@ class Now
      */
     public function isNextMinute(): bool
     {
-        $time = strtotime('next minute');
-        return $this->current('i', $time) == $this->minute;
+        $nextMinute = new DateTimeImmutable('+1 minute');
+
+        return $this->date->format('Y-m-d H:i') === $nextMinute->format('Y-m-d H:i');
     }
 
     /**
@@ -578,8 +669,7 @@ class Now
      */
     public function isLastYear(): bool
     {
-        $time = strtotime('last year');
-        return $this->current('Y', $time) == $this->year;
+        return $this->year === (int)date('Y') - 1;
     }
 
     /**
@@ -589,8 +679,9 @@ class Now
      */
     public function isLastMonth(): bool
     {
-        $time = strtotime('last month');
-        return $this->current('n', $time) == $this->month;
+        $lastMonth = new DateTimeImmutable('first day of last month');
+
+        return $this->date->format('Y-m') === $lastMonth->format('Y-m');
     }
 
     /**
@@ -600,8 +691,9 @@ class Now
      */
     public function isLastDay(): bool
     {
-        $time = strtotime('last day');
-        return $this->current('d', $time) == $this->day;
+        $yesterday = new DateTimeImmutable('yesterday');
+
+        return $this->date->format('Y-m-d') === $yesterday->format('Y-m-d');
     }
 
     /**
@@ -611,8 +703,9 @@ class Now
      */
     public function isLastHour(): bool
     {
-        $time = strtotime('last hour');
-        return $this->current('H', $time) == $this->hour;
+        $lastHour = new DateTimeImmutable('-1 hour');
+
+        return $this->date->format('Y-m-d H') === $lastHour->format('Y-m-d H');
     }
 
     /**
@@ -622,7 +715,8 @@ class Now
      */
     public function isLastMinute(): bool
     {
-        $time = strtotime('last minute');
-        return $this->current('i', $time) == $this->minute;
+        $lastMinute = new DateTimeImmutable('-1 minute');
+
+        return $this->date->format('Y-m-d H:i') === $lastMinute->format('Y-m-d H:i');
     }
 }
