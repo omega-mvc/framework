@@ -19,9 +19,9 @@ use Omega\Template\Method;
 /**
  * Class NewMethod
  *
- * Factory provider for constructing Method objects representing
- * class methods. It offers a streamlined way to initialize method
- * definitions when generating PHP class templates.
+ * Factory provider for generating Method objects representing
+ * PHP functions (non-class methods). It enables a fluent, uniform
+ * construction mechanism for template-based function definitions.
  *
  * @category   Omega
  * @package    Template
@@ -35,10 +35,10 @@ use Omega\Template\Method;
 class NewMethod
 {
     /**
-     * Creates a new Method instance with the specified method name.
+     * Creates a new Method instance representing a function.
      *
-     * @param string $name The name of the class method to create.
-     * @return Method A Method object instantiated with the provided name.
+     * @param string $name The function name to assign to the Method object.
+     * @return Method A newly created Method instance configured with the given name.
      */
     public static function name(string $name): Method
     {

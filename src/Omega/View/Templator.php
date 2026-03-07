@@ -126,7 +126,7 @@ class Templator
      *
      * @param string $parent      Parent template file path.
      * @param string $child       Child template file path.
-     * @param int    $dependDeep  Dependency depth (default 1).
+     * @param int    $dependDeep  Dependency depth (default 1).ls
      * @return self
      */
     public function addDependency(string $parent, string $child, int $dependDeep = 1): self

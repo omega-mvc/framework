@@ -22,7 +22,7 @@ use Omega\Template\MethodPool;
 use Omega\Template\Property;
 use Omega\Template\PropertyPool;
 use Omega\Template\Providers\NewConst;
-use Omega\Template\Providers\NewFunction;
+use Omega\Template\Providers\NewMethod;
 use Omega\Template\Providers\NewProperty;
 use PhpParser\Builder\TraitUse;
 use PhpParser\Builder\TraitUseAdaptation;
@@ -70,7 +70,7 @@ use function str_replace;
 #[CoversClass(Property::class)]
 #[CoversClass(PropertyPool::class)]
 #[CoversClass(NewConst::class)]
-#[CoversClass(NewFunction::class)]
+#[CoversClass(NewMethod::class)]
 #[CoversClass(NewProperty::class)]
 final class BasicTemplateTest extends TestCase
 {
@@ -137,7 +137,7 @@ final class BasicTemplateTest extends TestCase
             ])
             ->constants(NewConst::name('TEST'))
             ->properties(NewProperty::name('test'))
-            ->methods(NewFunction::name('test'))
+            ->methods(NewMethod::name('test'))
             ->setEndWithNewLine();
 
         $this->assertEquals(
@@ -171,7 +171,7 @@ final class BasicTemplateTest extends TestCase
             ->constants(NewConst::name('TEST'))
             ->properties(NewProperty::name('test'))
             ->methods(
-                NewFunction::name('test')
+                NewMethod::name('test')
                     ->customizeTemplate('{{comment}}{{before}}function {{name}}({{params}}){{return type}} {{{new line}}{{body}}{{new line}}}') // phpcs:ignore
             )
             ->setEndWithNewLine();
@@ -259,7 +259,7 @@ final class BasicTemplateTest extends TestCase
 
         $class
             ->methods(
-                NewFunction::name('test')
+                NewMethod::name('test')
                     ->addComment('A method')
                     ->addLineComment()
                     ->addReturnComment('string', '$name', 'Test')
@@ -343,6 +343,10 @@ final class BasicTemplateTest extends TestCase
             ->addConst('A_CONST')
             ->visibility(Constant::PRIVATE_)
             ->expecting('= true');
+        $class
+            ->addConst('B_CONST')
+            ->visibility(Constant::PROTECTED_)
+            ->expecting('= false');
 
         // add property using PropertyPool
         $pool = new ConstPool();
@@ -404,7 +408,7 @@ final class BasicTemplateTest extends TestCase
      *
      * @return void
      */
-    public function itCanGenerateReplacedTemplate(): void
+    public function testItCanGenerateReplacedTemplate(): void
     {
         // pre replace
         $class = new Generate('old_class');

@@ -14,19 +14,19 @@ declare(strict_types=1);
 
 namespace Tests\Console\Commands;
 
+use Omega\Application\Application;
+use Omega\Console\Commands\Make\MakeModelCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Database\Connection;
 use Omega\Database\Query\Query;
-use Omega\Application\Application;
-use Omega\Console\Commands\MakeCommand;
 use Omega\Support\Facades\PDO;
 use Omega\Support\Facades\Schema;
+use Omega\Text\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionException;
 use Tests\Database\AbstractTestDatabase;
-use Omega\Text\Str;
 use Tests\FixturesPathTrait;
 use Throwable;
 
@@ -62,9 +62,12 @@ use function unlink;
 #[CoversClass(Connection::class)]
 #[CoversClass(Query::class)]
 #[CoversClass(Application::class)]
-#[CoversClass(MakeCommand::class)]
+#[CoversClass(MakeModelCommand::class)]
 #[CoversClass(PDO::class)]
 #[CoversClass(Schema::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
 final class MakeCommandsWithDatabaseTest extends AbstractTestDatabase
 {
     use FixturesPathTrait;
@@ -138,10 +141,10 @@ final class MakeCommandsWithDatabaseTest extends AbstractTestDatabase
      */
     public function testItCanCallMakeCommandModelWithSuccess()
     {
-        $makeModel = new MakeCommand(['omega', 'make:model', 'Client', '--table-name', 'users']);
+        $makeModel = new MakeModelCommand(['omega', 'make:model', 'Client', '--table-name', 'users']);
 
         ob_start();
-        $exit = $makeModel->make_model();
+        $exit = $makeModel->makeModel();
         ob_get_clean();
 
         $this->assertEquals(0, $exit);

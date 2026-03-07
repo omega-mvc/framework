@@ -1,0 +1,62 @@
+- Connection.php
+- ConnectionInterface.php
+- DatabaseManager.php
+- Exceptions
+  - InvalidConfigurationException.php
+- LoggerInterface.php
+- Model
+  - Model.php
+  - ModelCollection.php
+- Query
+  - AbstractExecute.php
+  - AbstractFetch.php
+  - AbstractQuery.php
+  - Bind.php
+  - Delete.php
+  - InnerQuery.php
+  - Insert.php
+  - Join
+    - AbstractJoin.php
+    - CrossJoin.php
+    - FullJoin.php
+    - InnerJoin.php
+    - LeftJoin.php
+    - RightJoin.php
+  - Query.php
+  - Replace.php
+  - Select.php
+  - Table.php
+  - Traits
+    - ConditionTrait.php
+    - SubQueryTrait.php
+  - Update.php
+  - Where.php
+- Schema
+  - Create.php
+  - DB
+    - Create.php
+    - Drop.php
+  - Drop.php
+  - Query.php
+  - Schema.php
+  - SchemaConnection.php
+  - SchemaConnectionInterface.php
+  - Table
+    - Alter.php
+    - Attributes
+      - Alter
+        - Constraint.php
+        - DataType.php
+      - Constraint.php
+      - DataType.php
+    - Column.php
+    - Create.php
+    - Drop.php
+    - Raw.php
+    - Truncate.php
+  - Traits
+    - ConditionTrait.php
+- Seeder
+  - AbstractSeeder.php
+  - SeederInterface.php
+- TransactionInterface.php

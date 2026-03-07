@@ -337,7 +337,7 @@ final class NamedParameterRouteTest extends TestCase
      *
      * @return void
      */
-    public function itHandlesSpecialCharactersInParameters(): void
+    public function testItHandlesSpecialCharactersInParameters(): void
     {
         Router::get('/search/(query:all)', function ($query) {
             echo "Searching for: {$query}";
@@ -385,7 +385,7 @@ final class NamedParameterRouteTest extends TestCase
      *
      * @return void
      */
-    public function itMakeSureRouterNameIsNotOverwrittenWithPrefixGiven(): void
+    public function testItMakeSureRouterNameIsNotOverwrittenWithPrefixGiven(): void
     {
         $backup        = Router::$group;
         Router::$group = ['as' => 'prefix.'];

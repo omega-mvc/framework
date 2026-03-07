@@ -262,6 +262,6 @@ final class UploadFileTest extends TestCase
         $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_0.txt')));
         $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_1.txt')));
 
-        unlink($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file.txt')));
+        unlink($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file0.txt')));
     }
 }

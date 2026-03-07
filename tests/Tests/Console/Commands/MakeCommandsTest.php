@@ -16,7 +16,10 @@ namespace Tests\Console\Commands;
 
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
-use Omega\Console\Commands\MakeCommand;
+use Omega\Console\Commands\Make\MakeCommandCommand;
+use Omega\Console\Commands\Make\MakeControllerCommand;
+use Omega\Console\Commands\Make\MakeMigrationCommand;
+use Omega\Console\Commands\Make\MakeViewCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -58,7 +61,10 @@ use function unlink;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html GPL V3.0+
  * @version    2.0.0
  */
-#[CoversClass(MakeCommand::class)]
+#[CoversClass(MakeCommandCommand::class)]
+#[CoversClass(MakeControllerCommand::class)]
+#[CoversClass(MakeMigrationCommand::class)]
+#[CoversClass(MakeViewCommand::class)]
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
@@ -140,9 +146,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandControllerWithSuccess(): void
     {
-        $makeCommand = new MakeCommand($this->argv('omega make:controller Index'));
+        $makeCommand = new MakeControllerCommand($this->argv('omega make:controller Index'));
         ob_start();
-        $exit = $makeCommand->make_controller();
+        $exit = $makeCommand->makeController();
         ob_get_clean();
 
         $this->assertSuccess($exit);
@@ -167,9 +173,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandControllerWithFails(): void
     {
-        $makeCommand = new MakeCommand($this->argv('omega make:controller Asset'));
+        $makeCommand = new MakeControllerCommand($this->argv('omega make:controller Asset'));
         ob_start();
-        $exit = $makeCommand->make_controller();
+        $exit = $makeCommand->makeController();
         ob_get_clean();
 
         $this->assertFails($exit);
@@ -187,9 +193,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandViewWithSuccess(): void
     {
-        $makeCommand = new MakeCommand($this->argv('omega make:view welcome'));
+        $makeCommand = new MakeViewCommand($this->argv('omega make:view welcome'));
         ob_start();
-        $exit = $makeCommand->make_view();
+        $exit = $makeCommand->makeView();
         ob_get_clean();
 
         $this->assertSuccess($exit);
@@ -213,9 +219,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandViewWithFails(): void
     {
-        $makeCommand = new MakeCommand($this->argv('omega make:view asset'));
+        $makeCommand = new MakeViewCommand($this->argv('omega make:view asset'));
         ob_start();
-        $exit = $makeCommand->make_view();
+        $exit = $makeCommand->makeView();
         ob_get_clean();
 
         $this->assertFails($exit);
@@ -233,9 +239,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandACommandsWithSuccess(): void
     {
-        $makeCommand = new MakeCommand($this->argv('omega make:command Cache'));
+        $makeCommand = new MakeCommandCommand($this->argv('omega make:command Cache'));
         ob_start();
-        $exit = $makeCommand->make_command();
+        $exit = $makeCommand->makeCommand();
         ob_get_clean();
 
         $this->assertSuccess($exit);
@@ -259,9 +265,9 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandACommandsWithFails(): void
     {
-        $make_command = new MakeCommand($this->argv('omega make:command Asset'));
+        $makeCommand = new MakeCommandCommand($this->argv('omega make:command Asset'));
         ob_start();
-        $exit = $make_command->make_command();
+        $exit = $makeCommand->makeCommand();
         ob_get_clean();
 
         $this->assertFails($exit);
@@ -277,16 +283,16 @@ final class MakeCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandMigrationWithSuccess(): void
     {
-        $make_command = new MakeCommand($this->argv('omega make:migration user'));
+        $makeCommand = new MakeMigrationCommand($this->argv('omega make:migration user'));
         ob_start();
-        $exit = $make_command->make_migration();
+        $exit = $makeCommand->makeMigration();
         ob_get_clean();
 
         $this->assertSuccess($exit);
 
-        $make_command = new MakeCommand($this->argv('omega make:migration guest --update'));
+        $makeCommand = new MakeMigrationCommand($this->argv('omega make:migration guest --update'));
         ob_start();
-        $exit = $make_command->make_migration();
+        $exit = $makeCommand->makeMigration();
         ob_get_clean();
 
         $this->assertSuccess($exit);
