@@ -18,14 +18,17 @@ namespace Tests\Support\Bootstrap;
 
 use Exception;
 use Omega\Application\Application;
+use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Provider\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
+use Omega\Support\Bootstrap\RegisterProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
 use ReflectionProperty;
 use Tests\FixturesPathTrait;
@@ -56,6 +59,7 @@ use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
 #[CoversClass(BootProviders::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(RegisterProviders::class)]
 final class RegisterProvidersTest extends TestCase
 {
     use FixturesPathTrait;
@@ -143,5 +147,42 @@ final class RegisterProvidersTest extends TestCase
         $app->registerProvider();
 
         $this->assertSame(0, TestRegisterProvider::$called);
+    }
+
+    public function testBootstrapRegistersProviders(): void
+    {
+        // 1. Setup dell'applicazione
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+
+        // 2. Fai in modo che il provider sia presente nell'array dei provider dell'app.
+        // Poiché $providers è protetto, usiamo il metodo di test che hai già
+        // o manipoliamo la configurazione se possibile.
+        // Se non puoi accedere direttamente, aggiungi un metodo temporaneo
+        // o usa un file di configurazione di test nella cartella 'fixtures'.
+
+        $app->loadConfig(new ConfigRepository([
+            'providers' => [TestRegisterServiceProvider::class],
+            'VIEW_EXTENSIONS' => [] // Necessario se il costruttore lo richiede
+        ]));
+
+        // 3. Esegui il bootstrapper
+        $bootstrapper = new RegisterProviders();
+        $bootstrapper->bootstrap($app);
+
+        // 4. Verifica che il provider sia stato registrato
+        $this->assertTrue(
+            $this->isProviderLoaded($app, TestRegisterServiceProvider::class),
+            'Il provider non è stato caricato correttamente.'
+        );
+    }
+
+    private function isProviderLoaded(Application $app, string $providerClass): bool
+    {
+        $reflection = new ReflectionClass($app);
+        $property = $reflection->getProperty('loadedProviders');
+        $property->setAccessible(true);
+        $loaded = $property->getValue($app);
+
+        return in_array($providerClass, $loaded);
     }
 }
