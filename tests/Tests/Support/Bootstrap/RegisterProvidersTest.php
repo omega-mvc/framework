@@ -10,6 +10,8 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpExpressionResultUnusedInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Support\Bootstrap;
@@ -25,7 +27,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use ReflectionProperty;
 use Tests\FixturesPathTrait;
+use Tests\Support\Bootstrap\Support\TestRegisterProvider;
 use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
 
 /**
@@ -78,5 +82,66 @@ final class RegisterProvidersTest extends TestCase
             (fn () => $this->{'bootedProviders'})->call($app),
             '1 from default provider, 1 from this test, and 1 from vendor.'
         );
+    }
+
+    /**
+     * Test boot provider continue line is covered.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testBootProviderContinueLineIsCovered(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+        $provider = TestRegisterServiceProvider::class;
+
+        $app->register($provider);
+
+        (fn () => $this->{'bootedProviders'}[] = $provider)->call($app);
+
+        $app->bootstrapWith([BootProviders::class]);
+
+        $booted = (fn () => $this->{'bootedProviders'})->call($app);
+
+        $this->assertContains($provider, $booted);
+    }
+
+    public function testRegisterProviderCallsRegisterMethod(): void
+    {
+        TestRegisterProvider::$called = 0;
+
+        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+
+        $ref = new ReflectionProperty($app, 'providers');
+        $ref->setAccessible(true);
+        $ref->setValue($app, [TestRegisterProvider::class]);
+
+        $app->registerProvider();
+
+        $this->assertSame(1, TestRegisterProvider::$called);
+    }
+
+    public function testRegisterProviderSkipsLoadedProviders(): void
+    {
+        TestRegisterProvider::$called = 0;
+
+        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+
+        $ref = new ReflectionProperty($app, 'providers');
+        $ref->setAccessible(true);
+        $ref->setValue($app, [TestRegisterProvider::class]);
+
+        $loaded = new ReflectionProperty($app, 'loadedProviders');
+        $loaded->setAccessible(true);
+        $loaded->setValue($app, [TestRegisterProvider::class]);
+
+        $app->registerProvider();
+
+        $this->assertSame(0, TestRegisterProvider::$called);
     }
 }

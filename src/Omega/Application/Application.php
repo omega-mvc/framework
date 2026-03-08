@@ -67,7 +67,7 @@ class Application extends AbstractApplication
     /**
      * {@inheritdoc}
      */
-    public function definitions(): array
+    public function setDefinitions(): array
     {
         return [
             'boot.cache'              => $this->basePath . set_path('bootstrap.cache'),

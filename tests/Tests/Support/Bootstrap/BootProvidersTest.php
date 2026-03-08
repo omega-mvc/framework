@@ -19,6 +19,7 @@ use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Container\Provider\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -74,5 +75,53 @@ class BootProvidersTest extends TestCase
         $this->assertFalse($app->isBooted);
         $app->bootstrapWith([BootProviders::class]);
         $this->assertTrue($app->isBooted);
+    }
+
+    public function testRegisterBootsProviderWhenApplicationAlreadyBooted(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+
+        $app->isBooted = true;
+
+        $provider = new class($app) extends AbstractServiceProvider {
+
+            public bool $bootCalled = false;
+
+            public function register(): void {}
+
+            public function boot(): void
+            {
+                $this->bootCalled = true;
+            }
+        };
+
+        $class = get_class($provider);
+
+        $registered = $app->register($class);
+
+        $this->assertTrue($registered->bootCalled);
+    }
+
+    public function testRegisterDoesNotBootProviderWhenApplicationNotBooted(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+
+        $provider = new class($app) extends AbstractServiceProvider {
+
+            public bool $bootCalled = false;
+
+            public function register(): void {}
+
+            public function boot(): void
+            {
+                $this->bootCalled = true;
+            }
+        };
+
+        $class = get_class($provider);
+
+        $registered = $app->register($class);
+
+        $this->assertFalse($registered->bootCalled);
     }
 }

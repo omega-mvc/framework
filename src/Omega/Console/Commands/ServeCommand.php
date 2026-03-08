@@ -138,6 +138,6 @@ class ServeCommand extends AbstractCommand
             ->out(false);
 
         $address = $expose ? '0.0.0.0' : '127.0.0.1';
-        shell_exec("php -S " . $address . ":" . $port . " -t public/");
+        shell_exec("php -dxdebug.mode=off -S " . $address . ":" . $port . " -t public/");
     }
 }

@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
-use BadMethodCallException;
 use Exception;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Container;
@@ -31,16 +30,14 @@ use Omega\View\Templator;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
+use function array_diff;
+use function array_filter;
+use function array_walk;
 use function assert;
 use function count;
 use function file_exists;
 use function in_array;
-use function rtrim;
-use function str_ends_with;
 use function str_replace;
-use function str_starts_with;
-use function strtolower;
-use function substr;
 
 use const DIRECTORY_SEPARATOR;
 
@@ -119,15 +116,18 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         $this->registerAlias();
 
-        foreach ($this->definitions() as $key => $value) {
-            $this->set($key, $value);
-        }
+        $definitions = $this->setDefinitions();
+
+        array_walk(
+            $definitions,
+            fn ($value, $key) => $this->set($key, $value)
+        );
     }
 
     /**
      * {@inheritdoc}
      */
-    abstract public function definitions(): array;
+    abstract public function setDefinitions(): array;
 
     /**
      * {@inheritdoc}
@@ -286,9 +286,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     {
         $this->isBootstrapped = true;
 
-        foreach ($bootstrappers as $bootstrapper) {
-            $this->make($bootstrapper)->bootstrap($this);
-        }
+        array_walk($bootstrappers, fn($b) => $this->make($b)->bootstrap($this));
     }
 
     /**
@@ -307,14 +305,15 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         $this->callBootCallbacks($this->bootingCallbacks);
 
-        foreach ($this->getMergeProviders() as $provider) {
-            if (in_array($provider, $this->bootedProviders)) {
-                continue;
-            }
+        $providers = array_filter(
+            $this->getMergeProviders(),
+            fn ($provider) => ! in_array($provider, $this->bootedProviders)
+        );
 
+        array_walk($providers, function ($provider) {
             $this->call([$provider, 'boot']);
             $this->bootedProviders[] = $provider;
-        }
+        });
 
         $this->callBootCallbacks($this->bootedCallbacks);
 
@@ -331,15 +330,15 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function registerProvider(): void
     {
-        foreach ($this->getMergeProviders() as $provider) {
-            if (in_array($provider, $this->loadedProviders)) {
-                continue;
-            }
+        $providers = array_diff(
+            $this->getMergeProviders(),
+            $this->loadedProviders
+        );
 
+        array_walk($providers, function ($provider) {
             $this->call([$provider, 'register']);
-
             $this->loadedProviders[] = $provider;
-        }
+        });
     }
 
     /**
@@ -489,18 +488,15 @@ abstract class AbstractApplication extends Container implements ApplicationInter
             'template' => null,
         ];
 
-        if (false === file_exists($down = get_path('path.storage') . 'app/down')) {
+        $down = get_path('path.storage') . 'app/down';
+        if (!file_exists($down)) {
             return $default;
         }
 
         /** @var array<string, string|int|null> $config */
         $config = include $down;
 
-        foreach ($config as $key => $value) {
-            $default[$key] = $value;
-        }
-
-        return $default;
+        return array_replace($default, $config);
     }
 
     /**
@@ -519,18 +515,22 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     protected function registerAlias(): void
     {
-        foreach (
-            [
+        $aliases = [
             'request'       => [Request::class],
             'view.instance' => [Templator::class],
             'vite.gets'     => [Vite::class],
             'config'        => [ConfigRepository::class],
-            ] as $abstract => $aliases
-        ) {
-            foreach ($aliases as $alias) {
-                $this->alias($abstract, $alias);
+        ];
+
+        array_walk(
+            $aliases,
+            function (array $list, string $abstract): void {
+                array_walk(
+                    $list,
+                    fn (string $alias) => $this->alias($abstract, $alias)
+                );
             }
-        }
+        );
     }
 
     /**
@@ -543,7 +543,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    protected function getMergeProviders(): array
+    public function getMergeProviders(): array
     {
         $packageProviders = $this->make(PackageManifest::class)->providers() ?? [];
 

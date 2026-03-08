@@ -325,4 +325,44 @@ if (!function_exists('slash')) {
     {
         return str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
+
+    if (!function_exists('os_detect')) {
+        /**
+         * Detect the current operating system.
+         *
+         * This helper returns a simplified string identifier for the OS on which
+         * the PHP script is running. Useful for conditional logic depending on
+         * the operating system.
+         *
+         * Possible return values:
+         * - 'windows'
+         * - 'linux'
+         * - 'mac'
+         * - 'bsd'
+         * - 'solaris'
+         * - 'unknown'
+         *
+         * Example usage:
+         * ```php
+         * if (os_detect() === 'windows') {
+         *     // Windows-specific code
+         * }
+         * ```
+         *
+         * @return string The operating system identifier.
+         */
+        function os_detect(): string
+        {
+            $os = PHP_OS_FAMILY; // PHP >= 7.2, returns 'Windows', 'Linux', 'Darwin', etc.
+
+            return match (strtolower($os)) {
+                'windows' => 'windows',
+                'linux'   => 'linux',
+                'darwin'  => 'mac',
+                'bsd'     => 'bsd',
+                'solaris' => 'solaris',
+                default   => 'unknown',
+            };
+        }
+    }
 }

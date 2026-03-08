@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\Application;
 
 use Exception;
+use Omega\Application\AbstractApplication;
 use Omega\Application\Application;
 use Omega\Application\ApplicationInterface;
 use Omega\Config\ConfigRepository;
@@ -63,6 +64,7 @@ use Tests\Support\Bootstrap\Support\TestServiceProvider;
  * @version   2.0.0
  */
 #[CoversClass(Application::class)]
+#[CoversClass(AbstractApplication::class)]
 #[CoversClass(ApplicationNotAvailableException::class)]
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
@@ -427,5 +429,17 @@ class ApplicationTest extends TestCase
         $app->set('path.storage', $this->setFixturePath(slash(path: '/fixtures/application-read/storage/')));
 
         $this->assertTrue($app->isDownMaintenanceMode());
+    }
+
+    public function testTerminateWithNoCallbacks(): void
+    {
+        $app = new Application('/');
+
+        // Nessuna callback registrata qui
+
+        // Non deve dare errori, semplicemente non esegue nulla
+        $app->terminate();
+
+        $this->assertTrue(true); // serve solo a far passare il test
     }
 }

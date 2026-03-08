@@ -78,7 +78,7 @@ interface ApplicationInterface
      *
      * @return array<string, mixed> Key-value pairs defining paths, environment, and core settings.
      */
-    public function definitions(): array;
+    public function setDefinitions(): array;
 
     /**
      * Define and register the configuration directory path for the application.
