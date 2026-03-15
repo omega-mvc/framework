@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Omega\Application;
 
 use Omega\Config\ConfigRepository;
-use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Support\AbstractServiceProvider;
 
 /**
  * Defines the contract for an application instance.

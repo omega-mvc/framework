@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpExpressionResultUnusedInspection */
 
 /**
  * Part of Omega - Tests\Support Package.
@@ -17,6 +17,7 @@ namespace Tests\Support;
 use Omega\Support\PackageManifest;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use Tests\FixturesPathTrait;
 
 /**
@@ -133,9 +134,10 @@ class PackageManifestTest extends TestCase
     {
         $packageManifest = new PackageManifest($this->basePath, $this->applicationCachePath, '/package/');
 
-        $manifest = (fn () => $this->{'getPackageManifest'}())->call($packageManifest);
+        $manifest1 = (fn () => $this->{'getPackageManifest'}())->call($packageManifest);
+        $manifest2 = (fn () => $this->{'getPackageManifest'}())->call($packageManifest);
 
-        $this->assertEquals([
+        $expected = [
             'packages/package1' => [
                 'providers' => [
                     'Package//Package1//ServiceProvider::class',
@@ -147,7 +149,12 @@ class PackageManifestTest extends TestCase
                     'Package//Package2//ServiceProvider2::class',
                 ],
             ],
-        ], $manifest);
+        ];
+
+        $this->assertEquals($expected, $manifest1);
+        $this->assertEquals($expected, $manifest2);
+
+        $this->assertSame($manifest1, $manifest2);
     }
 
     /**
@@ -183,5 +190,81 @@ class PackageManifestTest extends TestCase
             'Package//Package2//ServiceProvider::class',
             'Package//Package2//ServiceProvider2::class',
         ], $config);
+    }
+
+    /**
+     * Test custom vendor path.
+     *
+     * @return void
+     */
+    public function testCustomVendorPath(): void
+    {
+        $customPath = '/custom/vendor/';
+        $manifest   = new PackageManifest('/base', '/cache', $customPath);
+
+        $reflection = new ReflectionProperty(PackageManifest::class, 'vendorPath');
+        $reflection->setAccessible(true);
+
+        $this->assertSame(slash($customPath), $reflection->getValue($manifest));
+    }
+
+    /**
+     * Test default vendor path.
+     *
+     * @return void
+     */
+    public function testDefaultVendorPath(): void
+    {
+        $manifest = new PackageManifest('/base', '/cache');
+
+        $reflection = new ReflectionProperty(PackageManifest::class, 'vendorPath');
+        $reflection->setAccessible(true);
+
+        $this->assertSame(slash('/vendor/composer/'), $reflection->getValue($manifest));
+    }
+
+    /**
+     * Test get package manifest file path.
+     *
+     * @return void
+     */
+    public function testGetPackageManifestWhenCacheFileMissing(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-missing/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+
+        $packageManifest = new PackageManifest($this->basePath, $tempCachePath);
+
+        $manifest = (fn () => $this->{'getPackageManifest'}())->call($packageManifest);
+
+        $this->assertIsArray($manifest);
+
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @unlink($tempCachePath . 'packages.php');
+    }
+
+    /**
+     * Test get package manifest when cache file exists.
+     *
+     * @return void
+     */
+    public function testGetPackageManifestWhenCacheFileExists(): void
+    {
+        if (!is_dir($this->applicationCachePath)) mkdir($this->applicationCachePath, 0777, true);
+        file_put_contents($this->applicationCachePath . 'packages.php', "<?php return ['test' => 'data'];");
+
+        $packageManifest = new PackageManifest($this->basePath, $this->applicationCachePath);
+
+        $ref = new ReflectionProperty(PackageManifest::class, 'packageManifest');
+        $ref->setAccessible(true);
+        $ref->setValue($packageManifest, null);
+
+        $manifest = (fn () => $this->{'getPackageManifest'}())->call($packageManifest);
+
+        $this->assertEquals(['test' => 'data'], $manifest);
     }
 }

@@ -14,8 +14,12 @@ declare(strict_types=1);
 
 namespace Omega\Support;
 
+use function array_column;
 use function array_filter;
-use function array_key_exists;
+use function array_map;
+use function array_merge;
+use function array_reduce;
+use function array_values;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
@@ -86,20 +90,23 @@ final class PackageManifest
     private function config(string $key): array
     {
         $manifest = $this->getPackageManifest();
-        $result   = [];
 
-        foreach ($manifest as $configuration) {
-            if (array_key_exists($key, $configuration)) {
-                $values = (array) $configuration[$key];
-                foreach ($values as $value) {
-                    if (false === empty($value)) {
-                        $result[] = $value;
-                    }
-                }
-            }
-        }
+        $values = array_column($manifest, $key);
 
-        return $result;
+        $values = array_map(
+            static fn ($value): array => (array) $value,
+            array_filter(
+                $values,
+                static fn ($value): bool => $value !== null
+            )
+        );
+
+        return array_values(
+            array_filter(
+                array_merge(...$values),
+                static fn ($value): bool => false === empty($value)
+            )
+        );
     }
 
     /**
@@ -130,31 +137,26 @@ final class PackageManifest
      */
     public function build(): void
     {
-        $packages = [];
-        $provider = [];
+        $file = $this->basePath . $this->vendorPath . 'installed.json';
 
-        // vendor\composer\installed.json
-        if (file_exists($file = $this->basePath . $this->vendorPath . 'installed.json')) {
-            $installed = file_get_contents($file);
-            $installed = json_decode($installed, true);
+        $packages = file_exists($file)
+            ? json_decode(file_get_contents($file), true)['packages'] ?? []
+            : [];
 
-            $packages = $installed['packages'] ?? [];
-        }
-
-        foreach ($packages as $package) {
-            if (isset($package['extra']['omega-mvc'])) {
-                $provider[$package['name']] = $package['extra']['omega-mvc'];
-            }
-        }
-        array_filter($provider);
+        $provider = array_reduce(
+            $packages,
+            static function (array $carry, array $package): array {
+                if (isset($package['extra']['omega-mvc'])) {
+                    $carry[$package['name']] = $package['extra']['omega-mvc'];
+                }
+                return $carry;
+            },
+            []
+        );
 
         file_put_contents(
-            $this->applicationCachePath
-            . 'packages.php',
-            '<?php return '
-            . var_export($provider, true)
-            . ';'
-            . PHP_EOL
+            $this->applicationCachePath . 'packages.php',
+            '<?php return ' . var_export($provider, true) . ';' . PHP_EOL
         );
     }
 }

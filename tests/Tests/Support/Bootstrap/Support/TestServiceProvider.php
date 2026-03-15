@@ -17,7 +17,7 @@ namespace Tests\Support\Bootstrap\Support;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Support\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;

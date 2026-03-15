@@ -137,13 +137,11 @@ abstract class AbstractFacade implements FacadeInterface
      */
     public static function __callStatic(string $name, array $arguments): mixed
     {
-        $instance = static::getFacade();
-
-        if (!$instance) {
-            throw new FacadeObjectNotSetException(
-                static::class
-            );
+        if (static::$app === null) {
+            throw new FacadeObjectNotSetException(static::class);
         }
+
+        $instance = static::getFacade();
 
         return $instance->$name(...$arguments);
     }

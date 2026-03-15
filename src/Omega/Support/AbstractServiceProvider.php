@@ -12,21 +12,22 @@
 
 declare(strict_types=1);
 
-namespace Omega\Container\Provider;
+namespace Omega\Support;
 
+use Exception;
 use Omega\Application\Application;
 
+use function array_diff;
 use function array_key_exists;
 use function array_merge;
-use function closedir;
+use function array_reduce;
 use function copy;
 use function file_exists;
 use function is_dir;
 use function mkdir;
-use function opendir;
 use function pathinfo;
-use function readdir;
 
+use function scandir;
 use const PATHINFO_DIRNAME;
 
 /**
@@ -85,22 +86,41 @@ abstract class AbstractServiceProvider
      * @param string $from      Source file path
      * @param string $to        Destination file path
      * @param bool   $overwrite Whether to overwrite the destination if it exists
-     * @return bool Returns true if the file was successfully imported, false otherwise
+     * @return bool Returns true if the file was successfully imported
+     * @throws Exception If the destination file exists and overwriting is not allowed
      */
     public static function importFile(string $from, string $to, bool $overwrite = false): bool
     {
-        $exists = file_exists($to);
-
-        if (($exists && $overwrite) || false === $exists) {
-            $path = pathinfo($to, PATHINFO_DIRNAME);
-            if (false === file_exists($path)) {
-                mkdir($path, 0755, true);
-            }
-
-            return copy($from, $to);
+        if (!file_exists($to)) {
+            return self::fileWrite($from, $to);
         }
 
-        return false;
+        if (!$overwrite) {
+            throw new Exception('You do not have permission to overwrite the destination file.');
+        }
+
+        return self::fileWrite($from, $to);
+    }
+
+    /**
+     * Write a file to the destination path.
+     *
+     * Ensures that the destination directory exists before copying the file.
+     * If the directory does not exist, it will be created recursively.
+     *
+     * @param string $from Source file path
+     * @param string $to   Destination file path
+     * @return bool True on success, false on failure
+     */
+    private static function fileWrite(string $from, string $to): bool
+    {
+        $path = pathinfo($to, PATHINFO_DIRNAME);
+
+        if (!file_exists($path)) {
+            mkdir($path, 0755, true);
+        }
+
+        return copy($from, $to);
     }
 
     /**
@@ -110,42 +130,36 @@ abstract class AbstractServiceProvider
      * @param string $to        Destination directory path
      * @param bool   $overwrite Whether to overwrite existing files
      * @return bool Returns true if all files and directories were successfully imported
+     * @throws Exception If the destination file exists and overwriting is not allowed
      */
     public static function importDir(string $from, string $to, bool $overwrite = false): bool
     {
-        $dir = opendir($from);
-
-        if (false === $dir) {
+        if (!is_dir($from)) {
             return false;
         }
 
-        if (false === file_exists($to)) {
+        $dir = scandir($from);
+
+        if ($dir === false) {
+            return false;
+        }
+
+        if (!file_exists($to)) {
             mkdir($to, 0755, true);
         }
 
-        while (($file = readdir($dir)) !== false) {
-            if ($file === '.' || $file === '..') {
-                continue;
-            }
+        $items = array_diff($dir, ['.', '..']);
 
-            $src = $from . '/' . $file;
-            $dst = $to . '/' . $file;
+        return array_reduce($items, function (bool $carry, string $file) use ($from, $to, $overwrite) {
+            if (!$carry) return false;
 
-            if (is_dir($src)) {
-                if (false === static::importDir($src, $dst, $overwrite)) {
-                    closedir($dir);
-                    return false;
-                }
-            } else {
-                if (false === static::importFile($src, $dst, $overwrite)) {
-                    closedir($dir);
-                    return false;
-                }
-            }
-        }
+            $src = slash(path: $from . '/' . $file);
+            $dst = slash(path: $to . '/' . $file);
 
-        closedir($dir);
-        return true;
+            return is_dir($src)
+                ? static::importDir($src, $dst, $overwrite)
+                : static::importFile($src, $dst, $overwrite);
+        }, true);
     }
 
     /**

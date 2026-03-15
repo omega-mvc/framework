@@ -24,7 +24,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use RuntimeException;
 use Tests\FixturesPathTrait;
+use function file_exists;
+use function file_put_contents;
+use function is_dir;
+use function mkdir;
+use function rmdir;
+use function unlink;
 
 /**
  * Class ConfigProvidersTest
@@ -102,6 +109,141 @@ class ConfigProvidersTest extends TestCase
 
         $this->assertEquals('prod', $config->get('environment'));
 
+        $app->flush();
+    }
+
+    /**
+     * Test it throws exception on invalid config file.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testItThrowsExceptionOnInvalidConfigFile(): void
+    {
+        $app = new Application($this->setFixtureBasePath());
+
+        $tempConfigDir = $this->setFixturePath(slash(path: '/fixtures/application-write/config_test/'));
+
+        if (!is_dir($tempConfigDir)) {
+            mkdir($tempConfigDir, 0777, true);
+        }
+
+        $filePath = $tempConfigDir . '/corrupted_config.php';
+        file_put_contents($filePath, "<?php return 'Invalid content'; ");
+
+        $app->set('path.config', $tempConfigDir);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid config file');
+
+        try {
+            new ConfigProviders()->bootstrap($app);
+        } finally {
+            if (file_exists($filePath)) unlink($filePath);
+            if (is_dir($tempConfigDir)) rmdir($tempConfigDir);
+        }
+    }
+
+    /**
+     * Test throws if cacge is not array.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testThrowsIfCacheIsNotArray(): void
+    {
+        $basePath = $this->setFixturePath(slash(path: '/fixtures/'));
+
+        $app = new Application($basePath);
+
+        $cachePath = $app->getApplicationCachePath();
+
+        $cacheFile = $cachePath . 'config.php';
+
+        file_put_contents($cacheFile, "<?php return 'not-an-array';");
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Invalid config cache file');
+
+        new ConfigProviders()->bootstrap($app);
+
+        unlink($cacheFile);
+
+        $app->flush();
+    }
+
+    /**
+     * Test it loads valid cache.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testItLoadsValidCache(): void
+    {
+        $basePath = $this->setFixturePath(slash(path: '/fixtures/bootstrap1/'));
+
+        $app = new Application($basePath);
+
+        $cacheFile = $app->getApplicationCachePath() . 'config.php';
+
+        file_put_contents(
+            $cacheFile,
+            "<?php return ['environment' => 'cached'];"
+        );
+
+        new ConfigProviders()->bootstrap($app);
+
+        $config = $app->get('config');
+
+        $this->assertSame('cached', $config->get('environment'));
+
+        unlink($cacheFile);
+    }
+
+    /**
+     * Test it returns empty array when no config files are found.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testItReturnsEmptyArrayWhenNoConfigFilesFound(): void
+    {
+        $app = new Application($this->setFixtureBasePath());
+
+        $emptyDir = $this->setFixturePath(slash(path: '/fixtures/application-write/empty_config_test/'));
+
+        if (!is_dir($emptyDir)) {
+            mkdir($emptyDir, 0777, true);
+        }
+
+        $app->set('path.config', $emptyDir);
+
+        new ConfigProviders()->bootstrap($app);
+
+        $config = $app->get('config');
+        $this->assertEmpty($config->getAll());
+
+        rmdir($emptyDir);
         $app->flush();
     }
 }

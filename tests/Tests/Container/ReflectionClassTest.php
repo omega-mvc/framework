@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use Omega\Container\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -52,6 +53,7 @@ use Tests\Container\Support\Service;
  */
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
 #[CoversClass(EntryNotFoundException::class)]
 class ReflectionClassTest extends AbstractTestContainer
 {

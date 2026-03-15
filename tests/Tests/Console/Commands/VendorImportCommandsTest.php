@@ -17,7 +17,7 @@ namespace Tests\Console\Commands;
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
 use Omega\Console\Commands\VendorImportCommand;
-use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Support\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;

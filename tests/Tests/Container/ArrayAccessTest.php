@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use Omega\Container\Container;
 use Omega\Container\Exceptions\AliasException;
 use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
@@ -37,6 +38,7 @@ use Tests\Container\Support\DummyClass;
  * @version   2.0.0
  */
 #[CoversClass(AliasException::class)]
+#[CoversClass(Container::class)]
 class ArrayAccessTest extends AbstractTestContainer
 {
     /**

@@ -26,13 +26,15 @@ use ReflectionException;
 use ReflectionMethod;
 use ReturnTypeWillChange;
 
+use function array_pop;
 use function class_exists;
 use function compact;
-use function count;
 use function end;
 use function interface_exists;
 use function is_object;
 use function sprintf;
+
+use const ARRAY_FILTER_USE_BOTH;
 
 /**
  * A dependency injection container that manages bindings, singletons, aliases, and resolves dependencies.
@@ -106,11 +108,7 @@ class Container implements ArrayAccess, ContainerInterface
      */
     public function get(string $id): mixed
     {
-        if (
-            false === $this->has($id)
-            && false === class_exists($id)
-            && false === interface_exists($id)
-        ) {
+        if (false === $this->has($id)) {
             throw new EntryNotFoundException($id);
         }
 
@@ -161,7 +159,16 @@ class Container implements ArrayAccess, ContainerInterface
      */
     public function has(string $id): bool
     {
-        return $this->bound($id) || class_exists($id) || interface_exists($id);
+        if ($this->bound($id)) {
+            return true;
+        }
+
+        if (class_exists($id)) {
+            $ref = new ReflectionClass($id);
+            return $ref->isInstantiable();
+        }
+
+        return false;
     }
 
     /**
@@ -189,8 +196,6 @@ class Container implements ArrayAccess, ContainerInterface
      *
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function build(string|Closure $concrete, array $parameters = []): mixed
@@ -253,7 +258,7 @@ class Container implements ArrayAccess, ContainerInterface
      */
     public function getLastParameterOverride(): array
     {
-        return count($this->with) ? end($this->with) : [];
+        return $this->with ? end($this->with) : [];
     }
 
     /**
@@ -381,16 +386,15 @@ class Container implements ArrayAccess, ContainerInterface
      */
     public function offsetUnset(mixed $offset): void
     {
-        $offset = $this->getAlias($offset);
+        $offset = $this->getAlias((string)$offset);
 
-        unset($this->instances[$offset]);
-        unset($this->bindings[$offset]);
+        unset($this->instances[$offset], $this->bindings[$offset]);
 
-        foreach ($this->aliases as $alias => $abstract) {
-            if ($abstract === $offset || $alias === $offset) {
-                unset($this->aliases[$alias]);
-            }
-        }
+        $this->aliases = array_filter(
+            $this->aliases,
+            fn (string $abstract, string $alias): bool => $abstract !== $offset && $alias !== $offset,
+            ARRAY_FILTER_USE_BOTH
+        );
     }
     #endregion
 
@@ -440,23 +444,45 @@ class Container implements ArrayAccess, ContainerInterface
             return $this->instances[$abstract];
         }
 
+        return $this->withParameterOverride($parameters, function () use ($abstract, $useCache) {
+
+            $concrete = $this->getConcrete($abstract);
+
+            $object = $concrete instanceof Closure
+                ? $this->call($concrete, $this->getLastParameterOverride())
+                : $this->build($concrete, $this->getLastParameterOverride());
+
+            if ($useCache || $this->isShared($abstract)) {
+                $this->instances[$abstract] = $object;
+            }
+
+            return $object;
+        });
+    }
+
+    /**
+     * Execute a callback within the scope of a temporary parameter override.
+     *
+     * This method pushes the given parameter overrides onto the internal stack,
+     * making them available during dependency resolution. The stack entry is
+     * automatically removed after the callback completes, even if an exception
+     * is thrown, ensuring the container state remains consistent.
+     *
+     * @param array<int|string, mixed> $parameters Parameter overrides to apply
+     *                                             during the callback execution.
+     * @param callable(): mixed $callback The callback executed while the
+     *                                    parameter override is active.
+     * @return mixed The value returned by the callback.
+     */
+    private function withParameterOverride(array $parameters, callable $callback): mixed
+    {
         $this->with[] = $parameters;
 
-        $concrete = $this->getConcrete($abstract);
-
-        if ($concrete instanceof Closure) {
-            $object = $this->call($concrete, $this->getLastParameterOverride());
-        } else {
-            $object = $this->build($concrete, $this->getLastParameterOverride());
+        try {
+            return $callback();
+        } finally {
+            array_pop($this->with);
         }
-
-        if ($useCache || $this->isShared($abstract)) {
-            $this->instances[$abstract] = $object;
-        }
-
-        array_pop($this->with);
-
-        return $object;
     }
 
     /**
@@ -488,28 +514,6 @@ class Container implements ArrayAccess, ContainerInterface
         return $abstract;
     }
 
-    /**
-     * Determine whether the given type name represents a PHP primitive type.
-     *
-     * @param string $type Type name to check.
-     * @return bool True if the type is a primitive, false otherwise.
-     */
-    protected function isPrimitiveType(string $type): bool
-    {
-        static $types = [
-            'int'       => true,
-            'float'     => true,
-            'string'    => true,
-            'bool'      => true,
-            'array'     => true,
-            'object'    => true,
-            'callable'  => true,
-            'iterable'  => true,
-            'resource'  => true,
-        ];
-
-        return isset($types[$type]);
-    }
     #endregion
 
     #region Private Method

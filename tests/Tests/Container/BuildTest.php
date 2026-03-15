@@ -14,9 +14,11 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use Omega\Container\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Container\Resolver;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
@@ -66,7 +68,9 @@ use Tests\Container\Support\UnionDependencyTwo;
  */
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
 #[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Resolver::class)]
 class BuildTest extends AbstractTestContainer
 {
     /**

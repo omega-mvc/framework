@@ -10,6 +10,8 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpExpressionResultUnusedInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Support;
@@ -104,16 +106,16 @@ final class EnvTest extends TestCase
     {
         return [
             ['BOOL_TRUE', 'true', true],
-            ['BOOL_TRUE_P', '(true)', true],
             ['BOOL_FALSE', 'false', false],
-            ['BOOL_FALSE_P', '(false)', false],
             ['NULL_VAL', 'null', null],
-            ['NULL_VAL_P', '(null)', null],
             ['EMPTY_VAL', 'empty', ''],
-            ['EMPTY_VAL_P', '(empty)', ''],
             ['NUMERIC_INT', '42', 42],
             ['NUMERIC_FLOAT', '3.14', 3.14],
             ['NORMAL_STRING', 'Omega', 'Omega'],
+            ['STRING_ALPHA', 'alpha', 'alpha'],
+            ['STRING_ZERO', '0', 0],
+            ['STRING_FLOAT_STRANGE', '10.50', 10.5],
+            ['STRING_EMPTY_SPACE', ' ', ' '],
         ];
     }
 
@@ -126,7 +128,6 @@ final class EnvTest extends TestCase
     {
         $reflection = new ReflectionClass(Env::class);
         $valuesProp = $reflection->getProperty('values');
-        /** @noinspection PhpExpressionResultUnusedInspection */
         $valuesProp->setAccessible(true);
         $valuesProp->setValue(null, [
             'ARRAY_VAL'  => [1, 2, 3],

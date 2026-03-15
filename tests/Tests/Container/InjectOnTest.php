@@ -14,8 +14,11 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use Omega\Container\Attribute\Inject;
+use Omega\Container\Container;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Container\Injector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
@@ -60,8 +63,11 @@ use Tests\Container\Support\UnresolvableSetterClass;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
+#[CoversClass(Inject::class)]
 #[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
 #[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Injector::class)]
 class InjectOnTest extends AbstractTestContainer
 {
     /**
@@ -254,5 +260,45 @@ class InjectOnTest extends AbstractTestContainer
 
         $this->assertSame($instance, $returnedInstance);
         $this->assertEquals('localhost', $returnedInstance->dependency);
+    }
+
+    /**
+     * Test that a method injection failure is caught.
+     *
+     * @return void
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
+     */
+
+    public function testMethodInjectionCatchBindingResolutionException(): void
+    {
+        // Creiamo una classe che richiede una dipendenza non risolvibile
+        $instance = new class {
+            public $resolved = false;
+            #[Inject]
+            public function setDependency(\ArrayAccess $dependency): void {
+                $this->resolved = true;
+            }
+        };
+
+        // ArrayAccess è un'interfaccia. Se non fai $container->bind(),
+        // il Resolver lancerà una BindingResolutionException.
+        $this->container->injectOn($instance);
+
+        $this->assertFalse($instance->resolved);
+    }
+
+    public function testPropertyInjectionCatchBindingResolutionException(): void
+    {
+        $instance = new class {
+            // Supponiamo che ArrayAccess non sia bindata nel container
+            #[Inject(\ArrayAccess::class)]
+            public $dependency = 'initial';
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertEquals('initial', $instance->dependency);
     }
 }

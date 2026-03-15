@@ -10,6 +10,8 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpPossiblePolymorphicInvocationInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Support\Bootstrap;
@@ -19,13 +21,15 @@ use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Support\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
+
+use function get_class;
 
 /**
  * Class BootProvidersTest
@@ -77,6 +81,12 @@ class BootProvidersTest extends TestCase
         $this->assertTrue($app->isBooted);
     }
 
+    /**
+     * Test register boot provider when application already booted.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testRegisterBootsProviderWhenApplicationAlreadyBooted(): void
     {
         $app = new Application($this->setFixturePath('/fixtures/application-read/'));
@@ -102,6 +112,12 @@ class BootProvidersTest extends TestCase
         $this->assertTrue($registered->bootCalled);
     }
 
+    /**
+     * Test register does not boot provider when application not booted.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
     public function testRegisterDoesNotBootProviderWhenApplicationNotBooted(): void
     {
         $app = new Application($this->setFixturePath('/fixtures/application-read/'));

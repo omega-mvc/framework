@@ -24,14 +24,13 @@ use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionParameter;
 
 use function array_key_exists;
-use function array_merge;
+use function array_map;
 use function array_shift;
-use function array_values;
 use function call_user_func_array;
 use function class_exists;
-use function count;
 use function is_array;
 use function is_callable;
 use function is_object;
@@ -166,51 +165,12 @@ final readonly class Invoker
      */
     private function resolveFunctionDependencies(ReflectionFunctionAbstract $reflection, array $parameters = []): array
     {
-        $dependencies = [];
+        $resolved = array_map(
+            fn($parameter) => $this->resolveParameter($parameter, $parameters),
+            $reflection->getParameters()
+        );
 
-        foreach ($reflection->getParameters() as $parameter) {
-            $name = $parameter->getName();
-
-            if (array_key_exists($name, $parameters)) {
-                $dependencies[] = $parameters[$name];
-                unset($parameters[$name]);
-                continue;
-            }
-
-            if (array_key_exists($parameter->getPosition(), $parameters)) {
-                $dependencies[] = $parameters[$parameter->getPosition()];
-                continue;
-            }
-
-            if ($parameter->getType() instanceof ReflectionNamedType && false === $parameter->getType()->isBuiltin()) {
-                $dependencies[] = $this->container->get($parameter->getType()->getName());
-                continue;
-            }
-
-            if ($parameter->getName() === 'container' && $parameter->getType() === null) {
-                $dependencies[] = $this->container;
-                continue;
-            }
-
-            if ($parameter->isDefaultValueAvailable()) {
-                $dependencies[] = $parameter->getDefaultValue();
-                continue;
-            }
-
-            if (count($parameters)) {
-                $dependencies[] = array_shift($parameters);
-                continue;
-            }
-
-            throw new BindingResolutionException(
-                sprintf(
-                    "Unable to resolve dependency [%s] in callable",
-                    $parameter
-                )
-            );
-        }
-
-        return array_merge($dependencies, array_values($parameters));
+        return array_merge($resolved, array_values($parameters));
     }
 
     /**
@@ -231,43 +191,51 @@ final readonly class Invoker
         object $instance,
         array $parameters = []
     ): array {
-        $dependencies = [];
+        return array_map(
+            fn (ReflectionParameter $parameter) => $this->resolveParameter($parameter, $parameters),
+            $method->getParameters()
+        );
+    }
 
-        foreach ($method->getParameters() as $parameter) {
-            $name = $parameter->getName();
+    private function resolveParameter(ReflectionParameter $parameter, array &$parameters): mixed
+    {
+        $name = $parameter->getName();
+        $pos  = $parameter->getPosition();
 
-            if (array_key_exists($name, $parameters)) {
-                $dependencies[] = $parameters[$name];
-
-                continue;
-            }
-
-            if ($type = $parameter->getType()) {
-                if ($type instanceof ReflectionNamedType) {
-                    // If it's a non-built-in class type,
-                    // resolve it from the container
-                    if (false === $type->isBuiltin()) {
-                        $dependencies[] = $this->container->get($type->getName());
-                        continue;
-                    }
-                }
-            }
-
-            if ($parameter->isDefaultValueAvailable()) {
-                $dependencies[] = $parameter->getDefaultValue();
-
-                continue;
-            }
-
-            throw new BindingResolutionException(
-                sprintf(
-                    "Cannot resolve parameter \$%s in %s::__invoke()",
-                    $name,
-                    $instance::class
-                )
-            );
+        if (array_key_exists($name, $parameters)) {
+            $value = $parameters[$name];
+            unset($parameters[$name]);
+            return $value;
         }
 
-        return $dependencies;
+        if (array_key_exists($pos, $parameters)) {
+            $value = $parameters[$pos];
+            unset($parameters[$pos]);
+            return $value;
+        }
+
+        $type = $parameter->getType();
+        if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
+            return $this->container->get($type->getName());
+        }
+
+        if ($name === 'container' && $type === null) {
+            return $this->container;
+        }
+
+        if ($parameter->isDefaultValueAvailable()) {
+            return $parameter->getDefaultValue();
+        }
+
+        if (!empty($parameters)) {
+            return array_shift($parameters);
+        }
+
+        throw new BindingResolutionException(
+            sprintf(
+                "Unable to resolve dependency [%s] in callable",
+                $parameter
+            )
+        );
     }
 }

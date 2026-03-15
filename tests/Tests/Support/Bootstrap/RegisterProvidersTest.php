@@ -22,7 +22,7 @@ use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Container\Provider\AbstractServiceProvider;
+use Omega\Support\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
 use Omega\Support\Bootstrap\RegisterProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -34,6 +34,7 @@ use ReflectionProperty;
 use Tests\FixturesPathTrait;
 use Tests\Support\Bootstrap\Support\TestRegisterProvider;
 use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
+use function in_array;
 
 /**
  * Class RegisterProvidersTest
@@ -115,6 +116,17 @@ final class RegisterProvidersTest extends TestCase
         $this->assertContains($provider, $booted);
     }
 
+    /**
+     * Test register provider calls register method.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
     public function testRegisterProviderCallsRegisterMethod(): void
     {
         TestRegisterProvider::$called = 0;
@@ -130,6 +142,17 @@ final class RegisterProvidersTest extends TestCase
         $this->assertSame(1, TestRegisterProvider::$called);
     }
 
+    /**
+     * Test register provider skips loaded providers.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
     public function testRegisterProviderSkipsLoadedProviders(): void
     {
         TestRegisterProvider::$called = 0;
@@ -149,33 +172,42 @@ final class RegisterProvidersTest extends TestCase
         $this->assertSame(0, TestRegisterProvider::$called);
     }
 
+    /**
+     * Test bootstrap register providers.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception if a generic error occurred
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
     public function testBootstrapRegistersProviders(): void
     {
-        // 1. Setup dell'applicazione
         $app = new Application($this->setFixturePath('/fixtures/support/'));
-
-        // 2. Fai in modo che il provider sia presente nell'array dei provider dell'app.
-        // Poiché $providers è protetto, usiamo il metodo di test che hai già
-        // o manipoliamo la configurazione se possibile.
-        // Se non puoi accedere direttamente, aggiungi un metodo temporaneo
-        // o usa un file di configurazione di test nella cartella 'fixtures'.
 
         $app->loadConfig(new ConfigRepository([
             'providers' => [TestRegisterServiceProvider::class],
             'VIEW_EXTENSIONS' => [] // Necessario se il costruttore lo richiede
         ]));
 
-        // 3. Esegui il bootstrapper
         $bootstrapper = new RegisterProviders();
         $bootstrapper->bootstrap($app);
 
-        // 4. Verifica che il provider sia stato registrato
         $this->assertTrue(
             $this->isProviderLoaded($app, TestRegisterServiceProvider::class),
-            'Il provider non è stato caricato correttamente.'
+            'The provider was not loaded correctly.'
         );
     }
 
+    /**
+     * Check if providers is loaded.
+     *
+     * @param Application $app           The Application instance.
+     * @param string      $providerClass The providers class name.
+     * @return bool Return true if the providers is loaded, false if not.
+     */
     private function isProviderLoaded(Application $app, string $providerClass): bool
     {
         $reflection = new ReflectionClass($app);
