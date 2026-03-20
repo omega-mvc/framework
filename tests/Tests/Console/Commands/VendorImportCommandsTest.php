@@ -26,6 +26,7 @@ use function file_exists;
 use function microtime;
 use function ob_get_clean;
 use function ob_start;
+use function Omega\Support\slash;
 use function Omega\Time\now;
 use function unlink;
 

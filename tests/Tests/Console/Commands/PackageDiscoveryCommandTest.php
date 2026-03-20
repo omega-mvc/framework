@@ -77,7 +77,7 @@ final class PackageDiscoveryCommandTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/bootstrap/cache/packages.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/packages.php');
 
         if (file_exists($file)) {
             @unlink($file);
@@ -93,7 +93,7 @@ final class PackageDiscoveryCommandTest extends TestCase
      */
     public function testItCanCreateConfigFile(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
 
         $app->set(PackageManifest::class, fn () => new PackageManifest(
             basePath: $app->get('path.base'),

@@ -23,6 +23,9 @@ use ReflectionException;
 
 use function file_exists;
 use function rtrim;
+use function Omega\Support\env;
+use function Omega\Support\get_path;
+use function Omega\Support\set_path;
 
 /**
  * Default Omega application implementation.

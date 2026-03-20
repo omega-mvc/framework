@@ -21,7 +21,10 @@ use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Cache\Storage\File;
 use Omega\Cache\Storage\Memory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
+
+use function Omega\Support\slash;
 
 /**
  * Class CacheFactoryTest
@@ -52,6 +55,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CacheManager::class)]
 #[CoversClass(File::class)]
 #[CoversClass(Memory::class)]
+#[CoversFunction('Omega\Support\slash')]
 final class CacheFactoryTest extends TestCase
 {
     /**

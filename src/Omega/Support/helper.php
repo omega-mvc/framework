@@ -12,8 +12,11 @@
 
 declare(strict_types=1);
 
+namespace Omega\Support;
+
+use Exception;
+use InvalidArgumentException;
 use Omega\Application\Application;
-use Omega\Collection\CollectionImmutable;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -22,9 +25,21 @@ use Omega\Http\RedirectResponse;
 use Omega\Http\Response;
 use Omega\Router\Router;
 use Omega\Router\RouteUrlBuilder;
-use Omega\Support\Env;
-use Omega\Support\Vite;
+use Omega\Support\Env as GetEnv;
+use Omega\Support\Vite as GetVite;
 use Psr\Container\ContainerExceptionInterface;
+use ReflectionException;
+
+use function array_key_first;
+use function array_map;
+use function count;
+use function is_array;
+use function str_ends_with;
+use function str_replace;
+use function strtolower;
+
+use const DIRECTORY_SEPARATOR;
+use const PHP_OS_FAMILY;
 
 /**
  * Omega Helper Functions.
@@ -42,37 +57,81 @@ use Psr\Container\ContainerExceptionInterface;
  * @version   2.0.0
  */
 
-if (!function_exists('app_env')) {
+if (!function_exists('app')) {
     /**
-     * Check application environment mode.
+     * Get Application container.
      *
-     * @return string Returns the current environment mode of the application, such as 'dev', 'prod', or 'testing'.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @return Application Return the current application instance.
+     * @throws ApplicationNotAvailableException if the application is not started.
      */
-    function app_env(): string
+    function app(): Application
     {
-        return app()->getEnvironment();
+        $app = Application::getInstance();
+        if (null === $app) {
+            throw new ApplicationNotAvailableException();
+        }
+
+        return $app;
     }
 }
 
-if (!function_exists('is_production')) {
+if (!function_exists('env')) {
     /**
-     * Check application production mode.
+     * Retrieve an environment variable value.
      *
-     * @return bool True if in production mode.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * This helper provides access to environment configuration values
+     * through the internal Env component. If the given key does not exist,
+     * the provided default value will be returned instead.
+     *
+     * Example usage:
+     * ```php
+     * $appEnv = env('APP_ENV', 'production');
+     * ```
+     *
+     * @param string $key The environment variable key.
+     * @param mixed $default Optional default value returned if the key is not found.
+     * @return mixed The environment value or the default if not set.
      */
-    function is_production(): bool
+    function env(string $key, mixed $default = null): mixed
     {
-        return app()->isProduction();
+        return GetEnv::get($key, $default);
+    }
+}
+
+if (!function_exists('get_path')) {
+    /**
+     * Retrieve application path(s) from the container and append a suffix.
+     *
+     * This helper resolves one or more path identifiers from the application
+     * container and optionally appends a normalized suffix to each path.
+     *
+     * The suffix is normalized using the {@see slash()} helper to ensure
+     * correct directory separators across platforms.
+     *
+     * It supports both string and array inputs:
+     * - If a single identifier is provided, a string is returned.
+     * - If multiple identifiers are provided (array), an array of paths is returned.
+     *
+     * @param string|array $id The container binding key(s) used to retrieve the path(s).
+     * @param string $suffix_path Optional suffix to append to each resolved path.
+     * @return string|array The resolved path(s) with the appended suffix.
+     * @throws BindingResolutionException If the container binding cannot be resolved.
+     * @throws CircularAliasException If a circular alias is detected.
+     * @throws ContainerExceptionInterface For general container errors.
+     * @throws EntryNotFoundException If no entry is found for the given identifier.
+     * @throws ReflectionException If a reflection error occurs during resolution.
+     */
+    function get_path(string|array $id, string $suffix_path = ''): string|array
+    {
+        $value = app()->get($id);
+
+        $normalizedSuffix = slash(path: $suffix_path);
+
+        if (is_array($value)) {
+            return array_map(fn ($v) => $v . $normalizedSuffix, $value);
+        }
+
+        return $value . $normalizedSuffix;
     }
 }
 
@@ -93,67 +152,183 @@ if (!function_exists('is_dev')) {
     }
 }
 
-if (!function_exists('app')) {
+if (!function_exists('is_production')) {
     /**
-     * Get Application container.
+     * Check application production mode.
      *
-     * @return Application Return the current application instance.
-     * @throws ApplicationNotAvailableException if the application is not started.
+     * @return bool True if in production mode.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    function app(): Application
+    function is_production(): bool
     {
-        $app = Application::getInstance();
-        if (null === $app) {
-            throw new ApplicationNotAvailableException();
+        return app()->isProduction();
+    }
+}
+
+if (!function_exists('os_detect')) {
+    /**
+     * Detect the current operating system.
+     *
+     * This helper returns a simplified string identifier for the OS on which
+     * the PHP script is running. Useful for conditional logic depending on
+     * the operating system.
+     *
+     * Possible return values:
+     * - 'windows'
+     * - 'linux'
+     * - 'mac'
+     * - 'bsd'
+     * - 'solaris'
+     * - 'unknown'
+     *
+     * Example usage:
+     * ```php
+     * if (os_detect() === 'windows') {
+     *     // Windows-specific code
+     * }
+     * ```
+     *
+     * @return string The operating system identifier.
+     */
+    function os_detect(?string $osFamily = null): string
+    {
+        $os = $osFamily ?? PHP_OS_FAMILY;
+
+        return match (strtolower($os)) {
+            'windows' => 'windows',
+            'linux'   => 'linux',
+            'darwin'  => 'mac',
+            'bsd'     => 'bsd',
+            'solaris' => 'solaris',
+            default   => 'unknown',
+        };
+    }
+}
+
+if (!function_exists('path')) {
+    /**
+     * Convert a dot-notated binding into a relative directory path.
+     *
+     * This function replaces dots in the given binding with the system's directory separator
+     * and ensures the path ends with a directory separator.
+     *
+     * @param string|array $binding The dot-notated binding (e.g., "app.config").
+     * @return string|array The resulting relative directory path with trailing separator.
+     */
+    function path(string|array $binding): string|array
+    {
+        if (is_array($binding)) {
+            return array_map(fn($b) => path($b), $binding);
         }
 
-        return $app;
+        $relative_path = str_replace('.', DIRECTORY_SEPARATOR, $binding);
+
+        if (!str_ends_with($relative_path, DIRECTORY_SEPARATOR)) {
+            $relative_path .= DIRECTORY_SEPARATOR;
+        }
+
+        return $relative_path;
     }
 }
 
-if (!function_exists('config')) {
+if (!function_exists('redirect')) {
     /**
-     * Get Application Configuration.
+     * Redirect to a specific URL.
      *
-     * @return CollectionImmutable<string, mixed> Returns an immutable collection
-     *  containing all application configuration values, indexed by string keys.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @param string $url The destination URL for the redirection.
+     * @return RedirectResponse Returns a RedirectResponse object representing the redirection.
+     * @throws Exception Thrown if the redirection cannot be created.
      */
-    function config(): CollectionImmutable
+    function redirect(string $url): RedirectResponse
     {
-        return new CollectionImmutable(app()->get('config'));
+        return new RedirectResponse($url);
     }
 }
 
-if (!function_exists('view')) {
+if (!function_exists('redirect_route')) {
     /**
-     * Render with custom template engine, wrap in `Route\Controller`.
+     * Redirect to another route using the route's name and optional parameters.
      *
-     * @param string               $view_path Path to the template file to render.
-     * @param array<string, mixed> $data      Associative array of data to pass to the template.
-     * @param array<string, mixed> $option    Optional settings such as 'status' (HTTP status code) and 'header'
-     *           (HTTP headers).
-     * @return Response Returns a Response object containing the rendered template along with the specified
-     *           status and headers.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @param string $route_name The name of the route to redirect to.
+     * @param array<string|int, string|int|bool> $parameter Optional dynamic parameters to populate the
+     *                                                      route's URL pattern.
+     * @return RedirectResponse Returns a RedirectResponse object representing the redirection.
+     * @throws Exception Thrown if the route cannot be resolved or URL cannot be built.
      */
-    function view(string $view_path, array $data = [], array $option = []): Response
+    function redirect_route(string $route_name, array $parameter = []): RedirectResponse
     {
-        $view        = app()->get('view.response');
-        $status_code = $option['status'] ?? 200;
-        $headers     = $option['header'] ?? [];
+        $route = Router::redirect($route_name);
+        $builder = new RouteUrlBuilder(Router::$patterns);
 
-        return $view($view_path, $data)
-            ->setResponseCode($status_code)
-            ->setHeaders($headers);
+        return new RedirectResponse($builder->buildUrl($route, $parameter));
+    }
+}
+
+if (!function_exists('set_path')) {
+    /**
+     * Convert a dot-notated key into an absolute directory path.
+     *
+     * This helper transforms a dot-notated string (e.g. "app.config")
+     * into a filesystem path using the system's directory separator.
+     * The resulting path is guaranteed to:
+     *
+     * - Start with a directory separator
+     * - End with a directory separator
+     *
+     * It supports both string and array inputs. When an array is provided,
+     * the transformation is applied recursively to each element.
+     *
+     * Example:
+     * - "app.config" => "/app/config/"
+     *
+     * @param string|array $key The dot-notated path key(s).
+     * @return string|array The resulting normalized directory path(s).
+     *
+     * @throws InvalidArgumentException If the given key is empty.
+     */
+    function set_path(string|array $key): string|array
+    {
+        if (empty($key)) {
+            throw new InvalidArgumentException('The path key cannot be an empty string or an empty array.');
+        }
+
+        $ds = DIRECTORY_SEPARATOR;
+
+        if (is_array($key)) {
+            return array_map(fn($k) => set_path($k), $key);
+        }
+
+        return $ds . str_replace('.', $ds, $key) . $ds;
+    }
+}
+
+if (!function_exists('slash')) {
+    /**
+     * Normalize filesystem path separators.
+     *
+     * This helper converts all forward slashes (`/`) in the given path
+     * to the platform-specific directory separator (`DIRECTORY_SEPARATOR`).
+     *
+     * It supports both string and array inputs. When an array is provided,
+     * the normalization is applied recursively to each element.
+     *
+     * This function does not alter the semantic meaning of the path,
+     * but ensures consistency across different operating systems.
+     *
+     * @param string|array $path The path or list of paths to normalize.
+     * @return string|array The normalized path(s) with correct directory separators.
+     */
+    function slash(string|array $path): string|array
+    {
+        if (is_array($path)) {
+            return array_map(fn($p) => str_replace('/', DIRECTORY_SEPARATOR, $p), $path);
+        }
+
+        return str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 }
 
@@ -174,7 +349,7 @@ if (!function_exists('vite')) {
      */
     function vite(string ...$entry_points): array|string
     {
-        /** @var Vite $vite */
+        /** @var GetVite $vite */
         $vite = app()->get('vite.gets');
 
         $resource = $vite->gets($entry_points);
@@ -184,185 +359,30 @@ if (!function_exists('vite')) {
     }
 }
 
-if (!function_exists('redirect_route')) {
+if (!function_exists('view')) {
     /**
-     * Redirect to another route using the route's name and optional parameters.
+     * Render with custom template engine, wrap in `Route\Controller`.
      *
-     * @param string $route_name The name of the route to redirect to.
-     * @param array<string|int, string|int|bool> $parameter Optional dynamic parameters to populate the
-     *                                                      route's URL pattern.
-     * @return RedirectResponse Returns a RedirectResponse object representing the redirection.
-     * @throws Exception Thrown if the route cannot be resolved or URL cannot be built.
-     */
-    function redirect_route(string $route_name, array $parameter = []): RedirectResponse
-    {
-        $route   = Router::redirect($route_name);
-        $builder = new RouteUrlBuilder(Router::$patterns);
-
-        return new RedirectResponse($builder->buildUrl($route, $parameter));
-    }
-}
-
-if (!function_exists('redirect')) {
-    /**
-     * Redirect to a specific URL.
-     *
-     * @param string $url The destination URL for the redirection.
-     * @return RedirectResponse Returns a RedirectResponse object representing the redirection.
-     * @throws Exception Thrown if the redirection cannot be created.
-     */
-    function redirect(string $url): RedirectResponse
-    {
-        return new RedirectResponse($url);
-    }
-}
-
-if (!function_exists('abort')) {
-    /**
-     * Abort application to an HTTP exception.
-     *
-     * @param int $code The HTTP status code for the abort.
-     * @param string $message Optional message describing the reason for the abort.
-     * @param array<string, string> $headers Optional HTTP headers to send with the response.
-     * @return void
-     */
-    function abort(int $code, string $message = '', array $headers = []): void
-    {
-        app()->abort($code, $message, $headers);
-    }
-}
-
-if (!function_exists('env')) {
-    function env(string $key, mixed $default = null): mixed
-    {
-        return Env::get($key, $default);
-    }
-}
-
-if (!function_exists('set_path')) {
-    /**
-     * Convert a dot-notated path key into a directory path.
-     *
-     * This function replaces dots in the given key with the system's directory separator
-     * and ensures the path starts and ends with a directory separator.
-     *
-     * @param string $key The dot-notated path key (e.g., "app.config").
-     * @return string The resulting directory path with separators.
-     * @throws InvalidArgumentException Thrown when the provided path key is an empty string.
-     */
-    function set_path(string $key): string
-    {
-        if ($key === '') {
-            throw new InvalidArgumentException('The path key cannot be an empty string.');
-        }
-
-        return DIRECTORY_SEPARATOR . str_replace('.', DIRECTORY_SEPARATOR, $key) . DIRECTORY_SEPARATOR;
-    }
-}
-
-if (!function_exists('get_path')) {
-    /**
-     * Get application config path, base on config file.
-     *
-     * @param string|array $id The configuration key(s) used to retrieve the path(s) from the application container.
-     * @param string $suffix_path Add string end of path.
-     * @return string|array Config path folder or an array of config path folder.
+     * @param string $view_path Path to the template file to render.
+     * @param array<string, mixed> $data Associative array of data to pass to the template.
+     * @param array<string, mixed> $option Optional settings such as 'status' (HTTP status code) and 'header'
+     *           (HTTP headers).
+     * @return Response Returns a Response object containing the rendered template along with the specified
+     *           status and headers.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    function get_path(string|array $id, string $suffix_path = ''): string|array
+    function view(string $view_path, array $data = [], array $option = []): Response
     {
-        $value = app()->get($id);
+        $view = app()->get('view.response');
+        $status_code = $option['status'] ?? 200;
+        $headers = $option['header'] ?? [];
 
-        if (is_array($value)) {
-            return array_map(fn ($v) => $v . $suffix_path, $value);
-        }
-
-        return $value . slash(path: $suffix_path);
-    }
-}
-
-if (!function_exists('path')) {
-    /**
-     * Convert a dot-notated binding into a relative directory path.
-     *
-     * This function replaces dots in the given binding with the system's directory separator
-     * and ensures the path ends with a directory separator.
-     *
-     * @param string $binding The dot-notated binding (e.g., "app.config").
-     * @return string The resulting relative directory path with trailing separator.
-     */
-    function path(string $binding): string
-    {
-        $relative_path = str_replace('.', DIRECTORY_SEPARATOR, $binding);
-
-        if (!str_ends_with($relative_path, DIRECTORY_SEPARATOR)) {
-            $relative_path .= DIRECTORY_SEPARATOR;
-        }
-
-        return $relative_path;
-    }
-}
-
-if (!function_exists('slash')) {
-    /**
-     * Normalize a filesystem path by converting forward slashes (`/`)
-     * into the platform-specific directory separator.
-     *
-     * This helper is mainly intended for the testing environment, where
-     * paths may be manually constructed using `/`, while the application
-     * runtime relies on `DIRECTORY_SEPARATOR` depending on the operating
-     * system. The function does not alter the meaning of the path; it
-     * simply ensures portability and consistency.
-     *
-     * @param string $path  The path to normalize.
-     * @return string       The normalized path with slashes converted.
-     */
-    function slash(string $path): string
-    {
-        return str_replace('/', DIRECTORY_SEPARATOR, $path);
-    }
-
-    if (!function_exists('os_detect')) {
-        /**
-         * Detect the current operating system.
-         *
-         * This helper returns a simplified string identifier for the OS on which
-         * the PHP script is running. Useful for conditional logic depending on
-         * the operating system.
-         *
-         * Possible return values:
-         * - 'windows'
-         * - 'linux'
-         * - 'mac'
-         * - 'bsd'
-         * - 'solaris'
-         * - 'unknown'
-         *
-         * Example usage:
-         * ```php
-         * if (os_detect() === 'windows') {
-         *     // Windows-specific code
-         * }
-         * ```
-         *
-         * @return string The operating system identifier.
-         */
-        function os_detect(): string
-        {
-            $os = PHP_OS_FAMILY; // PHP >= 7.2, returns 'Windows', 'Linux', 'Darwin', etc.
-
-            return match (strtolower($os)) {
-                'windows' => 'windows',
-                'linux'   => 'linux',
-                'darwin'  => 'mac',
-                'bsd'     => 'bsd',
-                'solaris' => 'solaris',
-                default   => 'unknown',
-            };
-        }
+        return $view($view_path, $data)
+            ->setResponseCode($status_code)
+            ->setHeaders($headers);
     }
 }

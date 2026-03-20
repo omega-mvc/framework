@@ -47,7 +47,7 @@ final class EnvTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->fixturePath = $this->setFixturePath(slash(path: '/fixtures/support/'));
+        $this->fixturePath = $this->setFixturePath('/fixtures/support/');
     }
 
     protected function tearDown(): void

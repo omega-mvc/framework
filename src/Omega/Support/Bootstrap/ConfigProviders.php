@@ -31,6 +31,9 @@ use function gettype;
 use function glob;
 use function is_array;
 
+use function Omega\Support\env;
+use function Omega\Support\get_path;
+
 /**
  * ConfigProviders is responsible for loading and bootstrapping the application's configuration.
  *

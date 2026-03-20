@@ -117,7 +117,7 @@ final class RequestTest extends TestCase
                 'file_2' => [
                     'name'      => 'test123.txt',
                     'type'      => 'file',
-                    'tmp_name'  => $this->setFixturePath(slash(path: '/fixtures/application-read/upload/test123.tmp')),
+                    'tmp_name'  => $this->setFixturePath('/fixtures/application-read/upload/test123.tmp'),
                     'error'     => 0,
                     'size'      => 1,
                 ],
@@ -470,7 +470,7 @@ final class RequestTest extends TestCase
                 'file_2' => [
                     'name'      => 'test123.txt',
                     'type'      => 'file',
-                    'tmp_name'  => $this->setFixturePath(slash(path: '/fixtures/application-read/upload/test123.tmp')),
+                    'tmp_name'  => $this->setFixturePath('/fixtures/application-read/upload/test123.tmp'),
                     'error'     => 0,
                     'size'      => 1,
                 ],
@@ -542,14 +542,14 @@ final class RequestTest extends TestCase
         $upload
             ->setFileName('success')
             ->setFileTypes(['txt', 'md'])
-            ->setFolderLocation($this->setFixturePath(slash(path: '/fixtures/application-write/upload/')))
+            ->setFolderLocation($this->setFixturePath('/fixtures/application-write/upload/'))
             ->setMaxFileSize(91)
             ->setMimeTypes(['file'])
         ;
 
         $upload->upload();
 
-        $upload->delete($this->setFixturePath(slash(path: '/fixtures/application-write/upload/success.txt')));
+        $upload->delete($this->setFixturePath('/fixtures/application-write/upload/success.txt'));
 
         $this->assertTrue($upload->success());
     }

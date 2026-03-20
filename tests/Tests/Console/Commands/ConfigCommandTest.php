@@ -86,7 +86,7 @@ final class ConfigCommandTest extends TestCase
     public function testItCanCreateConfigFile(): void
     {
         $app = new Application($this->setFixturePath('/fixtures/application-write/'));
-        $app->set('path.config', $this->setFixturePath(slash(path: '/fixtures/application-write/config/')));
+        $app->set('path.config', $this->setFixturePath('/fixtures/application-write/config/'));
 
         $command = new ConfigCommand([]);
 
@@ -109,8 +109,8 @@ final class ConfigCommandTest extends TestCase
      */
     public function testItCanRemoveConfigFile(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
-        $app->set('path.config', $this->setFixturePath(slash(path: '/fixtures/application-read/config/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+        $app->set('path.config', $this->setFixturePath('/fixtures/application-read/config/'));
 
         $command = new ConfigCommand([]);
 

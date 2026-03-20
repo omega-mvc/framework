@@ -14,14 +14,18 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use ArrayAccess;
 use Omega\Container\Attribute\Inject;
 use Omega\Container\Container;
+use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Injector;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Container\ContainerExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
+use ReflectionMethod;
 use stdClass;
 use Tests\Container\Support\AnotherService;
 use Tests\Container\Support\Dependant;
@@ -63,6 +67,7 @@ use Tests\Container\Support\UnresolvableSetterClass;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
+#[CoversClass(BindingResolutionException::class)]
 #[CoversClass(Inject::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(Container::class)]
@@ -74,6 +79,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject call setters.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -90,6 +97,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject skips non setters.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -107,6 +116,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject only class types.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -123,9 +134,11 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject ignores unresolvable.
      *
      * @return void
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
      */
     public function testInjectIgnoresUnresolvable(): void
     {
@@ -139,9 +152,11 @@ class InjectOnTest extends AbstractTestContainer
      * Test injects skips static.
      *
      * @return void
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
      */
     public function testInjectSkipsStatic(): void
     {
@@ -159,9 +174,11 @@ class InjectOnTest extends AbstractTestContainer
      * Test injects multiple setters.
      *
      * @return void
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
      */
     public function testInjectMultipleSetters(): void
     {
@@ -176,6 +193,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject resolves nested.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -195,6 +214,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject returns original.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -211,6 +232,8 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject using in inject attribute.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
@@ -228,6 +251,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject using inject attribute on parameter.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
@@ -247,6 +271,7 @@ class InjectOnTest extends AbstractTestContainer
      * Test inject using inject attribute on property.
      *
      * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
@@ -263,42 +288,84 @@ class InjectOnTest extends AbstractTestContainer
     }
 
     /**
-     * Test that a method injection failure is caught.
+     * Test method injection catch binding resolution exception.
      *
      * @return void
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws ReflectionException
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-
     public function testMethodInjectionCatchBindingResolutionException(): void
     {
-        // Creiamo una classe che richiede una dipendenza non risolvibile
         $instance = new class {
-            public $resolved = false;
+            public bool $resolved = false;
+
+            /**
+             * @noinspection PhpUnused
+             * @noinspection PhpUnusedParameterInspection
+             */
             #[Inject]
-            public function setDependency(\ArrayAccess $dependency): void {
+            public function setDependency(ArrayAccess $dependency): void {
                 $this->resolved = true;
             }
         };
 
-        // ArrayAccess è un'interfaccia. Se non fai $container->bind(),
-        // il Resolver lancerà una BindingResolutionException.
         $this->container->injectOn($instance);
 
         $this->assertFalse($instance->resolved);
     }
 
+    /**
+     * Test property injection catch binding resolution exception.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
     public function testPropertyInjectionCatchBindingResolutionException(): void
     {
         $instance = new class {
-            // Supponiamo che ArrayAccess non sia bindata nel container
-            #[Inject(\ArrayAccess::class)]
-            public $dependency = 'initial';
+            #[Inject(ArrayAccess::class)]
+            public string $dependency = 'initial';
         };
 
         $this->container->injectOn($instance);
 
         $this->assertEquals('initial', $instance->dependency);
+    }
+
+    /**
+     * Test is type injectable.
+     *
+     * @return void
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testIsTypeInjectable(): void
+    {
+        $dummy = new class {
+            public function method(
+                string $builtin,        // built-in
+                ArrayAccess $interface, // non-builtin
+                int $otherBuiltin       // built-in
+            ) {}
+        };
+
+        $reflector = new ReflectionClass($dummy);
+        $params = $reflector->getMethod('method')->getParameters();
+
+        $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
+        /** @noinspection PhpExpressionResultUnusedInspection */
+        $method->setAccessible(true);
+
+        $injector = new Injector($this->container);
+
+        $this->assertFalse($method->invoke($injector, $params[0]), 'String should not be injectable');
+        $this->assertTrue($method->invoke($injector, $params[1]), 'Interface should be injectable');
+        $this->assertFalse($method->invoke($injector, $params[2]), 'Int should not be injectable');
     }
 }

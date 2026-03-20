@@ -37,6 +37,7 @@ use function is_int;
 use function preg_match;
 use function preg_replace;
 use function str_split;
+use function Omega\Support\get_path;
 
 /**
  * AbstractCommand

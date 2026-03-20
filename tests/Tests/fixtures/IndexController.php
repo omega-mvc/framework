@@ -10,6 +10,8 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Response;
 use ReflectionException;
 
+use function Omega\Support\view;
+
 class IndexController extends AbstractController
 {
     /**

@@ -19,6 +19,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
@@ -27,6 +28,7 @@ use function filemtime;
 use function ob_get_clean;
 use function ob_start;
 use function unlink;
+use function Omega\Support\slash;
 
 /**
  * Test suite for the Maintenance console commands.
@@ -62,6 +64,7 @@ use function unlink;
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
 #[CoversClass(MaintenanceCommand::class)]
+#[CoversFunction('Omega\Support\slash')]
 final class MaintenanceCommandsTest extends AbstractTestCommand
 {
     /**

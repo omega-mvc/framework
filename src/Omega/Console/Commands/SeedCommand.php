@@ -37,6 +37,8 @@ use function Omega\Console\info;
 use function Omega\Console\style;
 use function Omega\Console\success;
 use function Omega\Console\warn;
+use function Omega\Support\app;
+use function Omega\Support\get_path;
 
 /**
  * SeedCommand

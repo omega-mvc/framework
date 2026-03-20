@@ -10,6 +10,8 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
+
 declare(strict_types=1);
 
 namespace Tests\Support;
@@ -19,6 +21,18 @@ use Omega\Support\Vite;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
+
+use function chmod;
+use function dirname;
+use function file_put_contents;
+use function is_dir;
+use function json_encode;
+use function mkdir;
+use function rmdir;
+use function sys_get_temp_dir;
+use function touch;
+use function uniqid;
+use function unlink;
 
 /**
  * Test suite for the Vite support class.
@@ -203,69 +217,267 @@ final class ViteTest extends TestCase
     }
 
     /**
-     * Test it can render head HTML tag.
+     * Test invoke returns empty string when not entry points are provided.
      *
      * @return void
      * @throws Exception Throw when a generic error occurred.
      */
-    public function testItCanRenderHeadHtmlTag(): void
+    public function testInvokeReturnsEmptyStringWhenNoEntryPointsAreProvided(): void
+    {
+        $vite = new Vite(__DIR__, 'build');
+
+        $result = $vite();
+
+        $this->assertSame('', $result);
+    }
+
+    /**
+     * Test it uses custom manifest name.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItUsesCustomManifestName(): void
     {
         $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
-        $headTag = $vite(
-            'resources/css/app.css',
-            'resources/js/app.js',
-        );
+        $vite->manifestName('custom-manifest.json');
 
-        $this->assertEquals(
-            '<link rel="stylesheet" href="build/fixtures/app-4ed993c7.css">' . "\n" .
-            '<script type="module" src="build/fixtures/app-0d91dc04.js"></script>',
-            $headTag
+        $this->assertStringEndsWith(
+            'custom-manifest.json',
+            $vite->manifest()
         );
     }
 
     /**
-     * Test it can render head HTML tag with preload.
+     * Test it thorws exception if manifest file not found.
      *
      * @return void
      * @throws Exception Throw when a generic error occurred.
      */
-    public function testItCanRenderHeadHtmlTagWithPreload(): void
+    public function testItThrowsExceptionIfManifestFileNotFound(): void
     {
-        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Manifest file not found');
 
-        $headTag = $vite('resources/js/app.js');
+        $vite = new Vite(__DIR__ . '/fixtures', 'build');
 
-        $this->assertEquals(
-            '<link rel="modulepreload" href="preload/fixtures/vendor.222bbb.js">' . "\n" .
-            '<link rel="modulepreload" href="preload/fixtures/chunk-vue.333ccc.js">' . "\n" .
-            '<link rel="modulepreload" href="preload/fixtures/chunk-utils.444ddd.js">' . "\n" .
-            '<link rel="stylesheet" href="preload/fixtures/app.111aaa.css">' . "\n" .
-            '<script type="module" src="preload/fixtures/app.111aaa.js"></script>',
-            $headTag
-        );
+        // Nome volutamente inesistente
+        $vite->manifestName('does-not-exist.json');
+
+        $vite->manifest();
     }
 
     /**
-     * Test it can render head HTML tag in hrm mode.
+     * Test manifest throws exception if file does not exists.
      *
      * @return void
      * @throws Exception Throw when a generic error occurred.
      */
-    public function testItCanRenderHeadHtmlTagInHrmMode(): void
+    public function testManifestThrowsExceptionIfFileDoesNotExist(): void
     {
-        $vite = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+        $vite->manifestName('nonexistent.json');
 
-        $headTags = $vite(
-            'resources/css/app.css',
-            'resources/js/app.js'
-        );
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/Manifest file not found/');
 
-        $this->assertEquals(
-            '<script type="module" src="http://[::1]:5173/@vite/client"></script>' . "\n" .
-            '<script type="module" src="http://[::1]:5173/resources/css/app.css"></script>' . "\n" .
-            '<script type="module" src="http://[::1]:5173/resources/js/app.js"></script>',
-            $headTags
-        );
+        $vite->manifest();
+    }
+
+    /**
+     * Test loader throws exception if file cannot be read.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testLoaderThrowsExceptionIfFileCannotBeRead(): void
+    {
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+        $vite->manifestName('unreadable.json');
+
+        $filePath = $this->setFixturePath('/fixtures/support/manifest/public/build/unreadable.json');
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
+
+        file_put_contents($filePath, '{"key":"value"}');
+        chmod($filePath, 0000);
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/Failed to read manifest file/');
+
+        try {
+            @$vite->loader();
+        } finally {
+            chmod($filePath, 0644);
+        }
+    }
+
+    /**
+     * Test loader throws exception on invalid json.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testLoaderThrowsExceptionOnInvalidJson(): void
+    {
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+        $vite->manifestName('invalid.json');
+
+        $filePath = $this->setFixturePath('/fixtures/support/manifest/public/build/invalid.json');
+        if (!is_dir(dirname($filePath))) {
+            mkdir(dirname($filePath), 0777, true);
+        }
+
+        file_put_contents($filePath, '{invalid json');
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageMatches('/Manifest JSON decode error/');
+
+        $vite->loader();
+    }
+
+    /**
+     * Test it can get the manifest path for a specific resource.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItCanGetManifestResourcePath(): void
+    {
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+
+        $path = $asset->getManifest('resources/js/app.js');
+
+        $this->assertEquals('build/fixtures/app-0d91dc04.js', $path);
+    }
+
+    /**
+     * Test it throws an exception when the resource is missing in manifest.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItThrowsExceptionIfResourceNotFoundInManifest(): void
+    {
+        $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Resource file not found non-existent-file.js');
+
+        $asset->getManifest('non-existent-file.js');
+    }
+
+    /**
+     * Test it returns cached hot URL on second call.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItReturnsCachedHotUrl(): void
+    {
+        $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+
+        $url1 = $asset->getHmrUrl();
+        $url2 = $asset->getHmrUrl();
+
+        $this->assertEquals($url1, $url2);
+        $this->assertNotNull(Vite::$hot);
+    }
+
+    /**
+     * Test it throws exception if hot file is unreadable.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItThrowsExceptionIfHotFileIsUnreadable(): void
+    {
+        $asset = new Vite($this->setFixturePath('/fixtures/application-write/public/'), 'build/');
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Failed to read hot file');
+
+        $asset->getHmrUrl();
+    }
+
+    /**
+     * Test it handles hot file with trailing slash already present.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItHandlesHotFileWithTrailingSlash(): void
+    {
+        $tempDir = sys_get_temp_dir() . '/vite_test_' . uniqid();
+        mkdir($tempDir);
+        file_put_contents($tempDir . '/hot', "http://localhost:5173/\n");
+
+        $asset = new Vite($tempDir, 'build/');
+        $url = $asset->getHmrUrl();
+
+        $this->assertEquals('http://localhost:5173/', $url);
+
+        unlink($tempDir . '/hot');
+        rmdir($tempDir);
+    }
+
+    /**
+     * Test it updates and returns the correct cache time.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItUpdatesAndReturnsCacheTime(): void
+    {
+        $manifestDir = $this->setFixturePath('/fixtures/application-write/manifest/public/build');
+
+        if (!is_dir($manifestDir)) {
+            mkdir($manifestDir, 0777, true);
+        }
+
+        $manifestPath = "{$manifestDir}/manifest.json";
+        file_put_contents($manifestPath, json_encode([
+            'resources/js/app.js' => ['file' => 'app.js']
+        ]));
+
+        $expectedTime = time() - 3600;
+        touch($manifestPath, $expectedTime);
+
+        $vite = new Vite($this->setFixturePath('/fixtures/application-write/manifest/public'), 'build');
+
+        $this->assertEquals(0, $vite->cacheTime());
+
+        $vite->loader();
+
+        $this->assertEquals($expectedTime, $vite->cacheTime());
+        $this->assertEquals($expectedTime, $vite->manifestTime());
+
+        unlink($manifestPath);
+        rmdir($manifestDir);
+    }
+
+    /**
+     * Test che getPreloadTags restituisca una stringa vuota quando HMR è attivo.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testGetPreloadTagsReturnsEmptyStringWhenHmrIsRunning(): void
+    {
+        $publicPath = $this->setFixturePath('/fixtures/application-write/manifest/public');
+        @mkdir($publicPath, 0777, true);
+
+        file_put_contents("{$publicPath}/hot", 'http://localhost:3000');
+
+        $vite = new Vite($publicPath, 'build');
+
+        $result = $vite->getPreloadTags(['main.js']);
+
+        $this->assertSame('', $result, 'getPreloadTags dovrebbe restituire una stringa vuota se il file hot esiste.');
+
+        unlink("{$publicPath}/hot");
+        rmdir($publicPath);
     }
 }

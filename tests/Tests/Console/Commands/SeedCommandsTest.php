@@ -19,9 +19,12 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
+
+use function Omega\Support\app;
 
 /**
  * Integration tests for the `SeedCommand` functionality.
@@ -57,6 +60,7 @@ use Tests\FixturesPathTrait;
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
+#[CoversFunction('Omega\Support\app')]
 final class SeedCommandsTest extends AbstractTestCommand
 {
     use FixturesPathTrait;
@@ -91,7 +95,7 @@ final class SeedCommandsTest extends AbstractTestCommand
         parent::tearDown();
 
         $path = $this->setFixturePath(
-            slash(path: '/fixtures/application-write/console/database/seeders/')
+            '/fixtures/application-write/console/database/seeders/'
         );
 
         $filesToRemove = [
@@ -126,7 +130,7 @@ final class SeedCommandsTest extends AbstractTestCommand
 
         $this->assertSuccess($exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/database/seeders/BaseSeeder.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/database/seeders/BaseSeeder.php');
         $this->assertTrue(file_exists($file));
 
         $class = file_get_contents($file);
@@ -166,7 +170,7 @@ final class SeedCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeCommandSeedWithFailsFileExist(): void
     {
-        app()->set('path.seeder', $this->setFixturePath(slash(path: '/fixtures/application-write/console/database/seeders/')));
+        app()->set('path.seeder', $this->setFixturePath('/fixtures/application-write/console/database/seeders/'));
         $makeCommand = new SeedCommand($this->argv('omega make:seed BasicSeeder'));
         ob_start();
         $exit = $makeCommand->make();
@@ -187,7 +191,7 @@ final class SeedCommandsTest extends AbstractTestCommand
      */
     public function testItCanCallMakeExistCommandSeeder(): void
     {
-        app()->set('path.seeder', $this->setFixturePath(slash(path: '/fixtures/application-write/console/database/seeders/')));
+        app()->set('path.seeder', $this->setFixturePath('/fixtures/application-write/console/database/seeders/'));
         $makeCommand = new SeedCommand($this->argv('omega make:seed ExistSeeder --force'));
         ob_start();
         $exit = $makeCommand->make();
@@ -195,7 +199,7 @@ final class SeedCommandsTest extends AbstractTestCommand
 
         $this->assertSuccess($exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/database/seeders/ExistSeeder.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/database/seeders/ExistSeeder.php');
         $this->assertTrue(file_exists($file));
 
         $class = file_get_contents($file);

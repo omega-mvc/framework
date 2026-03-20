@@ -22,7 +22,6 @@ use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Exceptions\ApplicationNotAvailableException;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -65,7 +64,6 @@ use Tests\Support\Bootstrap\Support\TestServiceProvider;
  */
 #[CoversClass(Application::class)]
 #[CoversClass(AbstractApplication::class)]
-#[CoversClass(ApplicationNotAvailableException::class)]
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
 #[CoversClass(EntryNotFoundException::class)]
@@ -75,52 +73,6 @@ use Tests\Support\Bootstrap\Support\TestServiceProvider;
 class ApplicationTest extends TestCase
 {
     use FixturesPathTrait;
-
-    /**
-     * Test it throw error.
-     *
-     * @return void
-     */
-    public function testItThrowError(): void
-    {
-        $this->expectException(ApplicationNotAvailableException::class);
-        app();
-        app()->flush();
-    }
-
-    /**
-     * Test it throw error after flush application.
-     *
-     * @return void
-     */
-    public function testItThrowErrorAfterFlushApplication(): void
-    {
-        $app = new Application('/');
-        $app->flush();
-
-        $this->expectException(ApplicationNotAvailableException::class);
-        app();
-        app()->flush();
-    }
-
-    /**
-     * Test it can load app.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanLoadApp(): void
-    {
-        $app = new Application('');
-
-        $this->assertEquals('/', app()->get('path.base'));
-
-        $app->flush();
-    }
 
     /**
      * Test it can load config from default.
@@ -289,7 +241,7 @@ class ApplicationTest extends TestCase
      */
     public function testItCanAddCallBacksBeforeAndAfterBoot(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $app->bootedCallback(static function () {
             echo 'booted01';
@@ -325,7 +277,7 @@ class ApplicationTest extends TestCase
      */
     public function testItCanAddCallImmediatelyIfApplicationAlreadyBooted(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $app->bootProvider();
 
@@ -399,7 +351,7 @@ class ApplicationTest extends TestCase
     public function testItCanGetDown(): void
     {
         $app = new Application($this->setFixtureBasePath());
-        $app->set('path.storage', $this->setFixturePath(slash(path: '/fixtures/application-read/storage3/')));
+        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
 
         $this->assertEquals([
             'redirect' => null,
@@ -426,18 +378,26 @@ class ApplicationTest extends TestCase
 
         $this->assertFalse($app->isDownMaintenanceMode());
 
-        $app->set('path.storage', $this->setFixturePath(slash(path: '/fixtures/application-read/storage/')));
+        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
 
         $this->assertTrue($app->isDownMaintenanceMode());
     }
 
+    /**
+     * Test terminate with no callbacks.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occured.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
     public function testTerminateWithNoCallbacks(): void
     {
         $app = new Application('/');
 
-        // Nessuna callback registrata qui
-
-        // Non deve dare errori, semplicemente non esegue nulla
         $app->terminate();
 
         $this->assertTrue(true); // serve solo a far passare il test

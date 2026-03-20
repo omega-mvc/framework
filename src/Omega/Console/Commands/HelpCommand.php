@@ -34,6 +34,7 @@ use function method_exists;
 use function Omega\Console\info;
 use function Omega\Console\style;
 use function Omega\Console\warn;
+use function Omega\Support\app;
 use function ucfirst;
 
 /**

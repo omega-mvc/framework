@@ -38,6 +38,7 @@ use function count;
 use function file_exists;
 use function in_array;
 use function str_replace;
+use function Omega\Support\get_path;
 
 use const DIRECTORY_SEPARATOR;
 

@@ -32,7 +32,8 @@ use function Omega\Console\error;
 use function Omega\Console\info;
 use function Omega\Console\success;
 use function Omega\Console\warn;
-
+use function Omega\Support\get_path;
+use function Omega\Support\path;
 use function ucfirst;
 
 /**

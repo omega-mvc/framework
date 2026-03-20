@@ -26,6 +26,7 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use RuntimeException;
 use Tests\FixturesPathTrait;
+
 use function file_exists;
 use function file_put_contents;
 use function is_dir;
@@ -127,7 +128,7 @@ class ConfigProvidersTest extends TestCase
     {
         $app = new Application($this->setFixtureBasePath());
 
-        $tempConfigDir = $this->setFixturePath(slash(path: '/fixtures/application-write/config_test/'));
+        $tempConfigDir = $this->setFixturePath('/fixtures/application-write/config_test/');
 
         if (!is_dir($tempConfigDir)) {
             mkdir($tempConfigDir, 0777, true);
@@ -162,7 +163,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testThrowsIfCacheIsNotArray(): void
     {
-        $basePath = $this->setFixturePath(slash(path: '/fixtures/'));
+        $basePath = $this->setFixturePath('/fixtures/');
 
         $app = new Application($basePath);
 
@@ -195,7 +196,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItLoadsValidCache(): void
     {
-        $basePath = $this->setFixturePath(slash(path: '/fixtures/bootstrap1/'));
+        $basePath = $this->setFixturePath('/fixtures/bootstrap1/');
 
         $app = new Application($basePath);
 
@@ -230,7 +231,7 @@ class ConfigProvidersTest extends TestCase
     {
         $app = new Application($this->setFixtureBasePath());
 
-        $emptyDir = $this->setFixturePath(slash(path: '/fixtures/application-write/empty_config_test/'));
+        $emptyDir = $this->setFixturePath('/fixtures/application-write/empty_config_test/');
 
         if (!is_dir($emptyDir)) {
             mkdir($emptyDir, 0777, true);

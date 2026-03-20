@@ -20,10 +20,13 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+
 use function dirname;
 use function Omega\Console\error;
 use function Omega\Console\info;
 use function Omega\Console\success;
+use function Omega\Support\get_path;
+use function Omega\Support\slash;
 
 /**
  * Generates a new view template.

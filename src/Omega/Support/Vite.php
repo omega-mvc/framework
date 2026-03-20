@@ -22,14 +22,17 @@ use Exception;
 use function array_combine;
 use function array_diff_key;
 use function array_fill;
-use function array_fill_keys;
 use function array_filter;
+use function array_flip;
+use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
 use function array_merge;
+use function array_reduce;
 use function array_unique;
 use function array_values;
+use function array_walk;
 use function count;
 use function file_exists;
 use function file_get_contents;
@@ -113,45 +116,108 @@ class Vite
             return '';
         }
 
-        if ($this->isRunningHRM()) {
-            $tags   = [];
-            $tags[] = $this->getHmrScript();
-            $hmrUrl = $this->getHmrUrl();
+        return $this->isRunningHRM()
+            ? $this->renderHmrTags($entryPoints)
+            : $this->renderBuildTags($entryPoints);
+    }
 
-            foreach ($entryPoints as $entryPoint) {
-                $url    = $hmrUrl . $entryPoint;
-                $tags[] = $this->createTag($url, $entryPoint);
-            }
+    /**
+     * Render HTML tags for entry points using the HMR (Hot Module Replacement) server.
+     *
+     * This method generates the HMR client script tag and resolves each entry point
+     * to its corresponding HMR URL, producing the appropriate script or style tags.
+     *
+     * @param string[] $entryPoints List of entry point filenames.
+     * @return string HTML string containing HMR script and resource tags.
+     * @throws Exception If the HMR URL cannot be determined.
+     */
+    private function renderHmrTags(array $entryPoints): string
+    {
+        $hmrUrl = $this->getHmrUrl();
 
-            return implode("\n", $tags);
-        }
-
-        $imports = $this->getManifestImports($entryPoints);
-        $preload = [];
-        foreach ($imports['imports'] as $entryPoint) {
-            $url       = $this->getManifest($entryPoint);
-            $preload[] = $this->createPreloadTag($url);
-        }
-
-        foreach ($imports['css'] as $entryPoint) {
-            $preload[] = $this->createStyleTag($this->buildPath . $entryPoint);
-        }
-
-        $assets    = $this->gets($entryPoints);
-        $cssAssets = array_filter(
-            $assets,
-            fn ($file, $url) => $this->isCssFile($file),
-            ARRAY_FILTER_USE_BOTH
-        );
-
-        $jsAssets = array_diff_key($assets, $cssAssets);
-        $tags     = array_merge(
-            $preload,
-            array_map(fn ($url) => $this->createStyleTag($url), $cssAssets),
-            array_map(fn ($url) => $this->createScriptTag($url), $jsAssets)
+        $tags = array_merge(
+            [$this->getHmrScript()],
+            array_map(
+                fn ($entry) => $this->createTag($hmrUrl . $entry, $entry),
+                $entryPoints
+            )
         );
 
         return implode("\n", $tags);
+    }
+
+    /**
+     * Render HTML tags for entry points using the HMR (Hot Module Replacement) server.
+     *
+     * This method generates the HMR client script tag and resolves each entry point
+     * to its corresponding HMR URL, producing the appropriate script or style tags.
+     *
+     * @param string[] $entryPoints List of entry point filenames.
+     * @return string HTML string containing HMR script and resource tags.
+     * @throws Exception If the HMR URL cannot be determined.
+     */
+    private function renderBuildTags(array $entryPoints): string
+    {
+        $imports = $this->getManifestImports($entryPoints);
+
+        $tags = array_merge(
+            $this->buildPreloadTags($imports),
+            $this->buildAssetTags($entryPoints)
+        );
+
+        return implode("\n", $tags);
+    }
+
+    /**
+     * Generate preload and style tags for imported resources.
+     *
+     * This method creates <link rel="modulepreload"> tags for imported JavaScript
+     * dependencies and <link rel="stylesheet"> tags for associated CSS files.
+     *
+     * @param array{imports: string[], css: string[]} $imports Import and CSS dependencies.
+     * @return string[] List of HTML preload and style tags.
+     * @throws Exception If manifest resources cannot be resolved.
+     */
+    private function buildPreloadTags(array $imports): array
+    {
+        $importTags = array_map(
+            fn ($entry) => $this->createPreloadTag($this->getManifest($entry)),
+            $imports['imports']
+        );
+
+        $cssTags = array_map(
+            fn ($entry) => $this->createStyleTag($this->buildPath . $entry),
+            $imports['css']
+        );
+
+        return array_merge($importTags, $cssTags);
+    }
+
+    /**
+     * Generate script and style tags for the given entry points.
+     *
+     * This method resolves asset URLs from the manifest, separates CSS and JS files,
+     * and generates the corresponding HTML tags for each resource.
+     *
+     * @param string[] $entryPoints List of entry point filenames.
+     * @return string[] List of HTML script and style tags.
+     * @throws Exception If manifest resources cannot be resolved.
+     */
+    private function buildAssetTags(array $entryPoints): array
+    {
+        $assets = $this->gets($entryPoints);
+
+        $cssAssets = array_filter(
+            $assets,
+            fn ($file) => $this->isCssFile($file)
+        );
+
+        $jsAssets = array_diff_key($assets, $cssAssets);
+
+        return array_merge(
+            array_map(fn ($url) => $this->createStyleTag($url), $cssAssets),
+            array_map(fn ($url) => $this->createScriptTag($url), $jsAssets)
+        );
     }
 
     /**
@@ -205,30 +271,90 @@ class Vite
      */
     public function loader(): array
     {
-        $fileName    = $this->manifest();
-        $currentTime = $this->manifestTime();
+        $fileName = $this->manifest();
 
-        if (
-            array_key_exists($fileName, static::$cache)
-            && $this->cacheTime === $currentTime
-        ) {
+        if ($this->isCacheValid($fileName)) {
             return static::$cache[$fileName];
         }
 
-        $this->cacheTime = $currentTime;
-        $load            = file_get_contents($fileName);
+        $content = $this->readManifestFile($fileName);
+        $data = $this->parseManifestJson($content);
 
-        if ($load === false) {
+        return $this->updateCache($fileName, $data);
+    }
+
+    /**
+     * Check if the cached manifest is still valid.
+     *
+     * Compares the cached timestamp with the current manifest file modification time
+     * to determine if the cached data can be reused.
+     *
+     * @param string $fileName Full path to the manifest file.
+     * @return bool True if the cache is valid, false otherwise.
+     * @throws Exception Throw when a generic error occurred.
+     */
+    private function isCacheValid(string $fileName): bool
+    {
+        return array_key_exists($fileName, static::$cache)
+            && $this->cacheTime === $this->manifestTime();
+    }
+
+    /**
+     * Read the contents of the manifest file from disk.
+     *
+     * Suppresses warnings from `file_get_contents` and throws an exception if
+     * the file cannot be read.
+     *
+     * @param string $fileName Full path to the manifest file.
+     * @return string File contents as a string.
+     * @throws Exception If the file cannot be read.
+     */
+    private function readManifestFile(string $fileName): string
+    {
+        $content = @file_get_contents($fileName);
+
+        if ($content === false) {
             throw new Exception("Failed to read manifest file: {$fileName}");
         }
 
-        $json = json_decode($load, true);
+        return $content;
+    }
 
-        if ($json === null && json_last_error() !== JSON_ERROR_NONE) {
+    /**
+     * Decode the JSON contents of the manifest file.
+     *
+     * Parses the JSON string into an associative array and validates the result.
+     * Throws an exception if decoding fails.
+     *
+     * @param string $content JSON string read from the manifest file.
+     * @return array<string, array<string, string|string[]>> Decoded manifest data.
+     * @throws Exception If JSON decoding fails.
+     */
+    private function parseManifestJson(string $content): array
+    {
+        $json = json_decode($content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
             throw new Exception('Manifest JSON decode error: ' . json_last_error_msg());
         }
 
-        return static::$cache[$fileName] = $json;
+        return $json ?? [];
+    }
+
+    /**
+     * Update the static cache with the newly loaded manifest data.
+     *
+     * Also updates the internal cache timestamp to the current manifest file modification time.
+     *
+     * @param string $fileName Full path to the manifest file.
+     * @param array<string, array<string, string|string[]>> $data Decoded manifest data to cache.
+     * @return array<string, array<string, string|string[]>> The cached manifest data.
+     * @throws Exception Throw when a generic error occurred.
+     */
+    private function updateCache(string $fileName, array $data): array
+    {
+        $this->cacheTime = $this->manifestTime();
+        return static::$cache[$fileName] = $data;
     }
 
     /**
@@ -250,28 +376,6 @@ class Vite
     }
 
     /**
-     * Get the built paths for multiple resources from the Vite manifest.
-     *
-     * @param string[] $resourceNames List of resource names defined in the manifest.
-     * @return array<string, string> Array of resource name => path mappings.
-     * @throws Exception If the manifest cannot be loaded.
-     * @deprecated Since v0.40. Use `gets()` instead.
-     */
-    public function getsManifest(array $resourceNames): array
-    {
-        $asset = $this->loader();
-
-        $resources = [];
-        foreach ($resourceNames as $resource) {
-            if (array_key_exists($resource, $asset)) {
-                $resources[$resource] = $this->buildPath . $asset[$resource]['file'];
-            }
-        }
-
-        return $resources;
-    }
-
-    /**
      * Collect imports and CSS files for the given resources.
      *
      * This builds an array with 'imports' and 'css' for the requested resources,
@@ -283,21 +387,23 @@ class Vite
      */
     public function getManifestImports(array $resources): array
     {
-        $assets      = $this->loader();
-        $resourceSet = array_fill_keys($resources, true);
+        $assets = $this->loader();
 
-        $preload = ['imports' => [], 'css' => []];
+        $initialAssets = array_intersect_key($assets, array_flip($resources));
 
-        foreach ($assets as $name => $asset) {
-            if (isset($resourceSet[$name])) {
-                $this->collectImports($assets, $asset, $preload);
-            }
-        }
+        $preload = array_reduce(
+            $initialAssets,
+            function (array $carry, array $asset) use ($assets) {
+                $this->collectImports($assets, $asset, $carry);
+                return $carry;
+            },
+            ['imports' => [], 'css' => []]
+        );
 
-        $preload['imports'] = array_values(array_unique($preload['imports']));
-        $preload['css']     = array_values(array_unique($preload['css']));
-
-        return $preload;
+        return [
+            'imports' => array_values(array_unique($preload['imports'])),
+            'css'     => array_values(array_unique($preload['css'])),
+        ];
     }
 
     /**
@@ -310,19 +416,17 @@ class Vite
      */
     private function collectImports(array $assets, array $asset, array &$preload): void
     {
-        if (false === empty($asset['css'])) {
-            $preload['css'] = array_merge($preload['css'], $asset['css']);
-        }
+        $preload['css'] = array_merge($preload['css'], (array) ($asset['css'] ?? []));
 
-        if (false === empty($asset['imports'])) {
-            foreach ($asset['imports'] as $import) {
-                $preload['imports'][] = $import;
+        $imports = (array) ($asset['imports'] ?? []);
 
-                if (isset($assets[$import])) {
-                    $this->collectImports($assets, $assets[$import], $preload);
-                }
+        $preload['imports'] = array_merge($preload['imports'], $imports);
+
+        array_walk($imports, function ($import) use ($assets, &$preload) {
+            if (isset($assets[$import])) {
+                $this->collectImports($assets, $assets[$import], $preload);
             }
-        }
+        });
     }
 
     /**
@@ -352,25 +456,23 @@ class Vite
      */
     public function gets(array $resourceNames): array
     {
-        if (false === $this->isRunningHRM()) {
-            $asset     = $this->loader();
-            $resources = [];
+        if ($this->isRunningHRM()) {
+            $hot = $this->getHmrUrl();
 
-            foreach ($resourceNames as $resource) {
-                if (array_key_exists($resource, $asset)) {
-                    $resources[$resource] = $this->buildPath . $asset[$resource]['file'];
-                }
-            }
-
-            return $resources;
+            return array_combine(
+                $resourceNames,
+                array_map(fn ($asset) => $hot . $asset, $resourceNames)
+            );
         }
 
-        $hot  = $this->getHmrUrl();
+        $asset = $this->loader();
 
-        return array_combine(
-            $resourceNames,
-            array_map(fn ($asset) => $hot . $asset, $resourceNames)
-        );
+        return array_reduce($resourceNames, function ($carry, $name) use ($asset) {
+            if (isset($asset[$name])) {
+                $carry[$name] = $this->buildPath . $asset[$name]['file'];
+            }
+            return $carry;
+        }, []);
     }
 
     /**
@@ -396,7 +498,7 @@ class Vite
         }
 
         $hotFile = "{$this->publicPath}/hot";
-        $hot     = file_get_contents($hotFile);
+        $hot     = @file_get_contents($hotFile);
 
         if ($hot === false) {
             throw new Exception("Failed to read hot file: {$hotFile}");
@@ -453,17 +555,19 @@ class Vite
             return '';
         }
 
-        $tags    = [];
         $imports = $this->getManifestImports($entryPoints);
 
-        foreach ($imports['imports'] as $entryPoint) {
-            $url    = $this->getManifest($entryPoint);
-            $tags[] = $this->createPreloadTag($url);
-        }
+        $importTags = array_map(
+            fn($entry) => $this->createPreloadTag($this->getManifest($entry)),
+            $imports['imports']
+        );
 
-        foreach ($imports['css'] as $entryPoint) {
-            $tags[] = $this->createStyleTag($this->buildPath . $entryPoint);
-        }
+        $cssTags = array_map(
+            fn($entry) => $this->createStyleTag($this->buildPath . $entry),
+            $imports['css']
+        );
+
+        $tags = array_merge($importTags, $cssTags);
 
         return implode("\n", $tags);
     }
@@ -508,7 +612,8 @@ class Vite
         );
 
         $jsAssets = array_diff_key($assets, $cssAssets);
-        $tags     = array_merge(
+        $tags = array_merge(
+            $tags,
             array_map(
                 fn ($url, $file) => $this->createStyleTag($url, $entryPoints[$file] ?? $defaultAttributes),
                 array_values($cssAssets),
@@ -635,25 +740,23 @@ class Vite
             return '';
         }
 
-        $parts = [];
-        foreach ($attributes as $key => $value) {
-            if (is_int($key)) {
-                $parts[] = htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
-                continue;
-            }
+        $parts = array_filter(array_map(
+            function ($key, $value) {
+                if (is_int($key)) {
+                    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+                }
 
-            $key = htmlspecialchars($key, ENT_QUOTES, 'UTF-8');
+                $key = htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8');
 
-            $part = match (true) {
-                is_bool($value) => $value ? $key : null,
-                $value === null => null,
-                default         => $key . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"',
-            };
-
-            if ($part !== null) {
-                $parts[] = $part;
-            }
-        }
+                return match (true) {
+                    is_bool($value) => $value ? $key : null,
+                    $value === null => null,
+                    default => $key . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"',
+                };
+            },
+            array_keys($attributes),
+            $attributes
+        ));
 
         return implode(' ', $parts);
     }

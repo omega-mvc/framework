@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Support Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Support\Helper;
@@ -14,11 +24,41 @@ use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
 
+use function Omega\Support\view;
+
+/**
+ * Integration test suite for the `view()` helper.
+ *
+ * This class verifies that the view helper correctly interacts with the
+ * application container and the templating system to produce a valid
+ * HTTP response.
+ *
+ * The tests cover:
+ * - Resolution of the view response factory from the container.
+ * - Proper wiring of the templating engine and template finder.
+ * - Rendering of templates using the configured templator.
+ * - Wrapping rendered output into a Response instance.
+ * - Handling of response options such as HTTP status codes.
+ *
+ * This is not a pure unit test of the helper itself, but an integration
+ * test ensuring that all involved components (container, templator,
+ * and response factory) work together as expected.
+ *
+ * @category   Tests
+ * @package    Support
+ * @subpackage Helper
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version    2.0.0
+ */
 #[CoversClass(Application::class)]
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
@@ -27,6 +67,7 @@ use Tests\FixturesPathTrait;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
+#[CoversFunction('Omega\Support\view')]
 final class ViewTest extends TestCase
 {
     use FixturesPathTrait;

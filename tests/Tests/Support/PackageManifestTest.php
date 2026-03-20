@@ -16,9 +16,12 @@ namespace Tests\Support;
 
 use Omega\Support\PackageManifest;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Tests\FixturesPathTrait;
+
+use function Omega\Support\slash;
 
 /**
  * Tests the PackageManifest support class.
@@ -41,6 +44,7 @@ use Tests\FixturesPathTrait;
  * @version   2.0.0
  */
 #[CoversClass(PackageManifest::class)]
+#[CoversFunction('Omega\Support\slash')]
 class PackageManifestTest extends TestCase
 {
     use FixturesPathTrait;

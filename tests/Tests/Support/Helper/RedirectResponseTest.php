@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Tests\Support Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Tests\Support\Helper;
@@ -8,10 +18,43 @@ use Exception;
 use Omega\Router\Router;
 use Omega\Testing\TestResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 
+use function Omega\Support\redirect;
+use function Omega\Support\redirect_route;
+
+/**
+ * Test suite for redirect helper functions and RedirectResponse behavior.
+ *
+ * This class verifies that the `redirect()` and `redirect_route()` helpers
+ * correctly generate HTTP redirect responses with the expected status code
+ * and target URL.
+ *
+ * The tests cover:
+ * - Redirecting to a named route with dynamic parameters.
+ * - Redirecting to a named route without parameters.
+ * - Redirecting directly to a given URL.
+ * - Proper integration with the Router for route resolution.
+ * - Correct HTTP status code (302) and response content.
+ *
+ * It ensures that redirect responses are properly constructed and that
+ * route-based redirection behaves consistently with the defined routing
+ * configuration.
+ *
+ * @category   Tests
+ * @package    Support
+ * @subpackage Helper
+ * @link       https://omega-mvc.github.io
+ * @author     Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version    2.0.0
+ */
 #[CoversClass(Router::class)]
 #[CoversClass(TestResponse::class)]
+#[CoversFunction('Omega\Support\redirect')]
+#[CoversFunction('Omega\Support\redirect_route')]
 final class RedirectResponseTest extends TestCase
 {
     /**

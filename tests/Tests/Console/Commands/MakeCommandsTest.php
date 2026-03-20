@@ -84,7 +84,7 @@ final class MakeCommandsTest extends AbstractTestCommand
     {
         parent::setUp();
 
-        $commandConfig = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/command.php'));
+        $commandConfig = $this->setFixturePath('/fixtures/application-write/console/commands/command.php');
         if (!file_exists($commandConfig)) {
             file_put_contents($commandConfig,
                 '<?php return \array_merge(
@@ -108,29 +108,29 @@ final class MakeCommandsTest extends AbstractTestCommand
     {
         parent::tearDown();
 
-        $fixturePath = $this->setFixturePath(slash(path: '/fixtures/application-write/console/'));
+        $fixturePath = $this->setFixturePath('/fixtures/application-write/console/');
 
-        if (file_exists($commandConfig = slash(path: $fixturePath . 'commands/command.php'))) {
+        if (file_exists($commandConfig = $fixturePath . 'commands/command.php')) {
             unlink($commandConfig);
         }
 
-        if (file_exists($assetController = slash(path: $fixturePath . 'commands/IndexController.php'))) {
+        if (file_exists($assetController = $fixturePath . 'commands/IndexController.php')) {
             unlink($assetController);
         }
 
-        if (file_exists($view = slash(path: $fixturePath . 'commands/welcome.template.php'))) {
+        if (file_exists($view = $fixturePath . 'commands/welcome.template.php')) {
             unlink($view);
         }
 
-        if (file_exists($service = slash(path: $fixturePath . 'commands/ApplicationService.php'))) {
+        if (file_exists($service = $fixturePath . 'commands/ApplicationService.php')) {
             unlink($service);
         }
 
-        if (file_exists($command = slash(path: $fixturePath . 'commands/CacheCommand.php'))) {
+        if (file_exists($command = $fixturePath . 'commands/CacheCommand.php')) {
             unlink($command);
         }
 
-        $migration = slash(path: $fixturePath . 'database/migration/');
+        $migration = $fixturePath . 'database/migration/';
         array_map('unlink', glob("$migration/*.php"));
     }
 
@@ -153,7 +153,7 @@ final class MakeCommandsTest extends AbstractTestCommand
 
         $this->assertSuccess($exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/IndexController.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/commands/IndexController.php');
         $this->assertTrue(file_exists($file));
 
         $class = file_get_contents($file);
@@ -200,7 +200,7 @@ final class MakeCommandsTest extends AbstractTestCommand
 
         $this->assertSuccess($exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/welcome.template.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/commands/welcome.template.php');
         $this->assertTrue(file_exists($file));
 
         $view = file_get_contents($file);
@@ -246,7 +246,7 @@ final class MakeCommandsTest extends AbstractTestCommand
 
         $this->assertSuccess($exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/CacheCommand.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/commands/CacheCommand.php');
         $this->assertTrue(file_exists($file));
 
         $command = file_get_contents($file);

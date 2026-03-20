@@ -77,7 +77,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/bootstrap/cache/roue.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/route.php');
 
         Router::Reset();
         if (file_exists($file)) {
@@ -120,7 +120,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     public function testItCanCreateRouteCache(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
         $app->setConfigPath();
 
         $command = new RouteCacheCommand([]);
@@ -148,7 +148,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     public function testItCanCreateRouteCacheFromFiles(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read')));
+        $app = new Application($this->setFixturePath('/fixtures/application-read'));
         $app->setConfigPath();
 
         $command = new RouteCacheCommand(
@@ -183,7 +183,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     public function testItFailCreateRouteCacheFromFiles(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
         $app->setConfigPath();
 
         $command = new RouteCacheCommand(
@@ -218,7 +218,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     public function testItCanGenerateValidRouterCache(): void
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
         $app->setConfigPath();
 
         $command = new RouteCacheCommand([]);
@@ -228,7 +228,7 @@ final class RouteCacheCommandTest extends TestCase
         ob_get_clean();
 
         $cache_route = require_once $this->setFixturePath(
-            slash(path: '/fixtures/application-write/bootstrap/cache/route.php')
+            '/fixtures/application-write/bootstrap/cache/route.php'
         );
         foreach ($cache_route as $route) {
             Router::addRoutes($route);
@@ -253,7 +253,7 @@ final class RouteCacheCommandTest extends TestCase
      */
     public function testItCanRemoveConfigFile()
     {
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-write/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
         $app->setConfigPath();
 
         $command = new RouteCacheCommand([]);

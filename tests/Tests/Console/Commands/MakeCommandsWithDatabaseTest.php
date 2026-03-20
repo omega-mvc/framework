@@ -105,7 +105,7 @@ final class MakeCommandsWithDatabaseTest extends AbstractTestDatabase
         $this->app->set('Schema', $this->schema);
         $this->app->set('dsn.sql', $this->env);
         $this->app->set('Query', fn () => new Query($this->pdo));
-        $this->app->set('path.model', $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/')));
+        $this->app->set('path.model', $this->setFixturePath('/fixtures/application-write/console/commands/'));
     }
 
     /**
@@ -123,7 +123,7 @@ final class MakeCommandsWithDatabaseTest extends AbstractTestDatabase
         $this->dropConnection();
         $this->app->flush();
 
-        if (file_exists($client = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/Client.php')))) {
+        if (file_exists($client = $this->setFixturePath('/fixtures/application-write/console/commands/Client.php'))) {
             unlink($client);
         }
     }
@@ -149,7 +149,7 @@ final class MakeCommandsWithDatabaseTest extends AbstractTestDatabase
 
         $this->assertEquals(0, $exit);
 
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-write/console/commands/Client.php'));
+        $file = $this->setFixturePath('/fixtures/application-write/console/commands/Client.php');
         $this->assertTrue(file_exists($file));
 
         $model = file_get_contents($file);

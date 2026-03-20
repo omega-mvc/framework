@@ -82,7 +82,7 @@ final class KernelHandleExceptionTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->app->set(PackageManifest::class, fn () => new PackageManifest(
             basePath: $this->app->get('path.base'),

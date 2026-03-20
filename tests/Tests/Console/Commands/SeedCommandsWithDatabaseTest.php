@@ -33,6 +33,7 @@ use Tests\FixturesPathTrait;
 
 use function ob_get_clean;
 use function ob_start;
+use function Omega\Support\slash;
 
 /**
  * Integration tests for database seeding console commands.
@@ -65,6 +66,7 @@ use function ob_start;
 #[CoversClass(DB::class)]
 #[CoversClass(FacadesPDO::class)]
 #[CoversClass(Schema::class)]
+#[CoversFunction('Omega\Support\slash')]
 final class SeedCommandsWithDatabaseTest extends AbstractTestDatabase
 {
     use FixturesPathTrait;
@@ -97,7 +99,7 @@ final class SeedCommandsWithDatabaseTest extends AbstractTestDatabase
         $this->createConnection();
         $this->createUserSchema();
 
-        $seederPath = $this->setFixturePath(slash(path: '/fixtures/application-read/console/database/seeders/'));
+        $seederPath = $this->setFixturePath('/fixtures/application-read/console/database/seeders/');
         // load seeder classes
         require_once slash(path: $seederPath . 'BasicSeeder.php');
         require_once slash(path: $seederPath . 'UserSeeder.php');

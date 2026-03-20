@@ -24,6 +24,8 @@ use ReflectionException;
 use Whoops\Handler\PrettyPageHandler;
 use Whoops\Run;
 
+use function Omega\Support\view;
+
 /**
  * HTTP kernel with enhanced error handling and routing resolution.
  *

@@ -82,7 +82,7 @@ final class UploadFileTest extends TestCase
             ->markTest(true)
             ->setFileName('success')
             ->setFileTypes(['txt', 'md'])
-            ->setFolderLocation($this->setFixturePath(slash(path: '/fixtures/application-read/upload/')))
+            ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
             ->setMaxFileSize(91)
             ->setMimeTypes(['file']);
     }
@@ -99,7 +99,7 @@ final class UploadFileTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $file = $this->setFixturePath(slash(path: '/fixtures/application-read/upload/success.txt'));
+        $file = $this->setFixturePath('/fixtures/application-read/upload/success.txt');
         if (file_exists($file)) {
             unlink($file);
         }
@@ -117,7 +117,7 @@ final class UploadFileTest extends TestCase
                 'name'     => 'test123.txt',
                 'type'     => 'file',
                 'tmp_name' => $this->setFixturePath(
-                    slash(path: '/fixtures/application-read/upload/test123.tmp')
+                    '/fixtures/application-read/upload/test123.tmp'
                 ),
                 'error'    => 0,
                 'size'     => 1,
@@ -126,8 +126,8 @@ final class UploadFileTest extends TestCase
                 'name'     => ['test123.txt', 'test234.txt'],
                 'type'     => ['file', 'file'],
                 'tmp_name' => [
-                    $this->setFixturePath(slash(path: '/fixtures/application-read/upload/test123.tmp')),
-                    $this->setFixturePath(slash(path: '/fixtures/application-read/upload/test234.tmp')),
+                    $this->setFixturePath('/fixtures/application-read/upload/test123.tmp'),
+                    $this->setFixturePath('/fixtures/application-read/upload/test234.tmp'),
                 ],
                 'error'    => [0, 0],
                 'size'     => [1, 1],
@@ -211,7 +211,7 @@ final class UploadFileTest extends TestCase
             ->markTest(true)
             ->setFileName('success')
             ->setFileTypes(['txt', 'md'])
-            ->setFolderLocation($this->setFixturePath(slash(path: '/fixtures/application-read/upload/')))
+            ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
             ->setMaxFileSize(91)
             ->setMimeTypes(['file']);
 
@@ -233,17 +233,17 @@ final class UploadFileTest extends TestCase
             ->markTest(true)
             ->setFileName('multi_file_')
             ->setFileTypes(['txt', 'md'])
-            ->setFolderLocation($this->setFixturePath(slash(path: '/fixtures/application-read/upload/')))
+            ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
             ->setMaxFileSize(91)
             ->setMimeTypes(['file'])
             ->uploads();
 
         $this->assertTrue($upload->success());
-        $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_0.txt')));
-        $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_1.txt')));
+        $this->assertFileExists($this->setFixturePath('/fixtures/application-read/upload/multi_file_0.txt'));
+        $this->assertFileExists($this->setFixturePath('/fixtures/application-read/upload/multi_file_1.txt'));
 
-        unlink($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_0.txt')));
-        unlink($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_1.txt')));
+        unlink($this->setFixturePath('/fixtures/application-read/upload/multi_file_0.txt'));
+        unlink($this->setFixturePath('/fixtures/application-read/upload/multi_file_1.txt'));
     }
 
     public function itCanMultiUploadFile(): void
@@ -253,15 +253,15 @@ final class UploadFileTest extends TestCase
             ->markTest(true)
             ->setFileName('multi_file')
             ->setFileTypes(['txt', 'md'])
-            ->setFolderLocation($this->setFixturePath(slash(path: '/fixtures/application-read/upload/')))
+            ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
             ->setMaxFileSize(91)
             ->setMimeTypes(['file'])
             ->uploads();
 
         $this->assertTrue($upload->success());
-        $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_0.txt')));
-        $this->assertFileExists($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file_1.txt')));
+        $this->assertFileExists($this->setFixturePath('/fixtures/application-read/upload/multi_file_0.txt'));
+        $this->assertFileExists($this->setFixturePath('/fixtures/application-read/upload/multi_file_1.txt'));
 
-        unlink($this->setFixturePath(slash(path: '/fixtures/application-read/upload/multi_file0.txt')));
+        unlink($this->setFixturePath('/fixtures/application-read/upload/multi_file0.txt'));
     }
 }

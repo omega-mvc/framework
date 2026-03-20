@@ -97,7 +97,7 @@ final class MigrationCommandsTest extends AbstractTestDatabase
         $this->createConnection();
 
         $this->app = new Application(__DIR__);
-        $this->app->set('path.migration', $this->setFixturePath(slash(path: '/fixtures/application-read/console/database/migration/')));
+        $this->app->set('path.migration', $this->setFixturePath('/fixtures/application-read/console/database/migration/'));
         $this->app->set('environment', 'dev');
         $this->app->set(Connection::class, fn () => $this->pdo);
         $this->app->set(SchemaConnection::class, fn () => $this->pdoSchema);
@@ -335,7 +335,7 @@ final class MigrationCommandsTest extends AbstractTestDatabase
     public function testItCanRunMigrationFromVendor(): void
     {
         $migrate = new MigrationCommand(['omega', 'migrate']);
-        MigrationCommand::addVendorMigrationPath($this->setFixturePath(slash(path: '/fixtures/application-read/console/database/vendor-migration/')));
+        MigrationCommand::addVendorMigrationPath($this->setFixturePath('/fixtures/application-read/console/database/vendor-migration/'));
         ob_start();
         $exit = $migrate->main();
         $out  = ob_get_clean();

@@ -26,6 +26,7 @@ use function shell_exec;
 use function stream_isatty;
 use function strtoupper;
 use function trim;
+use function Omega\Support\env;
 
 use const DIRECTORY_SEPARATOR;
 use const PHP_OS_FAMILY;

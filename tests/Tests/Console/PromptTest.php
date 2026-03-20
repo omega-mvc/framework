@@ -17,6 +17,7 @@ namespace Tests\Console;
 use Omega\Console\Prompt;
 use Omega\Text\Str;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 
 use function fclose;
@@ -24,6 +25,7 @@ use function function_exists;
 use function fwrite;
 use function proc_close;
 use function proc_open;
+use function Omega\Support\slash;
 use function stream_get_contents;
 
 /**
@@ -51,6 +53,7 @@ use function stream_get_contents;
  */
 #[CoversClass(Str::class)]
 #[CoversClass(Prompt::class)]
+#[CoversFunction('Omega\Support\slash')]
 final class PromptTest extends TestCase
 {
     /**

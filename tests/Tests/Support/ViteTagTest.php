@@ -10,6 +10,9 @@
  * @version   2.0.0
  */
 
+/** @noinspection PhpExpressionResultUnusedInspection */
+/** @noinspection HtmlWrongAttributeValue */
+
 declare(strict_types=1);
 
 namespace Tests\Support;
@@ -18,7 +21,14 @@ use Exception;
 use Omega\Support\Vite;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
 use Tests\FixturesPathTrait;
+
+use function file_put_contents;
+use function mkdir;
+use function unlink;
 
 /**
  * Test suite for the Vite tag generation functionality.
@@ -194,7 +204,7 @@ final class ViteTagTest extends TestCase
      * Test fet tags.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred
      */
     public function testGetTags(): void
     {
@@ -212,7 +222,7 @@ final class ViteTagTest extends TestCase
      * Test get tags attributes.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred
      */
     public function testGetTagsAttributes(): void
     {
@@ -239,7 +249,7 @@ final class ViteTagTest extends TestCase
      * Test get tags attributes with exception.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred
      */
     public function testGetTagsAttributesWithException(): void
     {
@@ -267,7 +277,7 @@ final class ViteTagTest extends TestCase
      * Test get preload tags.
      *
      * @return void
-     * @throws Exception
+     * @throws Exception Throw when a generic error occurred
      */
     public function testGetPreloadTags(): void
     {
@@ -281,5 +291,175 @@ final class ViteTagTest extends TestCase
             '<link rel="stylesheet" href="preload/fixtures/app.111aaa.css">',
             $tag
         );
+    }
+
+    /**
+     * Test it can render head HTML tag.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItCanRenderHeadHtmlTag(): void
+    {
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+
+        $headTag = $vite(
+            'resources/css/app.css',
+            'resources/js/app.js',
+        );
+
+        $this->assertEquals(
+            '<link rel="stylesheet" href="build/fixtures/app-4ed993c7.css">' . "\n" .
+            '<script type="module" src="build/fixtures/app-0d91dc04.js"></script>',
+            $headTag
+        );
+    }
+
+    /**
+     * Test it can render head HTML tag in hrm mode.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItCanRenderHeadHtmlTagInHrmMode(): void
+    {
+        $vite = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+
+        $headTags = $vite(
+            'resources/css/app.css',
+            'resources/js/app.js'
+        );
+
+        $this->assertEquals(
+            '<script type="module" src="http://[::1]:5173/@vite/client"></script>' . "\n" .
+            '<script type="module" src="http://[::1]:5173/resources/css/app.css"></script>' . "\n" .
+            '<script type="module" src="http://[::1]:5173/resources/js/app.js"></script>',
+            $headTags
+        );
+    }
+
+    /**
+     * Test it can render head HTML tag with preload.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred.
+     */
+    public function testItCanRenderHeadHtmlTagWithPreload(): void
+    {
+        $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
+
+        $headTag = $vite('resources/js/app.js');
+
+        $this->assertEquals(
+            '<link rel="modulepreload" href="preload/fixtures/vendor.222bbb.js">' . "\n" .
+            '<link rel="modulepreload" href="preload/fixtures/chunk-vue.333ccc.js">' . "\n" .
+            '<link rel="modulepreload" href="preload/fixtures/chunk-utils.444ddd.js">' . "\n" .
+            '<link rel="stylesheet" href="preload/fixtures/app.111aaa.css">' . "\n" .
+            '<script type="module" src="preload/fixtures/app.111aaa.js"></script>',
+            $headTag
+        );
+    }
+
+    /**
+     * Test get custom tags woth hmr.
+     *
+     * @return void
+     * @throws Exception Throw when a generic error occurred
+     */
+    public function testGetCustomTagsWithHmr(): void
+    {
+        $tmpDir = $this->setFixturePath('/fixtures/application-write/manifest1/public');
+        @mkdir($tmpDir, 0777, true);
+
+        file_put_contents($tmpDir . '/hot', 'http://localhost:5173');
+
+        $vite = new Vite($tmpDir, 'build');
+
+        $entryPoints = [
+            'app.js' => ['async' => true],
+            'main.css' => []
+        ];
+
+        $tags = $vite->getCustomTags($entryPoints);
+
+        $this->assertStringContainsString('@vite/client', $tags);
+
+        $this->assertStringContainsString(
+            '<script type="module" async src="http://localhost:5173/app.js"></script>',
+            $tags
+        );
+
+        $this->assertStringContainsString(
+            'http://localhost:5173/main.css',
+            $tags
+        );
+
+        unlink($tmpDir . '/hot');
+    }
+
+    /**
+     * Test build attrbute string with empty attributes returns empty string.
+     *
+     * @return void
+     * @throws ReflectionException If the method does not exist or reflection fails.
+     */
+    public function testBuildAttributeStringWithEmptyAttributesReturnsEmptyString(): void
+    {
+        $vite = new Vite('/public', '/build');
+
+        $reflection = new ReflectionClass($vite);
+        $method = $reflection->getMethod('buildAttributeString');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($vite, []);
+
+        $this->assertSame('', $result, 'Expected empty string when attributes array is empty');
+    }
+
+    /**
+     * Test create script tag with type already set.
+     *
+     * @return void
+     * @throws ReflectionException If the method does not exist or reflection fails.
+     */
+    public function testCreateScriptTagWithTypeAlreadySet(): void
+    {
+        $vite = new Vite('/public', '/build');
+
+        $attributes = ['type' => 'text/javascript', 'async' => true];
+
+        $result = $this->invokeCreateScriptTag($vite, 'app.js', $attributes);
+
+        $this->assertStringContainsString('type="text/javascript"', $result);
+        $this->assertStringContainsString('src="app.js"', $result); // corretto
+        $this->assertStringContainsString('async', $result);
+
+        $this->assertStringStartsWith('<script ', $result);
+        $this->assertStringEndsWith('</script>', $result);
+    }
+
+    /**
+    /**
+     * Invokes the private `createScriptTag` method of the Vite class using reflection.
+     *
+     * This helper allows tests to access the internal behavior of `createScriptTag`,
+     * which generates a <script> HTML tag for a given URL with optional attributes.
+     *
+     * It handles private visibility by setting the method accessible.
+     *
+     * @param Vite $vite The instance of the Vite class on which to invoke the method.
+     * @param string $url The URL of the JavaScript file to include in the script tag.
+     * @param array|null $attributes Optional associative array of HTML attributes to include
+     *                              in the <script> tag. Boolean values are handled according
+     *                              to HTML standards (true = present attribute, false/null = ignored).
+     * @return string The resulting <script> HTML tag as a string.
+     * @throws ReflectionException If the method does not exist or reflection fails.
+     */
+    private function invokeCreateScriptTag(Vite $vite, string $url, ?array $attributes = null): string
+    {
+        $method = new ReflectionMethod(Vite::class, 'createScriptTag');
+        $method->setAccessible(true);
+
+        return $method->invoke($vite, $url, $attributes);
     }
 }

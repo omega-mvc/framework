@@ -22,15 +22,17 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-
 use Tests\FixturesPathTrait;
+
 use function file_put_contents;
 use function md5;
 use function ob_get_clean;
 use function ob_start;
+use function Omega\Support\get_path;
 
 /**
  * Class ViewCommandsTest
@@ -56,6 +58,7 @@ use function ob_start;
  */
 #[CoversClass(Application::class)]
 #[CoversClass(ViewCommand::class)]
+#[CoversFunction('Omega\Support\get_path')]
 final class ViewCommandsTest extends TestCase
 {
     use FixturesPathTrait;
@@ -72,8 +75,8 @@ final class ViewCommandsTest extends TestCase
     {
         $app = new Application('');
 
-        $app->set('path.cache', $this->setFixturePath(slash(path: '/fixtures/application-write/view_cache/')));
-        $app->set('path.view', $this->setFixturePath(slash(path: '/fixtures/application-read/view/')));
+        $app->set('path.cache', $this->setFixturePath('/fixtures/application-write/view_cache/'));
+        $app->set('path.view', $this->setFixturePath('/fixtures/application-read/view/'));
 
         $app->set(
             TemplatorFinder::class,
@@ -109,7 +112,7 @@ final class ViewCommandsTest extends TestCase
     public function testItCanClearCompiledViewFile(): void
     {
         $app = new Application('');
-        $app->set('path.compiled_view_path', $this->setFixturePath(slash(path: '/fixtures/application-write/view_cache/')));
+        $app->set('path.compiled_view_path', $this->setFixturePath('/fixtures/application-write/view_cache/'));
 
         file_put_contents(get_path('path.compiled_view_path') . 'test01.php', '');
         file_put_contents(get_path('path.compiled_view_path') . 'test02.php', '');

@@ -27,6 +27,7 @@ use ReflectionException;
 use function Omega\Console\error;
 use function Omega\Console\success;
 use function Omega\Console\warn;
+use function Omega\Support\get_path;
 
 /**
  * RouteCacheCommand

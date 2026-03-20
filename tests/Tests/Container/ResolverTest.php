@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpExpressionResultUnusedInspection */
 
 /**
  * Part of Omega - Tests\Container Package.
@@ -23,6 +23,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use ReflectionProperty;
+use RuntimeException;
 use stdClass;
 use Tests\Container\Support\CircularA;
 use Tests\Container\Support\DependencyClass;
@@ -56,8 +58,6 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testResolveClassWithoutConstructor()
@@ -75,8 +75,6 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testResolveClassWithDependencies()
@@ -95,8 +93,6 @@ final class ResolverTest extends TestCase
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function testCircularDependencyThrowsException()
@@ -108,5 +104,34 @@ final class ResolverTest extends TestCase
         $resolver  = new Resolver($container);
 
         $resolver->resolveClass(CircularA::class);
+    }
+
+    /**
+     * Test with parameter override path exception.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testWithParameterOverridePathException(): void
+    {
+        $container = new Container();
+
+        $this->expectException(RuntimeException::class);
+
+        try {
+            $container->bind('error', function () {
+                throw new RuntimeException("Fail");
+            });
+
+            $container->make('error');
+        } finally {
+            $ref = new ReflectionProperty($container, 'with');
+            $ref->setAccessible(true);
+            $this->assertEmpty($ref->getValue($container));
+        }
     }
 }

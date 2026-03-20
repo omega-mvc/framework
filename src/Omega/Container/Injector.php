@@ -92,27 +92,29 @@ final class Injector
      * @param object $instance The object instance to inject dependencies into
      * @param ReflectionClass<object> $reflector Reflection class of the object
      * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     private function injectMethods(object $instance, ReflectionClass $reflector): void
     {
-        foreach ($reflector->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if ($method->isConstructor() || $method->isStatic()) continue;
+        array_map(
+            function (ReflectionMethod $method) use ($instance) {
+                $attributes = $method->getAttributes(Inject::class);
 
-            $attributes = $method->getAttributes(Inject::class);
-            if (empty($attributes)) continue;
+                if (empty($attributes) || $method->isConstructor() || $method->isStatic()) {
+                    return;
+                }
 
-            $injectConfig = $attributes[0]->newInstance()->getName();
-            $parameters = $method->getParameters();
+                $injectConfig = $attributes[0]->newInstance()->getName();
+                $parameters = $method->getParameters();
 
-            if ($this->canInjectMethod($parameters, $injectConfig)) {
-                $this->invokeMethodWithDependencies($instance, $method, $parameters, $injectConfig);
-            }
-        }
+                if ($this->canInjectMethod($parameters, $injectConfig)) {
+                    $this->invokeMethodWithDependencies($instance, $method, $parameters, $injectConfig);
+                }
+            },
+            $reflector->getMethods(ReflectionMethod::IS_PUBLIC)
+        );
     }
 
     /**
@@ -161,11 +163,38 @@ final class Injector
      */
     private function isParameterInjectable(ReflectionParameter $param, mixed $injectConfig): bool
     {
-        if ($this->hasExplicitInjection($param, $injectConfig)) {
-            return true;
+        if (!$this->hasExplicitInjection($param, $injectConfig)) {
+            return $this->isTypeInjectable($param);
         }
 
+        return true;
+    }
+
+    /**
+     * Determine whether the parameter type is eligible for automatic injection.
+     *
+     * This method checks if the given parameter has a resolvable type hint that
+     * can be used by the container to perform dependency injection.
+     *
+     * A parameter is considered injectable if:
+     * - It has a declared type
+     * - The type is a named type (i.e., not a union or intersection type)
+     * - The type is not a built-in PHP type (e.g., int, string, bool, array)
+     *
+     * In practice, this means only class or interface type-hinted parameters
+     * are eligible for automatic resolution via the container.
+     *
+     * This method is used as a fallback when no explicit injection configuration
+     * is provided (e.g., via #[Inject] attribute or method-level configuration).
+     *
+     * @param ReflectionParameter $param The parameter to evaluate
+     * @return bool True if the parameter type can be resolved and injected,
+     *              false otherwise
+     */
+    private function isTypeInjectable(ReflectionParameter $param): bool
+    {
         $type = $param->getType();
+
         return $type instanceof ReflectionNamedType && !$type->isBuiltin();
     }
 
@@ -186,7 +215,7 @@ final class Injector
         try {
             $dependencies = array_map(fn($param) => $this->resolveParam($param, $injectConfig), $parameters);
             $method->invokeArgs($instance, $dependencies);
-        } catch (BindingResolutionException|EntryNotFoundException) {
+        } catch (BindingResolutionException) {
             // Fail silently if binding cannot be resolved
         }
     }
@@ -262,7 +291,7 @@ final class Injector
                 $dependency = $this->container->get($abstract);
                 $property->setValue($instance, $dependency);
             }
-        } catch (BindingResolutionException|EntryNotFoundException) {
+        } catch (EntryNotFoundException) {
             // Fail silently if binding cannot be resolved
         }
     }

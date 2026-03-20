@@ -159,4 +159,34 @@ class FlushTest extends AbstractTestContainer
         $reflectionCache->setAccessible(true);
         $this->assertEmpty($reflectionCache->getValue($this->container));
     }
+
+    /**
+     * Test clear cache resets reflection cache.
+     *
+     * @return void
+     * @throws ReflectionException
+     */
+    public function testClearCacheResetsReflectionCache(): void
+    {
+        $ref1 = $this->container->getReflectionClass(stdClass::class);
+        $ref2 = $this->container->getReflectionClass(stdClass::class);
+
+        $this->assertSame($ref1, $ref2);
+
+        $this->container->clearCache();
+
+        $ref3 = $this->container->getReflectionClass(stdClass::class);
+
+        $this->assertNotSame($ref1, $ref3);
+    }
+
+    /**
+     * Test clear cache returns same instance.
+     *
+     * @return void
+     */
+    public function testClearCacheReturnsSameInstance(): void
+    {
+        $this->assertSame($this->container, $this->container->clearCache());
+    }
 }

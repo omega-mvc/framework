@@ -37,6 +37,7 @@ use Tests\FixturesPathTrait;
 use Throwable;
 
 use function file;
+use function Omega\Support\view;
 use function str_contains;
 
 /**
@@ -96,7 +97,7 @@ final class ExceptionHandlerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->app->set(PackageManifest::class, fn () => new PackageManifest(
             basePath: $this->app->get('path.base'),
@@ -299,10 +300,10 @@ final class ExceptionHandlerTest extends TestCase
      */
     public function testItCanRenderHttpException(): void
     {
-        $this->app->set('path.view', $this->setFixturePath(slash(path: '/fixtures/exceptions/')));
+        $this->app->set('path.view', $this->setFixturePath('/fixtures/exceptions/'));
         $this->app->set('paths.view', [
-            $this->setFixturePath(slash(path: '/fixtures/exceptions/')),
-            $this->setFixturePath(slash(path: '/fixtures/exceptions/pages/')),
+            $this->setFixturePath('/fixtures/exceptions/'),
+            $this->setFixturePath('/fixtures/exceptions/pages/'),
         ]);
         $this->app->set(
             TemplatorFinder::class,
@@ -311,13 +312,13 @@ final class ExceptionHandlerTest extends TestCase
 
         $this->app->set(
             'view.instance',
-            fn (TemplatorFinder $finder) => new Templator($finder, $this->setFixturePath(slash(path: '/fixtures/exceptions')))
+            fn (TemplatorFinder $finder) => new Templator($finder, $this->setFixturePath('/fixtures/exceptions'))
         );
 
         $this->app->set(
             'view.response',
-            fn () => fn (string $view_path, array $portal = []): Response => new Response(
-                $this->app->make(Templator::class)->render($view_path, $portal)
+            fn () => fn (string $viewPath, array $portal = []): Response => new Response(
+                $this->app->make(Templator::class)->render($viewPath, $portal)
             )
         );
 

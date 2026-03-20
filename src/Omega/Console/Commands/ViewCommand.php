@@ -47,6 +47,7 @@ use function str_replace;
 use function strlen;
 use function unlink;
 use function usleep;
+use function Omega\Support\get_path;
 
 use const DIRECTORY_SEPARATOR;
 

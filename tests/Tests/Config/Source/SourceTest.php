@@ -50,7 +50,7 @@ final class SourceTest extends TestCase
      */
     public function testItShouldFetchFileContent(): void
     {
-        $source = new TestConfigurationSource($this->setFixturePath(slash(path: '/fixtures/config/content.txt')));
+        $source = new TestConfigurationSource($this->setFixturePath('/fixtures/config/content.txt'));
 
         $content = 'content';
 
@@ -69,6 +69,6 @@ final class SourceTest extends TestCase
     {
         $this->expectException(FileReadException::class);
 
-        new TestConfigurationSource($this->setFixturePath(slash(path: '/fixtures/config/not-found.txt')))->fetch();
+        new TestConfigurationSource($this->setFixturePath('/fixtures/config/not-found.txt'))->fetch();
     }
 }

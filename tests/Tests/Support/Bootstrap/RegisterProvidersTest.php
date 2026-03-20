@@ -131,7 +131,7 @@ final class RegisterProvidersTest extends TestCase
     {
         TestRegisterProvider::$called = 0;
 
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $ref = new ReflectionProperty($app, 'providers');
         $ref->setAccessible(true);
@@ -157,7 +157,7 @@ final class RegisterProvidersTest extends TestCase
     {
         TestRegisterProvider::$called = 0;
 
-        $app = new Application($this->setFixturePath(slash(path: '/fixtures/application-read/')));
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $ref = new ReflectionProperty($app, 'providers');
         $ref->setAccessible(true);

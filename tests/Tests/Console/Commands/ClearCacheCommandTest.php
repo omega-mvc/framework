@@ -23,11 +23,14 @@ use Omega\Cache\Storage\Memory;
 use Omega\Console\Commands\ClearCacheCommand;
 use Omega\Container\Exceptions\CircularAliasException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
 
 use function ob_get_clean;
 use function ob_start;
+use function Omega\Support\get_path;
+use function Omega\Support\slash;
 
 /**
  * Test suite for the ClearCache console command.
@@ -61,6 +64,8 @@ use function ob_start;
 #[CoversClass(ClearCacheCommand::class)]
 #[CoversClass(Memory::class)]
 #[CoversClass(UnknownStorageException::class)]
+#[CoversFunction('Omega\Support\get_path')]
+#[CoversFunction('Omega\Support\slash')]
 final class ClearCacheCommandTest extends TestCase
 {
     use FixturesPathTrait;

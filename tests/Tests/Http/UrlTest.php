@@ -17,7 +17,10 @@ namespace Tests\Http;
 use Omega\Http\Request;
 use Omega\Http\Url;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
+
+use function Omega\Support\path;
 
 /**
  * Class UrlTest
@@ -44,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(Request::class)]
 #[CoversClass(Url::class)]
+#[CoversFunction('Omega\Support\path')]
 final class UrlTest extends TestCase
 {
     /**

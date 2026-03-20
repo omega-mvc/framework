@@ -84,7 +84,7 @@ final class PreventRequestInMaintenanceTest extends TestCase
         $config = [
             'APP_ENV'       => 'test',
             'APP_DEBUG'     => 'false',
-            'STORAGE_PATH'  => $this->setFixturePath(slash(path: '/fixtures/storage/')),
+            'STORAGE_PATH'  => $this->setFixturePath('/fixtures/storage/'),
         ];
         $app->loadConfig(new ConfigRepository($config));
         $middleware = new MaintenanceMiddleware($app);
@@ -108,7 +108,7 @@ final class PreventRequestInMaintenanceTest extends TestCase
     public function testItCanRedirectRequestDuringMaintenance(): void
     {
         $app        = new Application($this->setFixtureBasePath());
-        $app->set('path.storage', $this->setFixturePath(slash(path:'/fixtures/application-read/storage/')));
+        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
 
         $middleware = new MaintenanceMiddleware($app);
 
@@ -132,7 +132,7 @@ final class PreventRequestInMaintenanceTest extends TestCase
     public function testItCanRenderAndRetryRequestDuringMaintenance(): void
     {
         $app        = new Application($this->setFixtureBasePath());
-        $app->set('path.storage', $this->setFixturePath(slash(path:'/fixtures/application-read/storage2/')));
+        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage2/'));
 
         $middleware = new MaintenanceMiddleware($app);
         $response   = new Response('test');
@@ -157,7 +157,7 @@ final class PreventRequestInMaintenanceTest extends TestCase
     public function testItCanThrowRequestDuringMaintenance(): void
     {
         $app        = new Application($this->setFixtureBasePath());
-        $app->set('path.storage', $this->setFixturePath(slash(path:'/fixtures/application-read/storage3/')));
+        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
 
         $middleware = new MaintenanceMiddleware($app);
         $response   = new Response('test');

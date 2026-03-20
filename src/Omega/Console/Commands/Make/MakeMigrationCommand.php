@@ -31,6 +31,8 @@ use function Omega\Console\info;
 use function Omega\Console\success;
 use function Omega\Console\text;
 use function Omega\Console\warn;
+use function Omega\Support\get_path;
+use function Omega\Support\slash;
 use function Omega\Time\now;
 use function str_replace;
 

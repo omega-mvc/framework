@@ -39,7 +39,6 @@ namespace Omega\Support\Facades;
  * @method static string                manifest()
  * @method static array                 loader()
  * @method static string                getManifest(string $resourceName)
- * @method static array<string, string> getsManifest(string[] $resourceNames)
  * @method static array                 getManifestImports(string[] $resources)
  * @method static string                get(string $resourceName)
  * @method static array<string, string> gets(string[] $resourceNames)
