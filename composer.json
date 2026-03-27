@@ -47,7 +47,6 @@
         },
         "files": [
             "src/Omega/Collection/helper.php",
-            "src/Omega/Console/helper.php",
             "src/Omega/Text/helper.php",
             "src/Omega/Time/helper.php",
             "src/Omega/Support/helper.php"
