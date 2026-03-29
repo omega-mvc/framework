@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Omega\Console\Commands;
+
+use Omega\Text\Str;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputArgument;
+use Omega\Console\AbstractCommand;
+
+use function Omega\Support\path;
+use function Omega\Support\slash;
+
+#[AsCommand(
+    name: 'make:command',
+    description: 'Generate new command class'
+)]
+final class MakeCommand extends AbstractCommand
+{
+    protected function configure(): void
+    {
+        $this->addArgument('name', InputArgument::REQUIRED);
+    }
+
+    protected function handle(): int
+    {
+        $this->info('Making command file...');
+        $this->isPath('path.command');
+
+        $name = $this->argument('name');
+
+        // Generiamo il nome kebab-case (es. HelloWorld -> hello-world)
+        $kebabName = Str::toKebabCase($name);
+
+        // Passiamo le sostituzioni al template
+        $success = $this->makeTemplate($name, [
+            'template_location' => slash(path: dirname(__DIR__) . '/stubs/command.stub'),
+            'save_location'      => $this->app->get('path.command'),
+            'pattern'            => '__command__', // Questo sostituisce la classe
+            'suffix'             => 'Command.php',
+            // Aggiungiamo una logica per rimpiazzare __name__ nello stub
+            'vars'               => [
+                '__name__' => $kebabName,
+            ]
+        ]);
+
+        if (!$success) {
+            $this->error('Failed to create command file');
+            return self::FAILURE;
+        }
+
+        $this->registerCommand($name);
+
+        $path = path('app.Console.Commands') . $name . 'Command.php';
+        $this->success("Command [$path] created successfully.");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Registra il comando nel file config/command.php
+     */
+    private function registerCommand(string $name): void
+    {
+        $configPath = $this->app->get('path.config') . 'command.php';
+
+        $content = file_get_contents($configPath);
+
+        $placeholder = '// more commands here';
+
+        $commandName = Str::toKebabCase($name);
+
+        $commandEntry = sprintf(
+            "'app:%s' => \\App\\Console\\Commands\\%sCommand::class",
+            $commandName,
+            $name
+        );
+
+        // Evita duplicati
+        if (str_contains($content, $commandEntry)) {
+            $this->warn('Command already registered');
+
+            return;
+        }
+
+        $replacement = $commandEntry . ",\n    " . $placeholder;
+
+        $content = str_replace($placeholder, $replacement, $content);
+
+        file_put_contents($configPath, $content);
+    }
+}

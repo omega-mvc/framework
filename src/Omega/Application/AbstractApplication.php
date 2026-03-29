@@ -133,7 +133,12 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     /**
      * {@inheritdoc}
      */
-    abstract public function getVersion(?string $version): string;
+    abstract public function getName(?string $name = null): string;
+
+    /**
+     * {@inheritdoc}
+     */
+    abstract public function getVersion(?string $version = null): string;
 
     /**
      * {@inheritdoc}

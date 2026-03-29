@@ -27,12 +27,16 @@ use Omega\Support\Bootstrap\RegisterProviders;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Application as SymfonyConsole;
+use Symfony\Component\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function getenv;
 use function is_array;
+use function putenv;
+use function str_contains;
 
 /**
  * Console application entry point for Omega.
@@ -62,6 +66,8 @@ use function is_array;
  */
 class ConsoleApplication
 {
+    use DefaultCommandsTrait;
+
     /** @var array<int, class-string> The list of bootstrapper classes to run during initialization. */
     protected array $bootstrappers = [
         ConfigProviders::class,
@@ -104,7 +110,17 @@ class ConsoleApplication
         $input  = is_array($input) ? new ArgvInput($input) : ($input ?? new ArgvInput());
         $output = $output ?? new ConsoleOutput();
 
-        $omega = new ConsoleLogo('Omega Framework', $this->app->getVersion('2.0.0'));
+        $shell = getenv('SHELL');
+
+        if (!$shell || !str_contains($shell, 'bash') && !str_contains($shell, 'zsh') && !str_contains($shell, 'fish')) {
+            putenv('SHELL=/bin/bash');
+        }
+
+        $omega = new ConsoleBranding(
+            $this->app,
+            $this->app->getName() . ' Framework:',
+            $this->app->getVersion()
+        );
 
         $this->configureCommandLoader($omega);
 
@@ -158,8 +174,13 @@ class ConsoleApplication
         $config   = $this->app->make(ConfigRepository::class);
         $commands = $config->get('commands', []);
 
+        $merged = array_merge(
+            $this->defaultCommands,
+            $commands
+        );
+
         $console->setCommandLoader(
-            new CommandLoader($this->app, $commands)
+            new CommandLoader($this->app, $merged)
         );
     }
 }

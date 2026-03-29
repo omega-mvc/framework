@@ -1,0 +1,26 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Console\Commands;
+
+use Omega\Console\AbstractCommand;
+use Symfony\Component\Console\Attribute\AsCommand;
+
+#[AsCommand(
+    name: 'app:__name__',
+    description: 'Command description'
+)]
+class __command__Command extends AbstractCommand
+{
+    /**
+     * Esegue la logica del comando.
+     */
+    protected function handle(): int
+    {
+        $this->info('Command app:__name__ executed successfully.');
+
+        return self::SUCCESS;
+    }
+}

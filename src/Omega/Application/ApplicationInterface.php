@@ -47,22 +47,27 @@ use Omega\Support\AbstractServiceProvider;
 interface ApplicationInterface
 {
     /**
-     * Default application version identifier.
+     * Get the application name.
      *
-     * This constant represents the fallback version of the application and is
-     * returned when no explicit version string is provided at runtime.
+     * If a name is explicitly provided, it will be returned as-is.
+     * Otherwise, the method falls back to the default application name
+     * defined by the APP_NAME in .env files.
      *
-     * Implementations may override or dynamically replace this value when
-     * exposing the application version.
+     * This allows consumers to dynamically override the application name
+     * (e.g. during runtime, build, or release phases) without modifying
+     * the underlying application state.
+     *
+     * @param string|null $name Optional name override.
+     * @return string The resolved application name.
      */
-    public const string VERSION = '2.0.0';
+    public function getName(?string $name = null): string;
 
     /**
      * Get the application version string.
      *
      * If a version string is explicitly provided, it will be returned as-is.
      * Otherwise, the method falls back to the default application version
-     * defined by the VERSION constant.
+     * defined by the APP_VERSION in .env file.
      *
      * This allows consumers to dynamically override the application version
      * (e.g. during runtime, build, or release phases) without modifying
@@ -71,7 +76,7 @@ interface ApplicationInterface
      * @param string|null $version Optional version override.
      * @return string The resolved application version.
      */
-    public function getVersion(?string $version): string;
+    public function getVersion(?string $version = null): string;
 
     /**
      * Get the default application bindings and path definitions.

@@ -1,13 +1,30 @@
 <?php
 
+/**
+ * Part of Omega - Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Omega\Console;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
+use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Container\Exceptions\CircularAliasException;
+use Psr\Container\ContainerExceptionInterface;
+use ReflectionException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
+
+use function array_keys;
+use function sprintf;
 
 /**
  * Loads console commands using the Omega container.
@@ -18,15 +35,26 @@ use Symfony\Component\Console\Exception\CommandNotFoundException;
  *
  * This allows Symfony Console to remain responsible for command
  * resolution while Omega controls dependency injection and lifecycle.
+ *
+ * @category  Omega
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 class CommandLoader implements CommandLoaderInterface
 {
     /**
-     * @param Application                          $app      The Omega application container.
+     * CommandLoader constructor.
+     *
+     * @param ApplicationInterface                  $app      The Omega application container.
      * @param array<string, class-string<Command>> $commands Map of command names to command class names.
+     * @return void
      */
     public function __construct(
-        protected Application $app,
+        protected ApplicationInterface $app,
         protected array $commands
     ) {
     }
@@ -38,10 +66,13 @@ class CommandLoader implements CommandLoaderInterface
      * allowing full dependency injection support.
      *
      * @param string $name The command name.
-     *
      * @return Command The resolved command instance.
-     *
+     * @throws BindingResolutionException If a container binding cannot be resolved.
+     * @throws CircularAliasException If a circular alias is detected.
      * @throws CommandNotFoundException If the command name is not defined.
+     * @throws ContainerExceptionInterface For generic container errors.
+     * @throws ContainerExceptionInterface For generic container errors.
+     * @throws ReflectionException If a class cannot be reflected.
      */
     public function get(string $name): Command
     {
@@ -52,6 +83,10 @@ class CommandLoader implements CommandLoaderInterface
         /** @var Command $command */
         $command = $this->app->get($this->commands[$name]);
 
+        if ($command instanceof AbstractCommand) {
+            $command->setApp($this->app);
+        }
+
         return $command;
     }
 
@@ -59,7 +94,6 @@ class CommandLoader implements CommandLoaderInterface
      * Checks whether a command exists for the given name.
      *
      * @param string $name The command name.
-     *
      * @return bool True if the command exists, false otherwise.
      */
     public function has(string $name): bool
