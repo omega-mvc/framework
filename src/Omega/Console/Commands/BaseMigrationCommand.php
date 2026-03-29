@@ -6,18 +6,23 @@ namespace Omega\Console\Commands;
 
 use Omega\Collection\Collection;
 use Omega\Database\Schema\Table\Create;
+use Omega\Database\Schema\SchemaConnection;
 use Omega\Support\Facades\DB;
 use Omega\Support\Facades\PDO;
 use Omega\Support\Facades\Schema;
 use Omega\Console\AbstractCommand;
-use Omega\Database\Schema\SchemaConnection;
 use Symfony\Component\Console\Input\InputOption;
 
 use function Omega\Support\app;
 
 /**
  * BaseMigrationCommand
- * * Fornisce i mattoncini per costruire i comandi di database e migrazione.
+ * Fornisce i mattoncini per costruire i comandi di database e migrazione.
+ *
+ * @property ?int        $take
+ * @property ?int        $batch
+ * @property bool        $force
+ * @property string|bool $seed
  */
 abstract class BaseMigrationCommand extends AbstractCommand
 {
@@ -139,17 +144,18 @@ abstract class BaseMigrationCommand extends AbstractCommand
         if ($this->option('dry-run', false)) {
             return 0;
         }
+
         if ($this->seed) {
             $seed = true === $this->seed ? null : $this->seed;
 
-            return new SeedCommand([], ['class' => $seed])->handle();
+            return new SeedCommand('', ['class' => $seed])->handle();
         }
 
         $namespace = $this->option('seed-namespace', false);
         if ($namespace) {
             $namespace = true === $namespace ? null : $namespace;
 
-            return new SeedCommand([], ['name-space' => $namespace])->handle();
+            return new SeedCommand('', ['name-space' => $namespace])->handle();
         }
 
         return 0;
