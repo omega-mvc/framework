@@ -1,35 +1,42 @@
 <?php
 
+/** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
+
 declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputOption;
+use Exception;
 use Omega\Cache\CacheManager;
+use Omega\Cache\Exceptions\UnknownStorageException;
+use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
+use Omega\Container\Exceptions\CircularAliasException;
+use Symfony\Component\Console\Input\InputOption;
+
+use function array_keys;
+use function method_exists;
 
 #[AsCommand(
     name: 'cache:clear',
-    description: 'Clear the application cache (default or specific drivers)'
+    description: 'Clear the application cache (default or specific drivers)',
+    options: [
+        'all'     => ['a', InputOption::VALUE_NONE, 'Clear all registered cache drivers'],
+        'drivers' => ['d', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, 'Clear specific driver name(s)']
+    ]
 )]
 final class CacheClearCommand extends AbstractCommand
 {
-    protected function configure(): void
-    {
-        $this
-            ->addOption('all', 'a', InputOption::VALUE_NONE, 'Clear all registered cache drivers')
-            ->addOption('drivers', 'd', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Clear specific driver name(s)');
-    }
-
     /**
-     * @return int Exit code
+     * {@inheritdoc}
+     *
+     * @throws CircularAliasException
+     * @throws UnknownStorageException
      */
-    protected function handle(): int
+    public function __invoke(): int
     {
-        // 1. Verifica se il servizio cache è presente nel container
         if (!$this->app->has('cache')) {
-            $this->error('Cache is not set yet.');
+            $this->io->error('Cache is not set yet.');
             return self::FAILURE;
         }
 
@@ -37,13 +44,10 @@ final class CacheClearCommand extends AbstractCommand
         $cache = $this->app['cache'];
         $driversToClear = [];
 
-        // 2. Recupero le opzioni
-        $clearAll = $this->option('all');
-        $specificDrivers = $this->option('drivers');
+        $clearAll = $this->getOption('all');
+        $specificDrivers = $this->getOption('drivers');
 
-        // 3. Logica di selezione dei driver
         if ($clearAll) {
-            // Accediamo alla proprietà 'driver' del CacheManager tramite closure scope (come nel tuo originale)
             $driversToClear = array_keys(
                 (fn (): array => $this->{'driver'})->call($cache)
             );
@@ -51,11 +55,9 @@ final class CacheClearCommand extends AbstractCommand
             $driversToClear = $specificDrivers;
         }
 
-        // 4. Esecuzione del clearing
         if (empty($driversToClear)) {
-            // Caso default: solo il driver predefinito
             $cache->getDriver()->clear();
-            $this->success('Done! Default cache driver has been cleared.');
+            $this->io->success('Done! Default cache driver has been cleared.');
             return self::SUCCESS;
         }
 
@@ -63,16 +65,15 @@ final class CacheClearCommand extends AbstractCommand
             try {
                 $driver = $cache->getDriver($driverName);
 
-                // Verifica se il driver è supportato prima di procedere
                 if (method_exists($driver, 'isSupported') && !$driver->isSupported()) {
-                    $this->warn("Skipping '{$driverName}' driver: not supported.");
+                    $this->io->warning("Skipping '{$driverName}' driver: not supported.");
                     continue;
                 }
 
                 $driver->clear();
-                $this->info("Cleared '{$driverName}' driver.");
-            } catch (\Exception $e) {
-                $this->error("Failed to clear '{$driverName}': " . $e->getMessage());
+                $this->io->info("Cleared '{$driverName}' driver.");
+            } catch (Exception $e) {
+                $this->io->error("Failed to clear '{$driverName}': " . $e->getMessage());
             }
         }
 

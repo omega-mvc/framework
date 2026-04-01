@@ -1,183 +1,249 @@
 <?php
 
+/**
+ * Part of Omega - Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 declare(strict_types=1);
 
 namespace Omega\Console;
 
+use Closure;
+use InvalidArgumentException;
 use Omega\Application\ApplicationInterface;
-use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Cache\Exceptions\UnknownStorageException;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Container\Exceptions\CircularAliasException;
-use Omega\Container\Exceptions\EntryNotFoundException;
-use Psr\Container\ContainerExceptionInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
-use ReflectionException;
+use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Console\Terminal;
+use Throwable;
 
+use function count;
+use function is_array;
+use function is_int;
+use function is_null;
+use function is_string;
+
+/**
+ * Base class for all console commands in Omega.
+ *
+ * This class wraps Symfony Command, providing an extended execution flow
+ * with a dedicated Style helper for consistent console output formatting.
+ * Concrete commands should implement the handle() method to define logic.
+ *
+ * @category  Omega
+ * @package   Console
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
 abstract class AbstractCommand extends Command
 {
-    /** @var InputInterface L'istanza di input corrente. */
+    /** @var InputInterface Current input instance */
     protected InputInterface $input;
 
+    /** @var OutputInterface Current output instance */
     protected OutputInterface $output;
 
-    /** @var SymfonyStyle L'istanza di output (con superpoteri grafici). */
-    protected SymfonyStyle $io;
+    /** @var Style Console output helper for styled messages */
+    protected Style $io;
 
-    protected ApplicationInterface $app;
+    /** Provides access to terminal I/O and interaction utilities across the command. */
+    protected Terminal $terminal;
 
-    /**
-     * Inietta l'istanza dell'applicazione Omega.
-     */
-    public function setApp(ApplicationInterface $app): void
-    {
-        $this->app = $app;
+    /** @var ApplicationInterface The Omega application instance */
+    public ApplicationInterface $app {
+        set(ApplicationInterface $app) {
+            $this->app = $app;
+        }
     }
 
     /**
-     * Il metodo execute di Symfony viene "sigillato" qui.
-     * Serve a preparare l'ambiente e delegare al metodo handle().
+     * Executes the console command.
+     *
+     * Initializes input, output, and Style helper, then calls handle().
+     *
+     * @param InputInterface $input The input object
+     * @param OutputInterface $output The output object
+     * @return int Exit code from handle()
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->input  = $input;
-        $this->output = $output;
-        $this->io     = new SymfonyStyle($input, $output);
+        $this->input    = $input;
+        $this->output   = $output;
+        $this->io       = new Style($input, $output);
+        $this->terminal = new Terminal();
 
-        // Chiamiamo l'handle() definito nei comandi reali
-        return (int) $this->handle();
+        return (int) $this->__invoke();
     }
 
     /**
-     * La logica del comando va scritta qui.
+     * Runs another console command internally.
      *
-     * @return int|void
+     * @param string $commandName Name of the command to execute (e.g., 'migrate:fresh')
+     * @param array<string, mixed> $parameters Command arguments and options
+     * @return int Exit code of the executed command
      */
-    abstract protected function handle();
+    protected function call(string $commandName, array $parameters = []): int
+    {
+        try {
+            $command = $this->getApplication()->find($commandName);
+            $parameters['command'] = $commandName;
+            $input = new ArrayInput($parameters);
+
+            return $command->run($input, $this->output);
+        } catch (Throwable $e) {
+            $this->io->error('Unable to execute command \'' . $commandName . '\': ' . $e->getMessage());
+            return self::FAILURE;
+        }
+    }
 
     /**
-     * Recupera il valore di un argomento.
+     * Main logic of the command.
+     *
+     * Concrete commands must implement this method.
+     *
+     * @return int|void Exit code or nothing
+     * @throws CircularAliasException
+     * @throws UnknownStorageException
      */
-    protected function argument(string $key): mixed
+    abstract public function __invoke();
+
+    protected function configure(): void
+    {
+        $reflection = new ReflectionClass($this);
+        $attribute = $reflection->getAttributes(AsCommand::class)[0] ?? null;
+
+        if (!$attribute) {
+            return;
+        }
+
+        /** @var AsCommand $settings */
+        $settings = $attribute->newInstance();
+
+        // 1. Configurazione Metadati Base (quelli che prima faceva AsCommand)
+        $this->setName($settings->name);
+        if ($settings->description) {
+            $this->setDescription($settings->description);
+        }
+        $this->setAliases($settings->aliases);
+        $this->setHidden($settings->hidden);
+
+        // 2. Validazione e registrazione Argomenti (tua logica massiccia)
+        foreach ($settings->arguments as $name => $config) {
+            if (!is_array($config) || count($config) < 2 || count($config) > 3) {
+                throw new InvalidArgumentException(
+                    "Argument configuration for '$name' must be an array with 2 or 3 elements: [mode:int, description:string, default?]"
+                );
+            }
+
+            [$mode, $description] = $config;
+            $default = $config[2] ?? null;
+
+            if (!is_int($mode)) {
+                throw new InvalidArgumentException("Argument '$name': mode must be an integer.");
+            }
+            if (!is_string($description)) {
+                throw new InvalidArgumentException("Argument '$name': description must be a string.");
+            }
+
+            $this->addArgument($name, $config[0], $config[1], $config[2] ?? null);
+        }
+
+        // 3. Validazione e registrazione Opzioni (tua logica massiccia)
+        foreach ($settings->options as $name => $config) {
+            if (!is_array($config) || count($config) < 3 || count($config) > 5) {
+                throw new InvalidArgumentException(
+                    "Option configuration for '$name' must be an array with 3-5 elements: [shortcut:string|array|null, mode:int, description:string, default?, suggestedValues?]"
+                );
+            }
+
+            $shortcut = $config[0];
+            $mode = $config[1];
+            $description = $config[2];
+            $default = $config[3] ?? null;
+            $suggestedValues = $config[4] ?? [];
+
+            if (!is_int($mode)) {
+                throw new InvalidArgumentException("Option '$name': mode must be an integer.");
+            }
+            if (!is_string($description)) {
+                throw new InvalidArgumentException("Option '$name': description must be a string.");
+            }
+            if (!is_null($shortcut) && !is_string($shortcut) && !is_array($shortcut)) {
+                throw new InvalidArgumentException("Option '$name': shortcut must be string, array or null.");
+            }
+            if (!is_array($suggestedValues) && !$suggestedValues instanceof Closure) {
+                throw new InvalidArgumentException("Option '$name': suggestedValues must be array or Closure.");
+            }
+            $this->addOption($name, $config[0], $config[1], $config[2], $config[3] ?? null, $config[4] ?? []);
+        }
+    }
+
+    /**
+     * $mode param
+     * ```
+     * 1  VALUE_NONE
+     * 2  VALUE_REQUIRED
+     * 4  VALUE_OPTIONAL
+     * 8  VALUE_IS_ARRAY
+     * 16 VALUE_NEGATABLE
+     * ```
+     */
+    public function setOption(
+        string $name,
+        string|array|null $shortcut = null,
+        ?int $mode = null,
+        string $description = '',
+        mixed $default = null,
+        array|Closure $suggestedValues = []
+    ): static {
+        $mode ??= 1;
+
+        return $this->addOption(
+            $name,
+            $shortcut,
+            $mode,
+            $description,
+            $default,
+            $suggestedValues
+        );
+    }
+
+    /**
+     * Retrieves the value of an argument.
+     *
+     * @param string $key Argument name
+     * @return mixed Value of the argument
+     */
+    protected function getArgument(string $key): mixed
     {
         return $this->input->getArgument($key);
     }
 
     /**
-     * Recupera il valore di un'opzione.
+     * Retrieves the value of an option.
+     *
+     * @param string $key Option name
+     * @return mixed Value of the option
      */
-    protected function option(string $key): mixed
+    protected function getOption(string $key): mixed
     {
         return $this->input->getOption($key);
-    }
-
-    // --- Helper Grafici (Stile Omega) ---
-
-    protected function info(string $message): void
-    {
-        $this->io->info($message);
-    }
-
-    protected function error(string $message): void
-    {
-        $this->io->error($message);
-    }
-
-    protected function warn(string $message): void
-    {
-        $this->io->warning($message);
-    }
-
-    protected function comment(string $message): void
-    {
-        $this->io->comment($message);
-    }
-
-    protected function success(string $message): void
-    {
-        $this->io->success($message);
-    }
-
-    /**
-     * Generate a file from a stub template.
-     *
-     * @param string $argument
-     * @param array<string, string> $makeOption
-     * @param string $folder
-     */
-    protected function makeTemplate(string $argument, array $makeOption, string $folder = ''): bool
-    {
-        $folder = ucfirst($folder);
-
-        // Costruzione del percorso file (rimane invariata)
-        $fileName = $makeOption['save_location']
-            . $folder
-            . $argument
-            . $makeOption['suffix'];
-
-        if (file_exists($fileName)) {
-            $this->warn('File already exists');
-            return false;
-        }
-
-        if ($folder !== '' && !is_dir($makeOption['save_location'] . $folder)) {
-            mkdir($makeOption['save_location'] . $folder, 0755, true);
-        }
-
-        $template = file_get_contents($makeOption['template_location']);
-
-        // 1. Sostituzione del pattern principale (es: __command__ -> HelloWorld)
-        $template = str_replace(
-            $makeOption['pattern'],
-            $makeOption['replace'] ?? $argument,
-            $template
-        );
-
-        // 2. 🔹 GESTIONE VARIABILI OPZIONALI (Solo se presenti in $makeOption['vars'])
-        if (isset($makeOption['vars']) && is_array($makeOption['vars'])) {
-            foreach ($makeOption['vars'] as $search => $replace) {
-                $template = str_replace($search, $replace, $template);
-            }
-        }
-
-        // Rimuove la prima riga (probabilmente per gestire gli stub con tag PHP o commenti di intestazione)
-        $template = preg_replace('/^.+\n/', '', $template);
-
-        $written = file_put_contents($fileName, $template);
-
-        if ($written === false) {
-            $this->error('Failed to write file');
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Ensure that the given directory exists. Creates it recursively if missing.
-     *
-     * @param string $binding Logical path or container binding (e.g., "app.Http.Middlewares")
-     * @return string Absolute filesystem path
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    protected function isPath(string $binding): string
-    {
-        $logicalPath = $this->app->get($binding);
-
-        $realPath = str_replace(['.', '/','\\'], DIRECTORY_SEPARATOR, $logicalPath);
-
-        if (!is_dir($realPath)) {
-            mkdir($realPath, 0755, true);
-        }
-
-        return $realPath;
     }
 
     /**
@@ -202,11 +268,5 @@ abstract class AbstractCommand extends Command
         }
 
         return $files;
-    }
-
-    private function invalidAction(string $action): int
-    {
-        $this->error("Invalid action: {$action}. Use 'cache' or 'clear'.");
-        return self::FAILURE;
     }
 }

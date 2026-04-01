@@ -14,11 +14,9 @@ use Symfony\Component\Console\Attribute\AsCommand;
 )]
 class RouteCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $io = $this->io;
-
-        $io->title('Route List');
+        $this->io->title('Route List');
 
         $routes = Router::getRoutes();
 
@@ -33,12 +31,12 @@ class RouteCommand extends AbstractCommand
             $routes
         );
 
-        $io->table(
+        $this->io->table(
             ['Method', 'Name', 'URI'],
             $rows
         );
 
-        $io->success(count($rows) . ' routes listed.');
+        $this->io->success(count($rows) . ' routes listed.');
 
         return 0;
     }

@@ -6,7 +6,6 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
-
 use function file_exists;
 use function unlink;
 
@@ -16,7 +15,7 @@ use function unlink;
 )]
 class RouteClearCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
         $io = $this->io;
         $cachePath = $this->app->getApplicationCachePath() . 'route.php';

@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Cron\Schedule;
 use Omega\Support\Facades\Schedule as Scheduler;
 use Omega\Time\Now;
+
+use function microtime;
+use function round;
+use function sleep;
+use function sprintf;
 
 #[AsCommand(
     name: 'cron:work',
@@ -16,10 +21,10 @@ use Omega\Time\Now;
 )]
 final class CronWorkCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
         $this->io->title('Omega Cron Worker');
-        $this->info('Watching and executing scheduled jobs every minute...');
+        $this->io->info('Watching and executing scheduled jobs every minute...');
         $this->io->note('Press CTRL+C to stop the worker.');
 
         $schedule = Scheduler::add(new Schedule());
@@ -40,7 +45,6 @@ final class CronWorkCommand extends AbstractCommand
 
             $this->io->writeln("<info>Done!</info> ({$executionTime}ms)");
 
-            // Aspetta fino al prossimo minuto (o usa un ciclo di 60s)
             sleep(60);
         }
     }

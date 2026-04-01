@@ -6,8 +6,6 @@ namespace Omega\Console\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Omega\Console\AbstractCommand;
-
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
@@ -15,19 +13,19 @@ use function Omega\Support\slash;
     name: 'make:exception',
     description: 'Generate new exception class'
 )]
-final class MakeExceptionCommand extends AbstractCommand
+final class MakeExceptionCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED);
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making exception file...');
+        $this->io->info('Making exception file...');
         $this->isPath('path.exception');
 
-        $name = $this->argument('name');
+        $name = $this->getArgument('name');
 
         // Passiamo le sostituzioni al template
         $success = $this->makeTemplate($name, [
@@ -38,12 +36,12 @@ final class MakeExceptionCommand extends AbstractCommand
         ]);
 
         if (!$success) {
-            $this->error('Failed to create exception file');
+            $this->io->error('Failed to create exception file');
             return self::FAILURE;
         }
 
         $path = path('app.Exception') . $name . 'Exception.php';
-        $this->success("Exception [$path] created successfully.");
+        $this->io->success("Exception [$path] created successfully.");
 
         return self::SUCCESS;
     }

@@ -5,13 +5,11 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Text\Str;
+use Omega\View\Templator;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
-use Omega\View\Templator;
-use Omega\Text\Str;
 use Throwable;
-
-use function Omega\Support\get_path;
 
 #[AsCommand(
     name: 'view:watch',
@@ -30,14 +28,14 @@ final class ViewWatchCommand extends AbstractCommand
     /**
      * @return int
      */
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->warn('Watching view files in ' . get_path('path.view') . '...');
-        $this->info('Press CTRL+C to stop watching.');
+        $this->io->warning('Watching view files in ' . $this->app->get('path.view') . '...');
+        $this->io->info('Press CTRL+C to stop watching.');
 
         /** @var Templator $templator */
         $templator = $this->app[Templator::class];
-        $prefix = $this->option('prefix');
+        $prefix = $this->getOption('prefix');
 
         // Inizializzazione indici
         $getIndexes = $this->getIndexFiles($prefix);
@@ -108,7 +106,7 @@ final class ViewWatchCommand extends AbstractCommand
      */
     private function getIndexFiles(string $prefix): array
     {
-        $files = $this->findFiles(get_path('path.view'), $prefix);
+        $files = $this->findFiles($this->app->get('path.view'), $prefix);
         $indexes = [];
 
         foreach ($files as $file) {
@@ -127,7 +125,7 @@ final class ViewWatchCommand extends AbstractCommand
     private function compileSingle(Templator $templator, string $filePath): array
     {
         $start = microtime(true);
-        $viewPath = get_path('path.view');
+        $viewPath = $this->app->get('path.view');
         $filename = Str::replace($filePath, $viewPath, '');
 
         try {
@@ -140,7 +138,7 @@ final class ViewWatchCommand extends AbstractCommand
 
             return $templator->getDependency($filePath);
         } catch (Throwable $e) {
-            $this->error("Error compiling {$filename}: " . $e->getMessage());
+            $this->io->error("Error compiling {$filename}: " . $e->getMessage());
             return [];
         }
     }
@@ -154,7 +152,7 @@ final class ViewWatchCommand extends AbstractCommand
         $start = microtime(true);
 
         foreach ($indexes as $file => $time) {
-            $filename = Str::replace($file, get_path('path.view'), '');
+            $filename = Str::replace($file, $this->app->get('path.view'), '');
             $templator->compile($filename);
 
             foreach ($templator->getDependency($file) as $depPath => $depTime) {

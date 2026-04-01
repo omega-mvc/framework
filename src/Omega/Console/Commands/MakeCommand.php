@@ -7,8 +7,6 @@ namespace Omega\Console\Commands;
 use Omega\Text\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Omega\Console\AbstractCommand;
-
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
@@ -16,19 +14,19 @@ use function Omega\Support\slash;
     name: 'make:command',
     description: 'Generate new command class'
 )]
-final class MakeCommand extends AbstractCommand
+final class MakeCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED);
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making command file...');
+        $this->io->info('Making command file...');
         $this->isPath('path.command');
 
-        $name = $this->argument('name');
+        $name = $this->getArgument('name');
 
         // Generiamo il nome kebab-case (es. HelloWorld -> hello-world)
         $kebabName = Str::toKebabCase($name);
@@ -46,14 +44,14 @@ final class MakeCommand extends AbstractCommand
         ]);
 
         if (!$success) {
-            $this->error('Failed to create command file');
+            $this->io->error('Failed to create command file');
             return self::FAILURE;
         }
 
         $this->registerCommand($name);
 
         $path = path('app.Console.Commands') . $name . 'Command.php';
-        $this->success("Command [$path] created successfully.");
+        $this->io->success("Command [$path] created successfully.");
 
         return self::SUCCESS;
     }
@@ -79,7 +77,7 @@ final class MakeCommand extends AbstractCommand
 
         // Evita duplicati
         if (str_contains($content, $commandEntry)) {
-            $this->warn('Command already registered');
+            $this->io->warning('Command already registered');
 
             return;
         }

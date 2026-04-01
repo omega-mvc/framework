@@ -16,13 +16,13 @@ final class ViewClearCommand extends AbstractCommand
         $this->addOption('prefix', 'p', InputOption::VALUE_REQUIRED, 'File pattern', '*.php');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
         $compiledPath = $this->app->get('path.compiled_view_path');
-        $this->warn("Clearing view cache...");
+        $this->io->warning("Clearing view cache...");
 
         // Usiamo lo stesso metodo ereditato
-        $files = $this->findFiles($compiledPath, $this->option('prefix'));
+        $files = $this->findFiles($compiledPath, $this->getOption('prefix'));
 
         $count = 0;
         foreach ($files as $file) {
@@ -31,7 +31,7 @@ final class ViewClearCommand extends AbstractCommand
             }
         }
 
-        $this->success("Cleared {$count} cached files.");
+        $this->io->success("Cleared {$count} cached files.");
         return self::SUCCESS;
     }
 }

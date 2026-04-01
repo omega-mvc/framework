@@ -4,24 +4,25 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Application\Application;
-use Omega\Config\ConfigRepository;
-use Omega\Console\AbstractCommand;
-use Omega\Support\Bootstrap\ConfigProviders;
+use Psr\Container\ContainerExceptionInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Throwable;
+use Symfony\Component\Console\Exception\ExceptionInterface;
 
 #[AsCommand(
-    name: 'config:cache',
-    description: 'Create a cache file for faster configuration loading'
+    name: 'migrate',
+    description: 'Run migration (up).'
 )]
-final class MigrationCommand extends BaseMigrationCommand
+final class MigrateCommand extends AbstractMigrationCommand
 {
     protected function configure(): void
     {
         $this->addForceOption()->addDryRunOption()->addSeedOption();
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws ExceptionInterface
+     */
     public function handle(): int
     {
         return $this->migration();

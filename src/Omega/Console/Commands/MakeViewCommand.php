@@ -6,28 +6,25 @@ namespace Omega\Console\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Omega\Console\AbstractCommand;
-
-use function Omega\Support\path;
 use function Omega\Support\slash;
 
 #[AsCommand(
     name: 'make:view',
     description: 'Generate new view template'
 )]
-final class MakeViewCommand extends AbstractCommand
+final class MakeViewCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED);
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making view temlate...');
+        $this->io->info('Making view temlate...');
         $this->isPath('path.view');
 
-        $name = $this->argument('name');
+        $name = $this->getArgument('name');
 
         // Passiamo le sostituzioni al template
         $success = $this->makeTemplate($name, [
@@ -38,11 +35,11 @@ final class MakeViewCommand extends AbstractCommand
         ]);
 
         if (!$success) {
-            $this->error('Failed to create view template');
+            $this->io->error('Failed to create view template');
             return self::FAILURE;
         }
 
-        $this->success("Finish created view file.");
+        $this->io->success("Finish created view file.");
 
         return self::SUCCESS;
     }

@@ -9,7 +9,6 @@ use Omega\Router\Router;
 use Omega\SerializableClosure\UnsignedSerializableClosure;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
-
 use function file_exists;
 use function file_put_contents;
 use function is_callable;
@@ -32,7 +31,7 @@ class RouteCacheCommand extends AbstractCommand
         );
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
         $io = $this->io;
         $router = $this->app->make(Router::class);

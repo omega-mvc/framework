@@ -5,12 +5,11 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Helper\ProgressBar;
-use Omega\View\Templator;
 use Omega\Text\Str;
-
+use Omega\View\Templator;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(name: 'view:cache', description: 'Compile all view templates')]
 final class ViewCacheCommand extends AbstractCommand
@@ -20,21 +19,21 @@ final class ViewCacheCommand extends AbstractCommand
         $this->addOption('prefix', 'p', InputOption::VALUE_REQUIRED, 'File pattern', '*.php');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Building view compiler cache...');
+        $this->io->info('Building view compiler cache...');
         $viewPath = $this->app->get('path.view');
 
         // Usiamo il metodo ereditato da AbstractCommand
-        $files = $this->findFiles($viewPath, $this->option('prefix'));
+        $files = $this->findFiles($viewPath, $this->getOption('prefix'));
 
         if (empty($files)) {
-            $this->warn('No view files found.');
+            $this->io->warning('No view files found.');
             return self::SUCCESS;
         }
 
         $templator = $this->app[Templator::class];
-        $progressBar = new ProgressBar($this->io, count($files));
+        $progressBar = new ProgressBar($this->output, count($files));
         $progressBar->start();
 
         foreach ($files as $file) {
@@ -45,7 +44,7 @@ final class ViewCacheCommand extends AbstractCommand
 
         $progressBar->finish();
         $this->io->newLine();
-        $this->success("View cache built successfully.");
+        $this->io->success("View cache built successfully.");
 
         return self::SUCCESS;
     }

@@ -10,6 +10,9 @@ use Omega\Console\Commands\ConfigClearCommand;
 use Omega\Console\Commands\CronCommand;
 use Omega\Console\Commands\CronListCommand;
 use Omega\Console\Commands\CronWorkCommand;
+use Omega\Console\Commands\DatabaseCreateCommand;
+use Omega\Console\Commands\DatabaseDropCommand;
+use Omega\Console\Commands\DatabaseShowCommand;
 use Omega\Console\Commands\MaintenanceDownCommand;
 use Omega\Console\Commands\MaintenanceUpCommand;
 use Omega\Console\Commands\MakeCommand;
@@ -21,6 +24,13 @@ use Omega\Console\Commands\MakeModelCommand;
 use Omega\Console\Commands\MakeProviderCommand;
 use Omega\Console\Commands\MakeSeedCommand;
 use Omega\Console\Commands\MakeViewCommand;
+use Omega\Console\Commands\MigrateCommand;
+use Omega\Console\Commands\MigrateFreshCommand;
+use Omega\Console\Commands\MigrateInitCommand;
+use Omega\Console\Commands\MigrateRefreshCommand;
+use Omega\Console\Commands\MigrateResetCommand;
+use Omega\Console\Commands\MigrateRollbackCommand;
+use Omega\Console\Commands\MigrateStatusCommand;
 use Omega\Console\Commands\PackageDiscoverCommand;
 use Omega\Console\Commands\RouteCacheCommand;
 use Omega\Console\Commands\RouteClearCommand;
@@ -41,6 +51,9 @@ trait DefaultCommandsTrait
         'cron:run'         => CronCommand::class,
         'cron:list'        => CronListCommand::class,
         'cron:work'        => CronWorkCommand::class,
+        'database:create'  => DatabaseCreateCommand::class,
+        'database:drop'    => DatabaseDropCommand::class,
+        'database:show'    => DatabaseShowCommand::class,
         'db:seed'          => SeedCommand::class,
         'db:make'          => MakeSeedCommand::class,
         'down'             => MaintenanceDownCommand::class,
@@ -52,6 +65,13 @@ trait DefaultCommandsTrait
         'make:model'       => MakeModelCommand::class,
         'make:provider'    => MakeProviderCommand::class,
         'make:view'        => MakeViewCommand::class,
+        'migrate'          => MigrateCommand::class,
+        'migrate:fresh'    => MigrateFreshCommand::class,
+        'migrate:init'     => MigrateInitCommand::class,
+        'migrate:refresh'  => MigrateRefreshCommand::class,
+        'migrate:reset'    => MigrateResetCommand::class,
+        'migrate:rollback' => MigrateRollbackCommand::class,
+        'migrate:status'   => MigrateStatusCommand::class,
         'package:discover' => PackageDiscoverCommand::class,
         'route:cache'      => RouteCacheCommand::class,
         'route:clear'      => RouteClearCommand::class,

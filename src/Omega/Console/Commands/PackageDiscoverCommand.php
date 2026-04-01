@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Omega\Support\PackageManifest;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Throwable;
 
 #[AsCommand(
@@ -18,9 +18,9 @@ final class PackageDiscoverCommand extends AbstractCommand
     /**
      * @return int Exit code
      */
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Discovery packages in composer...');
+        $this->io->info('Discovery packages in composer...');
 
         // 1. Recupero il servizio dal container (ereditato da AbstractCommand via $this->app)
         /** @var PackageManifest $packageManifest */
@@ -35,7 +35,7 @@ final class PackageDiscoverCommand extends AbstractCommand
             $packages = (fn () => $this->{'getPackageManifest'}())->call($packageManifest) ?? [];
 
             if (empty($packages)) {
-                $this->warn('No discoverable packages found.');
+                $this->io->warning('No discoverable packages found.');
                 return self::SUCCESS;
             }
 
@@ -53,11 +53,11 @@ final class PackageDiscoverCommand extends AbstractCommand
             }
 
             $this->io->newLine();
-            $this->success('Package manifest generated successfully.');
+            $this->io->success('Package manifest generated successfully.');
 
         } catch (Throwable $th) {
-            $this->error($th->getMessage());
-            $this->error("Can't create package manifest cache file.");
+            $this->io->error($th->getMessage());
+            $this->io->error("Can't create package manifest cache file.");
 
             return self::FAILURE;
         }

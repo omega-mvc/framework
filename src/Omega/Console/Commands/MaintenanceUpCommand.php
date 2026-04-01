@@ -6,8 +6,6 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
-use function Omega\Support\app;
-use function Omega\Support\get_path;
 
 #[AsCommand(
     name: 'up',
@@ -15,22 +13,22 @@ use function Omega\Support\get_path;
 )]
 final class MaintenanceUpCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
-        if (!app()->isDownMaintenanceMode()) {
-            $this->warn('Application is already live.');
+        if (!$this->app->isDownMaintenanceMode()) {
+            $this->io->warning('Application is already live.');
             return self::FAILURE;
         }
 
-        $maintenanceFile = get_path('path.storage') . 'app/maintenance.php';
+        $maintenanceFile = $this->app->get('path.storage') . 'app/maintenance.php';
 
         if (file_exists($maintenanceFile) && !@unlink($maintenanceFile)) {
-            $this->error('Failed to remove the maintenance file.');
+            $this->io->error('Failed to remove the maintenance file.');
             $this->io->note("Please remove it manually at: $maintenanceFile");
             return self::FAILURE;
         }
 
-        $this->success('Application is now live.');
+        $this->io->success('Application is now live.');
 
         return self::SUCCESS;
     }

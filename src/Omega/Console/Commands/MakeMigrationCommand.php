@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Console\AbstractCommand;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Question\Question; // Importante
 
 use function Omega\Support\slash;
 use function Omega\Time\now;
@@ -16,7 +16,7 @@ use function Omega\Time\now;
     name: 'make:migration',
     description: 'Generate a new database migration file'
 )]
-final class MakeMigrationCommand extends AbstractCommand
+final class MakeMigrationCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
@@ -25,24 +25,32 @@ final class MakeMigrationCommand extends AbstractCommand
             ->addOption('update', 'u', InputOption::VALUE_NONE, 'Generate migration file with alter (update)');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making migration...');
+        $this->io->info('Making migration...');
 
-        // 1. Recupero e validazione Nome (Interattivo se manca)
-        $name = $this->argument('name');
+        // 1. Recupero Nome
+        $name = $this->getArgument('name');
 
+        // Se manca il nome, usiamo il sistema Question con Validator
         if (!$name) {
-            $this->warn('Table name cannot be empty.');
-            $name = $this->io->ask('Please fill the table name', null, function ($answer) {
-                if (empty($answer)) {
+            $question = new Question('Please fill the table name');
+
+            // In Symfony 8, la validazione si imposta così:
+            $question->setValidator(function ($answer) {
+                if (empty($answer) || trim($answer) === '') {
                     throw new \RuntimeException('The table name is required.');
                 }
                 return $answer;
             });
+
+            // Impostiamo un limite di tentativi (opzionale)
+            $question->setMaxAttempts(3);
+
+            $name = $this->io->askQuestion($question);
         }
 
-        $name = strtolower((string)$name);
+        $name = strtolower(trim((string)$name));
 
         // 2. Definizione percorsi e nomi file
         $pathToFile = $this->app->get('path.migration');
@@ -50,11 +58,11 @@ final class MakeMigrationCommand extends AbstractCommand
         $fileName   = "{$pathToFile}{$timestamp}_{$name}.php";
 
         // 3. Scelta dello Stub
-        $stubName = $this->option('update') ? 'migration_update.stub' : 'migration.stub';
+        $stubName = $this->getOption('update') ? 'migration_update.stub' : 'migration.stub';
         $stubPath = slash(dirname(__DIR__) . '/stubs/') . $stubName;
 
         if (!file_exists($stubPath)) {
-            $this->error("Stub not found at: {$stubPath}");
+            $this->io->error("Stub not found at: {$stubPath}");
             return self::FAILURE;
         }
 
@@ -68,11 +76,11 @@ final class MakeMigrationCommand extends AbstractCommand
         }
 
         if (file_put_contents($fileName, $template) === false) {
-            $this->error("Can't create migration file in: {$pathToFile}");
+            $this->io->error("Can't create migration file in: {$pathToFile}");
             return self::FAILURE;
         }
 
-        $this->success("Success! Migration file created: " . basename($fileName));
+        $this->io->success("Success! Migration file created: " . basename($fileName));
 
         return self::SUCCESS;
     }

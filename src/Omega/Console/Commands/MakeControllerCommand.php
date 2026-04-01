@@ -7,8 +7,6 @@ namespace Omega\Console\Commands;
 use Omega\Text\Str;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Omega\Console\AbstractCommand;
-
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
@@ -16,19 +14,19 @@ use function Omega\Support\slash;
     name: 'make:controller',
     description: 'Generate new controller class'
 )]
-final class MakeControllerCommand extends AbstractCommand
+final class MakeControllerCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED);
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making controller file...');
+        $this->io->info('Making controller file...');
         $this->isPath('path.controller');
 
-        $name = $this->argument('name');
+        $name = $this->getArgument('name');
 
         $viewName  = Str::toKebabCase($name);
 
@@ -44,12 +42,12 @@ final class MakeControllerCommand extends AbstractCommand
         ]);
 
         if (!$success) {
-            $this->error('Failed to create controller file');
+            $this->io->error('Failed to create controller file');
             return self::FAILURE;
         }
 
         $path = path('app.Controller') . $name . 'Controller.php';
-        $this->success("Controller [$path] created successfully.");
+        $this->io->success("Controller [$path] created successfully.");
 
         return self::SUCCESS;
     }

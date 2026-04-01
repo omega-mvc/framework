@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Console\AbstractCommand;
+use Omega\Template\Generate;
+use Omega\Template\Method;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Omega\Template\Generate;
-use Omega\Template\Method;
 
 #[AsCommand(
     name: 'db:make',
     description: 'Create a new seeder class'
 )]
-final class MakeSeedCommand extends AbstractCommand
+final class MakeSeedCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
@@ -24,13 +23,13 @@ final class MakeSeedCommand extends AbstractCommand
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite the seeder if it exists');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $name = $this->argument('name');
-        $filePath = $this->app->get('path.seeder', $name . '.php');
+        $name = $this->getArgument('name');
+        $filePath = $this->app->get('path.seeder');
 
-        if (file_exists($filePath) && !$this->option('force')) {
-            $this->error("Seeder [{$name}] already exists!");
+        if (file_exists($filePath) && !$this->getOption('force')) {
+            $this->io->error("Seeder [{$name}] already exists!");
             return self::FAILURE;
         }
 
@@ -48,11 +47,11 @@ final class MakeSeedCommand extends AbstractCommand
             ->body('// Insert your database seeding logic here');
 
         if (file_put_contents($filePath, $generator->__toString()) === false) {
-            $this->error("Failed to create seeder [{$name}].");
+            $this->io->error("Failed to create seeder [{$name}].");
             return self::FAILURE;
         }
 
-        $this->success("Seeder [{$name}] created successfully.");
+        $this->io->success("Seeder [{$name}] created successfully.");
         return self::SUCCESS;
     }
 }

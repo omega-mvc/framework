@@ -6,8 +6,6 @@ namespace Omega\Console\Commands;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
-use Omega\Console\AbstractCommand;
-
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
@@ -15,19 +13,19 @@ use function Omega\Support\slash;
     name: 'make:middleware',
     description: 'Generate new middleware class'
 )]
-final class MakeMiddlewareCommand extends AbstractCommand
+final class MakeMiddlewareCommand extends AbstractMakeCommand
 {
     protected function configure(): void
     {
         $this->addArgument('name', InputArgument::REQUIRED);
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Making middleware file...');
+        $this->io->info('Making middleware file...');
         $this->isPath('path.middleware');
 
-        $name = $this->argument('name');
+        $name = $this->getArgument('name');
 
         // Passiamo le sostituzioni al template
         $success = $this->makeTemplate($name, [
@@ -38,12 +36,12 @@ final class MakeMiddlewareCommand extends AbstractCommand
         ]);
 
         if (!$success) {
-            $this->error('Failed to create middleware file');
+            $this->io->error('Failed to create middleware file');
             return self::FAILURE;
         }
 
         $path = path('app.Middleware') . $name . 'Middleware.php';
-        $this->success("Middleware [$path] created successfully.");
+        $this->io->success("Middleware [$path] created successfully.");
 
         return self::SUCCESS;
     }

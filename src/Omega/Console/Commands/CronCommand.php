@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Cron\Schedule;
 use Omega\Support\Facades\Schedule as Scheduler;
+
+use function microtime;
+use function round;
 
 #[AsCommand(
     name: 'cron:run',
@@ -15,14 +18,14 @@ use Omega\Support\Facades\Schedule as Scheduler;
 )]
 final class CronCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
         $start = microtime(true);
 
         $this->getSchedule()->execute();
 
         $time = round((microtime(true) - $start) * 1000, 2);
-        $this->success("Cron jobs executed successfully in {$time}ms.");
+        $this->io->success("Cron jobs executed successfully in {$time}ms.");
 
         return self::SUCCESS;
     }

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Omega\Application\Application;
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
+
+use function file_exists;
 
 #[AsCommand(
     name: 'config:clear',
@@ -14,21 +15,21 @@ use Symfony\Component\Console\Attribute\AsCommand;
 )]
 final class ConfigClearCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $cachePath = Application::getInstance()->getApplicationCachePath() . 'config.php';
+        $cachePath = $this->app->getApplicationCachePath() . 'config.php';
 
         if (!file_exists($cachePath)) {
-            $this->warn('No configuration cache file found.');
+            $this->io->warning('No configuration cache file found.');
             return self::SUCCESS;
         }
 
         if (@unlink($cachePath)) {
-            $this->success('Configuration cache cleared successfully.');
+            $this->io->success('Configuration cache cleared successfully.');
             return self::SUCCESS;
         }
 
-        $this->error('Could not remove the configuration cache file.');
+        $this->io->error('Could not remove the configuration cache file.');
         return self::FAILURE;
     }
 }

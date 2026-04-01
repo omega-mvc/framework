@@ -10,8 +10,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Throwable;
 
-use function Omega\Support\app;
-
 #[AsCommand(
     name: 'db:seed',
     description: 'Seed the database with records'
@@ -26,18 +24,18 @@ final class SeedCommand extends AbstractCommand
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force the operation to run when in production');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
         if (!$this->confirmToProceed()) {
             return self::FAILURE;
         }
 
-        $class = $this->option('class');
-        $namespace = $this->option('name-space');
+        $class = $this->getOption('class');
+        $namespace = $this->getOption('name-space');
 
         // Controllo di mutua esclusività: non possiamo usarli entrambi
         if ($class && $namespace) {
-            $this->warn('Use only one: --class or --name-space, be specific.');
+            $this->io->warning('Use only one: --class or --name-space, be specific.');
             return self::FAILURE;
         }
 
@@ -49,27 +47,27 @@ final class SeedCommand extends AbstractCommand
         };
 
         if (!class_exists($targetClass)) {
-            $this->error("Seeder class [{$targetClass}] does not exist.");
+            $this->io->error("Seeder class [{$targetClass}] does not exist.");
             return self::FAILURE;
         }
 
-        $this->info("Running seeder: {$targetClass}");
+        $this->io->info("Running seeder: {$targetClass}");
 
         try {
-            $seeder = app()->make($targetClass);
-            app()->call([$seeder, 'run']);
+            $seeder = $this->app->make($targetClass);
+            $this->app->call([$seeder, 'run']);
 
-            $this->success("Success run seeder: {$targetClass}");
+            $this->io->success("Success run seeder: {$targetClass}");
             return self::SUCCESS;
         } catch (Throwable $e) {
-            $this->error("Seeding failed: " . $e->getMessage());
+            $this->io->error("Seeding failed: " . $e->getMessage());
             return self::FAILURE;
         }
     }
 
     private function confirmToProceed(): bool
     {
-        if (app()->isDev() || $this->option('force')) {
+        if ($this->app->isDev() || $this->getOption('force')) {
             return true;
         }
 

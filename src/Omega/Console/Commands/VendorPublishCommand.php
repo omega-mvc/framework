@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Helper\ProgressBar;
 use Omega\Support\AbstractServiceProvider;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'vendor:publish',
@@ -23,15 +23,15 @@ final class VendorPublishCommand extends AbstractCommand
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing files');
     }
 
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $tag = $this->option('tag');
-        $force = $this->option('force');
+        $tag = $this->getOption('tag');
+        $force = $this->getOption('force');
 
         $modules = AbstractServiceProvider::getModules();
 
         if (empty($modules)) {
-            $this->warn('No publishable resources found.');
+            $this->io->warning('No publishable resources found.');
             return self::SUCCESS;
         }
 
@@ -53,13 +53,13 @@ final class VendorPublishCommand extends AbstractCommand
             : array_filter($modules, fn($tag) => $tag === $targetTag, ARRAY_FILTER_USE_KEY);
 
         if (empty($filtered)) {
-            $this->error("No publishable resources found for tag: {$targetTag}");
+            $this->io->error("No publishable resources found for tag: {$targetTag}");
             return;
         }
 
-        $this->info("Publishing resources...");
+        $this->io->info("Publishing resources...");
 
-        $progressBar = new ProgressBar($this->io, count($filtered));
+        $progressBar = new ProgressBar($this->output, count($filtered));
         $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% -- %message%');
         $progressBar->start();
 
@@ -81,6 +81,6 @@ final class VendorPublishCommand extends AbstractCommand
         $progressBar->finish();
         $this->io->newLine(2);
 
-        $this->success("Done! <fg=yellow>{$added}</> resource(s) have been successfully published.");
+        $this->io->success("Done! <fg=yellow>{$added}</> resource(s) have been successfully published.");
     }
 }

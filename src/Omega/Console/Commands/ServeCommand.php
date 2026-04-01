@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Style;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Style\SymfonyStyle;
 
 use function Omega\Support\os_detect;
 use function shell_exec;
@@ -27,20 +27,26 @@ class ServeCommand extends AbstractCommand
 
     protected bool $expose = false;
 
-    protected function handle(): int
+    protected function configure(): void
     {
-        $io = new SymfonyStyle($this->input, $this->output);
+        // Symfony 8.x allows attributes but options still declared here
+        $this
+            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Serve with custom port', 8000)
+            ->addOption('expose', null, InputOption::VALUE_NONE, 'Make server run on public network');
+    }
 
+    public function __invoke(): int
+    {
         // Get options
-        $this->port = (int) $this->option('port');
-        $this->expose = (bool) $this->option('expose');
+        $this->port = (int) $this->getOption('port');
+        $this->expose = (bool) $this->getOption('expose');
 
         if (!is_numeric($this->port)) {
-            $io->error("Port must be numeric");
+            $this->io->error("Port must be numeric");
             return 1;
         }
 
-        $this->launchServer($io, $this->port, $this->expose);
+        $this->launchServer($this->io, $this->port, $this->expose);
 
         return 0;
     }
@@ -48,7 +54,7 @@ class ServeCommand extends AbstractCommand
     /**
      * Launch the PHP built-in server.
      */
-    private function launchServer(SymfonyStyle $io, int $port, bool $expose): void
+    private function launchServer(Style $io, int $port, bool $expose): void
     {
         $localIP = gethostbyname(gethostname());
 
@@ -77,13 +83,5 @@ class ServeCommand extends AbstractCommand
 
         $address = $expose ? '0.0.0.0' : '127.0.0.1';
         shell_exec("php -dxdebug.mode=off -S " . $address . ":" . $port . " -t public/");
-    }
-
-    protected function configure(): void
-    {
-        // Symfony 8.x allows attributes but options still declared here
-        $this
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Serve with custom port', 8000)
-            ->addOption('expose', null, InputOption::VALUE_NONE, 'Make server run on public network');
     }
 }

@@ -15,10 +15,10 @@ use function Omega\Support\slash;
 )]
 final class MaintenanceDownCommand extends AbstractCommand
 {
-    protected function handle(): int
+    public function __invoke(): int
     {
         if ($this->app->isDownMaintenanceMode()) {
-            $this->warn('Application is already under maintenance mode.');
+            $this->io->warning('Application is already under maintenance mode.');
             return self::FAILURE;
         }
 
@@ -39,7 +39,7 @@ final class MaintenanceDownCommand extends AbstractCommand
             file_get_contents(slash(dirname(__DIR__) . '/stubs/maintenance.stub'))
         );
 
-        $this->success('Application is now in maintenance mode.');
+        $this->io->success('Application is now in maintenance mode.');
 
         return self::SUCCESS;
     }

@@ -27,12 +27,10 @@ use Omega\Support\Bootstrap\RegisterProviders;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Application as SymfonyConsole;
-use Symfony\Component\Console\Helper\DescriptorHelper;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-
 use function getenv;
 use function is_array;
 use function putenv;

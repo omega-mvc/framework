@@ -22,7 +22,6 @@ use ReflectionException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
-
 use function array_keys;
 use function sprintf;
 
@@ -44,7 +43,7 @@ use function sprintf;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-class CommandLoader implements CommandLoaderInterface
+final class CommandLoader implements CommandLoaderInterface
 {
     /**
      * CommandLoader constructor.
@@ -84,7 +83,7 @@ class CommandLoader implements CommandLoaderInterface
         $command = $this->app->get($this->commands[$name]);
 
         if ($command instanceof AbstractCommand) {
-            $command->setApp($this->app);
+            $command->app = $this->app;
         }
 
         return $command;
