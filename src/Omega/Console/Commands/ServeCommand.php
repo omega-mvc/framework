@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Console\Style;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
 use function Omega\Support\os_detect;
@@ -19,21 +19,18 @@ use function shell_exec;
  */
 #[AsCommand(
     name: 'serve',
-    description: 'Serve server with port number (default 8000)'
+    description: 'Serve server with port number (default 8000)',
+    options: [
+        'port'   => [null, InputOption::VALUE_REQUIRED, 'Serve with custom port', 8000],
+        'expose' => [null, InputOption::VALUE_NONE, 'Make server run on public network']
+
+    ]
 )]
 class ServeCommand extends AbstractCommand
 {
     protected int $port = 8000;
 
     protected bool $expose = false;
-
-    protected function configure(): void
-    {
-        // Symfony 8.x allows attributes but options still declared here
-        $this
-            ->addOption('port', null, InputOption::VALUE_REQUIRED, 'Serve with custom port', 8000)
-            ->addOption('expose', null, InputOption::VALUE_NONE, 'Make server run on public network');
-    }
 
     public function __invoke(): int
     {

@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use function Omega\Support\slash;
 
 #[AsCommand(
     name: 'make:view',
-    description: 'Generate new view template'
+    description: 'Generate new view template',
+    arguments: [
+        'name' => [InputArgument::REQUIRED, 'The name of the view']
+    ]
+
 )]
 final class MakeViewCommand extends AbstractMakeCommand
 {
-    protected function configure(): void
-    {
-        $this->addArgument('name', InputArgument::REQUIRED);
-    }
-
     public function __invoke(): int
     {
         $this->io->info('Making view temlate...');
@@ -30,7 +29,7 @@ final class MakeViewCommand extends AbstractMakeCommand
         $success = $this->makeTemplate($name, [
             'template_location' => slash(path: dirname(__DIR__) . '/stubs/view.stub'),
             'save_location'      => $this->app->get('path.view'),
-            'pattern'            => '__view__', // Questo sostituisce la classe
+            'pattern'            => '__view__',
             'suffix'             => '.template.php'
         ]);
 

@@ -5,24 +5,21 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Support\AbstractServiceProvider;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'vendor:publish',
-    description: 'Publish any publishable assets from vendor packages'
+    description: 'Publish any publishable assets from vendor packages',
+    options: [
+        'tag'   => ['t', InputOption::VALUE_OPTIONAL, 'Specify the tag to run specific publishing', '*'],
+        'force' => ['f', InputOption::VALUE_NONE, 'Overwrite existing files']
+    ]
 )]
 final class VendorPublishCommand extends AbstractCommand
 {
-    protected function configure(): void
-    {
-        $this
-            ->addOption('tag', 't', InputOption::VALUE_OPTIONAL, 'Specify the tag to run specific publishing', '*')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing files');
-    }
-
     public function __invoke(): int
     {
         $tag = $this->getOption('tag');

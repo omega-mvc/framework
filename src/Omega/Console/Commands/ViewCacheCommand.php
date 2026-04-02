@@ -5,20 +5,21 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Text\Str;
 use Omega\View\Templator;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputOption;
 
-#[AsCommand(name: 'view:cache', description: 'Compile all view templates')]
+#[AsCommand(
+    name: 'view:cache',
+    description: 'Compile all view templates',
+    options: [
+        'prefix' => ['p', InputOption::VALUE_REQUIRED, 'File patternto stored in cache', '*.php']
+    ]
+)]
 final class ViewCacheCommand extends AbstractCommand
 {
-    protected function configure(): void
-    {
-        $this->addOption('prefix', 'p', InputOption::VALUE_REQUIRED, 'File pattern', '*.php');
-    }
-
     public function __invoke(): int
     {
         $this->io->info('Building view compiler cache...');

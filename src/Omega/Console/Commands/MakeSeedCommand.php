@@ -4,25 +4,24 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
+use Omega\Console\Attribute\AsCommand;
 use Omega\Template\Generate;
 use Omega\Template\Method;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'db:make',
-    description: 'Create a new seeder class'
+    description: 'Create a new seeder class',
+    arguments: [
+        'name'   => [InputArgument::REQUIRED, 'The name of the seeder']
+    ],
+    options: [
+        'force' => ['f', InputOption::VALUE_NONE, 'Overwrite the seeder if it exists']
+    ]
 )]
 final class MakeSeedCommand extends AbstractMakeCommand
 {
-    protected function configure(): void
-    {
-        $this
-            ->addArgument('name', InputArgument::REQUIRED, 'The name of the seeder class')
-            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite the seeder if it exists');
-    }
-
     public function __invoke(): int
     {
         $name = $this->getArgument('name');

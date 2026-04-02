@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
-#[AsCommand(name: 'view:clear', description: 'Clear all cached view files')]
+#[AsCommand(
+    name: 'view:clear',
+    description: 'Clear all cached view files',
+    options: [
+        'prefix' => ['p', InputOption::VALUE_REQUIRED, 'File pattern to clear', '*.php']
+    ]
+)]
 final class ViewClearCommand extends AbstractCommand
 {
-    protected function configure(): void
-    {
-        $this->addOption('prefix', 'p', InputOption::VALUE_REQUIRED, 'File pattern', '*.php');
-    }
-
     public function __invoke(): int
     {
         $compiledPath = $this->app->get('path.compiled_view_path');

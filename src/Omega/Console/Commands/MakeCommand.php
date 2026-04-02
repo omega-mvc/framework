@@ -4,23 +4,22 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
+use Omega\Console\Attribute\AsCommand;
 use Omega\Text\Str;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
+
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
 #[AsCommand(
     name: 'make:command',
-    description: 'Generate new command class'
+    description: 'Generate new command class',
+    arguments: [
+        'name' => [InputArgument::REQUIRED, 'The name of the command']
+    ]
 )]
 final class MakeCommand extends AbstractMakeCommand
 {
-    protected function configure(): void
-    {
-        $this->addArgument('name', InputArgument::REQUIRED);
-    }
-
     public function __invoke(): int
     {
         $this->io->info('Making command file...');

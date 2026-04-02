@@ -4,23 +4,21 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
+use Omega\Console\Attribute\AsCommand;
 use Omega\Text\Str;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use function Omega\Support\path;
 use function Omega\Support\slash;
 
 #[AsCommand(
     name: 'make:controller',
-    description: 'Generate new controller class'
+    description: 'Generate new controller class',
+    arguments: [
+        'name' => [InputArgument::REQUIRED, 'The name of the controller']
+    ]
 )]
 final class MakeControllerCommand extends AbstractMakeCommand
 {
-    protected function configure(): void
-    {
-        $this->addArgument('name', InputArgument::REQUIRED);
-    }
-
     public function __invoke(): int
     {
         $this->io->info('Making controller file...');
@@ -34,7 +32,7 @@ final class MakeControllerCommand extends AbstractMakeCommand
         $success = $this->makeTemplate($name, [
             'template_location' => slash(path: dirname(__DIR__) . '/stubs/controller.stub'),
             'save_location'      => $this->app->get('path.controller'),
-            'pattern'            => '__controller__', // Questo sostituisce la classe
+            'pattern'            => '__controller__',
             'suffix'             => 'Controller.php',
             'vars'              => [
                 '__view_name__' => $viewName,
@@ -46,7 +44,7 @@ final class MakeControllerCommand extends AbstractMakeCommand
             return self::FAILURE;
         }
 
-        $path = path('app.Controller') . $name . 'Controller.php';
+        $path = path('app.Http/Controllers') . $name . 'Controller.php';
         $this->io->success("Controller [$path] created successfully.");
 
         return self::SUCCESS;

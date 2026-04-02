@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Router\Router;
-use Symfony\Component\Console\Attribute\AsCommand;
 
 #[AsCommand(
     name: 'route:list',

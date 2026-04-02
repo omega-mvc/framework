@@ -4,39 +4,35 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
-use Symfony\Component\Console\Question\Question; // Importante
+use Symfony\Component\Console\Question\Question;
 
 use function Omega\Support\slash;
 use function Omega\Time\now;
 
 #[AsCommand(
     name: 'make:migration',
-    description: 'Generate a new database migration file'
+    description: 'Generate a new database migration file',
+    arguments: [
+        'name'   => [InputArgument::REQUIRED, 'The name of the migration']
+    ],
+    options: [
+        'update' => ['u', InputOption::VALUE_NONE, 'Generate migration file with alter (update)']
+    ]
 )]
 final class MakeMigrationCommand extends AbstractMakeCommand
 {
-    protected function configure(): void
-    {
-        $this
-            ->addArgument('name', InputArgument::OPTIONAL, 'The name of the table')
-            ->addOption('update', 'u', InputOption::VALUE_NONE, 'Generate migration file with alter (update)');
-    }
-
     public function __invoke(): int
     {
         $this->io->info('Making migration...');
 
-        // 1. Recupero Nome
         $name = $this->getArgument('name');
 
-        // Se manca il nome, usiamo il sistema Question con Validator
         if (!$name) {
             $question = new Question('Please fill the table name');
 
-            // In Symfony 8, la validazione si imposta così:
             $question->setValidator(function ($answer) {
                 if (empty($answer) || trim($answer) === '') {
                     throw new \RuntimeException('The table name is required.');
@@ -44,7 +40,6 @@ final class MakeMigrationCommand extends AbstractMakeCommand
                 return $answer;
             });
 
-            // Impostiamo un limite di tentativi (opzionale)
             $question->setMaxAttempts(3);
 
             $name = $this->io->askQuestion($question);

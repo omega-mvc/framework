@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Support\PackageManifest;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Throwable;
 
 #[AsCommand(

@@ -72,6 +72,11 @@ abstract class AbstractCommand extends Command
         }
     }
 
+    protected string $name;
+    protected ?string $description = null;
+    protected array $aliases = [];
+    protected bool $hidden = false;
+
     /**
      * Executes the console command.
      *
@@ -132,14 +137,14 @@ abstract class AbstractCommand extends Command
             return;
         }
 
-        /** @var AsCommand $settings */
         $settings = $attribute->newInstance();
 
-        // 1. Configurazione Metadati Base (quelli che prima faceva AsCommand)
         $this->setName($settings->name);
+
         if ($settings->description) {
             $this->setDescription($settings->description);
         }
+
         $this->setAliases($settings->aliases);
         $this->setHidden($settings->hidden);
 

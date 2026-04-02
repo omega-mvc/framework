@@ -5,25 +5,23 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Text\Str;
 use Omega\View\Templator;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
 #[AsCommand(
     name: 'view:watch',
-    description: 'Watch view files and recompile them on change'
+    description: 'Watch view files and recompile them on change',
+    options: [
+        'prefix'=> ['p', InputOption::VALUE_REQUIRED, 'File pattern to watch', '*.php']
+    ]
 )]
 final class ViewWatchCommand extends AbstractCommand
 {
     private bool $shouldExit = false;
     private int $width = 80;
-
-    protected function configure(): void
-    {
-        $this->addOption('prefix', 'p', InputOption::VALUE_REQUIRED, 'File pattern to watch', '*.php');
-    }
 
     /**
      * @return int
@@ -37,16 +35,13 @@ final class ViewWatchCommand extends AbstractCommand
         $templator = $this->app[Templator::class];
         $prefix = $this->getOption('prefix');
 
-        // Inizializzazione indici
         $getIndexes = $this->getIndexFiles($prefix);
         if (empty($getIndexes)) {
             return self::FAILURE;
         }
 
-        // Pre-compilazione e mapping dipendenze
         $compiled = $this->precompile($templator, $getIndexes);
 
-        // Loop di monitoraggio
         while (!$this->shouldExit) {
             $reindex = false;
 
@@ -60,11 +55,9 @@ final class ViewWatchCommand extends AbstractCommand
 
                 $now = filemtime($file);
 
-                // Se il file è stato modificato
                 if ($now > $time) {
                     $dependency = $this->compileSingle($templator, $file);
 
-                    // Aggiorna mappa dipendenze
                     foreach ($dependency as $compile => $depTime) {
                         $compile = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $compile);
                         $compiled[$compile][$file] = $time;
@@ -73,7 +66,6 @@ final class ViewWatchCommand extends AbstractCommand
                     $getIndexes[$file] = $now;
                     $reindex = true;
 
-                    // Ricompila i file dipendenti (padri)
                     if (isset($compiled[$file])) {
                         foreach ($compiled[$file] as $parentFile => $parentTime) {
                             $this->compileSingle($templator, $parentFile);
@@ -83,18 +75,15 @@ final class ViewWatchCommand extends AbstractCommand
                 }
             }
 
-            // Se sono stati aggiunti o rimossi file, rifacciamo l'indice
             if ($reindex || count($getIndexes) !== count($newIndexes = $this->getIndexFiles($prefix))) {
                 $getIndexes = $newIndexes ?? $getIndexes;
                 $compiled = $this->precompile($templator, $getIndexes);
             }
 
-            // Gestione segnali (se disponibile)
             if (function_exists('pcntl_signal_dispatch')) {
                 pcntl_signal_dispatch();
             }
 
-            // Sleep per non saturare la CPU (10ms è un buon compromesso tra reattività e consumo)
             usleep(10_000);
         }
 
@@ -116,12 +105,10 @@ final class ViewWatchCommand extends AbstractCommand
         }
 
         arsort($indexes);
+
         return $indexes;
     }
 
-    /**
-     * Compila un singolo file e logga l'esecuzione.
-     */
     private function compileSingle(Templator $templator, string $filePath): array
     {
         $start = microtime(true);
@@ -132,7 +119,6 @@ final class ViewWatchCommand extends AbstractCommand
             $templator->compile($filename);
             $time = round((microtime(true) - $start) * 1000, 2);
 
-            // Layout stile Omega: Nome file ............ 12ms
             $dots = str_repeat('.', max(2, $this->width - strlen($filename) - 10));
             $this->io->text(sprintf(" <info>%s</info> <fg=gray>%s</> <comment>%s ms</comment>", $filename, $dots, $time));
 
