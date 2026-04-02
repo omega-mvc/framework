@@ -17,6 +17,7 @@ namespace Omega\Console;
 use Exception;
 use Omega\Application\Application;
 use Omega\Config\ConfigRepository;
+use Omega\Console\Attribute\AsCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -25,6 +26,7 @@ use Omega\Support\Bootstrap\ConfigProviders;
 use Omega\Support\Bootstrap\RegisterFacades;
 use Omega\Support\Bootstrap\RegisterProviders;
 use Psr\Container\ContainerExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
 use Symfony\Component\Console\Application as SymfonyConsole;
 use Symfony\Component\Console\Input\ArgvInput;
@@ -167,7 +169,7 @@ class ConsoleApplication
      * @throws EntryNotFoundException If a required container entry is missing.
      * @throws ReflectionException If a class cannot be reflected.
      */
-    protected function configureCommandLoader(SymfonyConsole $console): void
+    /**protected function configureCommandLoader(SymfonyConsole $console): void
     {
         $config   = $this->app->make(ConfigRepository::class);
         $commands = $config->get('commands', []);
@@ -180,5 +182,42 @@ class ConsoleApplication
         $console->setCommandLoader(
             new CommandLoader($this->app, $merged)
         );
+    }*/
+
+    // ConsoleApplication.php
+
+    protected function configureCommandLoader(SymfonyConsole $console): void
+    {
+        $commandPaths = [
+            'Omega\\Console\\Commands\\' => dirname(__DIR__) . slash('/Commands'), // Comandi Core
+            'App\\Console\\Commands\\'   => $this->app->get('path.command'), // Comandi Utente
+        ];
+
+        $merged = [];
+
+        foreach ($commandPaths as $namespace => $path) {
+            if (!is_dir($path)) continue;
+
+            $finder = new Finder();
+            $finder->files()->name('*Command.php')->in($path);
+
+            foreach ($finder as $file) {
+                // Genera il nome della classe dal path
+                $className = $namespace . $file->getBasename('.php');
+
+                if (!class_exists($className)) continue;
+
+                $reflection = new ReflectionClass($className);
+                $attribute = $reflection->getAttributes(AsCommand::class)[0] ?? null;
+
+                if ($attribute) {
+                    $instance = $attribute->newInstance();
+                    // 'mio:comando' => 'App\Console\Commands\MioComando'
+                    $merged[$instance->name] = $className;
+                }
+            }
+        }
+
+        $console->setCommandLoader(new CommandLoader($this->app, $merged));
     }
 }
