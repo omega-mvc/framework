@@ -34,7 +34,7 @@ $command = new class ($argv) extends AbstractCommand
 
         if ('facade:update' === $this->cmd) {
             if (
-                false !== ($file = $this->option('from-file', false))
+                false !== ($file = $this->getOption('from-file', false))
                 && file_exists(dirname(__DIR__) . $file)
             ) {
                 $facades = require_once dirname(__DIR__) . $file;
@@ -72,13 +72,13 @@ $command = new class ($argv) extends AbstractCommand
 
     public function generate(): int
     {
-        if (false === ($className = $this->option('facade', false))) {
+        if (false === ($className = $this->getOption('facade', false))) {
             error('The command argument is required: facade:generate --facade')->outIf($this->canWrite());
 
             return AbstractCommand::INVALID;
         }
 
-        $accessor  = $this->option('accessor', $className);
+        $accessor  = $this->getOption('accessor', $className);
         $className = ucfirst($className);
 
         // get class methods
@@ -99,8 +99,8 @@ $command = new class ($argv) extends AbstractCommand
     public function update(): int
     {
         if (
-            false === ($facade  = $this->option('facade', false))
-            || false === ($accessor = $this->option('accessor', false))
+            false === ($facade  = $this->getOption('facade', false))
+            || false === ($accessor = $this->getOption('accessor', false))
         ) {
             error('The command argument is required: facade:update --facade --accessor')->outIf($this->canWrite());
 
@@ -411,7 +411,7 @@ $command = new class ($argv) extends AbstractCommand
     private function getAccessorAlias(string $accessor): string
     {
         if ($this->hasOption('alias')) {
-            return "'" . $this->option('alias') . "'";
+            return "'" . $this->getOption('alias') . "'";
         }
 
         if (class_exists($accessor)) {

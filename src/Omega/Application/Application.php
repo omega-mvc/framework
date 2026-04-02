@@ -81,7 +81,7 @@ class Application extends AbstractApplication
             'path.controller'         => $this->basePath . set_path('app.Http.Controllers'),
             'path.exception'          => $this->basePath . set_path('app.Exceptions'),
             'path.model'              => $this->basePath . set_path('app.Models'),
-            'path.middleware'         => $this->basePath . set_path('app.Http.Middlewares'),
+            'path.middleware'         => $this->basePath . set_path('app.Middlewares'),
             'path.provider'           => $this->basePath . set_path('app.Providers'),
             'path.view'               => $this->basePath . set_path('resources.views'),
             'path.storage'            => $this->basePath . set_path('storage'),
@@ -96,15 +96,25 @@ class Application extends AbstractApplication
             ),
             'environment'             => env('APP_ENV'),
             'app.debug'               => env('APP_DEBUG'),
+            'app.name'                => env('APP_NAME'),
+            'app.version'             => env('APP_VERSION')
         ];
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getVersion(?string $version): string
+    public function getName(?string $name = null): string
     {
-        return $version ?? static::VERSION;
+        return $name ?? $this->get('app.name');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getVersion(?string $version = null): string
+    {
+        return $version ?? $this->get('app.version');
     }
 
     /**

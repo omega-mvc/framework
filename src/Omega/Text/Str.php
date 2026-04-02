@@ -298,9 +298,23 @@ final class Str
      * @param string $text Input string.
      * @return string Converted string in kebab-case.
      */
+    /**
+     * Convert the string to kebab-case (words separated by dashes).
+     * Supporta sia separatori espliciti che il passaggio tra Minuscole e Maiuscole.
+     *
+     * @param string $text Input string.
+     * @return string Converted string in kebab-case.
+     */
     public static function toKebabCase(string $text): string
     {
-        return str_replace([' ', '-', '_', '+'], '-', $text);
+        if (strtoupper($text) === $text) {
+            return strtolower($text);
+        }
+
+        $text = preg_replace('/(?<!^)[A-Z]/', '-$0', $text);
+        $text = str_replace([' ', '_', '+'], '-', $text);
+
+        return strtolower(preg_replace('/-+/', '-', $text));
     }
 
     /**

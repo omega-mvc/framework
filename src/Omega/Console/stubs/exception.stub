@@ -1,0 +1,12 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Exceptions;
+
+use Omega\Exceptions\ExceptionHandler;
+
+class __exception__Exception extends ExceptionHandler
+{
+}
