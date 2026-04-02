@@ -20,6 +20,8 @@ use Symfony\Component\Console\Input\InputOption;
 )]
 final class ViewCacheCommand extends AbstractCommand
 {
+    use ViewCommandFilesTrait;
+
     public function __invoke(): int
     {
         $this->io->info('Building view compiler cache...');

@@ -15,8 +15,7 @@ declare(strict_types=1);
 namespace Omega\Console;
 
 use Exception;
-use Omega\Application\Application;
-use Omega\Config\ConfigRepository;
+use Omega\Application\ApplicationInterface;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -28,13 +27,16 @@ use Omega\Support\Bootstrap\RegisterProviders;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
-use Symfony\Component\Console\Application as SymfonyConsole;
+use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Finder\Finder;
+
 use function getenv;
 use function is_array;
+use function Omega\Support\slash;
 use function putenv;
 use function str_contains;
 
@@ -66,8 +68,6 @@ use function str_contains;
  */
 class ConsoleApplication
 {
-    use DefaultCommandsTrait;
-
     /** @var array<int, class-string> The list of bootstrapper classes to run during initialization. */
     protected array $bootstrappers = [
         ConfigProviders::class,
@@ -79,10 +79,10 @@ class ConsoleApplication
     /**
      * Create a new Console instance.
      *
-     * @param Application $app The application container.
+     * @param ApplicationInterface $app The application container.
      * @return void
      */
-    public function __construct(protected Application $app)
+    public function __construct(protected ApplicationInterface $app)
     {
     }
 
@@ -134,11 +134,6 @@ class ConsoleApplication
      * configuration, facades, and service providers into the container.
      *
      * @return void
-     * @throws BindingResolutionException If a container binding cannot be resolved.
-     * @throws CircularAliasException If a circular alias is detected.
-     * @throws ContainerExceptionInterface For generic container errors.
-     * @throws EntryNotFoundException If a required container entry is missing.
-     * @throws ReflectionException If a class cannot be reflected.
      */
     protected function bootstrap(): void
     {
@@ -161,7 +156,7 @@ class ConsoleApplication
      *     'cache:clear' => CacheClearCommand::class,
      * ]
      *
-     * @param SymfonyConsole $console The Symfony Console application instance.
+     * @param Application $console The Symfony Console application instance.
      * @return void
      * @throws BindingResolutionException If a container binding cannot be resolved.
      * @throws CircularAliasException If a circular alias is detected.
@@ -169,27 +164,10 @@ class ConsoleApplication
      * @throws EntryNotFoundException If a required container entry is missing.
      * @throws ReflectionException If a class cannot be reflected.
      */
-    /**protected function configureCommandLoader(SymfonyConsole $console): void
-    {
-        $config   = $this->app->make(ConfigRepository::class);
-        $commands = $config->get('commands', []);
-
-        $merged = array_merge(
-            $this->defaultCommands,
-            $commands
-        );
-
-        $console->setCommandLoader(
-            new CommandLoader($this->app, $merged)
-        );
-    }*/
-
-    // ConsoleApplication.php
-
-    protected function configureCommandLoader(SymfonyConsole $console): void
+    protected function configureCommandLoader(Application $console): void
     {
         $commandPaths = [
-            'Omega\\Console\\Commands\\' => dirname(__DIR__) . slash('/Commands'), // Comandi Core
+            'Omega\\Console\\Commands\\' => __DIR__ . slash('/Commands'), // Comandi Core
             'App\\Console\\Commands\\'   => $this->app->get('path.command'), // Comandi Utente
         ];
 

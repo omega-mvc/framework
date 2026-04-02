@@ -17,6 +17,8 @@ use Symfony\Component\Console\Input\InputOption;
 )]
 final class ViewClearCommand extends AbstractCommand
 {
+    use ViewCommandFilesTrait;
+
     public function __invoke(): int
     {
         $compiledPath = $this->app->get('path.compiled_view_path');

@@ -20,8 +20,6 @@ use Omega\Application\ApplicationInterface;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Container\Exceptions\CircularAliasException;
-use RecursiveDirectoryIterator;
-use RecursiveIteratorIterator;
 use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -249,29 +247,5 @@ abstract class AbstractCommand extends Command
     protected function getOption(string $key): mixed
     {
         return $this->input->getOption($key);
-    }
-
-    /**
-     * Helper to find files recursively.
-     */
-    protected function findFiles(string $directory, string $pattern): array
-    {
-        if (!is_dir($directory)) {
-            return [];
-        }
-
-        $files = [];
-        $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($directory),
-            RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($iterator as $file) {
-            if ($file->isFile() && fnmatch($pattern, $file->getFilename())) {
-                $files[] = $file->getPathname();
-            }
-        }
-
-        return $files;
     }
 }

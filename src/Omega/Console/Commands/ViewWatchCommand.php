@@ -20,6 +20,8 @@ use Throwable;
 )]
 final class ViewWatchCommand extends AbstractCommand
 {
+    use ViewCommandFilesTrait;
+
     private bool $shouldExit = false;
     private int $width = 80;
 

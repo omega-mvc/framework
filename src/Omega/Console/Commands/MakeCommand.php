@@ -47,44 +47,9 @@ final class MakeCommand extends AbstractMakeCommand
             return self::FAILURE;
         }
 
-        $this->registerCommand($name);
-
         $path = path('app.Console.Commands') . $name . 'Command.php';
         $this->io->success("Command [$path] created successfully.");
 
         return self::SUCCESS;
-    }
-
-    /**
-     * Registra il comando nel file config/command.php
-     */
-    private function registerCommand(string $name): void
-    {
-        $configPath = $this->app->get('path.config') . 'command.php';
-
-        $content = file_get_contents($configPath);
-
-        $placeholder = '// more commands here';
-
-        $commandName = Str::toKebabCase($name);
-
-        $commandEntry = sprintf(
-            "'app:%s' => \\App\\Console\\Commands\\%sCommand::class",
-            $commandName,
-            $name
-        );
-
-        // Evita duplicati
-        if (str_contains($content, $commandEntry)) {
-            $this->io->warning('Command already registered');
-
-            return;
-        }
-
-        $replacement = $commandEntry . ",\n    " . $placeholder;
-
-        $content = str_replace($placeholder, $replacement, $content);
-
-        file_put_contents($configPath, $content);
     }
 }
