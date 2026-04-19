@@ -22,6 +22,7 @@ use ReflectionException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\CommandLoader\CommandLoaderInterface;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
+
 use function array_keys;
 use function sprintf;
 
@@ -48,7 +49,7 @@ final class CommandLoader implements CommandLoaderInterface
     /**
      * CommandLoader constructor.
      *
-     * @param ApplicationInterface                  $app      The Omega application container.
+     * @param ApplicationInterface                 $app      The Omega application container.
      * @param array<string, class-string<Command>> $commands Map of command names to command class names.
      * @return void
      */
@@ -70,13 +71,17 @@ final class CommandLoader implements CommandLoaderInterface
      * @throws CircularAliasException If a circular alias is detected.
      * @throws CommandNotFoundException If the command name is not defined.
      * @throws ContainerExceptionInterface For generic container errors.
-     * @throws ContainerExceptionInterface For generic container errors.
      * @throws ReflectionException If a class cannot be reflected.
      */
     public function get(string $name): Command
     {
         if (!$this->has($name)) {
-            throw new CommandNotFoundException(sprintf('Command "%s" is not defined.', $name));
+            throw new CommandNotFoundException(
+                sprintf(
+                    'Command "%s" is not defined.',
+                    $name
+                )
+            );
         }
 
         /** @var Command $command */

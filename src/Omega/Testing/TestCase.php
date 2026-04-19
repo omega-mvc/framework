@@ -22,7 +22,7 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use Omega\Support\Facades\AbstractFacade;
 use PHPUnit\Framework\TestCase as PhpUnitTestCase;
 use Psr\Container\ContainerExceptionInterface;

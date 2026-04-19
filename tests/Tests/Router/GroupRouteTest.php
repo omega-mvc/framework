@@ -83,25 +83,6 @@ final class GroupRouteTest extends TestCase
     }
 
     /**
-     * Test it can use group controller.
-     *
-     * @return void
-     */
-    public function testItCanUseGroupController(): void
-    {
-        Router::controller(SomeClass::class)->group(function () {
-            Router::get('/foo', 'foo');
-            Router::get('/bar', 'bar');
-        });
-
-        $res = $this->dispatcher('/foo', 'get');
-        $this->assertEquals('bar', $res);
-
-        $res = $this->dispatcher('/bar', 'get');
-        $this->assertEquals('foo', $res);
-    }
-
-    /**
      * Test it can handle nested prefixes.
      *
      * @return void

@@ -67,7 +67,7 @@ class ServeCommand extends AbstractCommand
 
         $io->newLine(2);
         $io->writeln('Press <comment>ctrl+c</comment> to stop server');
-        $io->success('Server running...');
+        $io->info('Server running...');
 
         // Use pcntl signals if OS is not Windows
         if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {

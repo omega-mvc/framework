@@ -23,7 +23,7 @@ class __controller__Controller extends AbstractController
      */
     public function handle(): Response
     {
-        return view('__view_name__', [
+        return view('__name__', [
             "title" => "Document Title",
         ]);
     }

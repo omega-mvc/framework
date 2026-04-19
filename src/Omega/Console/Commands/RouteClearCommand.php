@@ -17,20 +17,19 @@ class RouteClearCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
-        $io = $this->io;
         $cachePath = $this->app->getApplicationCachePath() . 'route.php';
 
         if (file_exists($cachePath)) {
             if (@unlink($cachePath)) {
-                $io->success('Route cache cleared successfully.');
-                return 0;
+                $this->io->info('Route cache cleared successfully.');
+                return self::SUCCESS;
             }
 
-            $io->error('Unable to delete the route cache file.');
-            return 1;
+            $this->io->error('Unable to delete the route cache file.');
+            return self::FAILURE;
         }
 
-        $io->info('No route cache file found.');
-        return 0;
+        $this->io->warning('No route cache file found.');
+        return self::INVALID;
     }
 }

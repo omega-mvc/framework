@@ -11,7 +11,12 @@ use Omega\Cache\CacheManager;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
+use Omega\Container\Exceptions\EntryNotFoundException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
 use function array_keys;
@@ -30,7 +35,12 @@ final class CacheClearCommand extends AbstractCommand
     /**
      * {@inheritdoc}
      *
+     * @throws BindingResolutionException
      * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      * @throws UnknownStorageException
      */
     public function __invoke(): int
@@ -41,7 +51,7 @@ final class CacheClearCommand extends AbstractCommand
         }
 
         /** @var CacheManager $cache */
-        $cache = $this->app['cache'];
+        $cache = $this->app->get('cache');
         $driversToClear = [];
 
         $clearAll = $this->getOption('all');
@@ -57,7 +67,7 @@ final class CacheClearCommand extends AbstractCommand
 
         if (empty($driversToClear)) {
             $cache->getDriver()->clear();
-            $this->io->success('Done! Default cache driver has been cleared.');
+            $this->io->info('Application cache cleared successfully.');
             return self::SUCCESS;
         }
 

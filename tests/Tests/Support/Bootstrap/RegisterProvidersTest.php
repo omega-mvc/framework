@@ -22,7 +22,7 @@ use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use Omega\Support\Bootstrap\BootProviders;
 use Omega\Support\Bootstrap\RegisterProviders;
 use PHPUnit\Framework\Attributes\CoversClass;

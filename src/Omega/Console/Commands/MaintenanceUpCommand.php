@@ -28,7 +28,7 @@ final class MaintenanceUpCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $this->io->success('Application is now live.');
+        $this->io->info('Application is now live.');
 
         return self::SUCCESS;
     }

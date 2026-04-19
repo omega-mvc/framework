@@ -83,7 +83,7 @@ class ConfigProviders
     {
         $config = $this->loadConfiguration($app);
 
-        $app->loadConfig(new ConfigRepository($config));
+        $app->set('config', fn () => new ConfigRepository($config));
 
         date_default_timezone_set(env('APP_TIMEZONE') ?? 'UTC');
     }

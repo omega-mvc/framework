@@ -15,10 +15,8 @@ declare(strict_types=1);
 namespace Omega\Router;
 
 use ArrayAccess;
-use Exception;
+use Omega\Router\Exceptions\RouteNotRegisteredException;
 use ReturnTypeWillChange;
-
-use function sprintf;
 
 /**
  * Represents a single route definition including name, URI,
@@ -94,7 +92,7 @@ class Route implements ArrayAccess
      * @param string   $name      The called method name
      * @param string[] $arguments Arguments passed to the magic call
      * @return array<string, mixed>
-     * @throws Exception If an unsupported magic method is called
+     * @throws RouteNotRegisteredException If an unsupported magic method is called
      */
     public function __call(string $name, array $arguments)
     {
@@ -102,7 +100,7 @@ class Route implements ArrayAccess
             return $this->route;
         }
 
-        throw new Exception(sprintf("Route %s not registered.", $name));
+        throw new RouteNotRegisteredException($name);
     }
 
     /**

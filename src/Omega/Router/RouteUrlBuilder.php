@@ -16,16 +16,17 @@ declare(strict_types=1);
 
 namespace Omega\Router;
 
-use InvalidArgumentException;
+use Omega\Router\Exceptions\MissingRouteParameterException;
+use Omega\Router\Exceptions\PatternMismatchException;
+use Omega\Router\Exceptions\RouteUrlNotFullyResolvedException;
+use Omega\Router\Exceptions\UnknownRoutePatternException;
 
 use function array_is_list;
 use function array_merge;
-use function is_string;
 use function preg_match;
 use function preg_match_all;
 use function preg_quote;
 use function preg_replace;
-use function sprintf;
 use function str_contains;
 use function trim;
 
@@ -175,12 +176,12 @@ class RouteUrlBuilder
      * @param string                 $patternKey Pattern key to check.
      * @param array<string, string>  $patternMap Map of patterns.
      * @return void
-     * @throws InvalidArgumentException
+     * @throws UnknownRoutePatternException
      */
     private function validatePatternExists(string $patternKey, array $patternMap): void
     {
-        if (false === isset($patternMap[$patternKey])) {
-            throw new InvalidArgumentException("Unknown pattern type: {$patternKey}");
+        if (!isset($patternMap[$patternKey])) {
+            throw new UnknownRoutePatternException($patternKey);
         }
     }
 
@@ -192,7 +193,7 @@ class RouteUrlBuilder
      * @param int                                $paramIndex Index to use if parameters are numeric.
      * @param bool                               $isAssociative True if parameters are associative.
      * @return string|int|bool Value of the parameter.
-     * @throws InvalidArgumentException
+     * @throws MissingRouteParameterException
      */
     private function extractParameterValue(
         array $parameters,
@@ -201,17 +202,15 @@ class RouteUrlBuilder
         bool $isAssociative
     ): string|int|bool {
         if ($isAssociative) {
-            if (false === isset($parameters[$paramName])) {
-                throw new InvalidArgumentException("Missing named parameter: {$paramName}");
+            if (!isset($parameters[$paramName])) {
+                throw new MissingRouteParameterException($paramName);
             }
 
             return $parameters[$paramName];
         }
 
-        if (false === isset($parameters[$paramIndex])) {
-            throw new InvalidArgumentException(
-                "Missing parameter at index {$paramIndex} for named parameter {$paramName}"
-            );
+        if (!isset($parameters[$paramIndex])) {
+            throw new MissingRouteParameterException($paramIndex);
         }
 
         return $parameters[$paramIndex];
@@ -225,7 +224,7 @@ class RouteUrlBuilder
      * @param int                                $paramIndex  Index to use for numeric parameters.
      * @param bool                               $isAssociative True if parameters are associative.
      * @return string|int|bool Parameter value to replace pattern.
-     * @throws InvalidArgumentException
+     * @throws MissingRouteParameterException
      */
     private function getNextParameterValue(
         array $parameters,
@@ -236,25 +235,22 @@ class RouteUrlBuilder
         if ($isAssociative) {
             $patternName = trim($pattern, '(:)');
 
-            return match (true) {
-                isset($parameters[$patternName]) => $parameters[$patternName],
-                isset($parameters[$paramIndex])  => $parameters[$paramIndex],
-                default                          => throw new InvalidArgumentException(
-                    sprintf(
-                        "Missing parameter for pattern {%s}. Provide either numeric index {%s} or key '{%s}'",
-                        $pattern,
-                        $paramIndex,
-                        $patternName
-                    )
-                ),
-            };
+            if (isset($parameters[$patternName])) {
+                return $parameters[$patternName];
+            }
+
+            if (isset($parameters[$paramIndex])) {
+                return $parameters[$paramIndex];
+            }
+
+            throw MissingRouteParameterException::named($patternName);
         }
 
-        if (false === isset($parameters[$paramIndex])) {
-            throw new InvalidArgumentException("Missing parameter at index {$paramIndex} for pattern {$pattern}");
+        if (isset($parameters[$paramIndex])) {
+            return $parameters[$paramIndex];
         }
 
-        return $parameters[$paramIndex];
+        throw MissingRouteParameterException::indexed($paramIndex);
     }
 
     /**
@@ -265,7 +261,7 @@ class RouteUrlBuilder
      * @param string          $pattern    Pattern placeholder.
      * @param string          $regex      Regex to validate against.
      * @return void
-     * @throws InvalidArgumentException
+     * @throws PatternMismatchException
      */
     private function validateParameterAgainstPattern(
         mixed $value,
@@ -276,11 +272,12 @@ class RouteUrlBuilder
         $stringValue = (string) $value;
 
         if (1 !== preg_match("/^{$regex}$/", $stringValue)) {
-            $errorMsg = is_string($identifier) && $identifier !== $value
-                ? "Named parameter '{$identifier}' with value '{$value}' doesn't match pattern {$pattern} ({$regex})"
-                : "Parameter '{$value}' doesn't match pattern {$pattern} ({$regex})";
-
-            throw new InvalidArgumentException($errorMsg);
+            throw new PatternMismatchException(
+                $identifier,
+                $value,
+                $pattern,
+                $regex
+            );
         }
     }
 
@@ -301,18 +298,20 @@ class RouteUrlBuilder
      * @param string                $url        Final URL.
      * @param array<string, string> $patternMap Pattern map to validate.
      * @return void
-     * @throws InvalidArgumentException
+     * @throws RouteUrlNotFullyResolvedException
      */
     private function validateAllParametersProcessed(string $url, array $patternMap): void
     {
         if (preg_match('/\([^)]+:[^)]+\)/', $url)) {
-            throw new InvalidArgumentException('Some named parameters were not replaced in URL');
+            throw new RouteUrlNotFullyResolvedException(
+                'Unresolved named placeholders remain in the generated URL.'
+            );
         }
 
         foreach ($patternMap as $pattern => $regex) {
             if (str_contains($url, $pattern)) {
-                throw new InvalidArgumentException(
-                    "Not enough parameters provided. Pattern {$pattern} still exists in URL"
+                throw new RouteUrlNotFullyResolvedException(
+                    sprintf('Unresolved pattern "%s" remains in the generated URL.', $pattern)
                 );
             }
         }

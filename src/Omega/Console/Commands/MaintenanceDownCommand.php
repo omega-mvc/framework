@@ -39,7 +39,7 @@ final class MaintenanceDownCommand extends AbstractCommand
             file_get_contents(slash(dirname(__DIR__) . '/stubs/maintenance.stub'))
         );
 
-        $this->io->success('Application is now in maintenance mode.');
+        $this->io->info('Application is now in maintenance mode.');
 
         return self::SUCCESS;
     }

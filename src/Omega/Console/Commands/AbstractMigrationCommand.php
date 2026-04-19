@@ -60,42 +60,17 @@ abstract class AbstractMigrationCommand extends AbstractCommand
      *              confirms running in production; otherwise, `false`.
      * @throws Exception Thrown if reading input from STDIN fails during the prompt.
      */
-    protected function runInDev(): bool
+    protected function runInDev(?string $message = null): bool
     {
-        if ($this->app->isDev() || $this->getOption('force')) {
+        if ($this->app->isDev()) {
             return true;
         }
 
-        return $this->io->confirm(
-            '<fg=red;options=bold>Running migration/database in production?</> Continue?',
-            false
-        );
-    }
-
-    /**
-     * Prompt the user for confirmation with a yes/no question.
-     *
-     * This method displays a prompt message to the user and waits for a response.
-     * If the `--yes` option is provided, the method automatically returns `true`
-     * without asking.
-     *
-     * @param string $message The message to display in the prompt. Can be a string or a styled message.
-     * @return bool Returns `true` if the user confirms, otherwise `false`.
-     * @throws Exception Thrown if reading input from STDIN fails during the prompt.
-     */
-    protected function confirmation(string $message): bool
-    {
-        if ($this->getOption('yes')) {
-            return true;
+        if ($message === null) {
+            return false;
         }
 
-        $choice = $this->io->choice(
-            "<fg=red;options=bold>" . $message . "</>",
-            ['no', 'yes'],
-            'no'
-        );
-
-        return $choice === 'yes';
+        return $this->io->confirm($message, false);
     }
 
     /**
@@ -185,10 +160,10 @@ abstract class AbstractMigrationCommand extends AbstractCommand
      * @throws Exception Thrown if an unexpected error occurs during migration execution.
      * @throws ExceptionInterface
      */
-    protected function migration(bool $silent = false): int
+    protected function migration(): int
     {
         // 1. Controllo Ambiente
-        if (false === $this->runInDev() && false === $silent) {
+        if (!$this->runInDev('<fg=red;options=bold>Running migration/database in production?</> Continue?')) {
             return self::INVALID;
         }
 

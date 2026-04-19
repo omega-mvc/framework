@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Omega\Application;
 
 use Omega\Config\ConfigRepository;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 
 /**
  * Defines the contract for an application instance.
@@ -109,14 +109,6 @@ interface ApplicationInterface
     public static function getInstance(): ?Application;
 
     /**
-     * Load and set Configuration to application.
-     *
-     * @param ConfigRepository $configs ConfigRepository object.
-     * @return void
-     */
-    public function loadConfig(ConfigRepository $configs): void;
-
-    /**
      * Get application (bootstrapper) cache path.
      *
      * default './boostrap/cache/'.
@@ -167,13 +159,6 @@ interface ApplicationInterface
      * @return void
      */
     public function bootProvider(): void;
-
-    /**
-     * Register service providers.
-     *
-     * @return void
-     */
-    public function registerProvider(): void;
 
     /**
      * Call the registered booting callbacks.

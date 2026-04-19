@@ -21,10 +21,11 @@ use function var_export;
 )]
 final class ConfigCacheCommand extends AbstractCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     public function __invoke(): int
     {
-        $this->io->info('Caching the framework configuration...');
-
         try {
             new ConfigProviders()->bootstrap($this->app);
 
@@ -41,7 +42,7 @@ final class ConfigCacheCommand extends AbstractCommand
                 return self::FAILURE;
             }
 
-            $this->io->success('Configuration cached successfully!');
+            $this->io->info('Configuration cached successfully.');
             return self::SUCCESS;
 
         } catch (Throwable $e) {

@@ -14,26 +14,37 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
+use App\Providers\AppServiceProvider;
 use Exception;
+use Omega\Cache\CacheServiceProvider;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Cron\CronServiceProvider;
+use Omega\Database\DatabaseServiceProvider;
+use Omega\Exceptions\WhoopsServiceProvider;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
-use Omega\Support\AbstractServiceProvider;
-use Omega\Support\AddonServiceProvider;
+use Omega\RateLimiter\RateLimiterServiceProvider;
+use Omega\Router\RouteServiceProvider;
+use Omega\Security\HashServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use Omega\Support\PackageManifest;
 use Omega\Support\Vite;
 use Omega\View\Templator;
+use Omega\View\ViewServiceProvider;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
-use function array_diff;
+use Whoops\Handler\PlainTextHandler;
+use Whoops\Handler\PrettyPageHandler;
+use Whoops\Run;
 use function array_filter;
 use function array_walk;
 use function assert;
+use function class_exists;
 use function count;
 use function file_exists;
 use function in_array;
@@ -64,7 +75,17 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     protected string $basePath;
 
     /** @var array<int, class-string<AbstractServiceProvider>>|null Registered service provider class names. */
-    protected ?array $providers = [];
+    protected ?array $providers = [
+        WhoopsServiceProvider::class,
+        CronServiceProvider::class,
+        HashServiceProvider::class,
+        RouteServiceProvider::class,
+        DatabaseServiceProvider::class,
+        ViewServiceProvider::class,
+        CacheServiceProvider::class,
+        RateLimiterServiceProvider::class,
+        AppServiceProvider::class,
+    ];
 
     /** @var AbstractServiceProvider[] Service providers that have completed the boot phase. */
     protected array $bootedProviders = [];
@@ -101,7 +122,12 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      *
      * @param string|null $basePath Base application path.
      * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
      * @throws Exception
+     * @throws ReflectionException
      */
     public function __construct(?string $basePath = null)
     {
@@ -111,9 +137,9 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         $this->setConfigPath();
 
-        $this->setBaseBinding();
+        //$this->registerErrorHandling();
 
-        $this->register(AddonServiceProvider::class);
+        $this->setBaseBinding();
 
         $this->registerAlias();
 
@@ -203,19 +229,6 @@ abstract class AbstractApplication extends Container implements ApplicationInter
                 $this->getApplicationCachePath()
             )
         );
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function loadConfig(ConfigRepository $configs): void
-    {
-        $this->set('config', fn (): ConfigRepository => $configs);
-
-        $this->set('config.view.extensions', $configs['VIEW_EXTENSIONS']);
-        $this->providers = $configs['providers'];
     }
 
     /**
@@ -312,8 +325,8 @@ abstract class AbstractApplication extends Container implements ApplicationInter
         $this->callBootCallbacks($this->bootingCallbacks);
 
         $providers = array_filter(
-            $this->getMergeProviders(),
-            fn ($provider) => ! in_array($provider, $this->bootedProviders)
+            $this->getCoreProviders(),
+            fn ($provider) => ! in_array($provider, $this->bootedProviders, true)
         );
 
         array_walk($providers, function ($provider) {
@@ -324,27 +337,6 @@ abstract class AbstractApplication extends Container implements ApplicationInter
         $this->callBootCallbacks($this->bootedCallbacks);
 
         $this->isBooted = true;
-    }
-
-    /**
-     * {@inheritdoc}
-     *
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function registerProvider(): void
-    {
-        $providers = array_diff(
-            $this->getMergeProviders(),
-            $this->loadedProviders
-        );
-
-        array_walk($providers, function ($provider) {
-            $this->call([$provider, 'register']);
-            $this->loadedProviders[] = $provider;
-        });
     }
 
     /**
@@ -413,21 +405,24 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function register(string $provider): AbstractServiceProvider
     {
-        $providerClassName = $provider;
-        $provider          = new $provider($this);
-
-        $provider->register();
-        $this->loadedProviders[] = $providerClassName;
-
-        if ($this->isBooted) {
-            $provider->boot();
-            $this->bootedProviders[] = $providerClassName;
+        if (in_array($provider, $this->loadedProviders, true)) {
+            return new $provider($this);
         }
 
+        $instance = new $provider($this);
 
-        $this->providers[] = $providerClassName;
+        // fase register
+        $instance->register();
 
-        return $provider;
+        $this->loadedProviders[] = $provider;
+
+        // se l'app è già bootstrappata, boot immediato
+        if ($this->isBooted) {
+            $instance->boot();
+            $this->bootedProviders[] = $provider;
+        }
+
+        return $instance;
     }
 
     /**
@@ -540,22 +535,10 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     }
 
     /**
-     * Merge application provider and vendor package provider.
-     *
-     * @return AbstractServiceProvider[] Merged list of application and package service providers.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * {@inheritdoc}
      */
-    public function getMergeProviders(): array
+    public function getCoreProviders(): array
     {
-        $packageProviders = $this->make(PackageManifest::class)->providers() ?? [];
-
-        return [
-            ...$this->providers,
-            ...$packageProviders,
-        ];
+        return $this->providers;
     }
 }

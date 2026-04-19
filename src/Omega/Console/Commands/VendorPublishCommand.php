@@ -6,7 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputOption;
 
@@ -78,6 +78,6 @@ final class VendorPublishCommand extends AbstractCommand
         $progressBar->finish();
         $this->io->newLine(2);
 
-        $this->io->success("Done! <fg=yellow>{$added}</> resource(s) have been successfully published.");
+        $this->io->info("Done! <fg=yellow>{$added}</> resource(s) have been successfully published.");
     }
 }

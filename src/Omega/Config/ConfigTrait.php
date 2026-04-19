@@ -65,7 +65,7 @@ trait ConfigTrait
 
             // If the strategy is MERGE_INDEXED and both values are arrays, merge them with unique values
             if (
-                $strategy->value() === MergeStrategy::MERGE_INDEXED &&
+                $strategy === MergeStrategy::MERGE_INDEXED &&
                 is_array($a[$key]) &&
                 is_array($value)
             ) {
@@ -74,7 +74,7 @@ trait ConfigTrait
             }
 
             // If the strategy is MERGE_ADD_NEW, add new keys from $b that don't exist in $a
-            if ($strategy->value() === MergeStrategy::MERGE_ADD_NEW) {
+            if ($strategy === MergeStrategy::MERGE_ADD_NEW) {
                 foreach ($b as $k => $v) {
                     if (!array_key_exists($k, $a)) {
                         $a[$k] = $v;

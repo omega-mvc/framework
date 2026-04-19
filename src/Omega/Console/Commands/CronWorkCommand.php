@@ -21,6 +21,9 @@ use function sprintf;
 )]
 final class CronWorkCommand extends AbstractCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     public function __invoke(): int
     {
         $this->io->title('Omega Cron Worker');
@@ -43,7 +46,7 @@ final class CronWorkCommand extends AbstractCommand
             $schedule->execute();
             $executionTime = round((microtime(true) - $start) * 1000, 2);
 
-            $this->io->writeln("<info>Done!</info> ({$executionTime}ms)");
+            $this->io->writeln("Done! ({$executionTime}ms)");
 
             sleep(60);
         }

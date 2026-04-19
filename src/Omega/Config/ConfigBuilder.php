@@ -84,7 +84,7 @@ class ConfigBuilder
     public function build(?MergeStrategy $strategy = null): ConfigRepositoryInterface
     {
         if (is_null($strategy)) {
-            $strategy = MergeStrategy::from(MergeStrategy::REPLACE_INDEXED);
+            $strategy = MergeStrategy::REPLACE_INDEXED;
         }
 
         // Sort sources by priority (descending order)

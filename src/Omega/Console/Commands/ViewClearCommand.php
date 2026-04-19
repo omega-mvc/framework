@@ -6,6 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Traits\InteractWithFilesystemTrait;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
@@ -17,14 +18,12 @@ use Symfony\Component\Console\Input\InputOption;
 )]
 final class ViewClearCommand extends AbstractCommand
 {
-    use ViewCommandFilesTrait;
+    use InteractWithFilesystemTrait;
 
     public function __invoke(): int
     {
         $compiledPath = $this->app->get('path.compiled_view_path');
-        $this->io->warning("Clearing view cache...");
 
-        // Usiamo lo stesso metodo ereditato
         $files = $this->findFiles($compiledPath, $this->getOption('prefix'));
 
         $count = 0;
@@ -34,7 +33,7 @@ final class ViewClearCommand extends AbstractCommand
             }
         }
 
-        $this->io->success("Cleared {$count} cached files.");
+        $this->io->info("Cleared {$count} cached files.");
         return self::SUCCESS;
     }
 }

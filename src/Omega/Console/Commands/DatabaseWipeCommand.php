@@ -16,20 +16,19 @@ use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
-    name: 'database:drop',
-    description: 'Drop the specified database',
+    name: 'db:wipe',
+    description: 'Drop all tables, views, and types',
     options: [
-        'database' => ['d', InputOption::VALUE_OPTIONAL, 'The database connection to use'],
-        'force'    => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
-        'yes'      => ['y', InputOption::VALUE_NONE, 'Do not ask for confirmation (Assume "yes")']
+        'database'    => ['d', InputOption::VALUE_OPTIONAL, 'The database connection to use'],
+        'force'       => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
+        'no-interact' => [null, InputOption::VALUE_NONE, '']
     ]
 )]
-final class DatabaseDropCommand extends AbstractMigrationCommand
+final class DatabaseWipeCommand extends AbstractMigrationCommand
 {
     /**
      * Drop the target database after confirmation and environment validation.
      *
-     * @param bool $silent If `true`, suppresses confirmation prompts and environment checks.
      * @return int Exit code indicating the result of the operation:
      *             0 on success, 1 on failure, 2 if aborted due to environment or user confirmation.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
@@ -42,28 +41,31 @@ final class DatabaseDropCommand extends AbstractMigrationCommand
      */
     public function __invoke(): int
     {
-        $silent  = $this->getOption('silent');
-        $dbName  = $this->getDatabaseName();
-        $message = "Do you want to drop database `{$dbName}`?";
+        $interact = $this->getOption('no-interact');
+        $force    = $this->getOption('force');
+        $dbName   = $this->getDatabaseName();
+        $message  = "Do you want to drop database `{$dbName}`?";
 
-        // Controllo ambiente e conferma
-        if (false === $silent && (!$this->runInDev() || !$this->confirmation($message))) {
-            return 2;
+        if (!$interact) {
+            if (!$this->runInDev() && !$force) {
+                $this->io->warning("The application is in PRODUCTION.");
+                if (!$this->io->confirm("Are you sure you want to drop the database `{$dbName}`?", false)) {
+                    $this->io->note("Operation aborted.");
+                    return self::INVALID;
+                }
+            }
         }
 
-        // Output informativo
         $this->io->writeln("<comment>Trying to drop database `{$dbName}`...</comment>");
 
         $success = Schema::drop()->database($dbName)->ifExists()->execute();
 
         if ($success) {
-            $this->io->success("Successfully dropped database `{$dbName}`");
-
+            $this->io->info("Successfully dropped database `{$dbName}`");
             return self::SUCCESS;
         }
 
         $this->io->error("Cannot drop database `{$dbName}`");
-
         return self::FAILURE;
     }
 }

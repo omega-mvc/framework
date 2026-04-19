@@ -6,6 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Traits\InteractWithFilesystemTrait;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Symfony\Component\Console\Input\InputOption;
@@ -20,7 +21,7 @@ use Throwable;
 )]
 final class ViewWatchCommand extends AbstractCommand
 {
-    use ViewCommandFilesTrait;
+    use InteractWithFilesystemTrait;
 
     private bool $shouldExit = false;
     private int $width = 80;
@@ -30,7 +31,7 @@ final class ViewWatchCommand extends AbstractCommand
      */
     public function __invoke(): int
     {
-        $this->io->warning('Watching view files in ' . $this->app->get('path.view') . '...');
+        $this->io->info('Watching view files in ' . '<options=bold>' . $this->app->get('path.view') . '</>');
         $this->io->info('Press CTRL+C to stop watching.');
 
         /** @var Templator $templator */

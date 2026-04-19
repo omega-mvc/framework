@@ -16,8 +16,11 @@ namespace Omega\Support\Bootstrap;
 
 use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Support\PackageManifest;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 
 /**
@@ -46,13 +49,47 @@ class RegisterProviders
     /**
      * @param Application $app
      * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     public function bootstrap(Application $app): void
     {
-        $app->registerProvider();
+        foreach ($this->resolveProviders($app) as $provider) {
+            $app->register($provider);
+        }
+    }
+
+    /**
+     * @param Application $app
+     * @return array
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
+     */
+    private function resolveProviders(Application $app): array
+    {
+        $configProviders = [];
+
+        if ($app->has('config')) {
+            $configProviders = $app->get('config')
+                ->get('app.providers', []);
+        }
+
+        $packageProviders = $app
+            ->make(PackageManifest::class)
+            ->providers() ?? [];
+
+        return array_unique([
+            ...$app->getCoreProviders(),
+            ...$configProviders,
+            ...$packageProviders,
+        ]);
     }
 }

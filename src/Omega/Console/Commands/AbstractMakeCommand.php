@@ -5,90 +5,149 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
+
+use Omega\Console\Attribute\Make;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Text\Str;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use ReflectionClass;
 use ReflectionException;
+use function Omega\Support\path;
 
 abstract class AbstractMakeCommand extends AbstractCommand
 {
     /**
-     * Generate a file from a stub template.
-     *
-     * @param string $argument
-     * @param array<string, string> $makeOption
-     * @param string $folder
+     * @return int
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws EntryNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
+    public function __invoke(): int
+    {
+        $name = $this->getArgument('name');
+
+        $reflection = new ReflectionClass($this);
+        $attribute = $reflection->getAttributes(Make::class)[0] ?? null;
+
+        if (!$attribute) {
+            $this->io->error('Missing #[Make] attribute.');
+            return self::FAILURE;
+        }
+
+        $config = $attribute->newInstance();
+
+        $savePath = $this->app->get($config->path);
+
+        $success = $this->makeTemplate($name, [
+            'template_location' => $config->template,
+            'save_location'     => $savePath,
+            'pattern'           => $config->pattern,
+            'suffix'            => $config->suffix,
+            'vars'              => $this->resolveVars($config->vars, $name),
+        ]);
+
+        if (!$success) {
+            $this->warning($config, $name);
+            return self::FAILURE;
+        }
+
+        $this->info($config, $name);
+
+        return self::SUCCESS;
+    }
+
+    protected function resolveVars(array $vars, string $name): array
+    {
+
+        return array_map(function ($value) use ($name) {
+            return match ($value) {
+                'kebab' => Str::toKebabCase($name),
+                'snake' => Str::toSnakeCase($name),
+                default => $value,
+            };
+        }, $vars);
+    }
+
     protected function makeTemplate(string $argument, array $makeOption, string $folder = ''): bool
     {
-        $folder = ucfirst($folder);
+        $folder = $folder ? ucfirst($folder) . DIRECTORY_SEPARATOR : '';
 
-        // Costruzione del percorso file (rimane invariata)
-        $fileName = $makeOption['save_location']
-            . $folder
-            . $argument
-            . $makeOption['suffix'];
+        $basePath = rtrim($makeOption['save_location'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $targetDir = $basePath . $folder;
 
-        if (file_exists($fileName)) {
-            $this->io->warning('File already exists');
+        $fileName = $targetDir . $argument . $makeOption['suffix'];
+
+        if (!is_dir($targetDir) && !mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            $this->io->error("Unable to create directory [$targetDir]");
             return false;
         }
 
-        if ($folder !== '' && !is_dir($makeOption['save_location'] . $folder)) {
-            mkdir($makeOption['save_location'] . $folder, 0755, true);
+        if (file_exists($fileName)) {
+            return false;
         }
 
         $template = file_get_contents($makeOption['template_location']);
 
-        // 1. Sostituzione del pattern principale (es: __command__ -> HelloWorld)
+        if ($template === false) {
+            $this->io->error('Unable to read stub file');
+            return false;
+        }
+
         $template = str_replace(
             $makeOption['pattern'],
             $makeOption['replace'] ?? $argument,
             $template
         );
 
-        // 2. 🔹 GESTIONE VARIABILI OPZIONALI (Solo se presenti in $makeOption['vars'])
-        if (isset($makeOption['vars']) && is_array($makeOption['vars'])) {
+        if (!empty($makeOption['vars'])) {
             foreach ($makeOption['vars'] as $search => $replace) {
                 $template = str_replace($search, $replace, $template);
             }
         }
 
-        // Rimuove la prima riga (probabilmente per gestire gli stub con tag PHP o commenti di intestazione)
         $template = preg_replace('/^.+\n/', '', $template);
 
-        $written = file_put_contents($fileName, $template);
-
-        if ($written === false) {
-            $this->io->error('Failed to write file');
+        if (file_put_contents($fileName, $template) === false) {
+            $this->io->error("Failed to write file [$fileName]");
             return false;
         }
 
         return true;
     }
 
-    /**
-     * Ensure that the given directory exists. Creates it recursively if missing.
-     *
-     * @param string $binding Logical path or container binding (e.g., "app.Http.Middlewares")
-     * @return string Absolute filesystem path
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    protected function isPath(string $binding): string
+    protected function info(object $config, string $name): void
     {
-        $logicalPath = $this->app->get($binding);
+        $location = path($config->target);
+        $fileName = $name . $config->suffix;
+        $fullPath = $location . $fileName;
 
-        $realPath = str_replace(['.', '/','\\'], DIRECTORY_SEPARATOR, $logicalPath);
+        $message = str_replace(
+            '__file__name__',
+            $fullPath,
+            $config->info
+        );
 
-        if (!is_dir($realPath)) {
-            mkdir($realPath, 0755, true);
-        }
+        $this->io->info($message);
+    }
 
-        return $realPath;
+    protected function warning(object $config, string $name): void
+    {
+        $location = path($config->target);
+        $fileName = $name . $config->suffix;
+        $fullPath = $location . $fileName;
+
+        $message = str_replace(
+            '__file__name__',
+            $fullPath,
+            $config->warning
+        );
+
+        $this->io->warning($message);
     }
 }

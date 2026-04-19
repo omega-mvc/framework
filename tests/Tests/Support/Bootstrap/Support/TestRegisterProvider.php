@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Support\Bootstrap\Support;
 
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**

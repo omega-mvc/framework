@@ -25,6 +25,7 @@ use Omega\Support\Bootstrap\ConfigProviders;
 use Omega\Support\Bootstrap\RegisterFacades;
 use Omega\Support\Bootstrap\RegisterProviders;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
 use Symfony\Component\Console\Application;
@@ -34,8 +35,11 @@ use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 
+use function class_exists;
+use function file_exists;
 use function getenv;
 use function is_array;
+use function is_dir;
 use function Omega\Support\slash;
 use function putenv;
 use function str_contains;
@@ -166,12 +170,37 @@ class ConsoleApplication
      */
     protected function configureCommandLoader(Application $console): void
     {
+        $cacheFile = $this->app->getApplicationCachePath() . 'commands.php';
+
+        $merged = file_exists($cacheFile)
+            ? require $cacheFile
+            : $this->discoverCommands();
+
+        $console->setCommandLoader(new CommandLoader($this->app, $merged));
+    }
+
+    /**
+     * Discovers all available console commands by scanning configured directories.
+     *
+     * Iterates through predefined command paths, reflects each class, and extracts
+     * metadata from the AsCommand attribute to build a command name to class map.
+     *
+     * @return array<string, class-string> Discovered command name to class map
+     * @throws BindingResolutionException If a container binding cannot be resolved.
+     * @throws CircularAliasException If a circular alias is detected.
+     * @throws ContainerExceptionInterface For generic container errors.
+     * @throws EntryNotFoundException If a required container entry is missing.
+     * @throws NotFoundExceptionInterface If the 'path.command' entry is not found in the container.
+     * @throws ReflectionException If a class cannot be reflected.
+     */
+    public function discoverCommands(): array
+    {
         $commandPaths = [
-            'Omega\\Console\\Commands\\' => __DIR__ . slash('/Commands'), // Comandi Core
-            'App\\Console\\Commands\\'   => $this->app->get('path.command'), // Comandi Utente
+            'Omega\\Console\\Commands\\' => __DIR__ . slash('/Commands'),
+            'App\\Console\\Commands\\'   => $this->app->get('path.command'),
         ];
 
-        $merged = [];
+        $commands = [];
 
         foreach ($commandPaths as $namespace => $path) {
             if (!is_dir($path)) continue;
@@ -180,9 +209,7 @@ class ConsoleApplication
             $finder->files()->name('*Command.php')->in($path);
 
             foreach ($finder as $file) {
-                // Genera il nome della classe dal path
                 $className = $namespace . $file->getBasename('.php');
-
                 if (!class_exists($className)) continue;
 
                 $reflection = new ReflectionClass($className);
@@ -190,12 +217,18 @@ class ConsoleApplication
 
                 if ($attribute) {
                     $instance = $attribute->newInstance();
-                    // 'mio:comando' => 'App\Console\Commands\MioComando'
-                    $merged[$instance->name] = $className;
+
+                    $commands[$instance->name] = $className;
+
+                    if (!empty($instance->aliases)) {
+                        foreach ($instance->aliases as $alias) {
+                            $commands[$alias] = $className;
+                        }
+                    }
                 }
             }
         }
 
-        $console->setCommandLoader(new CommandLoader($this->app, $merged));
+        return $commands;
     }
 }

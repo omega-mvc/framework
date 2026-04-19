@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
+use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Template\Generate;
 use Omega\Template\Method;
@@ -11,7 +12,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
-    name: 'db:make',
+    name: 'make:seeder',
     description: 'Create a new seeder class',
     arguments: [
         'name'   => [InputArgument::REQUIRED, 'The name of the seeder']
@@ -20,7 +21,7 @@ use Symfony\Component\Console\Input\InputOption;
         'force' => ['f', InputOption::VALUE_NONE, 'Overwrite the seeder if it exists']
     ]
 )]
-final class MakeSeedCommand extends AbstractMakeCommand
+final class MakeSeedCommand extends AbstractCommand
 {
     public function __invoke(): int
     {

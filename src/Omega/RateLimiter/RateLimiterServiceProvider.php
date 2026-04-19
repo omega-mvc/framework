@@ -19,7 +19,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Middleware\ThrottleMiddleware;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 

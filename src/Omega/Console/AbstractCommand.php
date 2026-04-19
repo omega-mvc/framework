@@ -15,10 +15,10 @@ declare(strict_types=1);
 namespace Omega\Console;
 
 use Closure;
-use InvalidArgumentException;
 use Omega\Application\ApplicationInterface;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Exception\InvalidArgumentException;
 use Omega\Container\Exceptions\CircularAliasException;
 use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
@@ -39,7 +39,7 @@ use function is_string;
  *
  * This class wraps Symfony Command, providing an extended execution flow
  * with a dedicated Style helper for consistent console output formatting.
- * Concrete commands should implement the handle() method to define logic.
+ * Concrete commands should implement the __invoke() method to define logic.
  *
  * @category  Omega
  * @package   Console
@@ -70,19 +70,28 @@ abstract class AbstractCommand extends Command
         }
     }
 
+    /** @var string Command name used to invoke the command from the CLI */
     protected string $name;
+
+    /** @var string|null Short description displayed in the command list */
     protected ?string $description = null;
+
+    /** @var array Alternative names that can be used to execute the command */
     protected array $aliases = [];
+
+    /** @var bool Whether the command should be hidden from the command list */
     protected bool $hidden = false;
 
     /**
      * Executes the console command.
      *
-     * Initializes input, output, and Style helper, then calls handle().
+     * Initializes input, output, and Style helper, then calls __invoke().
      *
      * @param InputInterface $input The input object
      * @param OutputInterface $output The output object
-     * @return int Exit code from handle()
+     * @return int Exit code from __invoke()
+     * @throws CircularAliasException If a circular alias is detected.
+     * @throws UnknownStorageException if a requested cache storage driver is unknown, unregistered, or unsupported.
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -91,7 +100,8 @@ abstract class AbstractCommand extends Command
         $this->io       = new Style($input, $output);
         $this->terminal = new Terminal();
 
-        return (int) $this->__invoke();
+        // @todo Check if all commands return int
+        return (int) ($this->__invoke() ?? self::SUCCESS);
     }
 
     /**
@@ -100,6 +110,7 @@ abstract class AbstractCommand extends Command
      * @param string $commandName Name of the command to execute (e.g., 'migrate:fresh')
      * @param array<string, mixed> $parameters Command arguments and options
      * @return int Exit code of the executed command
+     * @throws Throwable Never thrown, handled internally
      */
     protected function call(string $commandName, array $parameters = []): int
     {
@@ -121,11 +132,20 @@ abstract class AbstractCommand extends Command
      * Concrete commands must implement this method.
      *
      * @return int|void Exit code or nothing
-     * @throws CircularAliasException
-     * @throws UnknownStorageException
+     * @throws CircularAliasException If a circular alias is detected.
+     * @throws UnknownStorageException if a requested cache storage driver is unknown, unregistered, or unsupported.
      */
     abstract public function __invoke();
 
+    /**
+     * Configures the command using the AsCommand attribute.
+     *
+     * Reads metadata via reflection and applies name, description,
+     * aliases, visibility, arguments, and options to the command.
+     *
+     * @return void
+     * @throws InvalidArgumentException If argument or option configuration is invalid
+     */
     protected function configure(): void
     {
         $reflection = new ReflectionClass($this);
@@ -146,7 +166,6 @@ abstract class AbstractCommand extends Command
         $this->setAliases($settings->aliases);
         $this->setHidden($settings->hidden);
 
-        // 2. Validazione e registrazione Argomenti (tua logica massiccia)
         foreach ($settings->arguments as $name => $config) {
             if (!is_array($config) || count($config) < 2 || count($config) > 3) {
                 throw new InvalidArgumentException(
@@ -167,7 +186,6 @@ abstract class AbstractCommand extends Command
             $this->addArgument($name, $config[0], $config[1], $config[2] ?? null);
         }
 
-        // 3. Validazione e registrazione Opzioni (tua logica massiccia)
         foreach ($settings->options as $name => $config) {
             if (!is_array($config) || count($config) < 3 || count($config) > 5) {
                 throw new InvalidArgumentException(
@@ -195,36 +213,6 @@ abstract class AbstractCommand extends Command
             }
             $this->addOption($name, $config[0], $config[1], $config[2], $config[3] ?? null, $config[4] ?? []);
         }
-    }
-
-    /**
-     * $mode param
-     * ```
-     * 1  VALUE_NONE
-     * 2  VALUE_REQUIRED
-     * 4  VALUE_OPTIONAL
-     * 8  VALUE_IS_ARRAY
-     * 16 VALUE_NEGATABLE
-     * ```
-     */
-    public function setOption(
-        string $name,
-        string|array|null $shortcut = null,
-        ?int $mode = null,
-        string $description = '',
-        mixed $default = null,
-        array|Closure $suggestedValues = []
-    ): static {
-        $mode ??= 1;
-
-        return $this->addOption(
-            $name,
-            $shortcut,
-            $mode,
-            $description,
-            $default,
-            $suggestedValues
-        );
     }
 
     /**

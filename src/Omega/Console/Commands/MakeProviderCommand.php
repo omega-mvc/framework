@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\Make;
 use Symfony\Component\Console\Input\InputArgument;
-use function Omega\Support\path;
-use function Omega\Support\slash;
 
 #[AsCommand(
     name: 'make:provider',
@@ -16,31 +15,15 @@ use function Omega\Support\slash;
         'name' => [InputArgument::REQUIRED, 'The name of the provider']
     ]
 )]
+#[Make(
+    template: __DIR__ . '/../stubs/provider.stub',
+    path: 'path.provider',
+    pattern: '__provider__',
+    suffix: 'Provider.php',
+    target: 'app.Provider',
+    info: 'ServiceProvider <options=bold>[__file__name__]</> created successfully.',
+    warning: 'ServiceProvider <options=bold>[__file__name__]</> already exists.',
+)]
 final class MakeProviderCommand extends AbstractMakeCommand
 {
-    public function __invoke(): int
-    {
-        $this->io->info('Making a service provider class...');
-        $this->isPath('path.provider');
-
-        $name = $this->getArgument('name');
-
-        // Passiamo le sostituzioni al template
-        $success = $this->makeTemplate($name, [
-            'template_location' => slash(path: dirname(__DIR__) . '/stubs/provider.stub'),
-            'save_location'      => $this->app->get('path.provider'),
-            'pattern'            => '__provider__', // Questo sostituisce la classe
-            'suffix'             => 'ServiceProvider.php'
-        ]);
-
-        if (!$success) {
-            $this->io->error('Failed to create service provider class.');
-            return self::FAILURE;
-        }
-
-        $path = path('app.Providers') . $name . 'ServiceProvider.php';
-        $this->io->success("ServiceProvider [$path] created successfully.");
-
-        return self::SUCCESS;
-    }
 }

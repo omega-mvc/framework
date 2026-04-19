@@ -13,6 +13,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
+use Throwable;
 
 #[AsCommand(
     name: 'migrate:fresh',
@@ -35,7 +36,6 @@ final class MigrateFreshCommand extends AbstractMigrationCommand
      * to suppress prompts and output, and the `--dry-run` option to
      * preview SQL queries without executing them.
      *
-     * @param bool $silent If `true`, suppresses prompts and outputs; otherwise prompts may be shown.
      * @return int Exit code indicating the result of running migrations:
      *             0 on success, 2 if aborted due to environment or user confirmation failure,
      *             1 on general failure.
@@ -45,13 +45,19 @@ final class MigrateFreshCommand extends AbstractMigrationCommand
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws NotFoundExceptionInterface Thrown if the requested schema connection service is not in the container.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws Throwable
      */
     public function __invoke(): int
     {
-        if (($drop = $this->call('database:drop', ['--silent' => false])) > 0) {
+        if (!$this->runInDev('<fg=red;options=bold>Running migration/database in production?</> Continue?')) {
+            return self::INVALID;
+        }
+
+        if (($drop = $this->call('db:wipe', ['--no-interact' => true])) > 0) {
             return $drop;
         }
-        if (($create = $this->call('database:create', ['--silent' => true])) > 0) {
+
+        if (($create = $this->call('db:create', ['--no-interact' => true])) > 0) {
             return $create;
         }
 

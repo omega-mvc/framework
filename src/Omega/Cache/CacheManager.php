@@ -131,13 +131,16 @@ class CacheManager implements CacheInterface
      */
     public function getDriver(?string $driverName = null): CacheInterface
     {
-        if (isset($this->driver[$driverName])) {
-            return $this->resolve($driverName);
+        if (null === $driverName) {
+            return $this->defaultDriver;
         }
 
-        return $this->defaultDriver;
-    }
+        if (!isset($this->driver[$driverName])) {
+            throw new UnknownStorageException($driverName);
+        }
 
+        return $this->resolve($driverName);
+    }
     /**
      * Magic method to delegate cache operations to the default driver.
      *

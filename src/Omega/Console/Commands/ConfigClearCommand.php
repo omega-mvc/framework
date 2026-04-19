@@ -15,6 +15,9 @@ use function file_exists;
 )]
 final class ConfigClearCommand extends AbstractCommand
 {
+    /**
+     * {@inheritdoc}
+     */
     public function __invoke(): int
     {
         $cachePath = $this->app->getApplicationCachePath() . 'config.php';
@@ -25,7 +28,7 @@ final class ConfigClearCommand extends AbstractCommand
         }
 
         if (@unlink($cachePath)) {
-            $this->io->success('Configuration cache cleared successfully.');
+            $this->io->info('Configuration cache cleared successfully.');
             return self::SUCCESS;
         }
 

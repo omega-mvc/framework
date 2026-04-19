@@ -18,6 +18,9 @@ use function round;
 )]
 final class CronCommand extends AbstractCommand
 {
+    /**
+     * {@iheritdoc}
+     */
     public function __invoke(): int
     {
         $start = microtime(true);
@@ -25,7 +28,7 @@ final class CronCommand extends AbstractCommand
         $this->getSchedule()->execute();
 
         $time = round((microtime(true) - $start) * 1000, 2);
-        $this->io->success("Cron jobs executed successfully in {$time}ms.");
+        $this->io->info("Cron jobs executed successfully in {$time}ms.");
 
         return self::SUCCESS;
     }

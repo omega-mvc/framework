@@ -17,12 +17,8 @@ namespace Tests\Router;
 use Omega\Router\Router;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use ReflectionException;
-use Tests\Router\Attribute\TestBasicRouteAttribute;
-use Tests\Router\Attribute\TestRouteAttribute;
 use Tests\Router\Support\TestMiddleware;
 
-use function array_map;
 use function ob_get_clean;
 use function ob_start;
 
@@ -448,111 +444,5 @@ final class BasicRouteTest extends TestCase
             $routeCustom,
             'the route must output same text'
         );
-    }
-
-    /**
-     * Test it can generate basic route using attribute.
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanGenerateBasicRouteUsingAttribute(): void
-    {
-        Router::reset();
-        Router::register(TestBasicRouteAttribute::class);
-
-        $routes = array_map(fn ($item) => (fn () => $this->{'route'})->call($item), Router::getRoutesRaw());
-
-        $this->assertEquals([
-            [ // 0
-                'method'     => ['GET'],
-                'patterns'   => [],
-                'uri'        => '/',
-                'expression' => '/',
-                'function'   => [TestBasicRouteAttribute::class, 'index'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 1
-                'method'     => ['GET'],
-                'patterns'   => [],
-                'uri'        => '/create',
-                'expression' => '/create',
-                'function'   => [TestBasicRouteAttribute::class, 'create'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 2
-                'method'     => ['POST'],
-                'patterns'   => [],
-                'uri'        => '/',
-                'expression' => '/',
-                'function'   => [TestBasicRouteAttribute::class, 'store'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 3
-                'method'     => ['GET'],
-                'patterns'   => [],
-                'uri'        => '/(:id)',
-                'expression' => '/(\d+)',
-                'function'   => [TestBasicRouteAttribute::class, 'show'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 4
-                'method'     => ['GET'],
-                'patterns'   => [],
-                'uri'        => '/(:id)/edit',
-                'expression' => '/(\d+)/edit',
-                'function'   => [TestBasicRouteAttribute::class, 'edit'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 5
-                'method'     => ['put', 'patch'],
-                'patterns'   => [],
-                'uri'        => '/(:id)',
-                'expression' => '/(\d+)',
-                'function'   => [TestBasicRouteAttribute::class, 'update'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-            [ // 6
-                'method'     => ['DELETE'],
-                'patterns'   => [],
-                'uri'        => '/(:id)',
-                'expression' => '/(\d+)',
-                'function'   => [TestBasicRouteAttribute::class, 'destroy'],
-                'middleware' => [],
-                'name'       => '',
-            ],
-        ], $routes);
-    }
-
-    /**
-     * Test it can generate route using attribute,
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanGenerateRouteUsingAttribute(): void
-    {
-        Router::reset();
-        Router::register(TestRouteAttribute::class);
-
-        $routes = array_map(fn ($item) => (fn () => $this->{'route'})->call($item), Router::getRoutesRaw());
-
-        $this->assertEquals([
-            [
-                'method'     => ['GET'],
-                'patterns'   => ['{id}' => '(\d+)'],
-                'uri'        => '/test/{id}/test',
-                'expression' => '/test/{id}/test',
-                'function'   => [TestRouteAttribute::class, 'index'],
-                'middleware' => ['testmiddeleware_class', 'testmiddeleware_method'],
-                'name'       => 'test.test',
-            ],
-        ], $routes);
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -16,16 +17,18 @@ use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
-    name: 'database:show',
+    name: 'db:show',
     description: 'Show database tables and sizes',
     options: [
         'database'   => ['d', InputOption::VALUE_OPTIONAL, 'The database connection to use'],
         'force'      => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
-        'table-name' => ['t', InputOption::VALUE_OPTIONAL, 'Show a specific table structure']
+        'table-name' => ['t', InputOption::VALUE_OPTIONAL, 'Display information about the given database table']
     ]
 )]
 final class DatabaseShowCommand extends AbstractMigrationCommand
 {
+    use InteractsWithConsoleOutputTrait;
+
     /**
      * Display information about the current database or a specific table.
      *
@@ -46,11 +49,10 @@ final class DatabaseShowCommand extends AbstractMigrationCommand
 
         $dbName = $this->getDatabaseName();
 
-        $io = $this->io;
-
-        $width = min($this->terminal->getWidth() - 20, 60);
-
-        $io->info("Showing database `{$dbName}`...");
+        // Messaggio iniziale pulito (senza info() di SymfonyStyle per coerenza)
+        $this->io->newLine();
+        $this->io->writeln("  <fg=gray>Showing database:</> <info>{$dbName}</info>");
+        $this->io->newLine();
 
         $tables = PDO::query('SHOW DATABASES')
             ->query('
@@ -61,26 +63,26 @@ final class DatabaseShowCommand extends AbstractMigrationCommand
             ->resultset();
 
         if (empty($tables)) {
-            $io->warning('Database is empty, try to run migration.');
+            $this->io->warning('Database is empty, try to run migration.');
             return self::INVALID;
         }
 
         foreach ($tables as $table) {
-            $table  = array_change_key_case($table);
-            $name   = $table['table_name'];
-            $time   = $table['create_time'];
-            $size   = $table['size'];
-            $length = strlen($name) + strlen((string)$time) + strlen((string)$size);
+            $table = array_change_key_case($table);
 
-            $dots = str_repeat('.', max(0, $width - $length));
-            $io->writeln(sprintf(
-                "<fg=cyan>%s</> <fg=gray>%s Mb</>%s <fg=yellow>%s</>",
-                $name,
-                $size,
-                $dots,
-                $time
-            ));
+            // Colonna Sinistra: Nome Tabella + Dimensione
+            $name = "<fg=cyan;options=bold>{$table['table_name']}</>";
+            $size = "<fg=gray>{$table['size']} MB</>";
+            $leftSide = "{$name} {$size}";
+
+            // Colonna Destra: Data di creazione
+            $rightSide = "<fg=yellow>{$table['create_time']}</>";
+
+            // Il trait si occupa di calcolare i puntini e allineare tutto
+            $this->componentsTwoColumns($leftSide, $rightSide);
         }
+
+        $this->io->newLine();
 
         return self::SUCCESS;
     }
@@ -97,41 +99,48 @@ final class DatabaseShowCommand extends AbstractMigrationCommand
         // Recuperiamo informazioni sulle colonne
         $columns = DB::table($tableName)->info();
 
-        // SymfonyStyle per output colorato
-        $io = $this->io;
+        if (empty($columns)) {
+            $this->io->error("Table `{$tableName}` does not exist or has no columns.");
+            return self::FAILURE;
+        }
 
-        // Calcolo larghezza terminal per allineamento
-        $width = min($this->terminal->getWidth() - 20, 60);
+        $this->io->newLine();
+        $this->io->writeln("  <fg=gray>Columns of table:</> <info>{$tableName}</info>");
+        $this->io->newLine();
 
-        $io->section("Columns of table `$tableName`");
-
-        // Header
-        $io->writeln(sprintf("<fg=yellow>%s</>", 'COLUMN'));
+        // 1. Calcoliamo la larghezza massima dei nomi delle colonne per l'allineamento
+        $columnNames = array_column($columns, 'COLUMN_NAME');
+        $maxColumnWidth = $this->getVisibleMaxWidth($columnNames);
 
         foreach ($columns as $column) {
-            $willPrint = [];
+            $name = $column['COLUMN_NAME'];
 
-            if ($column['IS_NULLABLE'] === 'YES') {
-                $willPrint[] = 'nullable';
+            // 2. Prepariamo gli attributi (Primary, Nullable)
+            $attributes = [];
+            if (($column['COLUMN_KEY'] ?? '') === 'PRI') {
+                $attributes[] = '<fg=yellow;options=bold>primary</>';
             }
-            if ($column['COLUMN_KEY'] === 'PRI') {
-                $willPrint[] = 'primary';
+            if (($column['IS_NULLABLE'] ?? '') === 'YES') {
+                $attributes[] = '<fg=gray>nullable</>';
             }
 
-            $info   = implode(', ', $willPrint);
-            $length = strlen($column['COLUMN_NAME']) + strlen($column['COLUMN_TYPE']) + strlen($info);
+            $attrString = !empty($attributes) ? implode(', ', $attributes) : '';
 
-            // Creiamo la riga formattata: nome colonna + info + punti + tipo
-            $dots = str_repeat('.', max(0, $width - $length));
+            // 3. Calcoliamo il padding per allineare gli attributi subito dopo il nome
+            $nameWidth = $this->getVisibleWidth($name);
+            $padding = str_repeat(' ', $maxColumnWidth - $nameWidth + 2);
 
-            $io->writeln(sprintf(
-                "<options=bold>%s</> <fg=gray>%s</>%s %s",
-                $column['COLUMN_NAME'],
-                $info,
-                $dots,
-                $column['COLUMN_TYPE']
-            ));
+            // Costruiamo la parte sinistra: NOME + PADDING + ATTRIBUTI
+            $leftSide = "<fg=cyan;options=bold>{$name}</>{$padding}{$attrString}";
+
+            // Parte destra: il tipo di dato (es. varchar(255), int, timestamp)
+            $rightSide = "<fg=magenta>{$column['COLUMN_TYPE']}</>";
+
+            // Visualizzazione con puntini
+            $this->componentsTwoColumns($leftSide, $rightSide);
         }
+
+        $this->io->newLine();
 
         return self::SUCCESS;
     }

@@ -6,7 +6,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-use Symfony\Component\Console\Attribute\AsCommand;
+use Omega\Console\Attribute\AsCommand;
 
 #[AsCommand(
     name: 'app:__name__',
@@ -17,9 +17,9 @@ class __command__Command extends AbstractCommand
     /**
      * Esegue la logica del comando.
      */
-    protected function handle(): int
+    public function __invoke(): int
     {
-        $this->info('Command app:__name__ executed successfully.');
+        $this->io->info('Command app:__name__ executed successfully.');
 
         return self::SUCCESS;
     }

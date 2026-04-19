@@ -14,20 +14,17 @@ declare(strict_types=1);
 
 namespace Omega\Console;
 
-use Omega\Application\Application;
-use Omega\Container\Exceptions\BindingResolutionException;
-use Omega\Container\Exceptions\CircularAliasException;
-use Omega\Container\Exceptions\EntryNotFoundException;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use Omega\Application\ApplicationInterface;
 use Symfony\Component\Console\Application as SymfonyConsole;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
+use function file_exists;
 use function in_array;
 use function memory_get_usage;
 use function round;
+use function sprintf;
 
 use const PHP_VERSION;
 
@@ -69,13 +66,13 @@ final class ConsoleBranding extends SymfonyConsole
      *
      * Initializes the custom Omega console application with logo and runtime info.
      *
-     * @param Application $app     The Omega application instance, used to retrieve environment, debug mode, and other runtime info.
-     * @param string      $name    The name of the console application.
-     * @param string      $version The version of the console application.
+     * @param ApplicationInterface $app     The Omega application instance, used to retrieve environment, debug mode, and other runtime info.
+     * @param string               $name    The name of the console application.
+     * @param string               $version The version of the console application.
      * @return void
      */
     public function __construct(
-        protected Application $app,
+        protected ApplicationInterface $app,
         string $name,
         string $version
     ) {
@@ -101,18 +98,13 @@ final class ConsoleBranding extends SymfonyConsole
      *
      * @param OutputInterface $output The output stream where the header will be written.
      * @return void
-     * @throws BindingResolutionException If a container binding cannot be resolved.
-     * @throws CircularAliasException If a circular alias is detected during service resolution.
-     * @throws ContainerExceptionInterface For generic container-related errors.
-     * @throws EntryNotFoundException If a required container entry is missing.
-     * @throws ReflectionException If a class or interface cannot be reflected.
      */
     protected function renderHeader(OutputInterface $output): void
     {
         $this->renderLogo($output);
         $this->renderRuntimeInfo($output);
 
-        $output->writeln(''); // spacing
+        $output->writeln('');
     }
 
     /**
@@ -124,7 +116,7 @@ final class ConsoleBranding extends SymfonyConsole
     protected function renderLogo(OutputInterface $output): void
     {
         $output->writeln("
-<fg=cyan;options=bold>   ____   __  __  ______  ______ ___    </>
+<fg=cyan;options=bold>   ____   __  __  ______  ______ ___   </>
 <fg=cyan;options=bold>  / __ \ /  |/  |/ ____// ____//   |   </>
 <fg=cyan;options=bold> / / / // /|_/ // __/  / / __ / /| |   </>
 <fg=cyan;options=bold>/ /_/ // /  / // /___ / /_/ // ___ |   </>
@@ -137,11 +129,6 @@ final class ConsoleBranding extends SymfonyConsole
      *
      * @param OutputInterface $output The output stream used to write runtime info.
      * @return void
-     * @throws BindingResolutionException If a container binding cannot be resolved.
-     * @throws CircularAliasException If a circular alias is detected during service resolution.
-     * @throws ContainerExceptionInterface For generic container-related errors.
-     * @throws EntryNotFoundException If a required container entry is missing.
-     * @throws ReflectionException If a class or interface cannot be reflected.
      */
     protected function renderRuntimeInfo(OutputInterface $output): void
     {
@@ -150,24 +137,19 @@ final class ConsoleBranding extends SymfonyConsole
         $php    = PHP_VERSION;
         $memory = $this->formatBytes(memory_get_usage(true));
 
+        $cacheFile = $this->app->getApplicationCachePath() . 'commands.php';
+        $isCached  = file_exists($cacheFile) ? 'YES' : 'NO';
+
         $output->writeln(sprintf(
-            '<fg=gray> Environment:</> <fg=yellow>%s</>  |  <fg=gray>Debug:</> <fg=%s>%s</>  |  <fg=gray>PHP:</> %s  |  <fg=gray>Memory:</> %s',
+            '<fg=gray> Environment:</> <fg=yellow>%s</>  |  <fg=gray>Debug:</> <fg=%s>%s</>  |  <fg=gray>PHP:</> %s  |  <fg=gray>Command Cache:</> <fg=%s>%s</>  |  <fg=gray>Memory:</> %s',
             $env,
-            $debug === 'ON' ? 'green' : 'red',
-            $debug,
+            $debug === 'ON' ? 'green' : 'red', $debug,
             $php,
+            $isCached === 'YES' ? 'green' : 'yellow', $isCached,
             $memory
         ));
     }
 
-    /**
-     * Determine if the current command should suppress the console header.
-     *
-     * This typically includes silent commands such as 'list' or '--help'.
-     *
-     * @param InputInterface $input The input arguments provided to the console.
-     * @return bool True if the command is considered silent and should skip header rendering; false otherwise.
-     */
     /**
      * Determine if the current command should suppress the console header.
      *

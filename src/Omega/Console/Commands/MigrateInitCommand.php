@@ -8,10 +8,14 @@ use Omega\Console\Attribute\AsCommand;
 use Omega\Database\Schema\Table\Create;
 use Omega\Support\Facades\PDO;
 use Omega\Support\Facades\Schema;
+use Symfony\Component\Console\Input\InputOption;
 
 #[AsCommand(
     name: 'migrate:init',
-    description: 'Initialize the migration table in the database'
+    description: 'Initialize the migration table in the database',
+    options: [
+        'database' => ['d', InputOption::VALUE_OPTIONAL, 'The database connection to use'],
+    ]
 )]
 final class MigrateInitCommand extends AbstractMigrationCommand
 {
@@ -24,13 +28,15 @@ final class MigrateInitCommand extends AbstractMigrationCommand
      */
     public function __invoke(): int
     {
+        $dbName = $this->getDatabaseName();
+
         if ($this->hasMigrationTable()) {
             $this->io->writeln('<comment>Migration table already exists in your database.</comment>');
             return self::SUCCESS;
         }
 
         if ($this->createMigrationTable()) {
-            $this->io->success('Successfully created migration table.');
+            $this->io->info('Successfully created migration table.');
             return self::SUCCESS;
         }
 
@@ -64,8 +70,8 @@ final class MigrateInitCommand extends AbstractMigrationCommand
             "SELECT COUNT(table_name) as total
             FROM information_schema.tables
             WHERE table_schema = DATABASE()
-            AND table_name = 'migration'"
-        )->single();
+            AND table_name = 'migration'")
+            ->single();
 
         if ($result) {
             return $result['total'] > 0;

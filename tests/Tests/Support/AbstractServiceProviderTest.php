@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Tests\Support;
 
 use Exception;
-use Omega\Support\AbstractServiceProvider;
+use Omega\Container\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
