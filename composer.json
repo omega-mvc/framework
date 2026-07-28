@@ -51,6 +51,7 @@
         "files": [
             "src/Omega/Application/helper.php",
             "src/Omega/Collection/helper.php",
+	    "src/Omega/Environment/helper.php",
             "src/Omega/Http/helper.php",
             "src/Omega/Text/helper.php",
             "src/Omega/Time/helper.php",
