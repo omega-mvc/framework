@@ -32,7 +32,6 @@
         "ext-readline": "*",
         "ext-simplexml": "*",
         "omega-mvc/gettext": "^1.0.0",
-        "omega-mvc/omega-kernel": "^1.0.1",
         "omega-mvc/serializable-closure":  "^1.0.0",
         "psr/container": "^2.0",
         "psr/simple-cache": "^3.0",

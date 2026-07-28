@@ -63,7 +63,7 @@ trait InteractsWithConsoleOutputTrait
     }
 
     /**
-     * Componente a due colonne separate da puntini (stile Laravel)
+     * Componente a due colonne separate da puntini.
      */
     protected function componentsTwoColumns(string $left, string $right, int $leftMargin = 2, int $rightMargin = 2): void
     {
