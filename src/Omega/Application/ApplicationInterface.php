@@ -19,4 +19,14 @@ interface ApplicationInterface extends AbstractApplicationInterface
      * @return array<string, string|int|null> Maintenance mode configuration data.
      */
     public function getDownData(): array;
+
+    /**
+     * Abort application to http exception.
+     *
+     * @param int                   $code    HTTP status code.
+     * @param string                $message Exception message.
+     * @param array<string, string> $headers HTTP response headers.
+     * @return void
+     */
+    public function abort(int $code, string $message = '', array $headers = []): void;
 }

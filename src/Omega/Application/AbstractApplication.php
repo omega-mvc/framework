@@ -18,6 +18,7 @@ use Exception;
 use Omega\Config\ConfigRepository;
 use Omega\Container\AbstractServiceProvider;
 use Omega\Container\Container;
+use Omega\Container\ContainerInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -170,8 +171,8 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
         Application::$app = $this;
 
         $this->set('app', $this);
-        $this->set(Application::class, $this);
-        $this->set(Container::class, $this);
+        $this->set(ApplicationInterface::class, $this);
+        //$this->set(ContainerInterface::class, $this);
 
         $this->set(
             ApplicationManifest::class,
@@ -351,40 +352,6 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
     /**
      * {@inheritdoc}
      */
-    public function abort(int $code, string $message = '', array $headers = []): void
-    {
-        throw new HttpException($code, $message, null, $headers);
-    }
-
-    /**
-     * Register aliases to container.
-     *
-     * @return void
-     * @throws Exception Thrown when alias registration fails.
-     */
-    protected function registerAlias(): void
-    {
-        $aliases = [
-            'request'       => [Request::class],
-            'view.instance' => [Templator::class],
-            'vite.gets'     => [Vite::class],
-            'config'        => [ConfigRepository::class],
-        ];
-
-        array_walk(
-            $aliases,
-            function (array $list, string $abstract): void {
-                array_walk(
-                    $list,
-                    fn (string $alias) => $this->alias($abstract, $alias)
-                );
-            }
-        );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function getCoreProviders(): array
     {
         return $this->providers;
@@ -397,7 +364,7 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws NotFoundExceptionInterface
+     * @throws NotFoundExceptionInterface Thrown when no entry exists for the requested identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function getName(): string
@@ -412,7 +379,7 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws NotFoundExceptionInterface
+     * @throws NotFoundExceptionInterface Thrown when no entry exists for the requested identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function getVersion(): string

@@ -14,7 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Application\Bootstrapper;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
+use Omega\Container\AbstractServiceProvider;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -47,16 +48,18 @@ use ReflectionException;
 class RegisterProviders
 {
     /**
-     * @param Application $app
+     * Bootstrap all service providers in the given application instance.
+     *
+     * @param ApplicationInterface $app The application instance used to resolve provider sources.
      * @return void
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws ReflectionException
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws NotFoundExceptionInterface Thrown when no entry exists for the requested identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    public function bootstrap(Application $app): void
+    public function bootstrap(ApplicationInterface $app): void
     {
         foreach ($this->resolveProviders($app) as $provider) {
             $app->register($provider);
@@ -64,16 +67,26 @@ class RegisterProviders
     }
 
     /**
-     * @param Application $app
-     * @return array
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws ReflectionException
+     * Resolve all service providers registered by the application.
+     *
+     * This method collects service provider class names from multiple sources:
+     * core application providers, configuration-defined providers, and package
+     * providers discovered through the application manifest.
+     *
+     * Duplicate providers are removed before returning the final list, ensuring
+     * that each provider is registered only once during the application bootstrap
+     * process.
+     *
+     * @param ApplicationInterface $app The application instance used to resolve provider sources.
+     * @return array<int, class-string<AbstractServiceProvider>> The list of unique service provider class names.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws NotFoundExceptionInterface Thrown when no entry exists for the requested identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    private function resolveProviders(Application $app): array
+    private function resolveProviders(ApplicationInterface $app): array
     {
         $configProviders = [];
 

@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Application\Bootstrapper;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
@@ -40,14 +40,10 @@ class BootProviders
     /**
      * Bootstrap all service providers in the given application instance.
      *
-     * @param Application $app The application instance whose providers should be bootstrapped
+     * @param ApplicationInterface $app The application instance used to resolve provider sources.
      * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    public function bootstrap(Application $app): void
+    public function bootstrap(ApplicationInterface $app): void
     {
         $app->bootProvider();
     }

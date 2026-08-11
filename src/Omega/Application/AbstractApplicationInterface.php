@@ -132,16 +132,6 @@ interface AbstractApplicationInterface
     public function terminate(): void;
 
     /**
-     * Abort application to http exception.
-     *
-     * @param int                   $code    HTTP status code.
-     * @param string                $message Exception message.
-     * @param array<string, string> $headers HTTP response headers.
-     * @return void
-     */
-    public function abort(int $code, string $message = '', array $headers = []): void;
-
-    /**
      * Get the list of core providers.
      *
      * @return array Return an array of core providers.
@@ -237,4 +227,11 @@ interface AbstractApplicationInterface
      * @return bool True when the application is running in development environment.
      */
     public function isDev(): bool;
+
+    /**
+     * Register aliases to container.
+     *
+     * @return void
+     */
+    public function registerAlias(): void;
 }

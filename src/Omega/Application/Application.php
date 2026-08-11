@@ -16,18 +16,25 @@ namespace Omega\Application;
 
 use Exception;
 use Omega\Cache\CacheServiceProvider;
+use Omega\Config\ConfigRepository;
 use Omega\Container\AbstractServiceProvider;
+use Omega\Container\Exceptions\AliasException;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Cron\CronServiceProvider;
 use Omega\Database\DatabaseServiceProvider;
 use Omega\Exceptions\WhoopsServiceProvider;
+use Omega\Http\Exceptions\HttpException;
 use Omega\Http\MacroServiceProvider;
+use Omega\Http\Request;
+use Omega\Logging\LoggingServiceProvider;
 use Omega\RateLimiter\RateLimiterServiceProvider;
 use Omega\Router\RouteServiceProvider;
 use Omega\Security\HashServiceProvider;
+use Omega\View\Templator;
 use Omega\View\ViewServiceProvider;
+use Omega\View\Vite;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
@@ -59,6 +66,7 @@ class Application extends AbstractApplication implements ApplicationInterface
     /** @var array<int, class-string<AbstractServiceProvider>> Registered service provider class names. */
     protected array $providers = [
         WhoopsServiceProvider::class,
+        LoggingServiceProvider::class,
         CronServiceProvider::class,
         HashServiceProvider::class,
         RouteServiceProvider::class,
@@ -127,5 +135,38 @@ class Application extends AbstractApplication implements ApplicationInterface
         $config = include $down;
 
         return array_replace($default, $config);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function abort(int $code, string $message = '', array $headers = []): void
+    {
+        throw new HttpException($code, $message, null, $headers);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws AliasException Thrown when an alias maps to itself.
+     */
+    public function registerAlias(): void
+    {
+        $aliases = [
+            'request'       => [Request::class],
+            'view.instance' => [Templator::class],
+            'vite.gets'     => [Vite::class],
+            'config'        => [ConfigRepository::class],
+        ];
+
+        array_walk(
+            $aliases,
+            function (array $list, string $abstract): void {
+                array_walk(
+                    $list,
+                    fn (string $alias) => $this->alias($abstract, $alias)
+                );
+            }
+        );
     }
 }
