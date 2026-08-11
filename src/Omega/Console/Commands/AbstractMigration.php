@@ -100,7 +100,7 @@ abstract class AbstractMigration extends AbstractCommand
 
         $batch = false === $batch ? $higher : $batch;
 
-        $paths   = [$this->app->get('path.migration'), ...static::$vendorPaths];
+        $paths   = [$this->app->get('path.migrations'), ...static::$vendorPaths];
         $migrate = new Collection([]);
 
         foreach ($paths as $dir) {

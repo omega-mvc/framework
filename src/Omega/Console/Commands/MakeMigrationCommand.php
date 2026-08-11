@@ -48,7 +48,7 @@ final class MakeMigrationCommand extends AbstractMakeCommand
         $name = strtolower(trim((string)$name));
 
         // 2. Definizione percorsi e nomi file
-        $pathToFile = $this->app->get('path.migration');
+        $pathToFile = $this->app->get('path.migrations');
         $timestamp  = now()->format('Y_m_d_His');
         $fileName   = "{$pathToFile}{$timestamp}_{$name}.php";
 

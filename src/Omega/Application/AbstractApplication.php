@@ -32,7 +32,6 @@ use ReflectionException;
 
 use function array_filter;
 use function array_walk;
-use function assert;
 use function count;
 use function in_array;
 use function Omega\Environment\env;
@@ -141,6 +140,9 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
      *
      * Responsibilities:
      * - Defines this instance as the active Application runtime.
+     * - Retires and flushes any previously active instance so that constructing
+     *   a new Application in the same process is always safe (e.g. the test
+     *   suite boots a fresh application per test).
      * - Registers core container bindings (app, Application::class, Container::class).
      * - Initializes framework-level services that depend on a stable Application instance.
      *
@@ -155,19 +157,22 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
      * The framework relies on a globally accessible Application reference for
      * container resolution, helpers, service providers, and testing utilities.
      * Assigning the instance here guarantees a deterministic initialization order.
+     * Any previous instance is flushed first, so application construction is
+     * idempotent within a single process and never fails depending on execution
+     * order (previously an assert required the singleton to be null, which made
+     * order-dependent state leaks between tests fatal).
      *
      * @return void
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      */
     protected function setBaseBinding(): void
     {
-        assert(
-            Application::$app === null,
-            'Application::$app must be null before base bindings are registered.'
-        );
-
         // The Application instance must be globally available before any container
         // bindings, helpers, or service providers are resolved.
+        if (Application::$app !== null) {
+            Application::$app->flush();
+        }
+
         Application::$app = $this;
 
         $this->set('app', $this);
@@ -407,7 +412,7 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
             'path.storage'            => $this->basePath . set_path('storage'),
             'path.logs'               => $this->basePath . set_path('storage.logs'),
             'path.public'             => $this->basePath . set_path('public'),
-            'path.migration'          => $this->basePath . set_path('database.migration'),
+            'path.migrations'         => $this->basePath . set_path('database.migrations'),
             'path.seeder'             => $this->basePath . set_path('database.seeders'),
             'path.compiled_view_path' => $this->basePath . set_path('storage.app.view'),
             'path.database'           => $this->basePath . set_path('database'),

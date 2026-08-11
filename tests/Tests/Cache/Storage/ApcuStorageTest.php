@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace System\Text\Cache\Storage;
+namespace Tests\Cache\Storage;
 
 use PHPUnit\Framework\TestCase;
-use System\Cache\Storage\ApcuStorage;
+use Omega\Cache\Storage\Apcu;
 
 /**
  * @group apcu
@@ -14,21 +14,21 @@ use System\Cache\Storage\ApcuStorage;
  */
 class ApcuStorageTest extends TestCase
 {
-    protected ApcuStorage $storage;
+    protected Apcu $storage;
 
     protected function setUp(): void
     {
-        if (!ApcuStorage::isSupported()) {
+        if (!Apcu::isSupported()) {
             $this->markTestSkipped('APCu extension is not loaded or enabled for CLI.');
         }
 
-        $this->storage = new ApcuStorage('test_');
+        $this->storage = new Apcu('test_');
         $this->storage->clear();
     }
 
     protected function tearDown(): void
     {
-        if (ApcuStorage::isSupported()) {
+        if (Apcu::isSupported()) {
             $this->storage->clear();
         }
     }
@@ -43,7 +43,7 @@ class ApcuStorageTest extends TestCase
      * @covers \System\Cache\Storage\ApcuStorage::calculateTTL
      * @covers \System\Cache\Storage\ApcuStorage::__construct
      */
-    public function itCanSetAndGet(): void
+    public function testItCanSetAndGet(): void
     {
         $this->assertTrue($this->storage->set('key1', 'value1'));
         $this->assertEquals('value1', $this->storage->get('key1'));
@@ -56,7 +56,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::get
      */
-    public function itCanGetWithDefault(): void
+    public function testItCanGetWithDefault(): void
     {
         $this->assertEquals('default', $this->storage->get('non_existing_key', 'default'));
     }
@@ -69,7 +69,7 @@ class ApcuStorageTest extends TestCase
      * @covers \System\Cache\Storage\ApcuStorage::set
      * @covers \System\Cache\Storage\ApcuStorage::calculateTTL
      */
-    public function itShouldSetWithTTL(): void
+    public function testItShouldSetWithTTL(): void
     {
         $this->assertTrue($this->storage->set('key2', 'value2', 1));
     }
@@ -81,7 +81,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::delete
      */
-    public function itCanDelete(): void
+    public function testItCanDelete(): void
     {
         $this->storage->set('key3', 'value3');
         $this->assertTrue($this->storage->delete('key3'));
@@ -95,7 +95,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::delete
      */
-    public function itShouldReturnFalseWhenDeleteNonExistingKey(): void
+    public function testItShouldReturnFalseWhenDeleteNonExistingKey(): void
     {
         $this->assertFalse($this->storage->delete('non_existing_key'));
     }
@@ -107,7 +107,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::clear
      */
-    public function itCanClear(): void
+    public function testItCanClear(): void
     {
         $this->storage->set('key4', 'value4');
         $this->assertTrue($this->storage->clear());
@@ -121,7 +121,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::getMultiple
      */
-    public function itCanGetMultiple(): void
+    public function testItCanGetMultiple(): void
     {
         $this->storage->set('key5', 'value5');
         $this->storage->set('key6', 'value6');
@@ -137,7 +137,7 @@ class ApcuStorageTest extends TestCase
      * @covers \System\Cache\Storage\ApcuStorage::setMultiple
      * @covers \System\Cache\Storage\ApcuStorage::calculateTTL
      */
-    public function itCanSetMultiple(): void
+    public function testItCanSetMultiple(): void
     {
         $this->assertTrue($this->storage->setMultiple(['key7' => 'value7', 'key8' => 'value8']));
         $this->assertEquals('value7', $this->storage->get('key7'));
@@ -151,7 +151,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::deleteMultiple
      */
-    public function itCanDeleteMultiple(): void
+    public function testItCanDeleteMultiple(): void
     {
         $this->storage->set('key9', 'value9');
         $this->storage->set('key10', 'value10');
@@ -167,7 +167,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::has
      */
-    public function itCanHas(): void
+    public function testItCanHas(): void
     {
         $this->storage->set('key11', 'value11');
         $this->assertTrue($this->storage->has('key11'));
@@ -181,7 +181,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::increment
      */
-    public function itCanIncrement(): void
+    public function testItCanIncrement(): void
     {
         $this->assertEquals(10, $this->storage->increment('key12', 10));
         $this->assertEquals(20, $this->storage->increment('key12', 10));
@@ -195,7 +195,7 @@ class ApcuStorageTest extends TestCase
      * @covers \System\Cache\Storage\ApcuStorage::decrement
      * @covers \System\Cache\Storage\ApcuStorage::increment
      */
-    public function itCanDecrement(): void
+    public function testItCanDecrement(): void
     {
         $this->storage->increment('key13', 20);
         $this->assertEquals(10, $this->storage->decrement('key13', 10));
@@ -208,7 +208,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::getInfo
      */
-    public function itCanGetInfo(): void
+    public function testItCanGetInfo(): void
     {
         $this->storage->set('key14', 'value14');
         $info = $this->storage->getInfo('key14');
@@ -225,7 +225,7 @@ class ApcuStorageTest extends TestCase
      *
      * @covers \System\Cache\Storage\ApcuStorage::remember
      */
-    public function itCanRemember(): void
+    public function testItCanRemember(): void
     {
         $value = $this->storage->remember('key1', 1, fn (): string => 'value1');
         $this->assertEquals('value1', $value);
