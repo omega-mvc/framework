@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Facade\Bootstrapper;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Facade\AbstractFacade;
 
 /**
@@ -39,10 +39,10 @@ class FacadeBootstrapper
      * This method sets the base application instance in the AbstractFacade class,
      * which is then used by all facades to resolve the underlying service objects.
      *
-     * @param Application $app The application instance to associate with facades
+     * @param ApplicationInterface $app The application instance to associate with facades
      * @return void
      */
-    public function bootstrap(Application $app): void
+    public function bootstrap(ApplicationInterface $app): void
     {
         AbstractFacade::setFacadeBase($app);
     }

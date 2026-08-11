@@ -37,7 +37,7 @@ use Tests\FixturesPathTrait;
 use Throwable;
 
 use function file;
-use function Omega\Support\view;
+use function Omega\View\view;
 use function str_contains;
 
 /**

@@ -55,7 +55,7 @@ use function Omega\Application\slash;
 #[CoversClass(CacheManager::class)]
 #[CoversClass(File::class)]
 #[CoversClass(Memory::class)]
-#[CoversFunction('Omega\Support\slash')]
+#[CoversFunction('Omega\Application\slash')]
 final class CacheFactoryTest extends TestCase
 {
     /**

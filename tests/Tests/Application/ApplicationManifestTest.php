@@ -46,7 +46,7 @@ use function Omega\Application\slash;
  * @version   2.0.0
  */
 #[CoversClass(ApplicationManifest::class)]
-#[CoversFunction('Omega\Support\slash')]
+#[CoversFunction('Omega\Application\slash')]
 class ApplicationManifestTest extends TestCase
 {
     use FixturesPathTrait;

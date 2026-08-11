@@ -47,7 +47,7 @@ use function Omega\Application\path;
  */
 #[CoversClass(Request::class)]
 #[CoversClass(Url::class)]
-#[CoversFunction('Omega\Support\path')]
+#[CoversFunction('Omega\Application\path')]
 final class UrlTest extends TestCase
 {
     /**

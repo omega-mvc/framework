@@ -18,12 +18,13 @@ declare(strict_types=1);
 namespace Omega\Exceptions\Bootstrapper;
 
 use ErrorException;
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ExceptionHandler;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Log\LogLevel;
 use ReflectionException;
 use Throwable;
 
@@ -67,7 +68,7 @@ use const E_USER_DEPRECATED;
 class HandleExceptions
 {
     /** @var Application The application instance used by this handler. */
-    private Application $app;
+    private ApplicationInterface $app;
 
     /** @var string|null Reserved memory buffer to allow handling fatal errors without running out of memory. */
     public static ?string $reserveMemory = null;
@@ -78,7 +79,7 @@ class HandleExceptions
      * Sets up error reporting, registers custom handlers for errors, exceptions, and shutdown,
      * and disables displaying errors outside the testing environment.
      *
-     * @param Application $app The application instance
+     * @param ApplicationInterface $app The application instance
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -86,7 +87,7 @@ class HandleExceptions
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    public function bootstrap(Application $app): void
+    public function bootstrap(ApplicationInterface $app): void
     {
         self::$reserveMemory = str_repeat('x', 32_768);
 
@@ -191,12 +192,27 @@ class HandleExceptions
      */
     private function log(int $level, string $message): bool
     {
-        if ($this->app->has('log')) {
-            $this->app['log']->log($level, $message);
+        if ($this->app->has('logging')) {
+            $this->app['logging']->log($this->mapLevel($level), $message);
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Map a PHP error level to the equivalent PSR-3 log level.
+     *
+     * @param int $level The PHP error level (e.g., E_USER_DEPRECATED).
+     * @return string The corresponding PSR-3 log level.
+     */
+    private function mapLevel(int $level): string
+    {
+        return match ($level) {
+            E_DEPRECATED, E_USER_DEPRECATED => LogLevel::NOTICE,
+            E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_PARSE => LogLevel::CRITICAL,
+            default => LogLevel::ERROR,
+        };
     }
 
     /**

@@ -17,7 +17,7 @@ namespace Omega\Http;
 use Closure;
 use Exception;
 use InvalidArgumentException;
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -69,7 +69,7 @@ class Http
      *
      * @var Application
      */
-    protected Application $app;
+    protected ApplicationInterface $app;
 
     /**
      * Global HTTP middleware stack.
@@ -104,9 +104,9 @@ class Http
     /**
      * Create a new HTTP kernel instance.
      *
-     * @param Application $app Application container instance.
+     * @param ApplicationInterface $app Application container instance.
      */
-    public function __construct(Application $app)
+    public function __construct(ApplicationInterface $app)
     {
         $this->app = $app;
     }

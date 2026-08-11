@@ -16,7 +16,7 @@ namespace Omega\Middleware;
 
 use Closure;
 use Exception;
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -50,9 +50,9 @@ class MaintenanceMiddleware
     /**
      * Create a new MaintenanceMiddleware instance.
      *
-     * @param Application $app The application instance used to check maintenance status and retrieve data.
+     * @param ApplicationInterface $app The application instance used to check maintenance status and retrieve data.
      */
-    public function __construct(protected Application $app)
+    public function __construct(protected ApplicationInterface $app)
     {
     }
 

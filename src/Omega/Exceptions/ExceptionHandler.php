@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Exceptions;
 
-use Omega\Container\Container;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -22,9 +22,11 @@ use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Exceptions\HttpResponseException;
 use Omega\Http\Request;
 use Omega\Http\Response;
+use Omega\Logging\LoggingManager;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Log\LogLevel;
 use ReflectionException;
 use Throwable;
 
@@ -46,8 +48,8 @@ use function Omega\View\view;
  */
 class ExceptionHandler
 {
-    /** @var Container The main application container. */
-    protected Container $app;
+    /** @var ApplicationInterface The main application container. */
+    protected ApplicationInterface $app;
 
     /** @var array<int, class-string<Throwable>> List of exceptions not to report. */
     protected array $dontReport = [];
@@ -61,9 +63,9 @@ class ExceptionHandler
     /**
      * Initialize the exception handler with the application container.
      *
-     * @param Container $application The main application container.
+     * @param ApplicationInterface $application The main application container.
      */
-    public function __construct(Container $application)
+    public function __construct(ApplicationInterface $application)
     {
         $this->app = $application;
     }
@@ -100,6 +102,9 @@ class ExceptionHandler
     /**
      * Report an exception (useful for logging).
      *
+     * Exceptions that are not marked as "do not report" are written to the
+     * application log through the `log` service resolved from the container.
+     *
      * @param Throwable $th The exception to report.
      * @return void
      */
@@ -109,6 +114,44 @@ class ExceptionHandler
             /** @noinspection PhpUnnecessaryStopStatementInspection */
             return;
         }
+
+        $this->log($th);
+    }
+
+    /**
+     * Write the given exception to the application log.
+     *
+     * The exception message, class, file, line and stack trace are passed as
+     * context to the logger. Exceptions related to an HTTP status code of 500
+     * or higher are logged at a critical level; any other exception at error
+     * level.
+     *
+     * @param Throwable $th The exception to log.
+     * @return void
+     */
+    protected function log(Throwable $th): void
+    {
+        if (false === $this->app->has('logging')) {
+            return;
+        }
+
+        /** @var LoggingManager $logger */
+        $logger = $this->app->get('logging');
+
+        $level = $th instanceof HttpException && $th->getStatusCode() >= 500
+            ? LogLevel::CRITICAL
+            : LogLevel::ERROR;
+
+        $logger->log(
+            $level,
+            $th->getMessage(),
+            [
+                'exception' => $th::class,
+                'file'      => $th->getFile(),
+                'line'      => $th->getLine(),
+                'trace'     => $th->getTraceAsString(),
+            ]
+        );
     }
 
     /**

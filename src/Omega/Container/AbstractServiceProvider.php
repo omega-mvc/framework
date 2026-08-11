@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Container;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 
 /**
  * Abstract base class for service providers.
@@ -41,9 +41,9 @@ abstract class AbstractServiceProvider
     /**
      * Create a new service provider instance.
      *
-     * @param Application $app The application instance
+     * @param ApplicationInterface $app The application instance
      */
-    public function __construct(protected Application $app)
+    public function __construct(protected ApplicationInterface $app)
     {
     }
 

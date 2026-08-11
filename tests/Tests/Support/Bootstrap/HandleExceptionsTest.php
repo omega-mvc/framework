@@ -99,7 +99,7 @@ class HandleExceptionsTest extends TestCase
         $app = new Application(basePath: __DIR__ . '/fixtures');
         $app->set('environment', 'testing');
         $app->set(ExceptionHandler::class, fn () => new TestHandleExceptions($app));
-        $app->set('log', fn () => new TestLog());
+        $app->set('logging', fn () => new TestLog());
 
         $handle = new HandleExceptions();
         $handle->bootstrap($app);

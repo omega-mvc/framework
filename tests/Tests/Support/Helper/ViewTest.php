@@ -30,7 +30,7 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
 
-use function Omega\Support\view;
+use function Omega\View\view;
 
 /**
  * Integration test suite for the `view()` helper.
@@ -67,7 +67,7 @@ use function Omega\Support\view;
 #[CoversClass(Str::class)]
 #[CoversClass(Templator::class)]
 #[CoversClass(TemplatorFinder::class)]
-#[CoversFunction('Omega\Support\view')]
+#[CoversFunction('Omega\View\view')]
 final class ViewTest extends TestCase
 {
     use FixturesPathTrait;

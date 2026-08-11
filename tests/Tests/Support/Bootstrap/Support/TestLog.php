@@ -24,7 +24,8 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * as expected. Instead of writing to files or external services, this logger
  * performs PHPUnit assertions to verify:
  *
- * - The log level matches the expected value (e.g., user deprecation level).
+ * - The log level matches the expected PSR-3 level (e.g., "notice" for a
+ *   user deprecation).
  * - The logged message is correct.
  *
  * This ensures logging integration is functioning without introducing
@@ -45,13 +46,13 @@ final class TestLog
     /**
      * Register a minimal log.
      *
-     * @param int $level
+     * @param string $level
      * @param string $message
      * @return void
      */
-    public function log(int $level, string $message): void
+    public function log(string $level, string $message): void
     {
-        Assert::assertEquals($level, 16384);
+        Assert::assertEquals($level, 'notice');
         Assert::assertEquals($message, 'deprecation');
     }
 }

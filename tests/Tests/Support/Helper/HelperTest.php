@@ -40,13 +40,13 @@ use function Omega\Application\os_detect;
 use function Omega\Application\path;
 use function Omega\Application\set_path;
 use function Omega\Application\slash;
-use function Omega\Support\vite;
+use function Omega\View\vite;
 
 /**
  * Test suite for Omega global helper functions.
  *
  * This class verifies the behavior and consistency of all core helper
- * functions provided by the Omega\Support namespace.
+ * functions provided by the Omega\Application namespace.
  *
  * The tests cover:
  * - Application container access via the `app()` helper, including lifecycle
@@ -79,16 +79,16 @@ use function Omega\Support\vite;
  * @version   2.0.0
  */
 #[CoversClass(Application::class)]
-#[CoversFunction('Omega\Support\app')]
-#[CoversFunction('Omega\Support\env')]
-#[CoversFunction('Omega\Support\get_path')]
-#[CoversFunction('Omega\Support\is_dev')]
-#[CoversFunction('Omega\Support\is_production')]
-#[CoversFunction('Omega\Support\os_detect')]
-#[CoversFunction('Omega\Support\path')]
-#[CoversFunction('Omega\Support\set_path')]
-#[CoversFunction('Omega\Support\slash')]
-#[CoversFunction('Omega\Support\vite')]
+#[CoversFunction('Omega\Application\app')]
+#[CoversFunction('Omega\Environment\env')]
+#[CoversFunction('Omega\Application\get_path')]
+#[CoversFunction('Omega\Application\is_dev')]
+#[CoversFunction('Omega\Application\is_production')]
+#[CoversFunction('Omega\Application\os_detect')]
+#[CoversFunction('Omega\Application\path')]
+#[CoversFunction('Omega\Application\set_path')]
+#[CoversFunction('Omega\Application\slash')]
+#[CoversFunction('Omega\View\vite')]
 final class HelperTest extends TestCase
 {
     use FixturesPathTrait;

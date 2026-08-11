@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Omega\Testing;
 
 use Exception;
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -49,8 +49,8 @@ use function array_key_exists;
  */
 class TestCase extends PhpUnitTestCase
 {
-    /** @var Application  The application instance used for testing. */
-    protected Application $app;
+    /** @var ApplicationInterface  The application instance used for testing. */
+    protected ApplicationInterface $app;
 
     /** @var Http The Http kernel used to handle requests. */
     protected Http $kernel;

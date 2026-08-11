@@ -2,13 +2,12 @@
 
 /**
  * Part of Omega - Logging Package.
- * php version 8.3
  *
- * @link       https://omegamvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2024 - 2025 Adriano Giovannini (https://omegamvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    1.0.0
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 
 declare(strict_types=1);
@@ -17,12 +16,17 @@ namespace Omega\Logging;
 
 use DateTime;
 use DateMalformedStringException;
+use Psr\Log\AbstractLogger;
+use Psr\Log\LogLevel;
 use RuntimeException;
-use Stringable;
 use Omega\Logging\Exception\LogArgumentException;
+use Stringable;
 
+use function array_keys;
 use function array_merge;
+use function array_reduce;
 use function date;
+use function dirname;
 use function file_exists;
 use function floor;
 use function fclose;
@@ -41,27 +45,31 @@ use function strlen;
 use function str_contains;
 use function str_repeat;
 use function str_replace;
+use function str_ends_with;
 use function str_starts_with;
+use function strtolower;
 use function strtoupper;
 use function trim;
 use function var_export;
+use function Omega\Application\slash;
 
 /**
- * Class Logger.
+ * Class Stream.
  *
- * This class is responsible for handling log operations, including writing log messages to files,
- * managing log levels, formatting messages, and handling log contexts. It supports various log
- * configurations such as log format, date format, log file path, and context management.
+ * The stream driver writes log messages to a file (or a PHP stream such as
+ * `php://stdout` or `php://stderr`). It manages log levels, formats messages,
+ * and handles log contexts. It supports various log configurations such as
+ * log format, date format, log file path, and context management.
  *
  * @category   Omega
  * @package    Logging
- * @link       https://omegamvc.github.io
+ * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2024 - 2025 Adriano Giovannini (https://omegamvc.github.io)
+ * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    1.0.0
+ * @version    2.0.0
  */
-class Logger extends AbstractLogger
+class Stream extends AbstractLogger
 {
     /**
      * Log array options.
@@ -127,9 +135,9 @@ class Logger extends AbstractLogger
     /**
      * The file handle for writing log messages.
      *
-     * @var mixed Holds the file handle for writing log message.
+     * @var resource|null Holds the file handle for writing log message.
      */
-    private mixed $fileHandle;
+    private mixed $fileHandle = null;
 
     /**
      * The last line written to the log.
@@ -150,7 +158,8 @@ class Logger extends AbstractLogger
      *
      * Initializes the logger by setting up the log directory, log level, and file options.
      *
-     * @param string               $logDirectory      The directory where log files are stored.
+     * @param string               $logDirectory      The directory where log files are stored, or an
+     *                                                explicit log file path ending in `.log`/`.txt`.
      * @param string               $logLevelThreshold The log level threshold (default: LogLevel::DEBUG).
      * @param array<string, mixed> $options           Optional configurations for the logger.
      * @return void
@@ -164,33 +173,36 @@ class Logger extends AbstractLogger
         $this->logLevelThreshold = $logLevelThreshold;
         $this->options           = array_merge($this->options, $options);
 
-        $logDirectory = rtrim($logDirectory, DIRECTORY_SEPARATOR);
-        if (!file_exists($logDirectory)) {
-            if (!mkdir($logDirectory, $this->defaultPermissions, true) && !is_dir($logDirectory)) {
-                throw new RuntimeException(
-                    'Unable to create log directory: ' . $logDirectory
-                );
-            }
-        }
+        $logDirectory = rtrim($logDirectory, slash(path: '/'));
 
         if (str_starts_with($logDirectory, 'php://')) {
             $this->setLogToStdOut($logDirectory);
             $this->setFileHandle('w+');
-        } else {
-            $this->setLogFilePath($logDirectory);
-            if (file_exists($this->logFilePath) && !is_writable($this->logFilePath)) {
-                throw new RuntimeException(
-                    'The file could not be written to. Check that appropriate permissions have been set.'
-                );
-            }
-            $this->setFileHandle('a');
+
+            return;
         }
 
-        if (!$this->fileHandle) {
+        $directory = $this->isLogFilePath($logDirectory)
+            ? dirname($logDirectory)
+            : $logDirectory;
+
+        if (!file_exists($directory)) {
+            if (!mkdir($directory, $this->defaultPermissions, true) && !is_dir($directory)) {
+                throw new RuntimeException(
+                    'Unable to create log directory: ' . $directory
+                );
+            }
+        }
+
+        $this->setLogFilePath($logDirectory);
+
+        if (file_exists($this->logFilePath) && !is_writable($this->logFilePath)) {
             throw new RuntimeException(
-                'The file could not be opened. Check permissions.'
+                'The file could not be written to. Check that appropriate permissions have been set.'
             );
         }
+
+        $this->setFileHandle('a');
     }
 
     /**
@@ -217,22 +229,41 @@ class Logger extends AbstractLogger
                 && (str_contains($this->options['filename'], '.log')
                 || str_contains($this->options['filename'], '.txt'))
             ) {
-                $this->logFilePath = $logDirectory . DIRECTORY_SEPARATOR . $this->options['filename'];
+                $this->logFilePath = $logDirectory . slash(path: '/') . $this->options['filename'];
             } else {
                 $this->logFilePath = $logDirectory
-                    . DIRECTORY_SEPARATOR
+                    . slash(path: '/')
                     . $this->options['filename']
                     . '.'
                     . $this->options['extension'];
             }
+        } elseif ($this->isLogFilePath($logDirectory)) {
+            $this->logFilePath = $logDirectory;
         } else {
             $this->logFilePath = $logDirectory
-                    . DIRECTORY_SEPARATOR
+                    . slash(path: '/')
                     . $this->options['prefix']
                     . date('Y-m-d')
                     . '.'
                     . $this->options['extension'];
         }
+    }
+
+    /**
+     * Determine whether the given path is an explicit log file path.
+     *
+     * A path is considered an explicit log file when it ends with a `.log`
+     * or `.txt` extension. In that case the logger writes directly to that
+     * file instead of generating a filename inside the directory.
+     *
+     * @param string $path The path to inspect.
+     * @return bool True when the path points to a log file.
+     */
+    private function isLogFilePath(string $path): bool
+    {
+        $path = strtolower($path);
+
+        return str_ends_with($path, '.log') || str_ends_with($path, '.txt');
     }
 
     /**
@@ -327,10 +358,11 @@ class Logger extends AbstractLogger
     /**
      * Formats a log message for writing to the file.
      *
-     * @param string               $level   The log level of the message.
-     * @param string|Stringable    $message The message to log.
+     * @param string $level The log level of the message.
+     * @param string|Stringable $message The message to log.
      * @param array<string, mixed> $context The context for the log message.
      * @return string The formatted message.
+     * @throws DateMalformedStringException
      */
     protected function formatMessage(string $level, string|Stringable $message, array $context): string
     {
@@ -350,12 +382,17 @@ class Logger extends AbstractLogger
                 'context'       => json_encode($context),
             ];
 
-            $formattedMessage = $logFormat;
-            foreach ($parts as $part => $value) {
-                if (is_string($value)) {
-                    $formattedMessage = str_replace('{' . $part . '}', $value, $formattedMessage);
-                }
-            }
+            $formattedMessage = array_reduce(
+                array_keys($parts),
+                static function (string $carry, string $part) use ($parts): string {
+                    $value = $parts[$part];
+
+                    return is_string($value)
+                        ? str_replace('{' . $part . '}', $value, $carry)
+                        : $carry;
+                },
+                $logFormat
+            );
         } else {
             $formattedMessage = '[' . $this->getTimestamp() . '] [' . $level . '] ' . $message;
         }
@@ -397,25 +434,30 @@ class Logger extends AbstractLogger
      */
     protected function contextToString(array $context): string
     {
-        $export = '';
-        foreach ($context as $key => $value) {
-            $export .= $key . ': ';
-            $export .= preg_replace(
-                [
-                    '/=>\s+([a-zA-Z])/im',
-                    '/array\(\s+\)/im',
-                    //'/^  |\G  /m'
-                    '/^\s{2}|\G\s{2}/m',
-                ],
-                [
-                    '=> $1',
-                    '[]',
-                    '    ',
-                ],
-                str_replace('array (', 'array(', var_export($value, true))
-            );
-            $export .= PHP_EOL;
-        }
+        $export = array_reduce(
+            array_keys($context),
+            function (string $carry, string $key) use ($context): string {
+                $carry .= $key . ': ';
+                $carry .= preg_replace(
+                    [
+                        '/=>\s+([a-zA-Z])/im',
+                        '/array\(\s+\)/im',
+                        //'/^  |\G  /m'
+                        '/^\s{2}|\G\s{2}/m',
+                    ],
+                    [
+                        '=> $1',
+                        '[]',
+                        '    ',
+                    ],
+                    str_replace('array (', 'array(', var_export($context[$key], true))
+                );
+                $carry .= PHP_EOL;
+
+                return $carry;
+            },
+            ''
+        );
 
         return str_replace(['\\\\', '\\\''], ['\\', '\''], rtrim($export));
     }
@@ -439,7 +481,8 @@ class Logger extends AbstractLogger
      * @param string|Stringable    $message The message to log.
      * @param array<string, mixed> $context The context for the log message.
      * @return void
-     * @throws LogArgumentException If an invalid log level is provided.
+     * @throws LogArgumentException
+     * @throws DateMalformedStringException
      */
     public function log(mixed $level, string|Stringable $message, array $context = []): void
     {

@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Facade;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -41,8 +41,8 @@ use function array_key_exists;
  */
 abstract class AbstractFacade implements FacadeInterface
 {
-    /** @var Application|null The Application container instance. */
-    protected static ?Application $app = null;
+    /** @var ApplicationInterface|null The Application container instance. */
+    protected static ?ApplicationInterface $app = null;
 
     /** @var array<string, mixed> Array mapping accessor names to resolved instances */
     protected static array $instance = [];
@@ -50,10 +50,10 @@ abstract class AbstractFacade implements FacadeInterface
     /**
      * Create a new facade instance and register the application container.
      *
-     * @param Application $app The application container instance
+     * @param ApplicationInterface $app The application container instance
      * @return void
      */
-    public function __construct(Application $app)
+    public function __construct(ApplicationInterface $app)
     {
         static::$app = $app;
     }
@@ -61,10 +61,10 @@ abstract class AbstractFacade implements FacadeInterface
     /**
      * Set the application container to be used by all facades.
      *
-     * @param Application|null $app The application container, or null to unset
+     * @param ApplicationInterface|null $app The application container, or null to unset
      * @return void
      */
-    public static function setFacadeBase(?Application $app = null): void
+    public static function setFacadeBase(?ApplicationInterface $app = null): void
     {
         static::$app = $app;
     }

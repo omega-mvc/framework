@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Config\Bootstrapper;
 
-use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -30,7 +30,6 @@ use function file_exists;
 use function gettype;
 use function glob;
 use function is_array;
-
 use function Omega\Environment\env;
 use function Omega\Application\get_path;
 
@@ -68,7 +67,7 @@ class ConfigBootstrapper
      * is set using the `APP_TIMEZONE` environment variable, falling back to
      * `UTC` when no value is defined.
      *
-     * @param Application $app The application instance that will receive the
+     * @param ApplicationInterface $app The application instance that will receive the
      *                         initialized configuration repository.
      * @return void
      * @throws BindingResolutionException Thrown when resolving a binding fails.
@@ -78,7 +77,7 @@ class ConfigBootstrapper
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @throws RuntimeException If a cached config file or a regular config file does not return an array
      */
-    public function bootstrap(Application $app): void
+    public function bootstrap(ApplicationInterface $app): void
     {
         $config = $this->loadConfiguration($app);
 
@@ -99,7 +98,7 @@ class ConfigBootstrapper
      * to loading individual configuration files from the configured
      * configuration directory.
      *
-     * @param Application $app The application instance used to resolve the
+     * @param ApplicationInterface $app The application instance used to resolve the
      *                         cache location and configuration paths.
      * @return array The fully resolved configuration array that will be
      *               injected into the application's configuration repository.
@@ -110,7 +109,7 @@ class ConfigBootstrapper
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @throws RuntimeException If a cached config file or a regular config file does not return an array
      */
-    private function loadConfiguration(Application $app): array
+    private function loadConfiguration(ApplicationInterface $app): array
     {
         if ($cache = $this->loadCachedConfig($app)) {
             return $cache;
@@ -131,7 +130,7 @@ class ConfigBootstrapper
      * that the configuration should be loaded dynamically from individual
      * configuration files.
      *
-     * @param Application $app The application instance used to determine the
+     * @param ApplicationInterface $app The application instance used to determine the
      *                         location of the configuration cache file.
      * @return array|null The cached configuration array when available,
      *                    or null when the cache file does not exist.
@@ -142,7 +141,7 @@ class ConfigBootstrapper
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @throws RuntimeException If a cached config file or a regular config file does not return an array
      */
-    private function loadCachedConfig(Application $app): ?array
+    private function loadCachedConfig(ApplicationInterface $app): ?array
     {
         $file = $app->getApplicationCachePath() . 'config.php';
 
