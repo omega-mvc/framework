@@ -14,6 +14,15 @@ declare(strict_types=1);
 
 namespace Omega\Router;
 
+use Omega\Router\Attribute\Middleware;
+use Omega\Router\Attribute\Name;
+use Omega\Router\Attribute\Prefix;
+use Omega\Router\Attribute\Where;
+use ReflectionAttribute;
+use ReflectionClass;
+use ReflectionException;
+use ReflectionMethod;
+
 use function call_user_func_array;
 
 /**
@@ -104,6 +113,118 @@ class Router extends AbstractRouter
         foreach ($arrayRoutes as $route) {
             self::addRoutes($route);
         }
+    }
+
+    /**
+     * Registers routes defined using PHP 8 attributes in a class or a set of classes.
+     *
+     * @param class-string|class-string[] $className A class name or an array of class names to scan.
+     * @return void
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public static function register(string|array $className): void
+    {
+        $classNames = is_string($className) ? [$className] : $className;
+
+        foreach ($classNames as $class) {
+            $reflection = new ReflectionClass($class);
+
+            $routes = self::resolveRouteAttribute(
+                $class,
+                $reflection->getAttributes(),
+                $reflection->getMethods()
+            );
+
+            foreach ($routes as $route) {
+                self::$routes[] = new Route($route);
+            }
+        }
+    }
+
+    /**
+     * Resolves routing attributes on a class and its methods, generating route
+     * definitions based on annotations such as Prefix, Name, Middleware, and Route.
+     *
+     * @param string                        $className         The class being processed.
+     * @param ReflectionAttribute<object>[] $attributes        Class-level attributes.
+     * @param ReflectionMethod[]            $attributesMethods Method-level attributes.
+     * @return array<int, array<string, string|array<string, string>>>  Parsed route definitions.
+     */
+    private static function resolveRouteAttribute(
+        string $className,
+        array $attributes = [],
+        array $attributesMethods = []
+    ): array {
+        $prefixUri       = '';
+        $prefixName      = '';
+        $rootMiddlewares = [];
+        $classes         = [];
+
+        foreach ($attributes as $classAttribute) {
+            $instance = $classAttribute->newInstance();
+
+            if ($instance instanceof Middleware) {
+                $rootMiddlewares = $instance->middleware;
+            }
+
+            if ($instance instanceof Name) {
+                $prefixName = $instance->name;
+            }
+
+            if ($instance instanceof Prefix) {
+                $prefixUri = $instance->prefix;
+            }
+        }
+
+        foreach ($attributesMethods as $method) {
+            $middlewares = $rootMiddlewares;
+            $name        = '';
+            $pattern     = [];
+            $uri         = '';
+            $httpMethod  = '';
+            $found       = false;
+
+            foreach ($method->getAttributes() as $attribute) {
+                $instance = $attribute->newInstance();
+
+                if ($instance instanceof Middleware) {
+                    $middlewares = array_merge($middlewares, $instance->middleware);
+                    continue;
+                }
+
+                if ($instance instanceof Name) {
+                    $name = $instance->name;
+                    continue;
+                }
+
+                if ($instance instanceof Where) {
+                    $pattern = $instance->pattern;
+                    continue;
+                }
+
+                if ($instance instanceof Attribute\Route\Route) {
+                    [
+                        'method'     => $httpMethod,
+                        'expression' => $uri,
+                    ] = $instance->route;
+                    $found = true;
+                }
+            }
+
+            if (true === $found) {
+                $classes[] = [
+                    'method'     => $httpMethod,
+                    'patterns'   => $pattern,
+                    'uri'        => $prefixUri . $uri,
+                    'expression' => self::mapPatterns($prefixUri . $uri, self::$patterns),
+                    'function'   => [$className, $method->getName()],
+                    'middleware' => $middlewares,
+                    'name'       => $prefixName . $name,
+                ];
+            }
+        }
+
+        return $classes;
     }
 
     /**
