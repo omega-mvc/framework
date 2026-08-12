@@ -22,7 +22,7 @@ class ApcuStorageTest extends TestCase
             $this->markTestSkipped('APCu extension is not loaded or enabled for CLI.');
         }
 
-        $this->storage = new Apcu('test_');
+        $this->storage = new Apcu(['ttl' => 3600, 'prefix' => 'test_']);
         $this->storage->clear();
     }
 
@@ -227,10 +227,10 @@ class ApcuStorageTest extends TestCase
      */
     public function testItCanRemember(): void
     {
-        $value = $this->storage->remember('key1', 1, fn (): string => 'value1');
+        $value = $this->storage->remember('key1', fn (): string => 'value1', 1);
         $this->assertEquals('value1', $value);
         // second call should get from cache
-        $value = $this->storage->remember('key1', 1, fn (): string => 'value2');
+        $value = $this->storage->remember('key1', fn (): string => 'value2', 1);
         $this->assertEquals('value1', $value);
     }
 }

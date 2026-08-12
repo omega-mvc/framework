@@ -81,7 +81,7 @@ class ConfigBootstrapper
     {
         $config = $this->loadConfiguration($app);
 
-        $app->set('config', fn () => new ConfigRepository($config));
+        $app->loadConfig(new ConfigRepository($config));
 
         date_default_timezone_set(env('APP_TIMEZONE') ?? 'UTC');
     }

@@ -5,7 +5,10 @@ return [
     'BASEURL'               => '/',
  //   'timezone'   => env('APP_TIMEZONE', 'UTC'),
     'APP_KEY'               => '',
-    'environment' => 'prod',
+    'environment'           => 'prod',
+    'name'                  => 'Omega',
+    'version'               => '2.0.0',
+    'debug'                 => false,
 
     'COMMAND_PATH'          => DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'Commands' . DIRECTORY_SEPARATOR,
     'CONTROLLER_PATH'       => DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'Controllers' . DIRECTORY_SEPARATOR,
@@ -58,4 +61,41 @@ return [
         '.php',
     ],
     'COMPILED_VIEW_PATH' => DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR, // phpcs:ignore
+
+    // cache config
+    'cache' => [
+        'default' => 'file',
+        'storage' => [
+            'file'   => [
+                'ttl'  => 3600,
+                'path' => DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR,
+            ],
+            'memory' => [
+                'ttl' => 3600,
+            ],
+        ],
+    ],
+
+    // db config
+    'db' => [
+        'default'     => 'sqlite',
+        'connections' => [
+            'sqlite' => [
+                'driver'   => 'sqlite',
+                'database' => DIRECTORY_SEPARATOR . 'database' . DIRECTORY_SEPARATOR . 'database.sqlite',
+            ],
+        ],
+    ],
+
+    // logging config
+    'logging' => [
+        'default' => 'stream',
+        'stream'  => [
+            'type'    => 'stream',
+            'path'    => DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs'
+                . DIRECTORY_SEPARATOR . 'omega.log',
+            'minimum' => 'debug',
+            'options' => [],
+        ],
+    ],
 ];

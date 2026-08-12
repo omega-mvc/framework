@@ -34,7 +34,6 @@ use function array_filter;
 use function array_walk;
 use function count;
 use function in_array;
-use function Omega\Environment\env;
 use function str_replace;
 
 use const DIRECTORY_SEPARATOR;
@@ -420,11 +419,22 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
                 fn ($p) => $this->basePath . $p,
                 [set_path('resources.views')]
             ),
-            'environment'             => env('APP_ENV'),
-            'app.debug'               => env('APP_DEBUG'),
-            'app.name'                => env('APP_NAME'),
-            'app.version'             => env('APP_VERSION')
         ];
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     */
+    public function loadConfig(ConfigRepository $configs): void
+    {
+        $this->set('config', fn (): ConfigRepository => $configs);
+
+        $this->set('environment', $configs['environment']);
+        $this->set('app.name', $configs['name']);
+        $this->set('app.version', $configs['version']);
+        $this->set('app.debug', $configs['debug']);
     }
 
     /**

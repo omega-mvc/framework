@@ -26,6 +26,10 @@ class RedisConnector
      */
     public function connect(array $config): object
     {
+	if (false === extension_loaded('redis')) {
+            throw new \RuntimeException('The Redis extension is not loaded.');
+        }
+
         $redis = new PhpRedis();
 
         $timeout       = (float) ($config['timeout'] ?? 0.0);

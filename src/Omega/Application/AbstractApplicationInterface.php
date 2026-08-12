@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
+use Omega\Config\ConfigRepository;
 use Omega\Container\AbstractServiceProvider;
 
 /**
@@ -167,6 +168,18 @@ interface AbstractApplicationInterface
      * @return string The resolved application version.
      */
     public function getVersion(): string;
+
+    /**
+     * Load the application configuration repository.
+     *
+     * Binds the given {@see ConfigRepository} instance to the container and
+     * resolves the application identity (environment, debug mode, name and
+     * version) from the loaded configuration.
+     *
+     * @param ConfigRepository $configs The configuration repository to bind.
+     * @return void
+     */
+    public function loadConfig(ConfigRepository $configs): void;
 
     /**
      * Get the default application bindings and path definitions.
