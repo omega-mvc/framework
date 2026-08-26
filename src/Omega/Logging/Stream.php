@@ -14,12 +14,12 @@ declare(strict_types=1);
 
 namespace Omega\Logging;
 
-use DateTime;
 use DateMalformedStringException;
+use Omega\Logging\Exception\LogArgumentException;
+use Omega\Time\Now;
 use Psr\Log\AbstractLogger;
 use Psr\Log\LogLevel;
 use RuntimeException;
-use Omega\Logging\Exception\LogArgumentException;
 use Stringable;
 
 use function array_keys;
@@ -27,9 +27,8 @@ use function array_merge;
 use function array_reduce;
 use function date;
 use function dirname;
-use function file_exists;
-use function floor;
 use function fclose;
+use function file_exists;
 use function fflush;
 use function fopen;
 use function fwrite;
@@ -37,10 +36,8 @@ use function is_resource;
 use function is_writable;
 use function json_encode;
 use function mkdir;
-use function microtime;
 use function preg_replace;
 use function rtrim;
-use function sprintf;
 use function strlen;
 use function str_contains;
 use function str_repeat;
@@ -294,7 +291,7 @@ class Stream extends AbstractLogger
      */
     public function setDateFormat(string $dateFormat): void
     {
-        $this->options['dateformat'] = $dateFormat;
+        $this->options['dateFormat'] = $dateFormat;
     }
 
     /**
@@ -407,23 +404,17 @@ class Stream extends AbstractLogger
     /**
      * Gets the correctly formatted Date/Time for the log entry.
      *
-     * PHP DateTime is dump, and you have to resort to trickery to get microseconds
-     * to work correctly, so here it is.
-     *
      * @return string Return the formatted timestamp.
      * @throws DateMalformedStringException
      */
     private function getTimestamp(): string
     {
-        $originalTime = microtime(true);
-        $micro        = sprintf('%06d', ($originalTime - floor($originalTime)) * 1000000);
-        $date         = new DateTime(date('Y-m-d H:i:s.' . $micro, (int)$originalTime));
+        $now    = new Now();
+        $format = is_string($this->options['dateFormat'])
+            ? $this->options['dateFormat']
+            : 'Y-m-d H:i:s.u';
 
-        if (is_string($this->options['dateFormat'])) {
-            return $date->format($this->options['dateFormat']);
-        }
-
-        return $date->format('Y-m-d H:i:s.u');  // Default fallback
+        return $now->format($format);
     }
 
     /**

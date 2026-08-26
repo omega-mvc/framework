@@ -18,6 +18,8 @@ use Omega\Application\ApplicationInterface;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Event\Dispatcher\DispatcherInterface;
+use Omega\Event\Events\ExceptionEvent;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Exceptions\HttpResponseException;
 use Omega\Http\Request;
@@ -152,6 +154,12 @@ class ExceptionHandler
                 'trace'     => $th->getTraceAsString(),
             ]
         );
+
+        if ($this->app->has(DispatcherInterface::class)) {
+            /** @var DispatcherInterface $events */
+            $events = $this->app->get(DispatcherInterface::class);
+            $events->dispatch(ExceptionEvent::create($th, $level));
+        }
     }
 
     /**

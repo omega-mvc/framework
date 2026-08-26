@@ -24,6 +24,7 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Cron\CronServiceProvider;
 use Omega\Database\DatabaseServiceProvider;
+use Omega\Event\EventServiceProvider;
 use Omega\Exceptions\WhoopsServiceProvider;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\MacroServiceProvider;
@@ -67,6 +68,7 @@ class Application extends AbstractApplication implements ApplicationInterface
     protected array $providers = [
         WhoopsServiceProvider::class,
         LoggingServiceProvider::class,
+        EventServiceProvider::class,
         CronServiceProvider::class,
         HashServiceProvider::class,
         RouteServiceProvider::class,

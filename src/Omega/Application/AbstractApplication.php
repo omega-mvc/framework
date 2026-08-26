@@ -51,7 +51,7 @@ use const DIRECTORY_SEPARATOR;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-abstract class AbstractApplication extends Container implements AbstractApplicationInterface
+abstract class AbstractApplication extends Container implements ApplicationInterface
 {
     /** @var Application|null Currently active Application runtime instance. */
     protected static ?Application $app = null;
@@ -176,7 +176,6 @@ abstract class AbstractApplication extends Container implements AbstractApplicat
 
         $this->set('app', $this);
         $this->set(ApplicationInterface::class, $this);
-        //$this->set(ContainerInterface::class, $this);
 
         $this->set(
             ApplicationManifest::class,

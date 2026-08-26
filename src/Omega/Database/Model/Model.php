@@ -25,6 +25,8 @@ use Omega\Database\Query\Join\InnerJoin;
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Select;
 use Omega\Database\Query\Where;
+use Omega\Event\Dispatcher\DispatcherInterface;
+use Omega\Event\Events\ModelEvent;
 use ReturnTypeWillChange;
 use Traversable;
 
@@ -101,6 +103,9 @@ class Model implements ArrayAccess, IteratorAggregate
 
     /** @var array<string, string> Sorting order, key => column, value => ASC|DESC */
     protected array $sortOrder  = [];
+
+    /** @var DispatcherInterface|null Static event dispatcher instance */
+    protected static ?DispatcherInterface $dispatcher = null;
 
     /**
      * Model class constructor.
@@ -374,6 +379,8 @@ class Model implements ArrayAccess, IteratorAggregate
             }
         }
 
+        $this->dispatchEvent('model.created', ModelEvent::created($this));
+
         return true;
     }
 
@@ -417,7 +424,13 @@ class Model implements ArrayAccess, IteratorAggregate
             ->update()
             ->values($this->changes());
 
-        return $this->changing($this->execute($update));
+        $result = $this->changing($this->execute($update));
+
+        if ($result) {
+            $this->dispatchEvent('model.saved', ModelEvent::saved($this, false));
+        }
+
+        return $result;
     }
 
     /**
@@ -429,7 +442,13 @@ class Model implements ArrayAccess, IteratorAggregate
     {
         $delete = Query::from($this->tableName, $this->pdo)->delete();
 
-        return $this->changing($this->execute($delete));
+        $result = $this->changing($this->execute($delete));
+
+        if ($result) {
+            $this->dispatchEvent('model.deleted', ModelEvent::deleted($this));
+        }
+
+        return $result;
     }
 
     /**
@@ -786,6 +805,7 @@ class Model implements ArrayAccess, IteratorAggregate
         }
 
         if ($model->insert()) {
+            $model->dispatchEvent('model.saved', ModelEvent::saved($model, true));
             return $model;
         }
 
@@ -892,6 +912,41 @@ class Model implements ArrayAccess, IteratorAggregate
         }
 
         return $change;
+    }
+
+    /**
+     * Dispatch an event if the event dispatcher is available.
+     *
+     * @param string $eventName The event name.
+     * @param mixed  $event     The event instance.
+     * @return void
+     */
+    private function dispatchEvent(string $eventName, mixed $event): void
+    {
+        if (static::$dispatcher !== null) {
+            static::$dispatcher->dispatch($event);
+        }
+    }
+
+    /**
+     * Set the static event dispatcher instance.
+     *
+     * @param DispatcherInterface $dispatcher The event dispatcher.
+     * @return void
+     */
+    public static function setEventDispatcher(DispatcherInterface $dispatcher): void
+    {
+        static::$dispatcher = $dispatcher;
+    }
+
+    /**
+     * Get the static event dispatcher instance.
+     *
+     * @return DispatcherInterface|null The event dispatcher or null if not set.
+     */
+    public static function getEventDispatcher(): ?DispatcherInterface
+    {
+        return static::$dispatcher;
     }
 
     /**

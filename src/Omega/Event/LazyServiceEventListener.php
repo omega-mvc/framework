@@ -15,9 +15,9 @@ declare(strict_types=1);
 namespace Omega\Event;
 
 use Omega\Container\ContainerInterface;
-use Omega\Event\Exception\ServiceMethodNotFoundException;
-use Omega\Event\Exception\ServiceNotRegisteredException;
-use Omega\Event\Exception\InvalidServiceListenerException;
+use Omega\Event\Exceptions\ServiceMethodNotFoundException;
+use Omega\Event\Exceptions\ServiceNotRegisteredException;
+use Omega\Event\Exceptions\InvalidServiceListenerException;
 use Omega\Event\Exceptions\InvalidServiceMethodException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
