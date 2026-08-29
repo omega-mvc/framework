@@ -74,6 +74,38 @@ class DatabaseManager implements ConnectionInterface
     }
 
     /**
+     * Get all currently instantiated database connections.
+     *
+     * @return array<string, ConnectionInterface> Connection instances keyed by name.
+     */
+    public function getConnections(): array
+    {
+        return $this->connections;
+    }
+
+    /**
+     * Reset request-scoped state on all instantiated connections.
+     *
+     * Flushes accumulated query logs and rolls back any transaction left open
+     * by the previous request. Safe to call at the boundary of every request
+     * in a persistent worker.
+     *
+     * @return void
+     */
+    public function resetConnectionsForRequest(): void
+    {
+        foreach ($this->connections as $connection) {
+            if (method_exists($connection, 'flushLogs')) {
+                $connection->flushLogs();
+            }
+
+            if (method_exists($connection, 'inTransaction') && $connection->inTransaction()) {
+                $connection->cancelTransaction();
+            }
+        }
+    }
+
+    /**
      * Retrieve a database connection by name.
      *
      * If the connection has not been created yet, it will be instantiated

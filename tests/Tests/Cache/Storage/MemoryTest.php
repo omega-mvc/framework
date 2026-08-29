@@ -152,7 +152,7 @@ final class MemoryTest extends TestCase
      */
     public function testSetMultiple(): void
     {
-        $this->assertFalse($this->storage->setMultiple(['key7' => 'value7', 'key8' => 'value8']));
+        $this->assertTrue($this->storage->setMultiple(['key7' => 'value7', 'key8' => 'value8']));
         $this->assertEquals('value7', $this->storage->get('key7'));
         $this->assertEquals('value8', $this->storage->get('key8'));
     }

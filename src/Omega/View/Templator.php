@@ -169,6 +169,22 @@ class Templator
     }
 
     /**
+     * Clear all recorded template dependencies.
+     *
+     * The dependencies array grows with every render on the shared Templator
+     * singleton. In a persistent worker this must be cleared at each request
+     * boundary to prevent unbounded growth.
+     *
+     * @return self Returns the Templator instance for method chaining.
+     */
+    public function clearDependencies(): self
+    {
+        $this->dependency = [];
+
+        return $this;
+    }
+
+    /**
      * Render a template with provided data, optionally using cached compiled templates.
      *
      * @param string               $templateName Template file name without suffix.

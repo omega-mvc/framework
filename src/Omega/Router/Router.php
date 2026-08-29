@@ -43,6 +43,8 @@ use function call_user_func_array;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @phpstan-import-type RouteData from Route
  */
 class Router extends AbstractRouter
 {
@@ -50,22 +52,12 @@ class Router extends AbstractRouter
      * Adds a new route to the internal collection if it contains
      * the required fields: expression, function, and method.
      *
-     * @param array{
-     *     expression:string,
-     *     function:callable,
-     *     method:string
-     * } $route  Route definition.
+     * @param array{expression:string, function:callable, method:string} $route  Route definition.
      * @return void
      */
     public static function addRoutes(array $route): void
     {
-        if (
-            isset($route['expression'])
-            && isset($route['function'])
-            && isset($route['method'])
-        ) {
-            self::$routes[] = new Route($route);
-        }
+        self::$routes[] = new Route($route);
     }
 
     /**
@@ -105,7 +97,7 @@ class Router extends AbstractRouter
      *
      * Each element of the array is passed to addRoutes().
      *
-     * @param array<int, array> $arrayRoutes  An array of route definitions.
+     * @param array<int, array{expression:string, function:callable, method:string}> $arrayRoutes  An array of route definitions.
      * @return void
      */
     public static function mergeRoutes(array $arrayRoutes): void
@@ -148,7 +140,7 @@ class Router extends AbstractRouter
      * @param string                        $className         The class being processed.
      * @param ReflectionAttribute<object>[] $attributes        Class-level attributes.
      * @param ReflectionMethod[]            $attributesMethods Method-level attributes.
-     * @return array<int, array<string, string|array<string, string>>>  Parsed route definitions.
+     * @return list<RouteData>              Parsed route definitions.
      */
     private static function resolveRouteAttribute(
         string $className,
@@ -158,12 +150,14 @@ class Router extends AbstractRouter
         $prefixUri       = '';
         $prefixName      = '';
         $rootMiddlewares = [];
+        /** @var list<RouteData> $classes */
         $classes         = [];
 
         foreach ($attributes as $classAttribute) {
             $instance = $classAttribute->newInstance();
 
             if ($instance instanceof Middleware) {
+                /** @var array<int, class-string> $rootMiddlewares */
                 $rootMiddlewares = $instance->middleware;
             }
 
@@ -179,6 +173,7 @@ class Router extends AbstractRouter
         foreach ($attributesMethods as $method) {
             $middlewares = $rootMiddlewares;
             $name        = '';
+            /** @var array<string, string> $pattern */
             $pattern     = [];
             $uri         = '';
             $httpMethod  = '';
@@ -212,13 +207,15 @@ class Router extends AbstractRouter
             }
 
             if (true === $found) {
+                $methodValue = is_array($httpMethod) ? array_values($httpMethod) : $httpMethod;
+
                 $classes[] = [
-                    'method'     => $httpMethod,
+                    'method'     => $methodValue,
                     'patterns'   => $pattern,
                     'uri'        => $prefixUri . $uri,
                     'expression' => self::mapPatterns($prefixUri . $uri, self::$patterns),
                     'function'   => [$className, $method->getName()],
-                    'middleware' => $middlewares,
+                    'middleware' => array_values($middlewares),
                     'name'       => $prefixName . $name,
                 ];
             }
@@ -233,7 +230,7 @@ class Router extends AbstractRouter
      * @param callable $function Callback to execute.
      * @return void
      */
-    public static function pathNotFound(mixed $function): void
+    public static function pathNotFound(?callable $function): void
     {
         self::$pathNotFound = $function;
     }
@@ -244,7 +241,7 @@ class Router extends AbstractRouter
      * @param callable $function Callback to execute.
      * @return void
      */
-    public static function methodNotAllowed(mixed $function): void
+    public static function methodNotAllowed(?callable $function): void
     {
         self::$methodNotAllowed = $function;
     }
@@ -262,9 +259,14 @@ class Router extends AbstractRouter
         string $basePath = '',
         bool $caseMatters = false,
         bool $trailingSlashMatters = false,
-        bool $multiMatch = false
+        bool $multiMatch = false,
+        ?string $uri = null,
+        ?string $method = null
     ): mixed {
-        $dispatcher = RouteDispatcher::dispatchFrom($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'], self::$routes);
+        $uri    = $uri    ?? (is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : '/');
+        $method = $method ?? (is_string($_SERVER['REQUEST_METHOD'] ?? null) ? $_SERVER['REQUEST_METHOD'] : 'GET');
+
+        $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, self::$routes);
 
         $dispatch = $dispatcher
             ->basePath($basePath)
@@ -272,23 +274,27 @@ class Router extends AbstractRouter
             ->trailingSlashMatters($trailingSlashMatters)
             ->multiMatch($multiMatch)
             ->run(
-                fn ($current, $params) => call_user_func_array($current, $params),
-                fn ($path)             => call_user_func_array(self::$pathNotFound, [$path]),
-                fn ($path, $method)    => call_user_func_array(self::$methodNotAllowed, [$path, $method])
+                fn (callable $current, array $params) => call_user_func_array($current, $params),
+                fn (string $path)        => self::$pathNotFound ? call_user_func_array(self::$pathNotFound, [$path]) : null,
+                fn (string $path, string $method) =>
+                    self::$methodNotAllowed ? call_user_func_array(self::$methodNotAllowed, [$path, $method]) : null
             );
 
         self::$current = $dispatcher->current();
 
         // Execute middleware
         $middlewareUsed = [];
-        foreach ($dispatch['middleware'] as $middleware) {
+        foreach ((array) $dispatch['middleware'] as $middleware) {
             if (in_array($middleware, $middlewareUsed)) {
                 continue;
             }
 
             $middlewareUsed[] = $middleware;
             $middlewareClass  = new $middleware();
-            $middlewareClass->handle();
+
+            if (method_exists($middlewareClass, 'handle')) {
+                $middlewareClass->handle();
+            }
         }
 
         return call_user_func_array($dispatch['callable'], $dispatch['params']);

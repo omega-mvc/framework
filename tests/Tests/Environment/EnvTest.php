@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\Environment Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support;
+namespace Tests\Environment;
 
 use Omega\Environment\Env;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,7 +31,7 @@ use Tests\FixturesPathTrait;
  * type casting of string representations.
  *
  * @category  Tests
- * @package   Support
+ * @package   Environment
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

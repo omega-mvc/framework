@@ -37,7 +37,17 @@ use ReturnTypeWillChange;
  *
  * @implements ArrayAccess<string, mixed>
  *
- * @method route()
+ * @phpstan-type RouteData array{
+ *     method: string|array<int, string>,
+ *     uri?: string,
+ *     expression?: string,
+ *     function: mixed,
+ *     patterns?: array<string, string>,
+ *     middleware?: array<int, class-string>,
+ *     name?: string
+ * }
+ *
+ * @method RouteData route()
  */
 class Route implements ArrayAccess
 {
@@ -49,6 +59,10 @@ class Route implements ArrayAccess
      * - name
      * - middleware
      * - patterns
+     *
+     * Stored as a generic string-keyed array because individual offsets are
+     * mutated through the {@see ArrayAccess} contract (offsetSet/offsetUnset)
+     * and thus cannot be narrowed to the {@see RouteData} shape.
      *
      * @var array<string, mixed>
      */
@@ -67,15 +81,15 @@ class Route implements ArrayAccess
     /**
      * Create a new Route instance.
      *
-     * Injects the raw route array and automatically applies any active
-     * group name prefix from Router::$group['as'].
+     * Given any route definition array, applies any active group name
+     * prefix from Router::$group['as'].
      *
-     * @param array<string, mixed> $route Initial route definition
+     * @param RouteData $route Initial route definition
      * @return void
      */
     public function __construct(array $route)
     {
-        $this->prefixName = Router::$group['as'] ?? '';
+        $this->prefixName = (string) (Router::$group['as'] ?? '');
 
         $route['name'] ??= '';
         $route['name'] = $this->prefixName . $route['name'];
@@ -129,9 +143,13 @@ class Route implements ArrayAccess
      */
     public function middleware(array $middlewares): self
     {
+        $existing = (array) ($this->route['middleware'] ?? []);
+
         foreach ($middlewares as $middleware) {
-            $this->route['middleware'][] = $middleware;
+            $existing[] = $middleware;
         }
+
+        $this->route['middleware'] = $existing;
 
         return $this;
     }

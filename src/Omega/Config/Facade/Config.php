@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\Config\Facade;
 
 use Omega\Config\ConfigRepository;
+use Omega\Facade\AbstractFacade;
 
 /**
  * Facade for the Config service.

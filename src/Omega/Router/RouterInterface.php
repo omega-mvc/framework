@@ -25,6 +25,8 @@ use Exception;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @phpstan-import-type RouteData from Route
  */
 interface RouterInterface
 {
@@ -32,7 +34,7 @@ interface RouterInterface
      * Returns the list of registered routes in their normalized array form,
      * as provided by Route::route().
      *
-     * @return array<int, array<string, mixed>>  The list of routes.
+     * @return list<RouteData>  The list of routes.
      */
     public static function getRoutes(): array;
 
@@ -83,7 +85,7 @@ interface RouterInterface
      * The provided Closure is executed inside this temporary context and the
      * previous configuration is restored afterward.
      *
-     * @param array<string, string|string> $setupGroup Group configuration options.
+     * @param array{prefix?: string, middleware?: array<int, class-string>, as?: string} $setupGroup Group configuration options.
      * @param Closure $group The callback defining grouped routes.
      * @return void
      */
@@ -189,7 +191,7 @@ interface RouterInterface
      * @param callable $function Callback to execute.
      * @return void
      */
-    public static function pathNotFound(mixed $function): void;
+    public static function pathNotFound(?callable $function): void;
 
     /**
      * Sets the callback executed when a route is found but the HTTP method is not allowed.
@@ -197,7 +199,7 @@ interface RouterInterface
      * @param callable $function Callback to execute.
      * @return void
      */
-    public static function methodNotAllowed(mixed $function): void;
+    public static function methodNotAllowed(?callable $function): void;
 
     /**
      * Executes the routing process.
@@ -212,6 +214,8 @@ interface RouterInterface
         string $basePath = '',
         bool $caseMatters = false,
         bool $trailingSlashMatters = false,
-        bool $multiMatch = false
+        bool $multiMatch = false,
+        ?string $uri = null,
+        ?string $method = null
     ): mixed;
 }

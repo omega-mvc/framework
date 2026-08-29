@@ -22,6 +22,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ExceptionHandler;
+use Omega\Database\DatabaseManager;
 use Omega\Middleware\MaintenanceMiddleware;
 use Omega\Router\Router;
 use Omega\Application\Bootstrapper\BootProviders;
@@ -188,6 +189,37 @@ class Http
         }
 
         $this->app->terminate();
+
+        $this->resetForRequest();
+    }
+
+    /**
+     * Reset all request-scoped state in preparation for the next request.
+     *
+     * Called at the end of the request cycle by terminate(). In a persistent
+     * worker (e.g. RoadRunner) this prevents state accumulated by a request
+     * from leaking into the next one: it flushes connection logs, rolls back
+     * any dangling transaction, resets request-scoped container instances,
+     * static Router/Facade state and the Templator dependency map.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    protected function resetForRequest(): void
+    {
+        if (method_exists($this->app, 'bound') && $this->app->bound(DatabaseManager::class)) {
+            $manager = $this->app->get(DatabaseManager::class);
+            if ($manager instanceof DatabaseManager) {
+                $manager->resetConnectionsForRequest();
+            }
+        }
+
+        if (method_exists($this->app, 'resetForRequest')) {
+            $this->app->resetForRequest();
+        }
     }
 
     /**

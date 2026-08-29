@@ -73,7 +73,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
         }
 
         if (!$strategy instanceof MergeStrategy) {
-            $strategy = MergeStrategy::from($strategy ?? MergeStrategy::REPLACE_INDEXED);
+            $strategy = $strategy !== null ? MergeStrategy::from($strategy) : MergeStrategy::REPLACE_INDEXED;
         }
 
         $mergedStore = $this->mergeArrays($config, $configuration->getAll(), $strategy);

@@ -1,0 +1,7 @@
+parameters:
+	level: 10
+	paths:
+		- src
+	tmpDir: cache/phpstan
+	excludePaths:
+		- tests/Tests/fixtures

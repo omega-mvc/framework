@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Facades Package.
+ * Part of Omega - Tests\Facades Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Facades\Support;
+namespace Tests\Facades\Support;
 
 use Omega\Facade\AbstractFacade;
 
@@ -24,8 +24,8 @@ use Omega\Facade\AbstractFacade;
  * It points to a real, test-specific binding named 'test'.
  *
  * @category   Tests
- * @package    Support
- * @subpackage Facades\Support
+ * @package    Facades
+ * @subpackage Support
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini

@@ -11,7 +11,7 @@ class UnknownRoutePatternException extends InvalidArgumentException
     public function __construct(string $pattern)
     {
         parent::__construct(
-            sprintf('Unknown route pattern [%s].', $pattern)
+            sprintf('Unknown pattern type: %s', $pattern)
         );
     }
 }

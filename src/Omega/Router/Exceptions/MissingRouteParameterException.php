@@ -8,28 +8,35 @@ use InvalidArgumentException;
 
 class MissingRouteParameterException extends InvalidArgumentException
 {
-    public function __construct(
-        string|int $identifier,
-        ?string $context = null
-    ) {
-        $message = is_int($identifier)
-            ? sprintf('Missing route parameter at index [%d].', $identifier)
-            : sprintf('Missing route parameter [%s].', $identifier);
-
-        if ($context !== null) {
-            $message .= sprintf(' Context: %s.', $context);
-        }
-
+    public function __construct(string $message)
+    {
         parent::__construct($message);
     }
 
     public static function named(string $name): self
     {
-        return new self($name, 'named parameter');
+        return new self(sprintf('Missing named parameter: %s', $name));
     }
 
-    public static function indexed(int $index): self
+    public static function namedIndexed(int $index, string $name): self
     {
-        return new self($index, 'indexed parameter');
+        return new self(sprintf('Missing parameter at index %d for named parameter %s', $index, $name));
+    }
+
+    public static function patternAssoc(string $pattern, int $index): self
+    {
+        $type = trim($pattern, '(:)');
+
+        return new self(sprintf(
+            "Missing parameter for pattern {%s}. Provide either numeric index {%d} or key '{%s}'",
+            $pattern,
+            $index,
+            $type
+        ));
+    }
+
+    public static function patternIndexed(int $index, string $pattern): self
+    {
+        return new self(sprintf('Missing parameter at index %d for pattern %s', $index, $pattern));
     }
 }

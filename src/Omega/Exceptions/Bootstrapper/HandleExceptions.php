@@ -70,6 +70,9 @@ class HandleExceptions
     /** @var Application The application instance used by this handler. */
     private ApplicationInterface $app;
 
+    /** @var bool Whether the global handlers have already been registered this process (persists across requests). */
+    private static bool $handlersRegistered = false;
+
     /** @var string|null Reserved memory buffer to allow handling fatal errors without running out of memory. */
     public static ?string $reserveMemory = null;
 
@@ -89,6 +92,12 @@ class HandleExceptions
      */
     public function bootstrap(ApplicationInterface $app): void
     {
+        if (self::$handlersRegistered) {
+            $this->app = $app;
+
+            return;
+        }
+
         self::$reserveMemory = str_repeat('x', 32_768);
 
         $this->app = $app;
@@ -106,6 +115,8 @@ class HandleExceptions
         if ('testing' !== $app->getEnvironment()) {
             ini_set('display_errors', 'Off');
         }
+
+        self::$handlersRegistered = true;
     }
 
     /**

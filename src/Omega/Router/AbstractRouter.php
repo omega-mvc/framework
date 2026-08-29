@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Omega\Router;
 
 use Closure;
-use Omega\Router\Exception\RouteNotFoundException;
+use Omega\Router\Exceptions\RouteNotFoundException;
 
 use function array_any;
 use function array_keys;
@@ -13,6 +13,11 @@ use function array_values;
 use function preg_replace_callback;
 use function str_replace;
 
+/**
+ * Base router implementation shared by concrete routers.
+ *
+ * @phpstan-import-type RouteData from Route
+ */
 abstract class AbstractRouter implements RouterInterface
 {
     /**
@@ -21,7 +26,6 @@ abstract class AbstractRouter implements RouterInterface
      * @var Route[]
      */
     protected static array $routes = [];
-
     /**
      * The route that matched the current request, if any.
      *
@@ -53,9 +57,10 @@ abstract class AbstractRouter implements RouterInterface
      *
      * Supported keys:
      * - 'prefix'     string
-     * - 'middleware' string[]
+     * - 'middleware' class-string[]
+     * - 'as'         string (optional route name prefix)
      *
-     * @var array<string, string|string[]>
+     * @var array{prefix: string, middleware: array<int, class-string>, as?: string}
      */
     public static array $group = [
         'prefix'     => '',
@@ -80,6 +85,8 @@ abstract class AbstractRouter implements RouterInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return list<RouteData>  The list of routes.
      */
     public static function getRoutes(): array
     {
@@ -113,11 +120,20 @@ abstract class AbstractRouter implements RouterInterface
     public static function reset(): void
     {
         self::$routes           = [];
+        self::$current          = null;
         self::$pathNotFound     = null;
         self::$methodNotAllowed = null;
         self::$group            = [
             'prefix'     => '',
             'middleware' => [],
+        ];
+        self::$patterns         = [
+            '(:id)'   => '(\d+)',
+            '(:num)'  => '([0-9]*)',
+            '(:text)' => '([a-zA-Z]*)',
+            '(:any)'  => '([0-9a-zA-Z_+-]*)',
+            '(:slug)' => '([0-9a-zA-Z_-]*)',
+            '(:all)'  => '(.*)',
         ];
     }
 
@@ -164,20 +180,31 @@ abstract class AbstractRouter implements RouterInterface
      */
     public static function group(array $setupGroup, Closure $group): void
     {
-        self::$group['middleware'] ??= [];
+        $prefix     = $setupGroup['prefix'] ?? self::$group['prefix'];
+        $name       = $setupGroup['as'] ?? self::$group['as'] ?? null;
+        $middleware = self::$group['middleware'];
 
-        // backup current
+        foreach ($setupGroup['middleware'] ?? [] as $entry) {
+            $middleware[] = $entry;
+        }
+
+        $grouped = [
+            'prefix'     => $prefix,
+            'middleware' => $middleware,
+        ];
+
+        if (is_string($name)) {
+            $grouped['as'] = $name;
+        }
+
         $resetGroup = self::$group;
 
         $routeGroup = new RouteGroup(
         // setup
-            function () use ($setupGroup) {
-                foreach ((array) self::$group['middleware'] as $middleware) {
-                    $setupGroup['middleware'][] = $middleware;
-                }
-                self::$group = $setupGroup;
+            function () use ($grouped) {
+                self::$group = $grouped;
             },
-            // reset
+        // reset
             function () use ($resetGroup) {
                 self::$group = $resetGroup;
             }
@@ -215,8 +242,9 @@ abstract class AbstractRouter implements RouterInterface
      */
     public static function match(array|string $method, string $uri, array|callable|string $callback): Route
     {
+        $method     = is_array($method) ? array_values($method) : $method;
         $uri        = self::$group['prefix'] . $uri;
-        $middleware = self::$group['middleware'] ?? [];
+        $middleware = self::$group['middleware'];
 
         return self::$routes[] = new Route([
             'method'      => $method,
@@ -290,7 +318,9 @@ abstract class AbstractRouter implements RouterInterface
         string $basePath = '',
         bool $caseMatters = false,
         bool $trailingSlashMatters = false,
-        bool $multiMatch = false
+        bool $multiMatch = false,
+        ?string $uri = null,
+        ?string $method = null
     ): mixed;
 
     /**
@@ -310,7 +340,7 @@ abstract class AbstractRouter implements RouterInterface
 
         $expression = str_replace($userPattern, $allowPattern, $url);
 
-        return preg_replace_callback(
+        $result = preg_replace_callback(
             '/\((\w+):(\w+)\)/',
             static function (array $matches) use ($patterns): string {
                 $pattern = $patterns["(:" . $matches[2] . ")"] ?? '[^/]+';
@@ -320,5 +350,7 @@ abstract class AbstractRouter implements RouterInterface
             },
             $expression
         );
+
+        return $result ?? $url;
     }
 }

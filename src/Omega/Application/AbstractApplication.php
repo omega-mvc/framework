@@ -24,6 +24,8 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
+use Omega\Router\Router;
+use Omega\Facade\AbstractFacade;
 use Omega\View\Templator;
 use Omega\View\Vite;
 use Psr\Container\ContainerExceptionInterface;
@@ -291,6 +293,10 @@ abstract class AbstractApplication extends Container implements ApplicationInter
         $this->bootingCallbacks  = [];
         $this->bootedCallbacks   = [];
 
+        Router::reset();
+
+        AbstractFacade::flushInstance();
+
         parent::flush();
     }
 
@@ -349,6 +355,39 @@ abstract class AbstractApplication extends Container implements ApplicationInter
             $this->call($this->terminateCallback[$index]);
 
             $index++;
+        }
+    }
+
+    /**
+     * Reset all request-scoped state in preparation for the next request.
+     *
+     * Intended to be called at the end of every request in a persistent
+     * worker (e.g. RoadRunner). It resets the terminate callbacks, clears
+     * request-scoped container instances, resets static Router & Facade
+     * state and clears the Templator's accumulated dependencies.
+     *
+     * Connection-level cleanup (log flush, dangling transaction rollback)
+     * is handled by DatabaseManager::resetConnectionsForRequest().
+     *
+     * @return void
+     */
+    public function resetForRequest(): void
+    {
+        $this->terminateCallback = [];
+        $this->bootingCallbacks  = [];
+        $this->bootedCallbacks   = [];
+
+        $this->resetRequestScope();
+
+        Router::reset();
+
+        AbstractFacade::flushInstance();
+
+        if (method_exists($this, 'bound') && $this->bound('view.instance')) {
+            $templator = $this->get('view.instance');
+            if ($templator instanceof Templator) {
+                $templator->clearDependencies();
+            }
         }
     }
 

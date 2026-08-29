@@ -103,11 +103,45 @@ abstract class AbstractConnection implements ConnectionInterface
         try {
             return new PDO($dsn, $username ?? '', $password ?? '', $options);
         } catch (PDOException $e) {
-            if ($this->isLostConnection($e)) {
+            if ($this->causedByLostConnection($e)) {
                 return new PDO($dsn, $username ?? '', $password ?? '', $options);
             }
 
             throw $e;
+        }
+    }
+
+    /**
+     * Reconnect if the persisted connection has gone away.
+     *
+     * Safely rebuilds a dropped database link in a long-lived (RoadRunner)
+     * worker instead of leaving a dead PDO handle cached for the process
+     * lifetime. It is invoked at the `beginTransaction()` boundary only:
+     * running the `SELECT 1` ping from `query()`/`execute()` collides with
+     * the open result sets of nested subqueries (SQLSTATE[HY000] 2014).
+     */
+    protected function reconnectIfLost(): void
+    {
+        if (null === $this->pdo) {
+            return;
+        }
+
+        try {
+            $result = $this->pdo->query('SELECT 1');
+            if ($result instanceof PDOStatement) {
+                $result->closeCursor();
+            }
+        } catch (Throwable $e) {
+            if (!$this->causedByLostConnection($e)) {
+                throw $e;
+            }
+
+            $this->pdo = $this->createPdo(
+                $this->buildDsn(),
+                $this->configs['username'] ?? null,
+                $this->configs['password'] ?? null,
+                $this->mergeOptions($this->configs['options'] ?? [])
+            );
         }
     }
 
@@ -311,6 +345,8 @@ abstract class AbstractConnection implements ConnectionInterface
      */
     public function beginTransaction(): bool
     {
+        $this->reconnectIfLost();
+
         return $this->pdo->beginTransaction();
     }
 
@@ -328,6 +364,19 @@ abstract class AbstractConnection implements ConnectionInterface
     public function cancelTransaction(): bool
     {
         return $this->pdo->rollBack();
+    }
+
+    /**
+     * Determine whether a transaction is currently active on the connection.
+     *
+     * Used to detect dangling transactions at a request boundary so they can
+     * be rolled back before the persistent worker reuses the connection.
+     *
+     * @return bool True if a transaction is currently in progress.
+     */
+    public function inTransaction(): bool
+    {
+        return $this->pdo->inTransaction();
     }
 
     /**

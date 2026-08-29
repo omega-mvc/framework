@@ -186,7 +186,7 @@ final class ConfigBuilderTest extends TestCase
             $this->builder
                 ->addConfiguration($source_1)
                 ->addConfiguration($source_2)
-                ->build(MergeStrategy::from(MergeStrategy::MERGE_INDEXED))
+                ->build(MergeStrategy::MERGE_INDEXED)
                 ->getAll()
         );
     }

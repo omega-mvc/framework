@@ -21,6 +21,7 @@ use Omega\Cache\AbstractCache;
 use Omega\Cache\Traits\CacheTimeTrait;
 
 use function array_key_exists;
+use function count;
 use function time;
 
 /**
@@ -64,6 +65,9 @@ class Memory extends AbstractCache
      */
     protected array $storage = [];
 
+    /** @var int Maximum number of entries allowed before least-recently-written entries are evicted. */
+    protected int $maxItems;
+
     /**
      * Memory constructor.
      *
@@ -72,12 +76,19 @@ class Memory extends AbstractCache
      * Required keys in $options:
      * - 'ttl' : int|DateInterval  The default time-to-live for cache items.
      *
+     * Optional keys in $options:
+     * - 'maxItems' : int  Upper bound on entries kept in memory (default 1024).
+     *
      * @param array<string, mixed> $options Configuration options for the storage.
      * @return void
      */
     public function __construct(array $options)
     {
         parent::__construct($options['ttl']);
+
+        $this->maxItems = isset($options['maxItems']) && is_int($options['maxItems']) && $options['maxItems'] > 0
+            ? $options['maxItems']
+            : 1024;
     }
 
     /**
@@ -107,6 +118,12 @@ class Memory extends AbstractCache
      */
     public function set(string $key, mixed $value, int|DateInterval|null $ttl = null): bool
     {
+        $this->gc();
+
+        if (count($this->storage) >= $this->maxItems && !array_key_exists($key, $this->storage)) {
+            $this->evictLeastRecentlyWritten();
+        }
+
         $this->storage[$key] = [
             'value'     => $value,
             'timestamp' => $this->calculateExpirationTimestamp($ttl),
@@ -149,7 +166,7 @@ class Memory extends AbstractCache
             $this->set($key, $value, $ttl);
         }
 
-        return false;
+        return true;
     }
 
     /**
@@ -208,6 +225,49 @@ class Memory extends AbstractCache
     public static function isSupported(): bool
     {
         return true;
+    }
+
+    /**
+     * Garbage-collect entries whose TTL has expired but which were never read.
+     *
+     * Prevents the in-memory storage from growing without bound in a persistent
+     * worker when keys are written with a TTL but never retrieved.
+     *
+     * @return void
+     */
+    private function gc(): void
+    {
+        foreach ($this->storage as $key => $item) {
+            $expiresAt = $item['timestamp'] ?? 0;
+
+            if ($this->isExpired($expiresAt)) {
+                unset($this->storage[$key]);
+            }
+        }
+    }
+
+    /**
+     * Evict the single least-recently-written entry to stay within the size cap.
+     *
+     * @return void
+     */
+    private function evictLeastRecentlyWritten(): void
+    {
+        $oldestKey = null;
+        $oldestMtime = PHP_FLOAT_MAX;
+
+        foreach ($this->storage as $key => $item) {
+            $mtime = $item['mtime'] ?? 0;
+
+            if ($mtime < $oldestMtime) {
+                $oldestMtime = $mtime;
+                $oldestKey = $key;
+            }
+        }
+
+        if (null !== $oldestKey) {
+            unset($this->storage[$oldestKey]);
+        }
     }
 
     /**

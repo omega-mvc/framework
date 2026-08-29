@@ -65,6 +65,8 @@ use const ARRAY_FILTER_USE_KEY;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @phpstan-type DispatchResult array{callable: callable, params: array<int, mixed>, middleware: array<int, class-string>}
  */
 final class RouteDispatcher
 {
@@ -95,7 +97,7 @@ final class RouteDispatcher
     /** @var bool Whether to return multiple matches or only the first. */
     private bool $multiMatch = false;
 
-    /** @var array<string, mixed> Triggered action with callable and parameters after dispatch. */
+    /** @var DispatchResult Triggered action with callable and parameters after dispatch. */
     private array $trigger;
 
     /** @var Route|null The current matched route. */
@@ -197,7 +199,7 @@ final class RouteDispatcher
      * @param callable $found             Callback for a successful route match.
      * @param callable $notFound          Callback if no route matches.
      * @param callable $methodNotAllowed  Callback if the route exists but method is invalid.
-     * @return array<string, mixed> Triggered action with 'callable' and 'params'.
+     * @return DispatchResult Triggered action with 'callable' and 'params'.
      */
     public function run(callable $found, callable $notFound, callable $methodNotAllowed): array
     {
@@ -213,9 +215,9 @@ final class RouteDispatcher
     /**
      * Store the triggered callback with its parameters and middleware.
      *
-     * @param callable                   $callable   The callback to execute.
-     * @param array<int, mixed|string[]> $params     Parameters for the callback.
-     * @param class-string[]             $middleware Middleware classes to apply.
+     * @param callable       $callable   The callback to execute.
+     * @param array<int, mixed> $params   Parameters for the callback.
+     * @param class-string[] $middleware Middleware classes to apply.
      * @return void
      */
     private function trigger(callable $callable, array $params, array $middleware = []): void
@@ -223,7 +225,7 @@ final class RouteDispatcher
         $this->trigger = [
             'callable'      => $callable,
             'params'        => $params,
-            'middleware'    => $middleware,
+            'middleware'    => array_values($middleware),
         ];
     }
 
@@ -251,9 +253,11 @@ final class RouteDispatcher
         $routeMatchFound = false;
 
         foreach ($this->routes as $route) {
-            $expression         = $route['expression'];
+            $data = $route->route();
+
+            $expression         = (string) ($data['expression'] ?? '');
             $originalExpression = $expression;
-            $expression         = $this->makeRoutePatterns($expression, $route['patterns'] ?? []);
+            $expression         = $this->makeRoutePatterns($expression, (array) ($data['patterns'] ?? []));
 
             // Add basepath to matching string
             if ($basePath !== '' && $basePath !== '/') {
@@ -265,9 +269,9 @@ final class RouteDispatcher
                 $pathMatchFound = true;
 
                 // Cast allowed method to array if it's not one already, then run through all methods
-                foreach ((array) $route['method'] as $allowedMethod) {
+                foreach ((array) $data['method'] as $allowedMethod) {
                     // Check method match
-                    if (strtolower($method) !== strtolower($allowedMethod)) {
+                    if (strtolower($method) !== strtolower((string) $allowedMethod)) {
                         continue;
                     }
 
@@ -275,8 +279,8 @@ final class RouteDispatcher
 
                     $this->trigger(
                         callable: $this->found,
-                        params: [$route['function'], $parameters],
-                        middleware: $route['middleware'] ?? []
+                        params: [$data['function'], $parameters],
+                        middleware: (array) ($data['middleware'] ?? [])
                     );
                     $this->current               = $route;
                     $this->current['expression'] = "^{$originalExpression}$";
@@ -312,6 +316,7 @@ final class RouteDispatcher
     private function resolvePath(array|false $parsedUrl, string $basePath, bool $trailingSlashMatters): string
     {
         $parsedPath = $parsedUrl['path'] ?? null;
+        $parsedPath = null === $parsedPath ? null : (string) $parsedPath;
 
         /** @noinspection PhpDuplicateMatchArmBodyInspection */
         return match (true) {

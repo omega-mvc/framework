@@ -78,6 +78,9 @@ class Container implements ArrayAccess, ContainerInterface
 
     /** @var list<array> Stack of parameter overrides for resolving dependencies */
     protected array $with = [];
+
+    /** @var array<string, true> Bindings that are scoped to a single request */
+    protected array $requestScoped = [];
     #endregion
 
     #region Public Method
@@ -327,9 +330,44 @@ class Container implements ArrayAccess, ContainerInterface
         $this->instances       = [];
         $this->aliases         = [];
         $this->with            = [];
+        $this->requestScoped   = [];
         $this->resolver        = null;
         $this->invoker         = null;
         $this->reflectionCache = null;
+    }
+
+    /**
+     * Marks the given binding as request-scoped.
+     *
+     * Request-scoped bindings are resolved once per request and their resolved
+     * instances are discarded at the start of the next request, allowing a fresh
+     * instance to be created. This is essential for RoadRunner-style persistent
+     * workers where the container lives across many requests.
+     *
+     * @param string $name The binding identifier to mark as request-scoped.
+     * @return $this Returns the container instance for method chaining.
+     */
+    public function setRequestScoped(string $name): self
+    {
+        $this->requestScoped[$this->getAlias($name)] = true;
+
+        return $this;
+    }
+
+    /**
+     * Discards all cached instances of request-scoped bindings.
+     *
+     * Called at the boundary between requests to drop any state captured on
+     * request-scoped singletons. The binding definitions (factories) remain
+     * registered, so a fresh instance is lazily resolved on the next request.
+     *
+     * @return void
+     */
+    public function resetRequestScope(): void
+    {
+        foreach ($this->requestScoped as $abstract => $_) {
+            unset($this->instances[$abstract]);
+        }
     }
 
     /**

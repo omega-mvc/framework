@@ -47,14 +47,14 @@ final class Middleware
     /**
      * List of middleware class names to apply.
      *
-     * @var string[]
+     * @var class-string[]
      */
     public array $middleware;
 
     /**
      * Initializes the Middleware attribute.
      *
-     * @param string[] $middleware List of middleware class names.
+     * @param class-string[] $middleware List of middleware class names.
      */
     public function __construct(array $middleware)
     {

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Facades Package.
+ * Part of Omega - Tests\Facades Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -16,7 +16,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Facades;
+namespace Tests\Facades;
 
 use Exception;
 use Omega\Application\Application;
@@ -46,9 +46,9 @@ use PHPUnit\Framework\MockObject\Exception as PHPUnitException;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Tests\FixturesPathTrait;
-use Tests\Support\Facades\Sample\FacadesTestClass;
-use Tests\Support\Facades\Support\NullFacade;
-use Tests\Support\Facades\Support\TestAbstractFacade;
+use Tests\Facades\Sample\FacadesTestClass;
+use Tests\Facades\Support\NullFacade;
+use Tests\Facades\Support\TestAbstractFacade;
 
 /**
  * Tests the behavior of the facade system.
@@ -63,14 +63,13 @@ use Tests\Support\Facades\Support\TestAbstractFacade;
  * It also ensures that appropriate errors are thrown when the facade base
  * application has not been initialized.
  *
- * @category   Tests
- * @package    Support
- * @subpackage Facades
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
+ * @category  Tests
+ * @package   Facades
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 #[CoversClass(AbstractFacade::class)]
 #[CoversClass(Application::class)]

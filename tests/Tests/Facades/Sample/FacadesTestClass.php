@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Facades Package.
+ * Part of Omega - Tests\Facades Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Facades\Sample;
+namespace Tests\Facades\Sample;
 
 use Omega\Collection\Collection;
 use Omega\Facade\AbstractFacade;
@@ -26,8 +26,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * instance caching in the underlying AbstractFacade implementation.
  *
  * @category   Tests
- * @package    Support
- * @subpackage Facades\Sample
+ * @package    Facades
+ * @subpackage Sample
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

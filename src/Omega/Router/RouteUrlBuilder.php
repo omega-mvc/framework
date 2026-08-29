@@ -67,8 +67,17 @@ class RouteUrlBuilder
      */
     public function buildUrl(Route $route, array $parameters): string
     {
-        $url           = $route['uri'];
-        $patternMap    = $this->patterns + ($route['patterns'] ?? []);
+        $uri = $route['uri'];
+        $url = is_string($uri) ? $uri : '';
+
+        $patternMap = $this->patterns;
+        $routePatterns = $route['patterns'] ?? [];
+        foreach (is_array($routePatterns) ? $routePatterns : [] as $patternKey => $patternValue) {
+            if (is_string($patternKey) && is_string($patternValue)) {
+                $patternMap[$patternKey] = $patternValue;
+            }
+        }
+
         $isAssociative = !array_is_list($parameters);
 
         $url = $this->processNamedParameters($url, $parameters, $patternMap, $isAssociative);
@@ -116,7 +125,7 @@ class RouteUrlBuilder
     ): string {
         $paramIndex = 0;
 
-        return preg_replace_callback(
+        $result = preg_replace_callback(
             '/\(([^:)]+):([^)]+)\)/',
             function ($matches) use ($parameters, $isAssociative, &$paramIndex, $patternMap) {
                 $paramName   = $matches[1];
@@ -131,12 +140,14 @@ class RouteUrlBuilder
                     $paramIndex++;
                 }
 
-                $this->validateParameterAgainstPattern($value, $paramName, $patternKey, $patternMap[$patternKey]);
+                $this->validateParameterAgainstPattern($value, $paramName, $patternKey, $patternMap[$patternKey], true);
 
                 return (string) $value;
             },
             $url
         );
+
+        return $result ?? $url;
     }
 
     /**
@@ -160,9 +171,10 @@ class RouteUrlBuilder
             while (str_contains($url, $pattern)) {
                 $value = $this->getNextParameterValue($parameters, $pattern, $paramIndex, $isAssociative);
 
-                $this->validateParameterAgainstPattern($value, $value, $pattern, $regex);
+                $this->validateParameterAgainstPattern($value, $value, $pattern, $regex, false);
 
-                $url = preg_replace('/' . preg_quote($pattern, '/') . '/', (string) $value, $url, 1);
+                $replaced = preg_replace('/' . preg_quote($pattern, '/') . '/', (string) $value, $url, 1);
+                $url      = $replaced ?? $url;
                 $paramIndex++;
             }
         }
@@ -203,14 +215,14 @@ class RouteUrlBuilder
     ): string|int|bool {
         if ($isAssociative) {
             if (!isset($parameters[$paramName])) {
-                throw new MissingRouteParameterException($paramName);
+                throw MissingRouteParameterException::named($paramName);
             }
 
             return $parameters[$paramName];
         }
 
         if (!isset($parameters[$paramIndex])) {
-            throw new MissingRouteParameterException($paramIndex);
+            throw MissingRouteParameterException::namedIndexed($paramIndex, $paramName);
         }
 
         return $parameters[$paramIndex];
@@ -243,41 +255,41 @@ class RouteUrlBuilder
                 return $parameters[$paramIndex];
             }
 
-            throw MissingRouteParameterException::named($patternName);
+            throw MissingRouteParameterException::patternAssoc($pattern, $paramIndex);
         }
 
         if (isset($parameters[$paramIndex])) {
             return $parameters[$paramIndex];
         }
 
-        throw MissingRouteParameterException::indexed($paramIndex);
+        throw MissingRouteParameterException::patternIndexed($paramIndex, $pattern);
     }
 
     /**
      * Validate that a parameter value matches its regex pattern.
      *
-     * @param mixed           $value      Parameter value.
-     * @param string|int      $identifier Parameter name or index for error messages.
+     * @param string|int|bool $value      Parameter value.
+     * @param string|int|bool $identifier Parameter name or index for error messages.
      * @param string          $pattern    Pattern placeholder.
      * @param string          $regex      Regex to validate against.
      * @return void
      * @throws PatternMismatchException
      */
     private function validateParameterAgainstPattern(
-        mixed $value,
-        string|int $identifier,
+        string|int|bool $value,
+        string|int|bool $identifier,
         string $pattern,
-        string $regex
+        string $regex,
+        bool $named
     ): void {
         $stringValue = (string) $value;
 
         if (1 !== preg_match("/^{$regex}$/", $stringValue)) {
-            throw new PatternMismatchException(
-                $identifier,
-                $value,
-                $pattern,
-                $regex
-            );
+            if ($named) {
+                throw PatternMismatchException::forNamed((string) $identifier, $value, $pattern, $regex);
+            }
+
+            throw PatternMismatchException::forValue($value, $pattern, $regex);
         }
     }
 
@@ -289,7 +301,9 @@ class RouteUrlBuilder
      */
     private function countProcessedParameters(string $originalUrl): int
     {
-        return preg_match_all('/\([^:)]+:[^)]+\)/', $originalUrl);
+        $count = preg_match_all('/\([^:)]+:[^)]+\)/', $originalUrl);
+
+        return $count === false ? 0 : $count;
     }
 
     /**
