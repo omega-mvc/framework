@@ -52,20 +52,25 @@ use function Omega\Application\get_path;
 class ConfigBootstrapper
 {
     /**
+     * Process-lifetime cache of the resolved configuration array.
+     *
+     * In a persistent worker (e.g. RoadRunner) `bootstrap()` runs on every
+     * request. Re-reading and re-merging the configuration files each time is
+     * wasteful, so after the first successful load the assembled array is
+     * reused for the remainder of the process. This is safe because the
+     * configuration is static application metadata.
+     *
+     * @var array|null
+     */
+    protected static ?array $cachedConfig = null;
+
+    /**
      * Bootstrap the configuration subsystem for the given application instance.
      *
      * This method initializes the application's configuration repository by
      * resolving the full configuration array and binding it to the container.
-     *
-     * The configuration is resolved through the internal loading strategy:
-     * - If a cached configuration file exists, it is loaded and used directly.
-     * - Otherwise, all configuration files located in the configured
-     *   `path.config` directory are loaded and merged.
-     *
-     * Once the configuration is loaded, it is injected into the application
-     * through a ConfigRepository instance. Finally, the default PHP timezone
-     * is set using the `APP_TIMEZONE` environment variable, falling back to
-     * `UTC` when no value is defined.
+     * On subsequent calls (persistent worker) the already-resolved array is
+     * reused instead of re-reading the configuration files.
      *
      * @param ApplicationInterface $app The application instance that will receive the
      *                         initialized configuration repository.
@@ -79,7 +84,7 @@ class ConfigBootstrapper
      */
     public function bootstrap(ApplicationInterface $app): void
     {
-        $config = $this->loadConfiguration($app);
+        $config = static::$cachedConfig ??= $this->loadConfiguration($app);
 
         $app->loadConfig(new ConfigRepository($config));
 

@@ -88,6 +88,21 @@ class DirectiveTemplator extends AbstractTemplatorParse
     }
 
     /**
+     * Remove all custom directives.
+     *
+     * Useful at the start of a persistent worker (e.g. RoadRunner) if any
+     * directives are registered per request, so they cannot accumulate across
+     * requests. Directives that are process-lifetime (e.g. the `vite`
+     * directive registered once at boot) must be re-registered after this call.
+     *
+     * @return void
+     */
+    public static function reset(): void
+    {
+        self::$directive = [];
+    }
+
+    /**
      * Calls a registered directive.
      *
      * Executes the directive callback with the given parameters and returns

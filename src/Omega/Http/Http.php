@@ -128,6 +128,12 @@ class Http
     {
         $this->app->set('request', $request);
 
+        // The active request is inherently per-request; mark it request-scoped so
+        // `resetRequestScope()` discards it (and any singleton that captured it)
+        // between requests in a persistent worker (e.g. RoadRunner).
+        $this->app->setRequestScoped('request');
+        $this->app->setRequestScoped(Request::class);
+
         try {
             $this->bootstrap();
 
@@ -210,6 +216,8 @@ class Http
      */
     protected function resetForRequest(): void
     {
+        $this->middlewareUsed = [];
+
         if (method_exists($this->app, 'bound') && $this->app->bound(DatabaseManager::class)) {
             $manager = $this->app->get(DatabaseManager::class);
             if ($manager instanceof DatabaseManager) {

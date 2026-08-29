@@ -24,6 +24,23 @@ use function unserialize;
 class RouteServiceProvider extends AbstractServiceProvider
 {
     /**
+     * Indicates whether the cron schedule has already been loaded for this process.
+     *
+     * The schedule is process-lifetime configuration and must only be
+     * registered once per worker, even though the web routes are re-loaded
+     * on every request in a persistent worker (e.g. RoadRunner).
+     *
+     * @var bool
+     */
+    protected static bool $scheduleLoaded = false;
+
+    /**
+     * Boot the route service provider.
+     *
+     * Called exactly once per process from `bootProvider()`. Registers the
+     * web routes (from the route cache or the web routes file) and loads the
+     * cron schedule exactly once.
+     *
      * @return void
      * @throws BindingResolutionException
      * @throws BindingResolutionException Thrown when resolving a binding fails.
@@ -33,6 +50,31 @@ class RouteServiceProvider extends AbstractServiceProvider
      */
     public function boot(): void
     {
+        $this->registerWebRoutes();
+
+        if (false === self::$scheduleLoaded) {
+            require get_path('path.base', 'routes/schedule.php');
+            self::$scheduleLoaded = true;
+        }
+    }
+
+    /**
+     * (Re)register only the web routes.
+     *
+     * Called every request in a persistent worker to repopulate the static
+     * route table after it has been cleared by `Router::reset()`. The web
+     * routes file uses `require` instead of `require_once` so it re-executes
+     * on each call. The cron schedule is intentionally NOT loaded here; it is
+     * handled once per process by `boot()`.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function registerWebRoutes(): void
+    {
         if (file_exists($cache = $this->app->getApplicationCachePath() . 'route.php')) {
             $routes = require $cache;
 
@@ -40,17 +82,18 @@ class RouteServiceProvider extends AbstractServiceProvider
                 if (is_array($route)) {
                     $this->registerRoute($route);
                 }
-            }        } else {
-            Router::middleware([
-                MaintenanceMiddleware::class,
-            ])->group(
-                fn () => [
-                    require_once get_path('path.base', 'routes/web.php'),
-                ]
-            );
+            }
+
+            return;
         }
 
-        require_once get_path('path.base', 'routes/schedule.php');
+        Router::middleware([
+            MaintenanceMiddleware::class,
+        ])->group(
+            fn () => [
+                require get_path('path.base', 'routes/web.php'),
+            ]
+        );
     }
 
     /**

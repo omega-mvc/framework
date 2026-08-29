@@ -490,10 +490,19 @@ class Request implements ArrayAccess, IteratorAggregate
     /**
      * Determine if the request is made over HTTPS.
      *
+     * Prefers an explicit `scheme` attribute (set by the PSR-7 adapter) over
+     * the legacy `$_SERVER['HTTPS']` global used under classic PHP-FPM. Under
+     * RoadRunner the superglobal is not reliable, so the adapter sets the
+     * scheme from the PSR-7 request URI instead.
+     *
      * @return bool Returns true if the request is secured with HTTPS, false otherwise.
      */
     public function isSecured(): bool
     {
+        if (isset($this->attributes['scheme'])) {
+            return strcasecmp((string) $this->attributes['scheme'], 'https') === 0;
+        }
+
         return !empty($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'off');  // http;
     }
 

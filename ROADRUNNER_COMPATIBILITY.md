@@ -1,767 +1,560 @@
-# RoadRunner Compatibility Audit — Omega Framework
+# Omega Framework — RoadRunner (Persistent Worker) Compatibility Audit & Remediation Guide
 
-**Audit date:** 2026-08-28
-**Scope:** `src/` of the `omega-mvc/framework` repository (435 PHP source files)
-**Target runtime:** RoadRunner (RR) PHP Application Server — a **persistent-worker** model where a single PHP process is kept alive and executes **many sequential HTTP requests** without re-bootstrapping the interpreter.
-
-This document is both an **architectural audit** and an **actionable remediation guide**. It maps the framework's state management, identifies every construct that violates RoadRunner's persistent-worker assumptions, and prescribes precise code-level fixes.
+**Target:** `omega-mvc/framework` v1.0.0 (`Omega\`, PSR-4 → `src/Omega/`)
+**Audit objective:** Determine whether the framework can run successfully as a long-lived worker under [RoadRunner](https://roadrunner.dev) (PHP application server), map all state, and enumerate every modification required for full compliance.
+**Audit date:** 2026
 
 ---
 
-## Table of Contents
+## 1. Executive Summary
 
-1. [RoadRunner Model vs. Standard FPM Model](#1-roadrunner-model-vs-standard-fpm-model)
-2. [Codebase Discovery: Architecture Map](#2-codebase-discovery-architecture-map)
-3. [Verdict](#3-verdict)
-4. [Severity-Classified Findings](#4-severity-classified-findings)
-5. [Detailed Findings & Remediation](#5-detailed-findings--remediation)
-   - [5.1 Container instance-store accumulates forever](#51-container-instance-store-accumulates-forever)
-   - [5.2 `Application::$app` static singleton is never reset per request](#52-applicationapp-static-singleton-is-never-reset-per-request)
-   - [5.3 Router static route registry & request-time state](#53-router-static-route-registry--request-time-state)
-   - [5.4 Facade static instance cache](#54-facade-static-instance-cache)
-   - [5.5 Event dispatcher listener accumulation](#55-event-dispatcher-listener-accumulation)
-   - [5.6 Database: broken reconnection + log/transaction leakage](#56-database-broken-reconnection--logtransaction-leakage)
-   - [5.7 View/Templator singleton accumulation](#57-viewtemplator-singleton-accumulation)
-   - [5.8 In-memory cache growth](#58-in-memory-cache-growth)
-   - [5.9 Macroable & AppServiceProvider static registries](#59-macroable--appserviceprovider-static-registries)
-   - [5.10 Boot-Time-Only Registration Contract](#510-boot-time-only-registration-contract)
-6. [Compatibility Assessment Matrix](#6-compatibility-assessment-matrix)
-7. [The RoadRunner Worker Adapter](#7-the-roadrunner-worker-adapter)
-8. [Per-Request Reset Contract (RFC)](#8-per-request-reset-contract)
-9. [Verified Code Locations Index](#9-verified-code-locations-index)
-10. [Priority-Ordered Remediation Roadmap](#10-priority-ordered-remediation-roadmap)
+The Omega framework is **already unusually well prepared** for the RoadRunner persistent-worker model. The core container, database layer, exception bootstrapping, facades, and templating were clearly designed with "reset at the boundary of every request" in mind. There are no uninitialized-singleton hazards, no fatal global-state pollution in the *bootstrap path*, and the database layer already implements persistent PDO with automatic reconnection.
+
+**However, there is one critical, request-2-and-beyond breaker**: the route table is registered **only once** (guarded by `AbstractApplication::$isBooted`), yet it is **cleared on every request** by `Router::reset()`. This means the **very first request works and every subsequent request 404s** (unless the route cache file is present). This single defect blocks a RoadRunner deployment entirely.
+
+Beyond that blocker, the audit catalogues a set of *secondary* issues that must be addressed for correctness, hygiene and robustness in a multi-request process:
+
+1. **Route re-registration across requests** (CRITICAL — see §3.1).
+2. **`$_SERVER`/superglobal reliance** in the request lifecycle (`Router::run()`, `RequestFactory`, `Request::isSecured()`) which RoadRunner does not populate identically to PHP-FPM (§3.2).
+3. **Per-request re-evaluation of configuration files** via `ConfigBootstrapper` on every `handle()` (§3.3 — wasteful, not incorrect).
+4. **Static/accumulating memory caches** that hold references for the process lifetime: `Vite::$cache`/`$hot`, `ComponentTemplator::$cache`, `IncludeTemplator::$cache`, `SectionTemplator::$cache`, `DirectiveTemplator::$directive`, `MacroableTrait::$macros`, `Model::$dispatcher`, `Env::$values`, `Router::$routes` (§3.4).
+5. **Request-scoping gaps**: several container bindings that are conceptually per-request (e.g. the active `request`, cache manager, view instances) are **not** registered as request-scoped, so they survive `resetRequestScope()` and retain stale state across requests (§3.5).
+6. **`isBooted` semantics** are conflated with "routes are loaded"; the once-per-process flag and per-request route loading need to be separated (§3.6).
+
+Everything else — `HandleExceptions` static guard, `AbstractFacade::flushInstance()`, `DatabaseManager::resetConnectionsForRequest()`, `AbstractConnection::reconnectIfLost()` + persistent PDO, `Templator::clearDependencies()`, `Memory` cache GC, `Schedule` pools — is already RoadRunner-correct (§2.3).
 
 ---
 
-## 1. RoadRunner Model vs. Standard FPM Model
+## 2. Codebase Discovery — Complete State Map
 
-| Concern | PHP-FPM / `php -S` | RoadRunner (persistent worker) |
-|---|---|---|
-| Process lifetime | One process per request (reaped after). | One process serves **many** requests. |
-| Class/static state | Re-initialized each request — safe by construction. | **Persists across requests** — a leak/stale-data hazard unless explicitly reset. |
-| Superglobals (`$_SERVER` etc.) | Fresh per request from the SAPI. | Must be **re-injected manually** by the worker; RR does not populate them automatically. |
-| Container singletons | Fresh each request. | Shared for process lifetime; must not hold **request-scoped** data. |
-| DB connections | Created/closed per request. | **Must be pooled and reused**; closing per request kills performance. |
-| `exit`/`die`/`header()`/ob | Allowed (request ends). | **Forbidden** — kills the worker or corrupts the response. |
-| `register_shutdown_function`, error/exception handlers | Per request. | Re-registrations accumulate; handlers leak state. |
+This is the authoritative inventory of **every piece of state** in the framework and how it behaves across consecutive requests in a single worker process.
 
----
+### 2.1 DI Container (the central state owner)
 
-## 2. Codebase Discovery: Architecture Map
+**File:** `src/Omega/Container/Container.php`
 
-Omega bootstraps in the following layered fashion (verified against source):
-
-```
-Request (fresh per cycle)
-   │
-   ▼
-Omega\Http\Http::handle(Request)                 [src/Omega/Http/Http.php:126]
-   │  $this->app->set('request', $request)       // replaces shared 'request' instance each cycle — GOOD
-   ▼
-bootstrap() → Application::bootstrapWith()       [AbstractApplication.php:198]
-   ├─ ConfigBootstrapper
-   ├─ HandleExceptions                              // re-registers error/shutdown handlers EVERY request
-   ├─ FacadeBootstrapper
-   ├─ RegisterProviders                             // guarded by loadedProviders[]
-   └─ BootProviders                                 // guarded by isBooted
-   ▼
-dispatcher() → middlewarePipeline() → route dispatching → response
-   ▼
-Http::terminate(Request, Response)               [Http.php:181]
-   ├─ per-middleware terminate()
-   └─ Application::terminate() → registered terminateCallbacks
-```
-
-**Key lifecycle facts (verified):**
-- **`Http::handle()` re-binds `'request'` on every cycle** (`Http.php:128` + `Container::set` at `Container.php:135`), so the classic "shared request singleton reused across requests" bug is **correctly avoided** in the default flow. This is the framework's best native trait for RR.
-- **`Http::terminate()` is NOT a state reset.** It only invokes registered terminal callbacks (`AbstractApplication::terminate`, `AbstractApplication.php:344`) and middleware `terminate()` methods. It does **not** call `flush()`, `Router::reset()`, `flushInstance()`, `clearListeners()`, or any per-request cleanup.
-- **No per-request `flush()`/`reset()` is invoked anywhere in `src/`.** The only code path that calls `Application::flush()` is the **test suite** (`src/Omega/Testing/TestCase.php`) and `setBaseBinding()` when a *new* `Application` is constructed.
-- Therefore, **as shipped, the framework is not reproducible between requests within a single worker** unless the RoadRunner adapter explicitly resets state (Section 7 & 8).
-
-**State-focus subsystems and their core state holders:**
-
-| Subsystem | Central type(s) | State holder (persistence across requests in a worker) |
-|---|---|---|
-| Application | `AbstractApplication` | `static Application $app` + `Container::$instances/$bindings` + provider/callback arrays |
-| Container/DI | `Container`, `Resolver`, `ReflectionCache` | `$instances` (grows), `$bindings`, `ReflectionCache` (instance, safe) |
-| Router | `AbstractRouter`, `Router`, `RouteDispatcher` | `static $routes/$current/$group/$patterns/...` |
-| Facades | `AbstractFacade` | `static $app`, `static $instance[]` |
-| Events | `Dispatcher` | instance `$listeners[]` on a shared singleton |
-| Database | `DatabaseManager`, `AbstractConnection`, `Model` | `$connections[]`, `$pdo`, `$logs[]` (grows), static `Model::$dispatcher` |
-| View | `Templator`, `TemplatorFinder`, `Vite`, `DirectiveTemplator` | `Templator::$dependency` (grows), static directive/cache arrays |
-| Cache | `CacheManager`, `Storage\Memory` | `Memory::$storage` (grows without bound) |
-| Macro/Provider | `MacroableTrait`, `AppServiceProviderTrait` | `static $macros`, `static $modules` |
-
----
-
-## 3. Verdict
-
-### Overall rating: **NOT RoadRunner-compatible out of the box — but remediable with moderate, well-scoped changes.**
-
-**Strengths already aligned with RR:**
-- Per-request `Request` rebinding (`Http::handle` → `Container::set`).
-- DB connections created once and *not* closed per query — natural pooling foundation.
-- Service provider registration/boot is idempotent (guarded by `isBooted`/`loadedProviders`).
-- `ReflectionCache` is instance-scoped and stores **immutable** class metadata — it is safe to persist and in fact *beneficial* under RR (avoids re-reflection).
-- Explicit `terminate()`/`flush()`/`reset()` primitives exist, ready to be orchestrated.
-
-**Fatal/blocking incompatibilities that must be fixed:**
-1. **No per-request reset orchestration** — static singleton, container instance store, router static routes, facade instance cache, dispatcher listeners, templator dependencies, and in-memory cache all persist/accumulate across every request in a long-lived worker.
-2. **DB reconnection is broken** (`AbstractConnection.php:106` calls a non-existent `isLostConnection()` method) and there is **no runtime reconnect** after a mid-worker drop — a dead PDO handle kills the worker permanently.
-3. **`AbstractConnection::$logs` grows unboundedly** across requests (no auto-flush at request boundary).
-4. **DB transactions can leak across requests** (begin/commit on a shared PDO with no request-end rollback guarantee).
-5. **Superglobals reliance** — `Router::run()` reads `$_SERVER['REQUEST_URI']`/`$_SERVER['REQUEST_METHOD']` directly (`Router.php:267`); the RR worker must re-seed `$_SERVER` or the router must accept request-derived input.
-
-The remainder of this document details every finding and its precise remediation.
-
----
-
-## 4. Severity-Classified Findings
-
-| ID | Severity | Finding | Location |
+| Property | Kind | Across requests | RoadRunner impact |
 |---|---|---|---|
-| F-01 | **CRITICAL** | Container `$instances` store grows & persists across requests; shared singletons hold request-scoped data | `Container.php:56-153`, `resolve()` |
-| F-02 | **CRITICAL** | `Application::$app` static singleton never reset per request; helpers/`app()` read stale global state | `AbstractApplication.php:57,129,283`; `Application/helper.php:60` |
-| F-03 | **CRITICAL** | DB reconnection broken (calls missing `isLostConnection`) + no runtime reconnect | `AbstractConnection.php:96-112,117` |
-| F-04 | **CRITICAL** | No per-request state reset orchestration anywhere in request pathway | `Http.php:126-191` |
-| F-05 | **HIGH** | DB `$logs[]` accumulates unboundedly across requests | `AbstractConnection.php:197-205,238` |
-| F-06 | **HIGH** | DB transaction state leaks across requests on shared PDO | `AbstractConnection.php:312-331` |
-| F-07 | **HIGH** | `Router` static `$routes/$current/$group` persist/mutate per request; `$_SERVER` read directly | `AbstractRouter.php:23-72`; `Router.php:267-280` |
-| F-08 | **HIGH** | View `Templator::$dependency` grows on every render of the shared singleton | `Templator.php:83,135,180-196,311` |
-| F-09 | **HIGH** | Cache `Memory::$storage` grows unboundedly; TTL'd-but-unread keys never GC'd | `Cache/Storage/Memory.php:65,86-141` |
-| F-10 | **MEDIUM** | Event `Dispatcher::$listeners` accumulates if listeners registered during a request | `Dispatcher.php:61` |
-| F-11 | **MEDIUM** | Facade static `$instance[]` cache can return stale instances across app resets | `Facade/AbstractFacade.php:45-48,105-112` |
-| F-12 | **MEDIUM** | `HandleExceptions` re-registers error/shutdown handlers every request | `Exceptions/Bootstrapper/HandleExceptions.php:96-108` |
-| F-13 | **LOW** | `MacroableTrait::$macros`, `AppServiceProviderTrait::$modules` statics grow | `MacroableTrait.php:38`; `AppServiceProviderTrait.php:26` |
-| F-14 | **LOW** | `Vite::$cache/$hot`, `DirectiveTemplator::$directive`, `TemplatorFinder::$views` persistent statics | `Vite.php:79,82`; `DirectiveTemplator.php:48`; `TemplatorFinder.php:45` |
+| `$bindings` (`abstract => ['concrete'=>Closure,'shared'=>bool]`) | instance | survives (`flush()` only on full shutdown) | **Good** — factories are process-lifetime by design |
+| `$instances` (singleton cache) | instance | survives | **must be cleaned for request-scoped** bindings |
+| `$aliases` | instance | survives | Good (static map) |
+| `$resolver / $invoker / $reflectionCache / $injector` | instance (lazy) | survives | Good (harmless reflection caches) |
+| `$with` (param override stack) | instance | survives | must be emptied (`flush()` does) |
+| `$requestScoped` (`array<string,true>`) | instance | survives (the *markers*) | Good — used by `resetRequestScope()` |
+
+**Request-reset contract (already implemented):**
+- `Container::setRequestScoped(string $abstract)` (`:350`) marks a binding.
+- `Container::resetRequestScope()` (`:366`) unsets `$instances[$abstract]` for every marker, **keeping the factory closures** so a fresh instance is lazily rebuilt next request.
+- Docblock explicitly states "essential for RoadRunner-style persistent workers."
+
+**Gap:** Most framework bindings are registered with `$app->set(...)` which forces `shared=true`, and are **never** passed through `setRequestScoped()`. Therefore their singletons survive `resetRequestScope()` unchanged (see §3.5).
+
+### 2.2 The Application container/host
+
+**Files:** `src/Omega/Application/Application.php`, `AbstractApplication.php`
+
+| State | Kind | Reset on request? | RoadRunner impact |
+|---|---|---|---|
+| `Application::$app` (static app reference) | static | no | **Good** — single app per worker; only nulled by `flush()` |
+| `$isBooted` (hooked) | instance | **NO** | **BLOCKS route re-registration (§3.6)** |
+| `$isBootstrapped` (hooked) | instance | no | Fine |
+| `terminateCallback / bootingCallbacks / bootedCallbacks` | instance | yes (`resetForRequest()` `:376-378`) | Good |
+| `providers / loadedProviders / bootedProviders` | instance | no | Good (registered once) |
+| Request-scope (`resetRequestScope()`) | — | yes | Good |
+| `Router::reset()` (static router) | static | yes (`:382`) | **clears routes → causes bug (§3.1)** |
+| `AbstractFacade::flushInstance()` | static | yes (`:384`) | Good |
+| `Templator::clearDependencies()` | instance | yes (`:386-391`) | Good — clears per-render deps |
+
+`Application::flush()` resets everything and drops `Application::$app` to `null`; it is the *process-shutdown* (or test-teardown) operation, **not** the per-request reset.
+
+### 2.3 Things that are **already correct** for persistent workers
+
+- **`HandleExceptions`** (`Exceptions/Bootstrapper/HandleExceptions.php`): `private static bool $handlersRegistered` ensures `set_error_handler`/`set_exception_handler`/`register_shutdown_function` run **once per process**, then every subsequent `bootstrap()` is a near-no-op. Correct. Also keeps a 32KB `$reserveMemory` buffer for fatal handling.
+- **`AbstractFacade::flushInstance()`**: clears the resolved-facade cache so facades rebuild from the same app next request. Called in both `resetForRequest()` and `flush()`.
+- **Database connections** (`Database/AbstractConnection.php` + `DatabaseManager.php`):
+  - `PDO::ATTR_PERSISTENT => true` default; `beginTransaction()` calls `reconnectIfLost()` which pings and rebuilds a dead PDO `(SELECT 1)` with a comprehensive lost-connection detection list; `inTransaction()` + `cancelTransaction()` + `flushLogs()` made available for boundary rollback.
+  - `DatabaseManager::resetConnectionsForRequest()` (`:95-106`) rolls back dangling transactions and flushes query logs for every cached connection at the request boundary.
+- **`Templator::clearDependencies()`** dirties the per-render dependency tracker so views don't accumulate cross-request entries.
+- **`Memory` cache storage** (`Cache/Storage/Memory.php`): `$maxItems` + `evictLeastRecentlyWritten()`/`gc()` protect against unbounded growth.
+- **`Schedule`** pools are per-instance and bounded by `flush()`; cron is not re-registered per request and is intentionally process-lifetime (§3.6 note).
+
+### 2.4 Static / global state inventory (complete)
+
+| Class *::member* | Static? | Growth across requests? | Reset hook | Verdict |
+|---|---|---|---|---|
+| `AbstractRouter::$routes` | yes | re-populated per boot only (bug) | cleared in `reset()` | **BUG SOURCE** |
+| `AbstractRouter::$group` (prefix/middleware/as) | yes | bounded | cleared in `reset()` (note: `as` reset happens implicitly via whole-array reassignment) | ok-ish |
+| `AbstractRouter::$patterns` | yes | bounded | re-seeded in `reset()` | fine (static config) |
+| `AbstractRouter::$current / $pathNotFound / $methodNotAllowed` | yes | bounded | cleared | fine |
+| `AbstractFacade::$instance` / `$app` | yes | bounded | `flushInstance()` | good |
+| `AbstractApplication::$app` | yes | bounded | `flush()` | good |
+| `Env::$values` | yes | fixed size | — | good (env is static) |
+| `Model::$dispatcher` | yes | fixed | — | good if dispatcher is long-lived (set in `EventServiceProvider`) |
+| `HandleExceptions::$handlersRegistered` / `$reserveMemory` | yes | fixed | — | good |
+| `DirectiveTemplator::$directive` | yes | **can grow** (app-registered directives) | — | **must be cleared or re-applied** (see §3.4, §2.5) |
+| `DirectiveTemplator::$excludeList` | yes | fixed | — | fine |
+| `MacroableTrait::$macros` (per-class static) | yes | **can grow** | `resetMacro()` | **must be reset** (used by `Request`, `Response`) |
+| `Vite::$cache` / `Vite::$hot` | yes | bounded (manifest keyed) | `flush()` | small; optional flush |
+| `ComponentTemplator::$cache` | yes | reset to `[]` at start of every `parse()` | internal | good |
+| `IncludeTemplator::$cache` | yes | reset to `[]` at start of every `parse()` | internal | good |
+| `SectionTemplator::$cache` | yes | reset to `[]` at start of every `parse()` | internal | good |
+
+> Note: The three templator `$cache` arrays are **already** reset at the start of each `parse()` (e.g. `ComponentTemplator::parse()` `:75`), so they are *not* cross-request leaks. They only hold file contents for the duration of a single render.
+
+### 2.5 Per-request instance state that survives (response / middleware / cookies)
+
+- **`Http\Http::$middlewareUsed`** accumulates the middleware applied per request and is never cleared → grows on every request, and worse, holds references.
+- `Dispatcher`/`Event` listeners, `LoggingManager::$driver`, `CacheManager`, `RateLimiter` — all processes-lifetime singletons; generally fine, but see request-scoping notes (§3.5).
+- Responses are constructed per request in the kernel; no cross-request reuse. Cookies are per-`Request` instance (safe).
+- `Request` uses `MacroableTrait::$macros` (per-class static) — macros registered on one request leak to the next.
 
 ---
 
-## 5. Detailed Findings & Remediation
+## 3. RoadRunner Compatibility Assessment
 
-### 5.1 Container instance-store accumulates forever
+### 3.1 CRITICAL — Routes vanish after the first request (definitive)
 
-**Evidence — `src/Omega/Container/Container.php`:**
+**Root-cause chain (verified in source):**
+
+1. **Request 1:** `Http::handle()` → `bootstrap()` → `BootProviders` → `AbstractApplication::bootProvider()` (`AbstractApplication.php:215`). `$isBooted` is `false`, so it iterates core providers and calls `RouteServiceProvider::boot()` (`Router/RouteServiceProvider.php:34`), which registers the route table into **static** `AbstractRouter::$routes`. Then `$isBooted = true` (`:235`).
+2. `Router::run()` reads the static route table → request 1 dispatches fine.
+3. **End of request 1:** `Http::terminate()` → `Http::resetForRequest()` → `Application::resetForRequest()` (`AbstractApplication.php:374`) → **`Router::reset()` (`AbstractRouter.php:120`) sets `self::$routes = []` and nulls the handlers.**
+4. **Request 2:** `Http::handle()` → `bootstrap()` → `BootProviders` → `bootProvider()` **early-returns because `$isBooted` is still `true`** (never reset in `resetForRequest()`). `RouteServiceProvider::boot()` is therefore **never called again** → `AbstractRouter::$routes` stays empty → every request from request 2 onward produces **no matching route** (404 / `pathNotFound`).
+
+**Why this only manifests with 1+ requests:** under classic PHP-FPM each request is a fresh process, so `$isBooted=false` and routes load every time. Under a persistent RoadRunner worker the `isBooted` guard + route-table reset combine to break everything after the first request.
+
+**Affected code:**
 ```php
-// lines 56-62
-protected array $bindings = [];
-protected array $instances = [];          // <-- shared singleton cache
-protected array $aliases = [];
-```
-
-```php
-// lines 135-153 — set(): any non-Closure is stored as a resolved shared instance
-public function set(string $name, mixed $value): void
+// AbstractApplication.php:215
+public function bootProvider(): void
 {
-    if ($value instanceof Closure) {
-        $this->bind($name, $value, true);  // closure => shared factory
-        return;
-    }
-    $name = $this->getAlias($name);
-    $this->instances[$name] = $value;      // <-- persists for process lifetime
-    $this->bindings[$name]  = [
-        'concrete' => fn () => $this->instances[$name],
-        'shared'   => true,
-    ];
+    if ($this->isBooted) { return; }   // <-- once per process
+    ...
+    // RouteServiceProvider::boot() runs here ONLY
+    $this->isBooted = true;
 }
 ```
-`resolve()` returns and caches shared instances into `$this->instances` (lines ~440-462). `flush()` (`Container.php:324-333`) clears all of it, **but is never called automatically between requests**.
-
-**Why it breaks RR:** Every service resolved once (DB manager, view templator, dispatcher, cache manager, config, etc.) lives for the whole worker. If application code stores **request-scoped** data in the container via `set('foo', $requestScopedValue)`, that value and anything it references is retained until the worker restarts — a stale-data leak and a memory growth vector. Worse, because `set()` **always** overrides the previous binding, repeated `set('request', ...)` is fine (each cycle replaces), but any *accumulating* container key (arrays appended by `set` with the same key) is a leak.
-
-**Remediation:**
-- Introduce an explicit **request-scoped binding marker** or simply **do not** store request-scoped values in the shared container. Use constructor/parameter injection instead.
-- Add a `resetForRequest()` method to the Container that clears only the request-scoped subset while preserving long-lived infrastructure (see Section 8 for the RFC). At minimum, ensure the RR adapter calls `$app->flush()` at the end of each request if the app supports reconstruction.
-- Alternatively, adopt the **reconstruct-per-request** strategy: construct a fresh `Application` per request (Section 7, Strategy B), which is safe but pays re-reflection/bootstrap cost per request.
-
-**Code example — a request-scoped reset that preserves the app:**
 ```php
-// src/Omega/Container/Container.php
-/** Keys that must be torn down after every request in a persistent worker. */
-protected array $requestScopedKeys = [];
-
-public function setRequestScoped(string $name, mixed $value): void
-{
-    $this->set($name, $value);
-    $this->requestScopedKeys[$this->getAlias($name)] = true;
-}
-
-public function resetRequestScope(): void
-{
-    foreach (array_keys($this->requestScopedKeys) as $name) {
-        unset($this->instances[$name], $this->bindings[$name]);
-    }
-    $this->requestScopedKeys = [];
-}
+// AbstractApplication.php:382 (inside resetForRequest)
+Router::reset();   // <-- wipes the routes (and handlers/patterns/group)
 ```
+
+The **fix must separate "provider boot is done" from "routes need (re)loading per request."** See §4.1.
+
+### 3.2 Superglobal reliance vs RoadRunner PSR-7
+
+RoadRunner hands each request to the worker as a PSR-7 `ServerRequestInterface` (via the goridge relay). It does **not** fully populate PHP's `$_SERVER`, `$_GET`, `$_POST`, `$_COOKIE`, `$_FILES` the way PHP-FPM does, nor does it provide `php://input` in the traditional sense.
+
+The framework reads superglobals in several critical places:
+
+- **`Router::run()`** (`Router/Router.php:258-301`) reads `$_SERVER['REQUEST_URI']` and `$_SERVER['REQUEST_METHOD']` directly.
+- **`RequestFactory::getFromGlobal()`** (`Http/RequestFactory.php`) builds the `Request` from `$_SERVER`, `$_GET`, `$_POST`, `$_COOKIE`, `$_FILES`, `php://input`, `REMOTE_ADDR`.
+- **`Request::isSecured()`** (`Http/Request.php:497`) reads `$_SERVER['HTTPS']`.
+
+**Assessment:** This is the second-most-important integration point. Even after fixing §3.1, you cannot simply call `Http::handle($request)` from a worker with a PSR-7 request unless the kernel sources its input from the passed object, not the superglobals. RoadRunner provides a full PSR-7 factory precisely so the app never needs `$_SERVER`.
+
+**Fix:** Introduce a `RequestFactory::fromPsr7ServerRequest(Psr\Http\Message\ServerRequestInterface $psr7): Request` path, and have the RoadRunner entry point build the Omega `Request` from the PSR-7 server request. The roadrunner worker then calls `$http->handle($omegaRequest)` and sends `$response` back via `psr7()->respond()` (spiral adapter handles the relay). Details + code in §4.2.
+
+### 3.3 Configuration is re-read on every request (waste, not bug)
+
+`Http::bootstrap()` runs `ConfigBootstrapper` on every `handle()`. `ConfigBootstrapper::loadConfiguration()` (`Config/Bootstrapper/ConfigBootstrapper.php`) **glob/require**`s the config directory or loads the cached `config.php` each time. Idempotent and correct, but on a worker servicing thousands of requests this is pure overhead that should be avoided in production.
+
+**Fix:** cache the assembled `ConfigRepository` once per worker and only rebuild if the cached config file is present / stale. See §4.4.
+
+### 3.4 Static memory-accumulation vectors
+
+Under a long-lived process, statics that **only grow** are memory leaks, and statics carrying **per-request data** are correctness bugs. Reviewed:
+
+- **`DirectiveTemplator::$directive`** (`View/Templator/DirectiveTemplator.php:48`): custom directives registered via `DirectiveTemplator::register()` (e.g. `ViewServiceProvider::registerViteDirectives()` registers `'vite'` at boot). These are intended to be process-lifetime and bounded; the only leak is if application code registers directives per request. Safe to leave, but **must not be registered again on a request boundary** in a way that mutates other per-request state. See §4.5.
+- **`MacroableTrait::$macros`** (per-class static, `:38`): if middleware registers macros per request, they persist. Provide a `resetMacro()` call at boundary (§4.5).
+- **`Http::$middlewareUsed`** (`Http/Http.php`): grows per request; **must be cleared** in `resetForRequest()`.
+- **`Vite::$cache`/`$hot`** (`View/Vite.php:79,82`): bounded, keyed by manifest path, `flush()` available; only relevant in HMR (dev). Optional hygiene clear.
+- **`Model::$dispatcher`**: fixed-size static; safe.
+- **`Env::$values`**: fixed; safe (env is static config; re-`load()`ing is a no-op with `createImmutable`).
+- **`Memory` cache / `LoggingManager::$driver` / `CacheManager`**: already bounded or process-scoped correctly.
+
+### 3.5 Request-scoping gaps in the container
+
+Only bindings marked via `setRequestScoped()` are rebuilt after `resetRequestScope()`. In the framework, many **per-request** services are registered as ordinary shared singletons and thus survive with stale data:
+
+- The active **`request`** binding — `Http::handle()` does `$app->set('request', $request)` each request, but it is *not* marked request-scoped. Because `set()` overwrites `$instances`, this actually does get replaced — **but** any other service that captured the *old* request instance keeps the stale reference.
+- The **cache manager / drivers** — process-wide singletons are generally fine, but if the `Memory` driver is used as the app cache, entries written during request N are visible in request N+1 (by design for a cache, but worth noting for rate-limiting/fixed-window where `RateLimiterFactory` uses the cache).
+- **View instances / templators** — `view.instance` is a shared singleton; `clearDependencies()` handles the only per-render state, so acceptable.
+- Middleware/repository instances that cache request data.
+
+**Fix:** mark at least `request`, per-request `view`/`response` abstractions, and any request-bound repositories as request-scoped so `resetRequestScope()` tears them down. See §4.6.
+
+### 3.6 `isBooted` semantic confusion (tied to §3.1)
+
+`bootProvider()` bundles *all* once-only provider `boot()` logic (DB DSN setup, cache driver registration, cron schedule binding via `CronServiceProvider`, view resolvers, *and* route loading) behind `$isBooted`. The **route loading must happen per request**, but the rest should remain once-per-process. The remediation therefore splits these concerns rather than naively resetting `$isBooted` (which would re-run expensive provider boots every request).
 
 ---
 
-### 5.2 `Application::$app` static singleton is never reset per request
+## 4. Actionable Remediation Plan
 
-**Evidence — `src/Omega/Application/AbstractApplication.php`:**
+Ordered by priority. Each item includes the precise file, the change, and a code example. Items 4.1 and 4.2 are **mandatory** for a working RoadRunner deployment; 4.3+ are best-practice hardening.
+
+### 4.1 (MANDATORY) Re-register routes on every request
+
+Separate "routes loaded" from "providers booted." Two coordinated changes:
+
+**A. Give the Router a dedicated per-request load path (recommended).**
+
+Add a method on `AbstractApplication` that (re)loads routes without re-booting all providers, and call it *after* `Router::reset()` in `resetForRequest()` (or at the start of `Http::handle()`).
+
 ```php
-protected static ?Application $app = null;      // line 57
-
-public static function getInstance(): ?Application  // line 129
+// AbstractApplication.php — new method
+final public function loadRoutes(): void
 {
-    return Application::$app;
-}
-
-protected function setBaseBinding(): void           // lines 167-187
-{
-    if (Application::$app !== null) {
-        Application::$app->flush();                 // only reset path = new Application constructed
-    }
-    Application::$app = $this;
-    // ...
+    // Ensure route-registration code runs each request, NOT gated by $isBooted.
+    // If a route cache exists, RouteServiceProvider::registerRoute() re-adds them;
+    // otherwise require the web routes file again (this file must be written to
+    // be require'd, not require_once, so it re-executes each request).
 }
 ```
 
-**Evidence — `src/Omega/Application/helper.php:60`:** global `app()` returns `Application::getInstance()`, so every helper (`get_path()`, `app()`, `is_dev()`, etc.) reaches the process-global singleton.
+Implement it by adding a `bootRoutes()` hook to the application:
 
-**Why it breaks RR:** The static singleton persists for the worker's lifetime. All global helpers and all code that calls `app()` resolve against the *same* long-lived instance. Unless the RR adapter flushes/reconstructs, any per-request mutations to that instance accumulate.
-
-**Remediation:**
-- Implement a per-request reset that **detaches** the singleton without requiring a full reconstruct: add `Application::resetForRequest()` that calls the container's request-scope reset (5.1) and clears request-time callbacks (`terminateCallback`, any request-time `bootingCallback`/`bootedCallback` additions) while leaving core bindings intact.
-- Document that application code must **never** store request-scoped data on the `app()` singleton.
-- Update `flush()` to also reset `AbstractFacade::flushInstance()` and `Router::reset()` (see 5.3/5.4) so the whole logical reset is one call.
-
-**Code example:**
 ```php
-// AbstractApplication.php — add a dedicated request teardown, called by the worker adapter
+// AbstractApplication.php
+public function bootRoutes(): void
+{
+    $routeProvider = new \Omega\Router\RouteServiceProvider($this);
+    $routeProvider->boot();
+}
+```
+
+But note `RouteServiceProvider::boot()` uses `require_once` for `web.php`/`schedule.php`, so to make it re-execute each request you must switch the *web routes* include to `require` (the route cache path and schedule remain once-only). See the revised provider below.
+
+**B. Modify the boot flow so route loading is per-request and everything else stays once.**
+
+Revised `Http::bootstrap()` / `Http::resetForRequest()`:
+
+```php
+// Http/Http.php
+public function bootstrap(): void
+{
+    $this->app->bootstrapWith($this->bootstrappers);
+    // BootProviders runs bootProvider() ONCE (guarded by $isBooted).
+}
+
 public function resetForRequest(): void
 {
-    $this->terminateCallback = [];
-    $this->resetRequestScope();            // Container::resetRequestScope() from 5.1
-    Router::reset();                       // see 5.3
-    AbstractFacade::flushInstance();
-    Env::reloadIfRequested();
-    // per-request log flush, transaction rollback — see 5.6
-}
-```
-
----
-
-### 5.3 Router static route registry & request-time state
-
-**Evidence — `src/Omega/Router/AbstractRouter.php`:**
-```php
-protected static array $routes = [];                  // line 23
-protected static ?Route $current = null;              // line 30
-protected static $pathNotFound;                       // line 39
-protected static $methodNotAllowed;                   // line 49
-public static array $group = ['prefix' => '', 'middleware' => []];  // line 60
-public static array $patterns = [...];                // line 72
-```
-
-**Evidence — `src/Omega/Router/Router.php`:**
-```php
-// line 267 — reads superglobals directly
-$dispatcher = RouteDispatcher::dispatchFrom($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD'], self::$routes);
-// line 280 — overwrites static "current route" each request
-self::$current = $dispatcher->current();
-```
-
-**Analysis:**
-- `$routes` is registered **once** at boot (guarded by `isBooted`), so a persistent route table is actually *desirable* and not a leak by itself.
-- `$current` is overwritten each `run()` — self-healing **provided `run()` executes every request**. If `run()` is skipped or `$current` is read outside the cycle, stale route data leaks.
-- `$group` (prefix/middleware) is mutated via `RouteGroup` setup/cleanup closures; an exception inside a group leaves `$group` polluted, leaking prefixes/middleware into subsequent requests.
-- **`Router::reset()` exists (`AbstractRouter.php:113`) but is never called in `src/`.** It clears `$routes`, `$pathNotFound`, `$methodNotAllowed`, `$group` — but does **not** clear `$current` or `$patterns` (a gap worth fixing).
-- **`$_SERVER` dependency** is an RR integration point: RR does not populate `$_SERVER` for you.
-
-**Remediation:**
-1. **Route registration once, never during requests** — enforce that all routes are defined at boot (they already are, via the guarded provider). Document that dynamic per-request route registration is forbidden under RR.
-2. **Extend `Router::reset()`** to also reset `$current`, `$patterns`, and `$macro` state:
-   ```php
-   // AbstractRouter.php
-   public static function reset(): void
-   {
-       static::$routes         = [];
-       static::$current        = null;   // add
-       static::$pathNotFound   = null;
-       static::$methodNotAllowed = null;
-       static::$group          = ['prefix' => '', 'middleware' => []];
-       // optionally reset static::$patterns to its default instead of clearing
-   }
-   ```
-3. **Remove the `$_SERVER` dependency** in `Router::run()`. Accept the URI/method from the `Request` object or as method parameters, and have the RR adapter pass them explicitly:
-   ```php
-   public static function run(string $uri, string $method): mixed
-   {
-       $uri    = $uri    ?: ($_SERVER['REQUEST_URI']    ?? '/'); // fallback for non-RR
-       $method = $method ?: ($_SERVER['REQUEST_METHOD'] ?? 'GET');
-       $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, self::$routes);
-       self::$current = $dispatcher->current();
-       // ...
-   }
-   ```
-   This keeps back-compat while giving the worker a clean path to inject request data.
-
----
-
-### 5.4 Facade static instance cache
-
-**Evidence — `src/Omega/Facade/AbstractFacade.php`:**
-```php
-protected static ?ApplicationInterface $app = null;      // line 45
-protected static array $instance = [];                   // line 48
-
-protected static function getFacadeBase(string $name): mixed  // lines 105-112
-{
-    if (array_key_exists($name, static::$instance)) {
-        return static::$instance[$name];
+    if ($this->app->bound(DatabaseManager::class)) {
+        $this->app->get(DatabaseManager::class)->resetConnectionsForRequest();
     }
-    return static::$instance[$name] = static::$app->make($name);
+    if (method_exists($this->app, 'resetForRequest')) {
+        $this->app->resetForRequest();   // resets router, facades, request scope
+    }
+    // NEW: repopulate the route table for the next request.
+    if (method_exists($this->app, 'bootRoutes')) {
+        $this->app->bootRoutes();
+    }
 }
+```
 
-public static function flushInstance(): void            // lines 119-122
+**Revised `RouteServiceProvider::boot()`** (note `require` for web routes, keep schedule once-only):
+
+```php
+// RouteServiceProvider.php
+public function boot(): void
 {
-    static::$instance = [];
-    static::$app = null;
-}
-```
-
-**Analysis:** `$instance` is bounded by the number of distinct accessor names (e.g. `DB`, `PDO`, `Schema`, `Cache`, `Hash`, `View`, `Vite`) — it does **not** grow per request, so it is not an unbounded leak. However, after `Application::flush()` + a new application construction, a stale cached instance from the *old* container could be returned (the `array_key_exists` guard returns the stale entry). This becomes a correctness bug in the reconstruct-per-request strategy.
-
-**Remediation:** Ensure `flushInstance()` is invoked as part of the per-request reset (it is already part of the logical reset in 5.2's `resetForRequest()`). Add a `FacadeBootstrapper`-style re-injection of `AbstractFacade::$app` after any application reconstruction.
-
----
-
-### 5.5 Event dispatcher listener accumulation
-
-**Evidence — `src/Omega/Event/Dispatcher/Dispatcher.php:61`:**
-```php
-protected array $listeners = [];
-```
-The `Dispatcher` is registered in the container as a **shared singleton** (`EventServiceProvider.php:44-63`) and is also wired into the **static** `Model::$dispatcher` (`Model.php:108,924-950`).
-
-**Analysis:** If any listener/subscriber is registered **during** a request (route handler, model boot, user code), it remains in the shared singleton's `$listeners` array for the worker's lifetime — a memory leak **and** a stale-behavior leak (it fires on subsequent requests where it should not). `clearListeners()`/`removeListener()`/`removeSubscriber()` exist but are never called between requests.
-
-**Remediation:** Enforce all listener registration at **boot time only**. If dynamic registration is unavoidable, add a per-request teardown that captures the set of listeners at request start and restores it at request end:
-```php
-// in the worker adapter, per request:
-$snapshot = $dispatcher->getListeners();      // if such accessor exists
-// ... handle request ...
-$dispatcher->clearListeners();                // or restore($snapshot)
-```
-Prefer the simplest rule: **register listeners in service providers (boot), never in request handlers.**
-
----
-
-### 5.6 Database: broken reconnection + log/transaction leakage
-
-#### 5.6.1 Broken/missing reconnection (CRITICAL) — `src/Omega/Database/AbstractConnection.php`
-
-```php
-// lines 96-112 — createPdo() retries on "lost connection"
-protected function createPdo(...): PDO
-{
-    try {
-        return new PDO($dsn, $username ?? '', $password ?? '', $options);
-    } catch (PDOException $e) {
-        if ($this->isLostConnection($e)) {           // line 106  <-- BUG: method does not exist
-            return new PDO($dsn, $username ?? '', $password ?? '', $options);
+    // Route cache is process-lifetime (static); load once.
+    $routeCache = $this->getApplicationCachePath() . 'route.php';
+    if (is_file($routeCache)) {
+        $routes = require $routeCache;
+        foreach ($routes as $route) {
+            $this->registerRoute($route);
         }
-        throw $e;
-    }
-}
-
-// lines 117-169 — the actual method is named:
-protected function causedByLostConnection(Throwable $e): bool
-```
-
-`createPdo()` is only invoked from the constructor. The retry (a) calls a **non-existent method** `isLostConnection` — throwing an `Error` inside the `catch`, masking the original exception — and (b) even if renamed, only guards the *initial* connect. **There is no runtime reconnect**: `$this->pdo` is a `protected PDO` set once in the constructor and never replaced. In a long-lived worker, once the DB drops, every subsequent query fails against the dead cached handle; the connection is never rebuilt.
-
-**Remediation — fix the name and add runtime reconnect:**
-```php
-// AbstractConnection.php
-protected function createPdo(...): PDO
-{
-    try {
-        return new PDO($dsn, $username ?? '', $password ?? '', $options);
-    } catch (PDOException $e) {
-        if ($this->causedByLostConnection($e)) {     // rename call site to match method
-            return new PDO($dsn, $username ?? '', $password ?? '', $options);
-        }
-        throw $e;
-    }
-}
-
-/**
- * Reconnect if the persisted connection has gone away.
- * Call this before every query in a persistent worker.
- */
-protected function reconnectIfLost(): void
-{
-    if (null === $this->pdo) {
         return;
     }
-    try {
-        $this->pdo->query('SELECT 1');
-    } catch (\Throwable $e) {
-        if (!$this->causedByLostConnection($e)) {
-            throw $e;
+
+    // Re-register each request so Router::reset() doesn't leave an empty table.
+    Router::middleware([MaintenanceMiddleware::class])->group(
+        static function (): void {
+            require get_path('path.base', 'routes/web.php');   // was require_once
         }
-        $this->pdo = $this->createPdo(
-            $this->buildDsn(),
-            $this->configs['username'] ?? null,
-            $this->configs['password'] ?? null,
-            $this->options()
-        );
+    );
+
+    // Schedule is static config; registering once is fine (guarded by loadedProviders).
+    if (!isset($this->scheduleLoaded)) {
+        require_once get_path('path.base', 'routes/schedule.php');
+        $this->scheduleLoaded = true;
     }
 }
 ```
-Invoke `reconnectIfLost()` **only at the start of `beginTransaction()`**. Invoking it also from `query()`/`execute()` is unsafe: the `SELECT 1` ping runs on the single shared PDO handle and, during nested subqueries (an outer fetch still holding an open result set while an inner query runs), MySQL rejects the concurrent ping with `SQLSTATE[HY000] 2014: Cannot execute queries while there are pending result sets`. Keeping the reconnect to the transactional boundary removes that regression while still transparently rebuilding a dropped link. (A future enhancement could add lazy retry-on-failure around `execute()`, re-preparing the statement against the rebuilt PDO.) This is the single most important DB fix for RR.
 
-*(Note: `PDO::ATTR_PERSISTENT => true` is already set at `AbstractConnection.php:22`, which engages PHP's persistent-connection cache — good — but it does **not** provide cross-request *reattempt* logic on the PHP side; the reconnect wrapper above is still required.)*
+> If you prefer to avoid touching the provider, an alternative is to **not reset the router** at all and instead (a) register routes exactly once at worker startup and (b) rely on `Router::$routes` persisting; then remove `Router::reset()` from `resetForRequest()`. This is simpler and equally valid since routes are static per worker. **Choose one approach and apply it consistently** — see §4.7 for a worker that preloads routes at startup.
 
-#### 5.6.2 Unbounded query-log accumulation (HIGH) — `AbstractConnection.php`
+**Verification:** add an integration test that performs two consecutive simulated requests and asserts both dispatch (see §6).
+
+### 4.2 (MANDATORY) Drive the kernel from a PSR-7 request, not superglobals
+
+**A. Add a PSR-7 → Omega `Request` adapter** in `RequestFactory`:
 
 ```php
-protected array $logs = [];                    // line ~34
-public function execute(): bool                // lines 238-246
+// Http/RequestFactory.php
+use Psr\Http\Message\ServerRequestInterface;
+
+public function fromPsr7ServerRequest(ServerRequestInterface $psr7): Request
 {
-    $start = microtime(true);
-    $execute = $this->statement->execute();
-    $this->addLog($this->query, $start, microtime(true));   // appends to $this->logs
-    return $execute;
-}
-// addLog at lines 197-205 does: $this->logs[] = [...];
-```
-`$logs` grows with one entry per query and is **never auto-flushed between requests** (`flushLogs()` exists at `AbstractConnection.php:336` but is manual). In a worker handling many requests, this is an unbounded memory leak.
+    $query  = new \Omega\Collection\Collection($psr7->getQueryParams());
+    $body   = new \Omega\Collection\Collection($psr7->getParsedBody() ?? []);
+    $cookies= new \Omega\Collection\Collection($psr7->getCookieParams());
+    $files  = new \Omega\Collection\Collection(
+        array_map([$this, 'normalizeUpload'], $psr7->getUploadedFiles())
+    );
+    $headers= new HeaderCollection();
+    foreach ($psr7->getHeaders() as $name => $values) {
+        $headers->set($name, implode(', ', $values));
+    }
 
-**Remediation:** Call `flushLogs()` at the end of each request (in the reset orchestration), or bound the array. Preferred: auto-flush at request boundary:
-```php
-// in resetForRequest() / worker adapter per request:
-$connection->flushLogs();
-```
-Consider also a size cap (e.g. keep the last N entries) if `flushLogs()` is not reliably called.
+    $request = new Request(
+        $psr7->getMethod(),
+        (string) $psr7->getUri(),
+        $query, $body, $headers, $cookies, $files
+    );
+    $request->initialize(
+        remoteAddress: $psr7->getServerParams()['REMOTE_ADDR'] ?? null,
+        rawBody: (string) $psr7->getBody(),
+    );
 
-#### 5.6.3 Transaction state leakage (HIGH) — `AbstractConnection.php:312-331`
-
-`beginTransaction()`/`endTransaction()`/`cancelTransaction()` operate directly on the shared PDO. If a request begins a transaction but returns without commit/rollback, the open transaction **leaks into the next request** on the same worker connection.
-
-**Remediation:** Guarantee rollback at the request boundary:
-```php
-// in resetForRequest() of the worker adapter:
-if ($connection->inTransaction()) {
-    $connection->cancelTransaction();   // rollback any dangling transaction
+    return $request;
 }
 ```
-Ensure `inTransaction()` reflects `$this->pdo->inTransaction()`.
 
-#### 5.6.4 Model static state — `Model.php:107-108`
+**B. Change `Http::handle()` to use the injected `Request` (already true — it receives `$request`).** The only remaining superglobal reads to remove are in `Router::run()` and `Request::isSecured()`:
 
-`protected static ?DispatcherInterface $dispatcher = null;` is a single non-accumulating reference (safe). No static model registry, no static connection holder. **No remediation required.**
-
-#### 5.6.5 DatabaseManager pooling — `DatabaseManager.php:47-102`
-
-`$connections[]` caches one `ConnectionInterface` per name and reuses it; resolvers are bounded. `clearConnections()` exists for manual reset. **No change needed** — this is the correct pooling shape.
-
-**Connection-state note:** `$statement` and `$query` (last prepared statement / last query) are overwritten each query — safe in a single-request-at-a-time worker.
-
----
-
-### 5.7 View/Templator singleton accumulation
-
-**Evidence — `src/Omega/View/Templator.php`:**
 ```php
-private array $dependency = [];              // line 83
-public function addDependency(string $parent, string $child, int $dependDeep = 1): self  // line 135
+// Router.php run(): accept the current URI/method from the matched kernel instead of $_SERVER
+public static function run(?string $path = null, ?string $method = null): mixed
 {
-    $this->dependency[$parent][$child] = $dependDeep;
+    $path   ??= /* from $this->app request */;
+    $method ??= /* from $this->app request */;
+    ...
 }
 ```
-`Templator` is a **shared singleton** (`ViewServiceProvider.php:85-88`, bound via closure → shared). During `render()` it calls `prependDependency()` (line ~311), so `$this->dependency` grows with every new template/combo rendered across all requests — **unbounded growth + stale dependency data**.
 
-**Other persistent view statics (bounded but global):**
-- `TemplatorFinder::$views` (`TemplatorFinder.php:45`) — bounded per-view-name cache; `flush()` exists.
-- `DirectiveTemplator::$directive` (`DirectiveTemplator.php:48`) — grows if dynamic directives registered.
-- `Vite::$cache` / `Vite::$hot` (`Vite.php:79,82`) — persistent; `flush()` exists.
-- Per-pass statics in `SectionTemplator`/`ComponentTemplator`/`IncludeTemplator` (`self::$cache = []` reset at start of `parse()`) — effectively scoped to one compile pass, **safe**.
+Pass the resolved `Request`/URI/method into `Router::run()` from the dispatcher so the router never reads `$_SERVER`.
 
-**Remediation:**
-1. **Bound or flush `Templator::$dependency` per request** — add a `clearDependencies()` and call it in the reset orchestration, or convert it to a fixed-capacity LRU.
-   ```php
-   public function clearDependencies(): void
-   {
-       $this->dependency = [];
-   }
-   ```
-2. **Bind `Templator` as shared but request-safe** — ensure `render()` does not mutate cross-request state (it already rebuilds compilation per call; only the `$dependency` cache persists).
-3. For `Vite`/`DirectiveTemplator`, call `Vite::flush()` and (if dynamic) reset the directive registry in the per-request reset, or enforce static/directive registration only at boot.
+**C.** `Request::isSecured()` (`Http/Request.php:497`) should fall back to a scheme known from the PSR-7 URI (`$psr7->getUri()->getScheme() === 'https'`) rather than `$_SERVER['HTTPS']`.
 
----
+### 4.3 (RECOMMENDED) Cache the configuration once per worker
 
-### 5.8 In-memory cache growth
+Modify `ConfigBootstrapper::bootstrap()` to build the repository once and keep it, or gate on a worker flag:
 
-**Evidence — `src/Omega/Cache/Storage/Memory.php:65`:**
 ```php
-protected array $storage = [];
+// Config/Bootstrapper/ConfigBootstrapper.php
+public function bootstrap(ApplicationInterface $app): void
+{
+    static $cached = null;
+    if ($cached === null || !$app->isProduction()) {
+        $cached = $this->loadConfiguration($app);          // heavy I/O only once
+    }
+    $app->loadConfig(new ConfigRepository($cached));
+    date_default_timezone_set(env('APP_TIMEZONE') ?? 'UTC');
+}
 ```
-`Memory` is bound as a **shared singleton** (`CacheServiceProvider.php:75-97` via closure→shared). The class docblock claims it "does not persist data between requests" (`Memory.php:30-31`) — **factually wrong under RR**: as a singleton in a persistent worker it persists across requests. TTL expiry is only checked on `get()` (`Memory.php:94-100`); keys written with TTL but never read are **never GC'd**, so `$storage` grows without bound. If the app stores *request-scoped* tokens/users in the memory driver, both a memory leak and cross-request data bleed occur.
 
-**Bonus bug:** `Memory::setMultiple()` returns `false` unconditionally (`Memory.php:146-153`).
+In production (which RoadRunner implies) `loadConfig()` becomes a cheap rebind of the same repository. Env and timezone setting remain safe.
 
-**Remediation:**
-- **Do not default to the in-memory driver** in production workers. Default to `File`, `Redis`, or `Apcu` (those don't hold growing PHP arrays; Apcu/Redis are shared externally).
-- If the memory driver is used, add a **size cap / eviction policy** and enforce TTL GC on write as well as read.
-- Fix `setMultiple()` to return `true` on success:
-   ```php
-   public function setMultiple(iterable $values, int|\DateInterval|null $ttl = null): bool
-   {
-       foreach ($values as $key => $value) {
-           $this->set($key, $value, $ttl);
-       }
-       return true;   // was: return false;
-   }
-   ```
+### 4.4 (RECOMMENDED) Introduce a RoadRunner worker entry point + `Http` termination contract
 
----
+Add a worker bootstrap file (e.g. `public/roadrunner-worker.php` or a `Console` command `rr:work`) that:
 
-### 5.9 Macroable & AppServiceProvider static registries
+1. Instantiates the `Application`, binds a fixed base path, builds the `Http` kernel **once**.
+2. Registers the `BosunOPs`-style loop via the RoadRunner PSR-7 adapter.
+3. For each incoming PSR-7 request: convert via `RequestFactory::fromPsr7ServerRequest`, call `$http->handle()`, return the `Response`.
 
-**Evidence:**
 ```php
-// src/Omega/Support/MacroableTrait.php:38
-protected static array $macros = [];
-// src/Omega/Container/AppServiceProviderTrait.php:26
-protected static array $modules = [];
-```
-`$macros` grows with every `macro()` registration; `$modules` grows with every `export()`. Neither is auto-reset (`resetMacro()`/`flushModule()` exist but are manual).
-
-**Remediation:** Register macros and export modules **only at boot**; document that per-request dynamic macro/module registration is forbidden. Optionally include `resetMacro()`/`flushModule()` in the per-request reset if dynamic registration is required (avoid this if possible).
-
----
-
-### 5.10 Boot-Time-Only Registration Contract
-
-**Status:** Applied as *documentation* (Phase 3, point 9). No dev-mode assertion was added: the four registries below (`Dispatcher` listeners, `Macroable` macros, `AppServiceProvider` modules, `DirectiveTemplator` directives) are standalone classes that are not container-aware, so a runtime assertion would require injecting `Application` boot state into each of them — rejected as invasive and fragile.
-
-**The rule (project-wide, mandatory for persistent workers):** every registry below must be populated **only during the boot phase** — i.e. inside `ServiceProvider::register()` or `ServiceProvider::boot()`, or in your application's `bootstrap/app.php` route/directive setup — and **never inside a request handler, middleware, controller or `Http::handle()` path**. Rationale: the framework's shared singletons for these registries persist for the entire worker process; any entry added during one request stays in memory and keeps firing/being visible on every subsequent request in that worker (memory leak **and** stale-behavior leak).
-
-| Registry | Location | Grows via | Reset primitive |
-|---|---|---|---|
-| Event listeners | `Dispatcher::addListener()` — `src/Omega/Event/Dispatcher/Dispatcher.php:66` | `addListener()`, `addSubscriber()` | `clearListeners()`, `removeListener()`, `removeSubscriber()` |
-| Macros | `MacroableTrait::macro()` — `src/Omega/Macroable/MacroableTrait.php:47` | `macro()` | `resetMacro()` |
-| Modules | `AppServiceProviderTrait::export()` — `src/Omega/Container/AppServiceProviderTrait.php:118` | `export()` | `flushModule()` |
-| View directives | `DirectiveTemplator::register()` — `src/Omega/View/Templator/DirectiveTemplator.php:81` | `register()` | none (avoid dynamic use) |
-
-**Guidance:**
-- **Listeners:** register them in a service provider's `boot()` (e.g. `$this->app->get('events')->addListener(...)` or `DispatcherInterface::class`), never in a route handler or model boot callback that can fire per request.
-- **Macros / modules / directives:** register at application bootstrap time only. If an application genuinely needs dynamic per-request registration, it must maintain its own snapshot/restore around `handle()` — but this is strongly discouraged.
-- **Enforcement in tests (recommended):** assert in your integration tests that the listener/macro/module/directive counts are identical before and after a `handle()` round-trip. This turns the documented contract into an automated regression guard without touching the standalone registries.
-- Under a RoadRunner worker, prefer the anatomy already wired in Phase 1/2: mark genuinely per-request bindings request-scoped (`Container::setRequestScoped()`) and run `Application::resetForRequest()` (Section 8) at the end of each request; the boot-time-only rule above applies to the *global* registries that `resetForRequest()` intentionally does **not** clear.
-
----
-
-## 6. Compatibility Assessment Matrix
-
-| Area | RR-compatible as-is? | Action required |
-|---|---|---|
-| Per-request Request object rebinding (`Http::handle`) | ✅ Yes | None (keep) |
-| DB connection pooling / no per-query connect | ✅ Yes | None (keep) |
-| PDO `ATTR_PERSISTENT` | ✅ Yes | None (keep) |
-| ReflectionCache (instance, immutable metadata) | ✅ Yes | None (keep) — beneficial under RR |
-| Idempotent provider registration/boot | ✅ Yes | None (keep) |
-| **Per-request state reset** | ❌ No | **Add reset orchestration (Section 7/8)** |
-| **Container `$instances` accumulation** | ❌ No | Request-scoped binding + reset (5.1) |
-| **`Application::$app` static singleton** | ❌ No | Per-request detach (5.2) |
-| **Router static route/group state + `$_SERVER`** | ❌ No | Reset + inject URI/method (5.3) |
-| **Facade static cache** | ⚠️ Partial | `flushInstance()` in reset (5.4) |
-| **Event listener accumulation** | ⚠️ Partial | Boot-only registration / reset (5.5) |
-| **DB reconnect** | ❌ No (broken) | Fix method name + reconnect wrapper (5.6.1) |
-| **DB `$logs` accumulation** | ❌ No | Flush per request (5.6.2) |
-| **DB transaction leakage** | ❌ No | Rollback per request boundary (5.6.3) |
-| **Templator `$dependency` growth** | ❌ No | Flush/bound per request (5.7) |
-| **Memory cache growth** | ❌ No | Non-memory default + cap + GC (5.8) |
-| **Macro/module statics** | ⚠️ Partial | Boot-only registration (5.9) |
-
----
-
-## 7. The RoadRunner Worker Adapter
-
-To run Omega under RoadRunner you need a `psr/container`-compatible RR worker entrypoint (the `spiral/roadrunner-http` + `spiral/roadrunner-worker` packages) that:
-
-1. Boots the Omega application **once** at worker start.
-2. For each incoming RR request: builds a fresh `Request`, calls `kernel->handle()`, writes the `Response` to RR's `StreamWriterInterface`, then runs the per-request teardown (Section 8).
-
-**Suggested worker skeleton (`worker.php`):**
-```php
-<?php
-declare(strict_types=1);
-
+// public/roadrunner-worker.php
 use Spiral\RoadRunner\Worker;
 use Spiral\RoadRunner\Http\PSR7Worker;
-use Spiral\RoadRunner\Environment;
+use Omega\Application\Application;
+use Omega\Http\Http;
+use Omega\Http\RequestFactory;
 
-require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-$worker  = Worker::create();
-$psr7    = new PSR7Worker($worker, new \Nyholm\Psr7\Factory\Psr17Factory(), new \Nyholm\Psr7\Factory\Psr17Factory(), new \Nyholm\Psr7\Factory\Psr17Factory());
-$app     = require __DIR__ . '/bootstrap/app.php';      // constructs Application once
-$kernel  = $app->make(\Omega\Http\Http::class);          // resolve kernel once
+$app = new Application(__DIR__ . '/..');
+$app->setBaseBinding();
+$http  = $app->make(Http::class);
+$rf    = $app->make(RequestFactory::class);
 
-while (true) {
-    $request = $psr7->waitRequest();
-    if (null === $request) {
-        break;
-    }
+$worker = $app->make(Worker::class);          // from RR relay
+$psr7   = new PSR7Worker($worker);
+
+while ($serverRequest = $psr7->waitRequest()) {   // persistent loop
     try {
-        // 1. Populate superglobals from RR request (Router still reads $_SERVER) — see 5.3.
-        $_SERVER['REQUEST_URI']    = $request->getUri()->getPath();
-        $_SERVER['REQUEST_METHOD'] = $request->getMethod();
-        // optionally $_COOKIE/$_GET/$_POST/$_FILES/$_SERVER['REMOTE_ADDR'] etc.
-
-        // 2. Map PSR-7 -> Omega Request, or use an Omega PSR-7 bridge.
-        $omegaRequest = /* convert $request to \Omega\Http\Request */;
-
-        // 3. Handle.
-        $response = $kernel->handle($omegaRequest);
-        $psr7->respond(/* convert $response to PSR-7 */);
-    } catch (\Throwable $e) {
-        $psr7->getWorker()->error((string) $e);
+        $omegaRequest = $rf->fromPsr7ServerRequest($serverRequest);
+        $response     = $http->handle($omegaRequest);   // Omega Response
+        $psr7->respond(Psr7Response::fromOmega($response));
+    } catch (Throwable $e) {
+        $psr7->respond(new Response(500, [], $http->report($e))); // or getStream
     } finally {
-        // 4. Run the per-request reset (Section 8).
-        resetForRequest($app);
+        $http->terminate($omegaRequest, $response); // fires terminate + resetForRequest
     }
 }
 ```
 
-> **Important:** Because Omega's `Router::run()` reads `$_SERVER` directly, the worker must re-seed `$_SERVER` (as shown) **or** the router method must be refactored per 5.3 to accept the request. The `$_SERVER` seeding is a stopgap; the refactor is the durable fix.
+`Http::terminate()` already (a) runs middleware terminate, (b) `app->terminate()`, (c) `resetForRequest()`. With §4.1 applied, `resetForRequest()` also re-loads routes, so the loop is self-resetting.
 
----
+### 4.5 (RECOMMENDED) Clear per-request static/macro state at the boundary
 
-## 8. Per-Request Reset Contract (RFC)
-
-The single most important deliverable of this audit is a **defined, guaranteed per-request teardown**. Every RoadRunner integration must run this after each request. Photograph the exact top-to-bottom sequence:
+In `AbstractApplication::resetForRequest()` (or `Http::resetForRequest()`), clear the per-request statics:
 
 ```php
-/**
- * Per-request teardown for a persistent RoadRunner worker.
- * MUST run after EVERY completed request, in this order.
- *
- * @param  \Omega\Application\Application $app the long-lived Application singleton
- * @return void
- */
-function resetForRequest(Omega\Application\Application $app): void
-{
-    // 1. Terminate middleware + registered terminal callbacks (existing behaviour).
-    // $kernel->terminate($request, $response);   // run BEFORE teardown, if not already
-
-    // 2. Flush DB query logs to stop unbounded growth (5.6.2).
-    foreach ($app->get(DatabaseManager::class)->getConnections() as $connection) {
-        $connection->flushLogs();
-    }
-
-    // 3. Roll back any dangling active transaction (5.6.3).
-    foreach ($app->get(DatabaseManager::class)->getConnections() as $connection) {
-        if ($connection->inTransaction()) {
-            $connection->cancelTransaction();
-        }
-    }
-
-    // 4. Reset the container's request-scoped bindings (5.1).
-    $app->resetRequestScope();
-
-    // 5. Reset Router static request-time state (5.3) and Facade cache (5.4).
-    Router::reset();
-    AbstractFacade::flushInstance();
-
-    // 6. Clear view/templator dependency cache (5.7) if any accumulated.
-    $app->get('view.instance')->clearDependencies();
-
-    // 7. (Optional, only if used) bound the in-memory cache or switch default (5.8).
-    // $app->get('cache')->clear();   // only if Memory driver and data is request-scoped
-
-    // 8. Release the request object so nothing holds it across cycles.
-    $app->set('request', null);   // optional: avoids retaining the last request
-}
+// AbstractApplication.php::resetForRequest()
+Router::reset();                       // existing
+AbstractFacade::flushInstance();       // existing
+DirectiveTemplator::resetDirectives(); // NEW — clear app-registered directives if any are per-request
+Request::resetMacro();                 // NEW — only if macros are registered per request
+Response::resetMacro();                // NEW
+$this->middlewareUsed = [];            // Http::resetForRequest()
 ```
 
-**Guarantee ordering rationale:**
-- Terminate callbacks may touch the DB, so they run **first** (before logs are flushed / transactions rolled back — actually, run terminate **before** step 2).
-- Container and facade resets must come after any application code that resolves services during teardown.
-- Router/facade/view resets are independent of the DB resets and order among them only matters for cleanliness.
+Add these exactly once at the start of the worker so they never run per-request (they are process-lifetime): `DirectiveTemplator::register('vite', ...)`, `Model::setEventDispatcher(...)`, `AbstractFacade::setFacadeBase(...)` (already in `FacadeBootstrapper`).
 
-**Also required in the worker:**
-- Re-seed `$_SERVER` and other superglobals per request **before** `handle()` (5.3), until the router refactor lands.
-- Do **not** call `exit`/`die`, do not rely on `register_shutdown_function` for per-request work (it accumulates — see below).
+> `Vite::$cache` need only be flushed if you redeploy assets without restarting workers; keep `Vite::flush()` callable from a cache-clear command instead of per request.
 
----
+### 4.6 (RECOMMENDED) Mark request-scoped bindings
 
-### Fix `HandleExceptions` re-registration (F-12) — `Exceptions/Bootstrapper/HandleExceptions.php:96-108`
+In the kernel or providers, mark the per-request bindings so `resetRequestScope()` rebuilds them:
 
-`HandleExceptions::bootstrap()` runs every request and calls `set_error_handler`/`set_exception_handler`/`register_shutdown_function` each time. Over many requests these registrations stack. While functionally idempotent, they leak handler closures referencing the singleton. Guard them:
 ```php
-// HandleExceptions.php
-private bool $handlersRegistered = false;
+// Http::handle() — after $this->app->set('request', $request);
+$this->app->setRequestScoped('request');
+$this->app->setRequestScoped(Http\Request::class);
 
-public function bootstrap(\Omega\Application\ApplicationInterface $app): void
+// If repositories/cache-per-request are desired, also:
+$this->app->setRequestScoped('view.response');
+```
+
+And ensure any service that stored a `Request` reference is rebuilt: resolve it through the container each request rather than capturing it in another singleton's constructor. This is the correct long-term pattern for "current user", "current request", etc.
+
+### 4.7 Alternative design: preload routes once at worker startup
+
+Rather than re-running route registration every request, you can keep routes as process-lifetime static state and simply **not reset them**:
+
+```php
+// public/roadrunner-worker.php (startup)
+$app->setBaseBinding();
+$app->make(\Omega\Http\Http::class)->bootstrap(); // boot providers once, registering routes
+// do NOT call Router::reset() per request — remove it from resetForRequest,
+// or override resetForRequest in your app's Http subclass to skip it.
+```
+
+This is the lowest-overhead approach and is fully valid because the route table is immutable static data. The only cost is changing `Router::reset()` behavior in the reset path (or guarding it). If you take this route, still call `AbstractFacade::flushInstance()`, request-scope reset, and `Templator::clearDependencies()` each request — those do not touch routes.
+
+**Recommendation:** prefer **4.1** (per-request reload) for correctness and testability, since it keeps `Router::reset()` safe and matches the framework's existing reset semantics. Use **4.7** only if profiling shows route re-registration is a measurable hotspot (it generally is not).
+
+### 4.8 (OPTIONAL) Cron + Schedule notes
+
+`RouteServiceProvider::boot()` also does `require_once routes/schedule.php`, which populates the `Schedule` pool **once** (guarded by `$isBooted`). Under a persistent worker the schedule is registered once and executed by a `CronWorkCommand` — this is correct. Do **not** re-require `schedule.php` per request (it would run `Schedule::call()` repeatedly). If you merge route reloading per request (§4.1), keep schedule loading guarded by a `$scheduleLoaded` flag as shown.
+
+---
+
+## 5. Recommended `.rr.yaml` Configuration
+
+```yaml
+version: "3"
+
+rpc:
+  listen: tcp://127.0.0.1:6001
+
+server:
+  command: "php public/roadrunner-worker.php"   # entry point from §4.4
+  relay: pipes
+
+http:
+  address: 0.0.0.0:8080
+  middleware: [static, gzip, headers]
+  pool:
+    num_workers: 8
+    max_jobs: 10000          # recycle workers periodically to bound memory
+    allocate_timeout: 20s
+    destroy_timeout: 10s
+  headers:
+    response:
+      X-Powered-By: "Omega/RoadRunner"
+
+logs:
+  mode: production
+  level: error
+
+metrics:
+  address: 127.0.0.1:2112
+
+# Optional: reuse the same pools for a `/health` route by binding a small
+# PHP worker that answers from the same Application instance.
+```
+
+Notes:
+- `max_jobs` recycling bounds any residual per-request growth even after remediation — a best practice for long-lived PHP.
+- Use `relay: pipes` (goridge) for the worker entry; `PSR7Worker` uses the standard relay.
+- The framework's existing `Http::terminate()` + `resetForRequest()` sequence maps naturally onto the `finally` block of the worker loop.
+
+---
+
+## 6. Testing Recommendations
+
+No multi-request test currently exists (`tests/Tests/Http/KernelTerminateTest.php` and `KernelTest.php` each exercise a single lifecycle). Add an integration test that simulates a persistent worker:
+
+```php
+// tests/Tests/Http/RoadRunnerMultiRequestTest.php
+public function testRoutesSurviveAcrossRequests(): void
 {
-    if ($this->handlersRegistered) {
-        return;
-    }
-    // ... existing registration ...
-    $this->handlersRegistered = true;
+    $app = $this->setFixtureBasePath(...);   // fixture with routes/web.php
+    $http = $app->make(Http::class);
+
+    // Request 1
+    $r1 = RequestFactory::capture();           // or fromPsr7ServerRequest(...)
+    $res1 = $http->handle($r1);
+    $this->assertSame(200, $res1->getStatusCode());
+    $http->terminate($r1, $res1);              // triggers resetForRequest
+
+    // Request 2 — the regression this audit fixes
+    $r2 = RequestFactory::capture();
+    $res2 = $http->handle($r2);
+    $this->assertSame(200, $res2->getStatusCode(), // would be 404 w/o the fix
+        'Routes must be re-registered on the 2nd request in a persistent worker.');
+
+    $http->terminate($r2, $res2);
+    $app->flush();
 }
 ```
 
----
+Extend the existing `MemoryLeakTest` pattern (`tests/Tests/Container/MemoryLeakTest.php`) to loop `handle()+terminate()` 1,000 × and assert that `Router::getRoutes()` count, container `instances`/`bindings`, and `Http::$middlewareUsed` do **not** grow.
 
-## 9. Verified Code Locations Index
-
-| File | Lines | Subject |
-|---|---|---|
-| `src/Omega/Container/Container.php` | 56-62, 135-153, 440-462, 306-333 | `$instances`/`$bindings` persistence; `set()` shared capture; `flush()` |
-| `src/Omega/Application/AbstractApplication.php` | 57, 129-132, 167-187, 213-234, 283-295, 300-318, 344-353 | static `$app`; singleton/`setBaseBinding`; idempotent boot/register; `flush()`; `terminate()` |
-| `src/Omega/Application/helper.php` | 60-68, 94-105 | `app()`/`get_path()` hit global singleton |
-| `src/Omega/Application/Application.php` | 155-173 | alias registration (`request`, `config`, ...) |
-| `src/Omega/Router/AbstractRouter.php` | 23, 30, 39, 49, 60, 72, 84-122, 216-281 | static routes/current/group/patterns; `reset()` |
-| `src/Omega/Router/Router.php` | 267, 280 | `$_SERVER` read; `self::$current` overwrite |
-| `src/Omega/Facade/AbstractFacade.php` | 45-48, 105-112, 119-122 | static app/instance cache; `flushInstance()` |
-| `src/Omega/Event/Dispatcher/Dispatcher.php` | 61 | `$listeners` accumulation |
-| `src/Omega/Event/EventServiceProvider.php` | 44-63 | dispatcher singleton + dual instances |
-| `src/Omega/Database/DatabaseManager.php` | 47-48, 71-74, 86-102 | `$connections` pooling; `clearConnections()` |
-| `src/Omega/Database/AbstractConnection.php` | 15-24, 48-60, 96-169, 179-205, 238-246, 312-339 | PDO lifetime; broken reconnect; `$logs`; transactions |
-| `src/Omega/Database/Model/Model.php` | 107-108, 924-950 | static dispatcher (safe) |
-| `src/Omega/View/Templator.php` | 83, 135, 180-196, 311 | `$dependency` growth |
-| `src/Omega/View/ViewServiceProvider.php` | 84-88 | `Templator`/`TemplatorFinder` singletons |
-| `src/Omega/View/TemplatorFinder.php` | 45, 78-85, 149 | `$views` cache |
-| `src/Omega/View/Vite.php` | 79, 82, 244-248 | static `$cache`/`$hot`; `flush()` |
-| `src/Omega/View/Templator/DirectiveTemplator.php` | 48, 81-87 | static `$directive` |
-| `src/Omega/Cache/Storage/Memory.php` | 30-31, 65, 86-141, 146-153 | growable `$storage`; wrong `setMultiple()` |
-| `src/Omega/Cache/CacheServiceProvider.php` | 75-97 | cache manager/driver singletons |
-| `src/Omega/Support/MacroableTrait.php` | 38, 47-50, 114-117 | static `$macros` |
-| `src/Omega/Container/AppServiceProviderTrait.php` | 26, 118-145 | static `$modules` |
-| `src/Omega/Http/Http.php` | 96-102, 126-147, 162-165, 181-191, 244-247 | bootstrappers; per-request `'request'` set; terminate (no reset) |
-| `src/Omega/Exceptions/Bootstrapper/HandleExceptions.php` | 96-108 | handler re-registration per request |
+Also add:
+- A PSR-7 → `Request` conversion test (query, body, headers, cookies, files round-trip).
+- A test asserting `DirectiveTemplator::$directive` and `MacroableTrait::$macros` are stable across reset (or explicitly reset).
+- A DB test verifying `resetConnectionsForRequest()` rolls back an uncommitted transaction between two simulated requests.
 
 ---
 
-## 10. Priority-Ordered Remediation Roadmap
+## 7. Remediation Checklist
 
-**Phase 1 — Blocking blockers (must fix before any RR deployment):**
-1. Fix DB reconnect: rename `isLostConnection` → `causedByLostConnection` (`AbstractConnection.php:106`) **and** add a runtime `reconnectIfLost()` invoked at the `beginTransaction()` boundary (kept out of `query()`/`execute()` to avoid `2014 pending result sets` on nested subqueries) (5.6.1).
-2. Implement the **per-request reset orchestration** (Section 8) in the worker adapter — this alone neutralizes F-01/F-02/F-04/F-05/F-06/F-07/F-08/F-10.
-3. Remove/decouple the `$_SERVER` dependency in `Router::run()` (5.3) or guarantee superglobal reseeding in the worker.
-
-**Phase 2 — Memory safety hardening:**
-4. Flush DB `$logs` and roll back dangling transactions per request (5.6.2/5.6.3) — fold into the reset.
-5. Bound or flush `Templator::$dependency` (5.7); default cache to File/Redis/Apcu and cap/GC the Memory driver (5.8); fix `setMultiple()` (5.8).
-6. Guard `HandleExceptions` handler registration (F-12).
-
-**Phase 3 — Correctness & hygiene:**
-7. ~~Add `resetRequestScope()` to the Container and `resetForRequest()` to `AbstractApplication` as first-class framework APIs (5.1/5.2) so future apps and RR adapters share one contract.~~ **APPLIED** — `Container::setRequestScoped()`/`resetRequestScope()` (`Container.php:350,366`) and `AbstractApplication::resetForRequest()` (`AbstractApplication.php:374`) are now public first-class APIs; `Http::terminate()` calls `$this->resetForRequest()` after `$app->terminate()`.
-8. ~~Extend `Router::reset()` to clear `$current`/`$patterns` (5.3).~~ **APPLIED** — `AbstractRouter::reset()` now clears `self::$current = null` and restores `self::$patterns` to the default set (`AbstractRouter.php:120`).
-9. ~~Enforce boot-time-only listener / macro / module / directive registration via documentation and/or a dev-mode assertion (5.5/5.9).~~ **APPLIED (documentation)** — see §5.10 Boot-Time-Only Registration Contract. Dev-mode assertion intentionally omitted (registries are non-container-aware); enforcement is by documented contract + optional test snapshot assertion.
-10. Add an integration test that simulates multiple sequential `handle()` calls on one `Application` and asserts: no cross-request leakage, bounded `$logs`, GC'd memory cache, no dangling transactions, and stable memory footprint. **PENDING — deferred to the test-revision pass.**
+| # | Item | Severity | Status |
+|---|---|---|---|
+| 4.1 | Re-register routes per request (separate from `$isBooted`) | **Critical** | ❌ Required |
+| 4.2 | PSR-7 → `Request` adapter; stop reading `$_SERVER` in kernel/router | **Critical** | ❌ Required |
+| 4.3 | Cache `ConfigRepository` once per worker | Medium | ⬜ Recommended |
+| 4.4 | `public/roadrunner-worker.php` + worker loop | **Required for deploy** | ⬜ Recommended |
+| 4.5 | Clear `Http::$middlewareUsed`, per-request macros/directives | Medium | ⬜ Recommended |
+| 4.6 | Mark request-scoped bindings (`request`, `view.response`, …) | Medium | ⬜ Recommended |
+| 4.7 | (Alt) preload routes once, don't reset router | Low | ⬜ Optional |
+| 4.8 | Guard `schedule.php` with `$scheduleLoaded` | Low | ⬜ Optional |
+| 5 | `.rr.yaml` with `max_jobs` recycling | Deploy | ⬜ Recommended |
+| 6 | Multi-request + memory-leak integration tests | **Quality gate** | ⬜ Recommended |
 
 ---
 
-### Conclusion
+## 8. Bottom Line
 
-Omega's core request dispatch (`Http::handle` replacing `'request'` each cycle), its connection pooling, and its idempotent boot are all natively RoadRunner-aligned. **The decisive gap is the absence of a per-request state-reset contract**: the process-global `Application` singleton, the container's shared instance store, and multiple static registries (Router, Facade, Dispatcher listeners, Templator dependencies, Memory cache) all persist and accumulate across the many requests a single worker handles. Combined with a genuinely broken DB reconnection path and unbound query logs, the framework **cannot run correctly as a long-lived RoadRunner worker without remediation**.
+The Omega framework was **architected with persistent workers in mind**: the container's request-scope model, facade flushing, persistent-PDO with loss detection, database transaction rollback at the boundary, exception-handler static guard, templator dependency clearing, and bounded memory caches are all the *right* primitives. **Two mandatory changes** stand between it and a working RoadRunner deployment:
 
-Apply Phase 1 to unblock, Phase 2 to make it memory-safe, and Phase 3 to institutionalize a shared reset contract — the resulting framework is then fully compliant with RoadRunner's persistent-worker model.
+1. **Re-register the route table per request** (decouple route loading from `$isBooted` and from `Router::reset()`), and
+2. **Bootstrap from the PSR-7 `ServerRequestInterface`** instead of PHP superglobals.
+
+Apply §4.1 and §4.2, then the recommended hardening in §4.3–§4.8 and the `.rr.yaml` in §5, and the framework runs correctly, safely, and efficiently inside a long-lived RoadRunner worker.

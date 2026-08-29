@@ -14,6 +14,9 @@ declare(strict_types=1);
 
 namespace Omega\Http;
 
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UploadedFileInterface;
+
 use function apache_request_headers;
 use function array_change_key_case;
 use function base64_encode;
@@ -51,6 +54,52 @@ class RequestFactory
     public static function capture(): Request
     {
         return new self()->getFromGlobal();
+    }
+
+    /**
+     * Build an Omega Request from a PSR-7 ServerRequestInterface.
+     *
+     * This is the canonical entry point for persistent workers (e.g.
+     * RoadRunner), where the framework must not rely on PHP superglobals
+     * such as `$_SERVER`, `$_GET`, `$_POST`, `$_COOKIE` or `php://input`.
+     * Instead, all request data is taken directly from the PSR-7 object.
+     *
+     * @param ServerRequestInterface $psr7 The PSR-7 server request.
+     * @return Request The equivalent Omega Request.
+     */
+    public static function fromPsr7ServerRequest(ServerRequestInterface $psr7): Request
+    {
+        $factory = new self();
+
+        $headers = [];
+        foreach ($psr7->getHeaders() as $name => $values) {
+            $headers[strtolower($name)] = implode(', ', $values);
+        }
+
+        $uri    = $psr7->getUri();
+        $method = $psr7->getMethod() ?: 'GET';
+
+        if ($method === 'POST') {
+            $override = $psr7->getHeaderLine('X-HTTP-Method-Override');
+            if (preg_match('#^[A-Z]+$#D', $override)) {
+                $method = $override;
+            }
+        }
+
+        $request = new Request(
+            (string) $uri,
+            $psr7->getQueryParams(),
+            is_array($psr7->getParsedBody()) ? $psr7->getParsedBody() : [],
+            ['scheme' => $uri->getScheme()],
+            $psr7->getCookieParams(),
+            $factory->normalizeFiles($psr7->getUploadedFiles()),
+            $headers,
+            $method,
+            (string) ($psr7->getServerParams()['REMOTE_ADDR'] ?? '::1'),
+            (string) $psr7->getBody()
+        );
+
+        return $request;
     }
 
     /**
@@ -149,5 +198,32 @@ class RequestFactory
     private function getRawBody(): ?string
     {
         return file_get_contents('php://input') ?: null;
+    }
+
+    /**
+     * Convert PSR-7 uploaded files into `$_FILES`-style arrays.
+     *
+     * @param array<string, mixed> $files The PSR-7 uploaded file tree.
+     * @return array<string, mixed> The normalized uploaded file tree.
+     */
+    private function normalizeFiles(array $files): array
+    {
+        $normalized = [];
+
+        foreach ($files as $key => $value) {
+            if ($value instanceof UploadedFileInterface) {
+                $normalized[$key] = [
+                    'name'     => $value->getClientFilename(),
+                    'type'     => $value->getClientMediaType(),
+                    'tmp_name' => $value->getStream()->getMetadata('uri') ?? '',
+                    'error'    => $value->getError(),
+                    'size'     => $value->getSize(),
+                ];
+            } elseif (is_array($value)) {
+                $normalized[$key] = $this->normalizeFiles($value);
+            }
+        }
+
+        return $normalized;
     }
 }

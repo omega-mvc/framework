@@ -389,6 +389,28 @@ abstract class AbstractApplication extends Container implements ApplicationInter
                 $templator->clearDependencies();
             }
         }
+
+        $this->bootRoutes();
+    }
+
+    /**
+     * (Re)register the application routes for the next request.
+     *
+     * In a persistent worker (e.g. RoadRunner) the static route table is
+     * cleared by `Router::reset()` above, and `bootProvider()` will not run
+     * again because `$isBooted` stays `true` for the lifetime of the worker.
+     * This method therefore re-executes the route registration (via the
+     * RouteServiceProvider) so the router is populated for every request.
+     *
+     * It is safe to call repeatedly: the web routes file uses `require`
+     * (re-executes each time) while the cron schedule is loaded only once.
+     *
+     * @return void
+     */
+    protected function bootRoutes(): void
+    {
+        $provider = new \Omega\Router\RouteServiceProvider($this);
+        $provider->registerWebRoutes();
     }
 
     /**
