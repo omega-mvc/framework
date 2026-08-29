@@ -26,7 +26,7 @@ class RedisConnector
      */
     public function connect(array $config): object
     {
-	if (false === extension_loaded('redis')) {
+        if (false === extension_loaded('redis')) {
             throw new \RuntimeException('The Redis extension is not loaded.');
         }
 

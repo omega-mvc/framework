@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\Http Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Helper;
+namespace Tests\Http;
 
 use Exception;
 use Omega\Router\Router;
@@ -42,20 +42,19 @@ use function Omega\Http\redirect_route;;
  * route-based redirection behaves consistently with the defined routing
  * configuration.
  *
- * @category   Tests
- * @package    Support
- * @subpackage Helper
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
+ * @category  Tests
+ * @package   Http
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 #[CoversClass(Router::class)]
 #[CoversClass(TestResponse::class)]
-#[CoversFunction('Omega\Support\redirect')]
-#[CoversFunction('Omega\Support\redirect_route')]
-final class RedirectResponseTest extends TestCase
+#[CoversFunction('Omega\Http\redirect')]
+#[CoversFunction('Omega\Http\redirect_route')]
+final class HelperTest extends TestCase
 {
     /**
      * Test it redirect to correct url.

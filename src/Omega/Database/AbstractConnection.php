@@ -94,12 +94,11 @@ abstract class AbstractConnection implements ConnectionInterface
      * Create PDO with retry on lost connection.
      */
     protected function createPdo(
-        string  $dsn,
+        string $dsn,
         ?string $username,
         ?string $password,
-        array   $options
-    ): PDO
-    {
+        array $options
+    ): PDO {
         try {
             return new PDO($dsn, $username ?? '', $password ?? '', $options);
         } catch (PDOException $e) {

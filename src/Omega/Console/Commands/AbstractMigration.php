@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
+<?php
+
+/** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
 
 declare(strict_types=1);
 

@@ -12,18 +12,18 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap\Support;
+namespace Tests\Application\Bootstrapper\Fixtures;
 
 use Omega\Container\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
- * Class TestVendorServiceProvider
+ * Class TestRegisterServiceProvider
  *
- * A dummy service provider intended to simulate a provider registered from a
- * vendor package. It does not register or resolve any services, but provides
- * a concrete `boot()` implementation so that the bootstrap process can verify
- * vendor providers are correctly initialized.
+ * A minimal service provider used only for testing provider registration.
+ * This provider does not register or boot any services. Its purpose is simply
+ * to confirm that the application correctly stores and marks providers as
+ * booted during the bootstrap phase.
  *
  * @category   Tests
  * @package    Support
@@ -35,9 +35,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @version    2.0.0
  */
 #[CoversClass(AbstractServiceProvider::class)]
-class TestVendorServiceProvider extends AbstractServiceProvider
+final class TestRegisterServiceProvider extends AbstractServiceProvider
 {
-    public function boot(): void
-    {
-    }
 }

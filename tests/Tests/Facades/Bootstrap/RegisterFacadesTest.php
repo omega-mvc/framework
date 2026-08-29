@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Facades Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Facades\Bootstrap;
 
 use Exception;
 use Omega\Application\Application;
@@ -25,7 +25,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\Support\Bootstrap\Support\TestCollectionFacade;
+use Tests\Facades\Bootstrap\Fixtures\TestCollectionFacade;
 
 /**
  * Class RegisterFacadesTest
@@ -36,7 +36,7 @@ use Tests\Support\Bootstrap\Support\TestCollectionFacade;
  * proxy calls to the underlying container-bound instances.
  *
  * @category   Tests
- * @package    Support
+ * @package    Facades
  * @subpackage Bootstrap
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>

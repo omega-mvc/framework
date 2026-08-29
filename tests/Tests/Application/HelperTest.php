@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\Application Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Helper;
+namespace Tests\Application;
 
 use Exception;
 use InvalidArgumentException;
@@ -23,7 +23,6 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ApplicationNotAvailableException;
-use Omega\View\Vite;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
@@ -32,7 +31,6 @@ use ReflectionException;
 use Tests\FixturesPathTrait;
 
 use function Omega\Application\app;
-use function Omega\Environment\env;
 use function Omega\Application\get_path;
 use function Omega\Application\is_dev;
 use function Omega\Application\is_production;
@@ -40,7 +38,6 @@ use function Omega\Application\os_detect;
 use function Omega\Application\path;
 use function Omega\Application\set_path;
 use function Omega\Application\slash;
-use function Omega\View\vite;
 
 /**
  * Test suite for Omega global helper functions.
@@ -51,7 +48,6 @@ use function Omega\View\vite;
  * The tests cover:
  * - Application container access via the `app()` helper, including lifecycle
  *   handling and exception scenarios after flushing the application instance.
- * - Environment helpers such as `env()`, `is_dev()`, and `is_production()`.
  * - Filesystem and path utilities including `path()`, `set_path()`,
  *   `get_path()`, and `slash()`, with special attention to:
  *     - Support for both string and array inputs
@@ -62,8 +58,6 @@ use function Omega\View\vite;
  *   OS families and default fallback behavior.
  * - Integration of helpers with the application container, ensuring
  *   bindings are correctly resolved and returned values are accurate.
- * - The `vite()` helper, validating both single and multiple entry point
- *   resolution using mocked dependencies.
  *
  * This suite ensures that helper functions behave consistently across
  * different input types (scalar vs array), maintain cross-platform
@@ -71,7 +65,7 @@ use function Omega\View\vite;
  * infrastructure.
  *
  * @category  Tests
- * @package   Support
+ * @package   Application
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -80,7 +74,6 @@ use function Omega\View\vite;
  */
 #[CoversClass(Application::class)]
 #[CoversFunction('Omega\Application\app')]
-#[CoversFunction('Omega\Environment\env')]
 #[CoversFunction('Omega\Application\get_path')]
 #[CoversFunction('Omega\Application\is_dev')]
 #[CoversFunction('Omega\Application\is_production')]
@@ -88,7 +81,6 @@ use function Omega\View\vite;
 #[CoversFunction('Omega\Application\path')]
 #[CoversFunction('Omega\Application\set_path')]
 #[CoversFunction('Omega\Application\slash')]
-#[CoversFunction('Omega\View\vite')]
 final class HelperTest extends TestCase
 {
     use FixturesPathTrait;
@@ -210,18 +202,6 @@ final class HelperTest extends TestCase
     }
 
     /**
-     * Test env helper returns value if not exists.
-     *
-     * @return void
-     */
-    public function testEnvHelperReturnsValueIfNotExists(): void
-    {
-        $default = 'default_value';
-
-        $this->assertSame($default, env('NON_EXISTING_KEY', $default));
-    }
-
-    /**
      * Test get path with array and suffix.
      *
      * @return void
@@ -330,38 +310,5 @@ final class HelperTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         set_path([]);
-    }
-
-    /**
-     * Test vite helper handles single and multiple entry points.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occurred.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     * @throws \PHPUnit\Framework\MockObject\Exception
-     */
-    public function testViteHelperHandlesSingleAndMultipleEntryPoints(): void
-    {
-        $app = new Application(__DIR__);
-        $viteMock = $this->createMock(Vite::class);
-        $app->set('vite.gets', $viteMock);
-
-        $viteMock->expects($this->exactly(2))
-        ->method('gets')
-            ->willReturnOnConsecutiveCalls(
-                ['main.js' => 'url_string'],
-                ['a.js' => 'url_a', 'b.js' => 'url_b']
-            );
-
-        $this->assertSame('url_string', vite('main.js'));
-
-        $resultArray = vite('a.js', 'b.js');
-        $this->assertIsArray($resultArray);
-        $this->assertCount(2, $resultArray);
-        $this->assertSame('url_a', $resultArray['a.js']);
     }
 }

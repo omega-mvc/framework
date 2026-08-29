@@ -143,9 +143,11 @@ final class ConsoleBranding extends SymfonyConsole
         $output->writeln(sprintf(
             '<fg=gray> Environment:</> <fg=yellow>%s</>  |  <fg=gray>Debug:</> <fg=%s>%s</>  |  <fg=gray>PHP:</> %s  |  <fg=gray>Command Cache:</> <fg=%s>%s</>  |  <fg=gray>Memory:</> %s',
             $env,
-            $debug === 'ON' ? 'green' : 'red', $debug,
+            $debug === 'ON' ? 'green' : 'red',
+            $debug,
             $php,
-            $isCached === 'YES' ? 'green' : 'yellow', $isCached,
+            $isCached === 'YES' ? 'green' : 'yellow',
+            $isCached,
             $memory
         ));
     }

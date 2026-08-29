@@ -9,6 +9,7 @@ use Omega\Console\Attribute\AsCommand;
 use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Omega\Cron\Schedule;
 use Omega\Cron\Facade\Schedule as Scheduler;
+
 use function array_map;
 use function count;
 use function str_repeat;
@@ -34,7 +35,7 @@ final class CronListCommand extends AbstractCommand
             return self::SUCCESS;
         }
 
-        $formattedJobs = array_map(function($cron) {
+        $formattedJobs = array_map(function ($cron) {
             return [
                 'schedule'  => "<fg=green>$cron->timeName</>",
                 'event'     => $cron->eventName,

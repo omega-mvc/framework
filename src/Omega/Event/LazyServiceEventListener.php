@@ -63,8 +63,7 @@ final class LazyServiceEventListener
         private ContainerInterface $container,
         private string $serviceId,
         private string $method = ''
-    )
-    {
+    ) {
         if (empty($serviceId)) {
             throw new InvalidServiceListenerException(
                 sprintf(

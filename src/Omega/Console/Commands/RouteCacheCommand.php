@@ -9,6 +9,7 @@ use Omega\Console\Attribute\AsCommand;
 use Omega\Router\Router;
 use Omega\SerializableClosure\UnsignedSerializableClosure;
 use Symfony\Component\Console\Input\InputOption;
+
 use function file_exists;
 use function file_put_contents;
 use function is_callable;

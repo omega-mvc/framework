@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\Http Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support;
+namespace Tests\Http;
 
 use Omega\Application\Application;
 use Omega\Http\Request;
@@ -37,7 +37,7 @@ use PHPUnit\Framework\TestCase;
  * the macros integrate correctly with the Request component.
  *
  * @category  Tests
- * @package   Support
+ * @package   Http
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -47,7 +47,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Application::class)]
 #[CoversClass(MacroServiceProvider::class)]
 #[CoversClass(Request::class)]
-class AddonServiceProviderTest extends TestCase
+class MacroServiceProviderTest extends TestCase
 {
     /**
      * Test it register request macros.

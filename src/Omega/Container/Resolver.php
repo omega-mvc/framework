@@ -80,7 +80,7 @@ final class Resolver
         $reflector = $this->container->getReflectionClass($concrete);
         $this->ensureInstantiable($reflector);
 
-        return $this->withBuildStack($concrete, function() use ($concrete, $parameters, $reflector) {
+        return $this->withBuildStack($concrete, function () use ($concrete, $parameters, $reflector) {
             $dependencies = $this->container->getConstructorParameters($concrete);
 
             if (is_null($dependencies)) {
@@ -228,7 +228,9 @@ final class Resolver
     private function tryResolveFromType(ReflectionParameter $parameter): mixed
     {
         $type = $parameter->getType();
-        if (!$type) return self::NOT_RESOLVED;
+        if (!$type) {
+            return self::NOT_RESOLVED;
+        }
 
         if ($type instanceof ReflectionIntersectionType) {
             $class = $parameter->getDeclaringClass()?->getName() ?? 'unknown';
@@ -253,12 +255,16 @@ final class Resolver
 
         // Estrarre il primo match dal container (il primo che risulta bound)
         $resolved = array_reduce($classTypes, function ($carry, $classType) {
-            if ($carry !== null) return $carry;
+            if ($carry !== null) {
+                return $carry;
+            }
             $name = $classType->getName();
             return $this->container->bound($name) ? $this->container->get($name) : null;
         });
 
-        if ($resolved !== null) return $resolved;
+        if ($resolved !== null) {
+            return $resolved;
+        }
 
         if (!$isUnion && !empty($classTypes)) {
             return $this->container->make(array_values($classTypes)[0]->getName());

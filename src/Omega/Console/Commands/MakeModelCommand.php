@@ -11,6 +11,7 @@ use Omega\Template\Property;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
+
 use function file_exists;
 use function file_put_contents;
 use function Omega\Application\path;

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Fixtures Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,22 +12,22 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap\Support;
+namespace Tests\Application\Fixtures;
 
 use Omega\Container\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 
 /**
- * Class TestRegisterServiceProvider
+ * Class TestVendorServiceProvider
  *
- * A minimal service provider used only for testing provider registration.
- * This provider does not register or boot any services. Its purpose is simply
- * to confirm that the application correctly stores and marks providers as
- * booted during the bootstrap phase.
+ * A dummy service provider intended to simulate a provider registered from a
+ * vendor package. It does not register or resolve any services, but provides
+ * a concrete `boot()` implementation so that the bootstrap process can verify
+ * vendor providers are correctly initialized.
  *
  * @category   Tests
- * @package    Support
- * @subpackage Bootstrap\Support
+ * @package    Application
+ * @subpackage Fixtures
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -35,6 +35,9 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @version    2.0.0
  */
 #[CoversClass(AbstractServiceProvider::class)]
-final class TestRegisterServiceProvider extends AbstractServiceProvider
+class TestVendorServiceProvider extends AbstractServiceProvider
 {
+    public function boot(): void
+    {
+    }
 }

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\View Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -10,12 +10,9 @@
  * @version   2.0.0
  */
 
-/** @noinspection PhpExpressionResultUnusedInspection */
-/** @noinspection HtmlWrongAttributeValue */
-
 declare(strict_types=1);
 
-namespace Tests\Support;
+namespace Tests\View;
 
 use Exception;
 use Omega\View\Vite;
@@ -50,7 +47,7 @@ use function unlink;
  * correctly and that the resulting HTML meets the expected structure.
  *
  * @category  Tests
- * @package   Support
+ * @package   View
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

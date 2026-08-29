@@ -36,8 +36,12 @@ final class CronWorkCommand extends AbstractCommand
             $now = new Now();
             $timestamp = sprintf(
                 '%s-%s-%s %02d:%02d:%02d',
-                $now->getYear(), $now->getMonth(), $now->getDay(),
-                $now->getHour(), $now->getMinute(), $now->getSecond()
+                $now->getYear(),
+                $now->getMonth(),
+                $now->getDay(),
+                $now->getHour(),
+                $now->getMinute(),
+                $now->getSecond()
             );
 
             $this->io->write("<fg=gray>[{$timestamp}]</> Running scheduled tasks... ");

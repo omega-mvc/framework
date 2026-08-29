@@ -54,5 +54,6 @@ class Make
         public string $info,
         public string $warning,
         public array $vars = []
-    ) {}
+    ) {
+    }
 }

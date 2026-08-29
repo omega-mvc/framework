@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Application\Bootstrap Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -10,11 +10,9 @@
  * @version   2.0.0
  */
 
-/** @noinspection PhpExpressionResultUnusedInspection */
-
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Application\Bootstrapper;
 
 use Exception;
 use Omega\Application\Application;
@@ -30,10 +28,9 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
-use ReflectionProperty;
+use Tests\Application\Bootstrapper\Fixtures\TestRegisterServiceProvider;
 use Tests\FixturesPathTrait;
-use Tests\Support\Bootstrap\Support\TestRegisterProvider;
-use Tests\Support\Bootstrap\Support\TestRegisterServiceProvider;
+
 use function in_array;
 
 /**
@@ -46,7 +43,7 @@ use function in_array;
  * entries.
  *
  * @category   Tests
- * @package    Support
+ * @package    Application
  * @subpackage Bootstrap
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
@@ -117,62 +114,6 @@ final class RegisterProvidersTest extends TestCase
     }
 
     /**
-     * Test register provider calls register method.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testRegisterProviderCallsRegisterMethod(): void
-    {
-        TestRegisterProvider::$called = 0;
-
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
-
-        $ref = new ReflectionProperty($app, 'providers');
-        $ref->setAccessible(true);
-        $ref->setValue($app, [TestRegisterProvider::class]);
-
-        $app->registerProvider();
-
-        $this->assertSame(1, TestRegisterProvider::$called);
-    }
-
-    /**
-     * Test register provider skips loaded providers.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testRegisterProviderSkipsLoadedProviders(): void
-    {
-        TestRegisterProvider::$called = 0;
-
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
-
-        $ref = new ReflectionProperty($app, 'providers');
-        $ref->setAccessible(true);
-        $ref->setValue($app, [TestRegisterProvider::class]);
-
-        $loaded = new ReflectionProperty($app, 'loadedProviders');
-        $loaded->setAccessible(true);
-        $loaded->setValue($app, [TestRegisterProvider::class]);
-
-        $app->registerProvider();
-
-        $this->assertSame(0, TestRegisterProvider::$called);
-    }
-
-    /**
      * Test bootstrap register providers.
      *
      * @return void
@@ -189,7 +130,7 @@ final class RegisterProvidersTest extends TestCase
 
         $app->loadConfig(new ConfigRepository([
             'providers' => [TestRegisterServiceProvider::class],
-            'VIEW_EXTENSIONS' => [] // Necessario se il costruttore lo richiede
+            'VIEW_EXTENSIONS' => []
         ]));
 
         $bootstrapper = new RegisterProviders();

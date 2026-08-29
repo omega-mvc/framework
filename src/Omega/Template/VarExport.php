@@ -12,6 +12,7 @@ use Omega\Template\VarExport\Compiler\StringCompiler;
 use Omega\Template\VarExport\Value\Constant;
 use ReflectionObject;
 use stdClass;
+
 use function array_key_last;
 use function array_keys;
 use function array_unshift;
@@ -38,6 +39,7 @@ use function str_repeat;
 use function strlen;
 use function trim;
 use function var_export;
+
 use const PHP_EOL;
 
 final class VarExport

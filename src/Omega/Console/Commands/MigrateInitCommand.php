@@ -70,7 +70,8 @@ final class MigrateInitCommand extends AbstractMigration
             "SELECT COUNT(table_name) as total
             FROM information_schema.tables
             WHERE table_schema = DATABASE()
-            AND table_name = 'migration'")
+            AND table_name = 'migration'"
+        )
             ->single();
 
         if ($result) {

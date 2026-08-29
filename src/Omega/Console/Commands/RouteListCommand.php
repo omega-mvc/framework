@@ -27,7 +27,7 @@ final class RouteListCommand extends AbstractCommand
         }
 
         // 1. Prepariamo i dati formattati
-        $formattedRoutes = array_map(function($route) {
+        $formattedRoutes = array_map(function ($route) {
             $methods = is_array($route['method']) ? $route['method'] : [$route['method']];
             return [
                 'method' => $this->formatMethods($methods),

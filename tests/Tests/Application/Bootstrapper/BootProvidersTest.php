@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Application Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Application\Bootstrapper;
 
 use Exception;
 use Omega\Application\Application;
@@ -44,7 +44,7 @@ use function get_class;
  * provider registration system and the bootstrap loading mechanism.
  *
  * @category   Tests
- * @package    Support
+ * @package    Application
  * @subpackage Bootstrap
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>

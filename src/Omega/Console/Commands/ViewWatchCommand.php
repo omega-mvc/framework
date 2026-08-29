@@ -16,7 +16,7 @@ use Throwable;
     name: 'view:watch',
     description: 'Watch view files and recompile them on change',
     options: [
-        'prefix'=> ['p', InputOption::VALUE_REQUIRED, 'File pattern to watch', '*.php']
+        'prefix' => ['p', InputOption::VALUE_REQUIRED, 'File pattern to watch', '*.php']
     ]
 )]
 final class ViewWatchCommand extends AbstractCommand

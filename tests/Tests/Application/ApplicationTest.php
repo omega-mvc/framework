@@ -29,10 +29,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversClassesThatImplementInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
+use Tests\Application\Fixtures\TestBootstrapProvider;
+use Tests\Application\Fixtures\TestServiceProvider;
 use Tests\FixturesPathTrait;
-use Tests\Support\Bootstrap\Support\TestBootstrapProvider;
-use Tests\Support\Bootstrap\Support\TestServiceProvider;
 
 /**
  * Integration and behavioral test suite for the Application core.
@@ -159,6 +160,13 @@ class ApplicationTest extends TestCase
      * Test get version returns the version loaded from configuration.
      *
      * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws Exception
+     * @throws NotFoundExceptionInterface
+     * @throws ReflectionException
      */
     public function testGetVersionReturnsVersionFromConfig(): void
     {
@@ -227,7 +235,7 @@ class ApplicationTest extends TestCase
         ]);
         $out = ob_get_clean();
 
-        $this->assertEquals('Tests\Support\Bootstrap\Support\TestBootstrapProvider::bootstrap', $out);
+        $this->assertEquals('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap', $out);
         $this->assertTrue($app->bootstrapped);
     }
 

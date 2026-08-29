@@ -204,9 +204,11 @@ final class ClosureExtractor
                 for ($j = $i + 1; $j < count($tokens); $j++) {
                     $nextToken = $tokens[$j];
 
-                    if ($this->isChar($nextToken, ',')
+                    if (
+                        $this->isChar($nextToken, ',')
                         || $this->isChar($nextToken, ';')
-                        || $this->isChar($nextToken, ')')) {
+                        || $this->isChar($nextToken, ')')
+                    ) {
                         $closureEnd = $j - 1;
                         break 2;
                     }

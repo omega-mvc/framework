@@ -21,11 +21,13 @@ class CronServiceProvider extends AbstractServiceProvider
      */
     public function boot(): void
     {
-        $this->app->set('cron.log',
+        $this->app->set(
+            'cron.log',
             fn (): Log => new Log()
         );
 
-        $this->app->set('schedule',
+        $this->app->set(
+            'schedule',
             fn (): Schedule => new Schedule(now()->getTimestamp(), $this->app->get('cron.log'))
         );
     }

@@ -66,8 +66,9 @@ final class NamespaceResolver
             return;
         }
 
-        if ($type instanceof ReflectionUnionType
-        || $type instanceof ReflectionIntersectionType
+        if (
+            $type instanceof ReflectionUnionType
+            || $type instanceof ReflectionIntersectionType
         ) {
             foreach ($type->getTypes() as $inner) {
                 $this->collectFromType($inner, $classes);

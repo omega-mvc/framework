@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
-
 use Omega\Console\Attribute\Make;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -15,6 +14,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
+
 use function Omega\Application\path;
 
 abstract class AbstractMakeCommand extends AbstractCommand

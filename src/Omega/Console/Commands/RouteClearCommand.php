@@ -6,6 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+
 use function file_exists;
 use function unlink;
 

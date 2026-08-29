@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Exceptions Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap\Support;
+namespace Tests\Exceptions\Bootstrap\Fixtures;
 
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -32,8 +32,8 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * side effects or I/O during tests.
  *
  * @category   Tests
- * @package    Support
- * @subpackage Bootstrap\Support
+ * @package    Exception
+ * @subpackage Bootstrap\Fixtures
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

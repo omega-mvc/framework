@@ -44,7 +44,6 @@ final class ConfigCacheCommand extends AbstractCommand
 
             $this->io->info('Configuration cached successfully.');
             return self::SUCCESS;
-
         } catch (Throwable $e) {
             $this->io->error('An error occurred while caching configuration: ' . $e->getMessage());
             return self::FAILURE;

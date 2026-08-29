@@ -203,14 +203,18 @@ class ConsoleApplication
         $commands = [];
 
         foreach ($commandPaths as $namespace => $path) {
-            if (!is_dir($path)) continue;
+            if (!is_dir($path)) {
+                continue;
+            }
 
             $finder = new Finder();
             $finder->files()->name('*Command.php')->in($path);
 
             foreach ($finder as $file) {
                 $className = $namespace . $file->getBasename('.php');
-                if (!class_exists($className)) continue;
+                if (!class_exists($className)) {
+                    continue;
+                }
 
                 $reflection = new ReflectionClass($className);
                 $attribute = $reflection->getAttributes(AsCommand::class)[0] ?? null;

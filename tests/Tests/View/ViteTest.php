@@ -14,7 +14,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support;
+namespace Tests\View;
 
 use Exception;
 use Omega\View\Vite;
@@ -47,7 +47,7 @@ use function unlink;
  * the expected Vite conventions.
  *
  * @category  Tests
- * @package   Support
+ * @package   View
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

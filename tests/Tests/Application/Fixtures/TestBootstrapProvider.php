@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Application Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap\Support;
+namespace Tests\Application\Fixtures;
 
 use Omega\Application\Application;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -31,8 +31,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * - Outputs the class and method name to confirm execution.
  *
  * @category   Tests
- * @package    Support
- * @subpackage Bootstrap\Support
+ * @package    Application
+ * @subpackage Fixtures
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

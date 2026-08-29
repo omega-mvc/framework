@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap\Support;
+namespace Tests\Application\Bootstrapper\Fixtures;
 
 use Omega\Container\AbstractServiceProvider;
 use PHPUnit\Framework\Attributes\CoversClass;

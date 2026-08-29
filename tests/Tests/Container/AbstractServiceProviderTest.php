@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support Package.
+ * Part of Omega - Tests\Continer Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support;
+namespace Tests\Container;
 
 use Exception;
 use Omega\Container\AbstractServiceProvider;
@@ -50,7 +50,7 @@ use function unlink;
  * ensure isolation and prevent side effects outside the test environment.
  *
  * @category  Tests
- * @package   Support
+ * @package   Container
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)

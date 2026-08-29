@@ -48,7 +48,6 @@ final class PackageDiscoverCommand extends AbstractCommand
 
             $this->io->newLine();
             $this->io->success('Package manifest generated successfully.');
-
         } catch (Throwable $th) {
             $this->io->error($th->getMessage());
             $this->io->error("Can't create package manifest cache file.");

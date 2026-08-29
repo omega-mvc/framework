@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Part of Omega - Tests\Support\Bootstrap Package.
+ * Part of Omega - Tests\Exceptions Package.
  *
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
@@ -12,7 +12,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Support\Bootstrap;
+namespace Tests\Exceptions\Bootstrap;
 
 use ErrorException;
 use Exception;
@@ -27,8 +27,8 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\Support\Bootstrap\Support\TestHandleExceptions;
-use Tests\Support\Bootstrap\Support\TestLog;
+use Tests\Exceptions\Bootstrap\Fixtures\TestHandleExceptions;
+use Tests\Exceptions\Bootstrap\Fixtures\TestLog;
 use Throwable;
 
 /**
@@ -48,7 +48,7 @@ use Throwable;
  * exception handling behavior.
  *
  * @category   Tests
- * @package    Support
+ * @package    Exception
  * @subpackage Bootstrap
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>

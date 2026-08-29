@@ -1,6 +1,6 @@
 <?php
 
-use Tests\Support\Bootstrap\Support\TestVendorServiceProvider;
+use Tests\Application\Fixtures\TestVendorServiceProvider;
 
 return [
     'omega-mvc/firstpackage' => [

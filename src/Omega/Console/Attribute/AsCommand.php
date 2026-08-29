@@ -50,5 +50,6 @@ class AsCommand
         public array $options = [],
         public array $aliases = [],
         public bool $hidden = false,
-    ) {}
+    ) {
+    }
 }

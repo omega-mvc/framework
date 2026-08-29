@@ -59,7 +59,6 @@ class NameTemplator extends AbstractTemplatorParse
                 $content = trim($matches[3]);
                 return "<?php echo htmlspecialchars({$content}); ?>";
             }
-
         }, $template);
     }
 }
