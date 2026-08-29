@@ -152,6 +152,14 @@ class DatabaseManager implements ConnectionInterface
     /**
      * {@inheritdoc}
      */
+    public function getInstance(): self
+    {
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function query(string $query): self
     {
         $this->connection->query($query);

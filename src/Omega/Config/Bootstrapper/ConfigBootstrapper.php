@@ -52,7 +52,7 @@ use function Omega\Application\get_path;
 class ConfigBootstrapper
 {
     /**
-     * Process-lifetime cache of the resolved configuration array.
+     * Process-lifetime cache of resolved configuration arrays.
      *
      * In a persistent worker (e.g. RoadRunner) `bootstrap()` runs on every
      * request. Re-reading and re-merging the configuration files each time is
@@ -60,9 +60,14 @@ class ConfigBootstrapper
      * reused for the remainder of the process. This is safe because the
      * configuration is static application metadata.
      *
-     * @var array|null
+     * The cache is keyed by the application cache path so that distinct
+     * application instances (with their own configuration) do not share a
+     * single global array, and so that an invalid configuration for a fresh
+     * application still surfaces its runtime exception.
+     *
+     * @var array<string, array>
      */
-    protected static ?array $cachedConfig = null;
+    protected static array $cachedConfigs = [];
 
     /**
      * Bootstrap the configuration subsystem for the given application instance.
@@ -84,7 +89,8 @@ class ConfigBootstrapper
      */
     public function bootstrap(ApplicationInterface $app): void
     {
-        $config = static::$cachedConfig ??= $this->loadConfiguration($app);
+        $config = static::$cachedConfigs[$app->getApplicationCachePath()]
+            ??= $this->loadConfiguration($app);
 
         $app->loadConfig(new ConfigRepository($config));
 

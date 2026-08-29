@@ -4,21 +4,48 @@ declare(strict_types=1);
 
 namespace Tests\Database\Pdo;
 
+use Omega\Database\ConnectionFactory;
 use Omega\Database\Exceptions\InvalidConfigurationException;
+use Omega\Database\MariadbConnection;
+use Omega\Database\MysqlConnection;
+use Omega\Database\PgsqlConnection;
+use Omega\Database\SqliteConnection;
 use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\AbstractTestDatabase;
+use PHPUnit\Framework\TestCase;
+use ReflectionClass;
 
+#[CoversClass(MysqlConnection::class)]
+#[CoversClass(MariadbConnection::class)]
+#[CoversClass(PgsqlConnection::class)]
+#[CoversClass(SqliteConnection::class)]
+#[CoversClass(ConnectionFactory::class)]
 #[CoversClass(InvalidConfigurationException::class)]
-final class ConfigsTest extends AbstractTestDatabase
+final class ConfigsTest extends TestCase
 {
-    protected function setUp(): void
+    /**
+     * Build the DSN for a driver class without opening a real connection.
+     *
+     * Driver connections connect eagerly in their constructor, so the
+     * protected `buildDsn()` implementation is exercised via reflection on
+     * an instance created without invoking the constructor.
+     */
+    private function buildDsn(string $connectionClass, array $config): string
     {
-        $this->createConnection();
-    }
+        $reflection = new ReflectionClass($connectionClass);
+        $connection = $reflection->newInstanceWithoutConstructor();
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
+        $normalize = $reflection->getMethod('normalizeConfigs');
+        $normalize->setAccessible(true);
+        $normalized = $normalize->invoke($connection, $config);
+
+        $configs = $reflection->getProperty('configs');
+        $configs->setAccessible(true);
+        $configs->setValue($connection, $normalized);
+
+        $buildDsn = $reflection->getMethod('buildDsn');
+        $buildDsn->setAccessible(true);
+
+        return $buildDsn->invoke($connection);
     }
 
     /**
@@ -26,11 +53,26 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetConfig()
+    public function testItNormalizesLegacyConfigKeys()
     {
-        $config = $this->pdo->configs();
-        unset($config['options']);
-        $this->assertEquals($this->env, $config);
+        $reflection = new ReflectionClass(MysqlConnection::class);
+        $connection = $reflection->newInstanceWithoutConstructor();
+
+        $normalize = $reflection->getMethod('normalizeConfigs');
+        $normalize->setAccessible(true);
+
+        $configs = $normalize->invoke($connection, [
+            'driver'        => 'mysql',
+            'host'          => 'localhost',
+            'database_name' => 'db_from_name',
+            'user'          => 'legacy_user',
+            'options'       => ['foo' => 1],
+        ]);
+
+        $this->assertSame('mysql', $configs['driver']);
+        $this->assertSame('db_from_name', $configs['database']);
+        $this->assertSame('legacy_user', $configs['username']);
+        $this->assertSame(['foo' => 1], $configs['options']);
     }
 
     /**
@@ -48,8 +90,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'charset'  => 'utf8mb4',
         ];
 
-        $expected = 'mysql:host=127.0.0.1;dbname=test_db;port=3306;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=127.0.0.1;port=3306;dbname=test_db;charset=utf8mb4',
+            $this->buildDsn(MysqlConnection::class, $config)
+        );
     }
 
     /**
@@ -60,12 +104,15 @@ final class ConfigsTest extends AbstractTestDatabase
     public function testItCanCreateMysqlDsnWithMinimalParameters()
     {
         $config = [
-            'driver' => 'mysql',
-            'host'   => 'localhost',
+            'driver'   => 'mysql',
+            'host'     => 'localhost',
+            'database' => 'test_db',
         ];
 
-        $expected = 'mysql:host=localhost;port=3306;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=localhost;port=3306;dbname=test_db;charset=utf8mb4',
+            $this->buildDsn(MysqlConnection::class, $config)
+        );
     }
 
     /**
@@ -82,8 +129,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'port'     => 3307,
         ];
 
-        $expected = 'mysql:host=192.168.1.100;dbname=custom_db;port=3307;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=192.168.1.100;port=3307;dbname=custom_db;charset=utf8mb4',
+            $this->buildDsn(MysqlConnection::class, $config)
+        );
     }
 
     /**
@@ -100,8 +149,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'charset'  => 'latin1',
         ];
 
-        $expected = 'mysql:host=db.example.com;dbname=legacy_db;port=3306;charset=latin1';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=db.example.com;port=3306;dbname=legacy_db;charset=latin1',
+            $this->buildDsn(MysqlConnection::class, $config)
+        );
     }
 
     /**
@@ -109,16 +160,19 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithoutDatabase()
+    public function testItCanCreateMysqlDsnWithZeroPort()
     {
         $config = [
-            'driver' => 'mysql',
-            'host'   => 'mysql.server.com',
-            'port'   => 3308,
+            'driver'   => 'mysql',
+            'host'     => 'localhost',
+            'database' => 'test_db',
+            'port'     => 0,
         ];
 
-        $expected = 'mysql:host=mysql.server.com;port=3308;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=localhost;port=0;dbname=test_db;charset=utf8mb4',
+            $this->buildDsn(MysqlConnection::class, $config)
+        );
     }
 
     /**
@@ -134,8 +188,25 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('mysql driver require `host`.');
-        $this->pdo->getDsn($config);
+        $this->expectExceptionMessage('MySQL requires host and database.');
+        $this->buildDsn(MysqlConnection::class, $config);
+    }
+
+    /**
+     * @test
+     *
+     * @group database
+     */
+    public function testItCanCreateMysqlDsnThrowsExceptionWhenDatabaseMissing()
+    {
+        $config = [
+            'driver' => 'mysql',
+            'host'   => 'localhost',
+        ];
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('MySQL requires host and database.');
+        $this->buildDsn(MysqlConnection::class, $config);
     }
 
     // MariaDB Driver Tests (shares same logic as MySQL)
@@ -155,8 +226,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'charset'  => 'utf8',
         ];
 
-        $expected = 'mysql:host=mariadb.example.com;dbname=maria_db;port=3306;charset=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'mysql:host=mariadb.example.com;port=3306;dbname=maria_db;charset=utf8',
+            $this->buildDsn(MariadbConnection::class, $config)
+        );
     }
 
     /**
@@ -172,8 +245,8 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('mysql driver require `host`.');
-        $this->pdo->getDsn($config);
+        $this->expectExceptionMessage('MariaDB requires host and database.');
+        $this->buildDsn(MariadbConnection::class, $config);
     }
 
     // PostgreSQL Driver Tests
@@ -193,8 +266,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'charset'  => 'utf8',
         ];
 
-        $expected = 'pgsql:host=localhost;dbname=postgres_db;port=5432;client_encoding=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            "pgsql:host=localhost;port=5432;dbname=postgres_db;options='--client_encoding=utf8'",
+            $this->buildDsn(PgsqlConnection::class, $config)
+        );
     }
 
     /**
@@ -205,12 +280,15 @@ final class ConfigsTest extends AbstractTestDatabase
     public function testItCanCreatePgsqlDsnWithMinimalParameters()
     {
         $config = [
-            'driver' => 'pgsql',
-            'host'   => '127.0.0.1',
+            'driver'   => 'pgsql',
+            'host'     => '127.0.0.1',
+            'database' => 'test_db',
         ];
 
-        $expected = 'pgsql:host=127.0.0.1;port=5432;client_encoding=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            "pgsql:host=127.0.0.1;port=5432;dbname=test_db;options='--client_encoding=utf8'",
+            $this->buildDsn(PgsqlConnection::class, $config)
+        );
     }
 
     /**
@@ -227,8 +305,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'port'     => 5433,
         ];
 
-        $expected = 'pgsql:host=pg.server.com;dbname=production_db;port=5433;client_encoding=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            "pgsql:host=pg.server.com;port=5433;dbname=production_db;options='--client_encoding=utf8'",
+            $this->buildDsn(PgsqlConnection::class, $config)
+        );
     }
 
     /**
@@ -245,8 +325,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'charset'  => 'latin1',
         ];
 
-        $expected = 'pgsql:host=postgres.example.com;dbname=international_db;port=5432;client_encoding=latin1';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            "pgsql:host=postgres.example.com;port=5432;dbname=international_db;options='--client_encoding=latin1'",
+            $this->buildDsn(PgsqlConnection::class, $config)
+        );
     }
 
     /**
@@ -254,17 +336,19 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithoutDatabase()
+    public function testItCanCreatePgsqlDsnWithZeroPort()
     {
         $config = [
             'driver'   => 'pgsql',
-            'host'     => 'pg-cluster.local',
-            'port'     => 5434,
-            'charset'  => 'utf8mb4',
+            'host'     => 'localhost',
+            'database' => 'test_db',
+            'port'     => 0,
         ];
 
-        $expected = 'pgsql:host=pg-cluster.local;port=5434;client_encoding=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            "pgsql:host=localhost;port=0;dbname=test_db;options='--client_encoding=utf8'",
+            $this->buildDsn(PgsqlConnection::class, $config)
+        );
     }
 
     /**
@@ -281,8 +365,26 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('pgsql driver require `host` and `dbname`.');
-        $this->pdo->getDsn($config);
+        $this->expectExceptionMessage('PostgreSQL requires host and database.');
+        $this->buildDsn(PgsqlConnection::class, $config);
+    }
+
+    /**
+     * @test
+     *
+     * @group database
+     */
+    public function testItCanCreatePgsqlDsnThrowsExceptionWhenDatabaseMissing()
+    {
+        $config = [
+            'driver' => 'pgsql',
+            'host'   => 'localhost',
+            'port'   => 5432,
+        ];
+
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('PostgreSQL requires host and database.');
+        $this->buildDsn(PgsqlConnection::class, $config);
     }
 
     // SQLite Driver Tests
@@ -299,8 +401,10 @@ final class ConfigsTest extends AbstractTestDatabase
             'database' => ':memory:',
         ];
 
-        $expected = 'sqlite::memory:';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'sqlite::memory:',
+            $this->buildDsn(SqliteConnection::class, $config)
+        );
     }
 
     /**
@@ -308,15 +412,17 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnWithMemoryModeQuery()
+    public function testItCanCreateSqliteDsnWithmodeMemoryQueryParameter()
     {
         $config = [
             'driver'   => 'sqlite',
             'database' => '/path/to/db.sqlite?mode=memory',
         ];
 
-        $expected = 'sqlite:/path/to/db.sqlite?mode=memory';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'sqlite:/path/to/db.sqlite?mode=memory',
+            $this->buildDsn(SqliteConnection::class, $config)
+        );
     }
 
     /**
@@ -324,15 +430,17 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnWithMemoryModeQueryAmpersand()
+    public function testItCanCreateSqliteDsnWithCacheSharedAndmodeMemoryQueryParameter()
     {
         $config = [
             'driver'   => 'sqlite',
             'database' => '/path/to/db.sqlite?cache=shared&mode=memory',
         ];
 
-        $expected = 'sqlite:/path/to/db.sqlite?cache=shared&mode=memory';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->assertEquals(
+            'sqlite:/path/to/db.sqlite?cache=shared&mode=memory',
+            $this->buildDsn(SqliteConnection::class, $config)
+        );
     }
 
     /**
@@ -348,8 +456,8 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('sqlite driver require `database`.');
-        $this->pdo->getDsn($config);
+        $this->expectExceptionMessage('SQLite requires path.');
+        $this->buildDsn(SqliteConnection::class, $config);
     }
 
     /**
@@ -365,8 +473,8 @@ final class ConfigsTest extends AbstractTestDatabase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('sqlite driver require `database` with absolute path.');
-        $this->pdo->getDsn($config);
+        $this->expectExceptionMessage('SQLite requires valid file path.');
+        $this->buildDsn(SqliteConnection::class, $config);
     }
 
     // Edge Cases and Additional Coverage
@@ -376,87 +484,15 @@ final class ConfigsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCreateGetDsnWithUnsupportedDriver()
+    public function testItCannotCreateConnectionWithUnsupportedDriver()
     {
         $config = [
             'driver' => 'oracle',
             'host'   => 'oracle.server.com',
         ];
 
-        // This should trigger a match expression error since 'oracle' is not handled
-        $this->expectException(\UnhandledMatchError::class);
-        $this->pdo->getDsn($config);
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCreateMysqlDsnWithZeroPort()
-    {
-        $config = [
-            'driver' => 'mysql',
-            'host'   => 'localhost',
-            'port'   => 0,
-        ];
-
-        $expected = 'mysql:host=localhost;port=0;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCreatePgsqlDsnWithZeroPort()
-    {
-        $config = [
-            'driver' => 'pgsql',
-            'host'   => 'localhost',
-            'port'   => 0,
-        ];
-
-        $expected = 'pgsql:host=localhost;port=0;client_encoding=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCreateMysqlDsnWithNullValues()
-    {
-        $config = [
-            'driver'   => 'mysql',
-            'host'     => 'localhost',
-            'database' => null,
-            'port'     => null,
-            'charset'  => null,
-        ];
-
-        $expected = 'mysql:host=localhost;port=3306;charset=utf8mb4';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCreatePgsqlDsnWithNullValues()
-    {
-        $config = [
-            'driver'   => 'pgsql',
-            'host'     => 'localhost',
-            'database' => null,
-            'port'     => null,
-            'charset'  => null,
-        ];
-
-        $expected = 'pgsql:host=localhost;port=5432;client_encoding=utf8';
-        $this->assertEquals($expected, $this->pdo->getDsn($config));
+        $this->expectException(\Error::class);
+        $this->expectExceptionMessage('OracleConnection');
+        ConnectionFactory::make($config);
     }
 }

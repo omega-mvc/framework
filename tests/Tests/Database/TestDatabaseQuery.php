@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Database;
 
-use Omega\Database\Connection;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\SchemaConnection;
 use PHPUnit\Framework\MockObject\Exception as PHPUnitMockException;
 use PHPUnit\Framework\TestCase;
@@ -37,8 +37,8 @@ use PHPUnit\Framework\TestCase;
  */
 abstract class TestDatabaseQuery extends TestCase
 {
-    /** @var Connection Stub for the main database connection */
-    protected Connection $pdo;
+    /** @var ConnectionInterface Stub for the main database connection */
+    protected ConnectionInterface $pdo;
 
     /** @var SchemaConnection Stub for the schema-specific connection */
     protected SchemaConnection $pdoSchema;
@@ -54,7 +54,7 @@ abstract class TestDatabaseQuery extends TestCase
      */
     protected function setUp(): void
     {
-        $this->pdo       = $this->createStub(Connection::class);
+        $this->pdo       = $this->createStub(ConnectionInterface::class);
         $this->pdoSchema = $this->createStub(SchemaConnection::class);
     }
 

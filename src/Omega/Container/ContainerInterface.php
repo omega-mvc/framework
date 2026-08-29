@@ -110,6 +110,19 @@ interface ContainerInterface extends PSRContainerInterface
     public function bound(string $abstract): bool;
 
     /**
+     * Determine whether the given abstract type has already been resolved.
+     *
+     * This differs from {@see bound()} in that it only returns true when the
+     * abstract has actually been instantiated and cached as a shared instance
+     * during this request/process, not merely declared as a binding.
+     *
+     * @param string $abstract The abstract type or identifier to check.
+     * @return bool True if the type has been resolved and cached, false otherwise.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     */
+    public function resolved(string $abstract): bool;
+
+    /**
      * Call a callable and automatically inject its dependencies.
      *
      * @param callable|object|array|string $callable The callable to invoke.

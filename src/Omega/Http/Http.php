@@ -218,7 +218,7 @@ class Http
     {
         $this->middlewareUsed = [];
 
-        if (method_exists($this->app, 'bound') && $this->app->bound(DatabaseManager::class)) {
+        if (method_exists($this->app, 'resolved') && $this->app->resolved(DatabaseManager::class)) {
             $manager = $this->app->get(DatabaseManager::class);
             if ($manager instanceof DatabaseManager) {
                 $manager->resetConnectionsForRequest();

@@ -173,7 +173,7 @@ abstract class AbstractTestDatabase extends TestCase
     {
         return match ($driver) {
             'mysql'   => \Omega\Database\MysqlConnection::class,
-            'mariadb' => \Omega\Database\MariaDbConnection::class,
+            'mariadb' => \Omega\Database\MariadbConnection::class,
             'pgsql'   => \Omega\Database\PgsqlConnection::class,
             'sqlite'  => \Omega\Database\SqliteConnection::class,
             default   => throw new InvalidConfigurationException(

@@ -32,6 +32,17 @@ use PDOException;
 interface ConnectionInterface extends LoggerInterface, TransactionInterface
 {
     /**
+     * Return the current connection instance.
+     *
+     * Provided for backward compatibility with code that accessed the
+     * connection through a shared instance; it does not implement a real
+     * singleton and simply returns `$this`.
+     *
+     * @return self Returns the current connection instance.
+     */
+    public function getInstance(): self;
+
+    /**
      * Prepare an SQL statement for execution.
      *
      * @param string $query The SQL query string to prepare.

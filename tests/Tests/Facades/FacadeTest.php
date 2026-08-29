@@ -23,7 +23,7 @@ use Omega\Application\Application;
 use Omega\Collection\Collection;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\CircularAliasException;
-use Omega\Database\Connection;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\DatabaseManager;
 use Omega\Database\Query\Table;
 use Omega\Security\Hashing\HashManager;
@@ -80,7 +80,7 @@ use Tests\Facades\Support\TestAbstractFacade;
 #[CoversClass(Collection::class)]
 #[CoversClass(Config::class)]
 #[CoversClass(ConfigRepository::class)]
-#[CoversClass(Connection::class)]
+#[CoversClass(ConnectionInterface::class)]
 #[CoversClassesThatImplementInterface(FacadeInterface::class)]
 #[CoversClass(FacadeObjectNotSetException::class)]
 #[CoversClass(Hash::class)]
@@ -222,7 +222,7 @@ final class FacadeTest extends TestCase
             [Config::class, ConfigRepository::class],
             [Cache::class, 'cache'],
             [Hash::class, HashManager::class],
-            [PDO::class, Connection::class],
+            [PDO::class, 'database'],
             [Schedule::class, 'schedule'],
             [Schema::class, 'Schema'],
             [View::class, 'view.instance'],
@@ -241,9 +241,10 @@ final class FacadeTest extends TestCase
     {
         $app = new Application($this->setFixtureBasePath());
 
-        $connection = $this->createStub(Connection::class);
+        $connection = $this->createStub(ConnectionInterface::class);
+        $connection->method('getInstance')->willReturn($connection);
 
-        $app->set(Connection::class, fn () => $connection);
+        $app->set('database', fn () => $connection);
 
         AbstractFacade::setFacadeBase($app);
 
@@ -260,7 +261,7 @@ final class FacadeTest extends TestCase
      */
     public function testFromReturnsQueryBuilder(): void
     {
-        $connection = $this->createStub(Connection::class);
+        $connection = $this->createStub(ConnectionInterface::class);
 
         $table = DB::from('users', $connection);
 

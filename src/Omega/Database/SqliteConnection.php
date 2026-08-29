@@ -16,8 +16,12 @@ final class SqliteConnection extends AbstractConnection
             throw new InvalidConfigurationException('SQLite requires path.');
         }
 
-        if ($path === ':memory:') {
-            return 'sqlite::memory:';
+        if (
+            $path === ':memory:'
+            || str_contains($path, '?mode=memory')
+            || str_contains($path, '&mode=memory')
+        ) {
+            return "sqlite:{$path}";
         }
 
         if (!realpath($path)) {

@@ -16,6 +16,7 @@ use Omega\SerializableClosure\UnsignedSerializableClosure;
 use function file_exists;
 use function is_array;
 use function is_callable;
+use function is_file;
 use function is_string;
 use function Omega\Application\get_path;
 use function str_contains;
@@ -53,7 +54,12 @@ class RouteServiceProvider extends AbstractServiceProvider
         $this->registerWebRoutes();
 
         if (false === self::$scheduleLoaded) {
-            require get_path('path.base', 'routes/schedule.php');
+            $schedule = get_path('path.base', 'routes/schedule.php');
+
+            if (is_file($schedule)) {
+                require $schedule;
+            }
+
             self::$scheduleLoaded = true;
         }
     }
@@ -87,11 +93,17 @@ class RouteServiceProvider extends AbstractServiceProvider
             return;
         }
 
+        $webRoutes = get_path('path.base', 'routes/web.php');
+
+        if (!is_file($webRoutes)) {
+            return;
+        }
+
         Router::middleware([
             MaintenanceMiddleware::class,
         ])->group(
             fn () => [
-                require get_path('path.base', 'routes/web.php'),
+                require $webRoutes,
             ]
         );
     }
