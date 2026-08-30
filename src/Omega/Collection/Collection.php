@@ -17,8 +17,6 @@ declare(strict_types=1);
 namespace Omega\Collection;
 
 use function array_chunk;
-use function array_diff;
-use function array_diff_assoc;
 use function array_diff_key;
 use function array_key_exists;
 use function array_key_first;
@@ -31,7 +29,6 @@ use function call_user_func;
 use function ceil;
 use function in_array;
 use function is_array;
-use function is_callable;
 use function krsort;
 use function ksort;
 use function shuffle;
@@ -87,8 +84,8 @@ class Collection extends AbstractCollectionImmutable
      * $collection->foo = 'bar';
      * ```
      *
-     * @param TKey   $name  The key to assign.
-     * @param TValue $value The value to set.
+     * @param TKey  $name  The key to assign.
+     * @param mixed $value The value to set.
      * @return void
      */
     public function __set(int|string $name, $value): void
@@ -159,8 +156,8 @@ class Collection extends AbstractCollectionImmutable
     /**
      * Set or replace a value for the given key.
      *
-     * @param TKey   $name  The key to assign.
-     * @param TValue $value The value to set.
+     * @param TKey  $name  The key to assign.
+     * @param mixed $value The value to set.
      * @return $this
      */
     public function set(int|string $name, $value): self
@@ -173,7 +170,7 @@ class Collection extends AbstractCollectionImmutable
     /**
      * Append a value to the collection without specifying a key.
      *
-     * @param TValue $value The value to append.
+     * @param mixed $value The value to append.
      * @return $this
      */
     public function push($value): self
@@ -211,10 +208,6 @@ class Collection extends AbstractCollectionImmutable
      */
     public function map(callable $callable): self
     {
-        if (!is_callable($callable)) {
-            return $this;
-        }
-
         $newCollection = [];
         foreach ($this->collection as $key => $item) {
             $newCollection[$key] = call_user_func($callable, $item, $key);
@@ -386,13 +379,17 @@ class Collection extends AbstractCollectionImmutable
      *
      * @param int $length The maximum size of each chunk.
      * @param bool $preserveKeys Whether to preserve the original keys.
-     * @return $this
+     * @return Collection<int, non-empty-list<TValue>> A new collection of chunks.
+     *
+     * @throws \InvalidArgumentException If `$length` is less than 1.
      */
-    public function chunk(int $length, bool $preserveKeys = true): self
+    public function chunk(int $length, bool $preserveKeys = true): Collection
     {
-        $this->collection = array_chunk($this->collection, $length, $preserveKeys);
+        if ($length < 1) {
+            throw new \InvalidArgumentException('Chunk length must be greater than zero.');
+        }
 
-        return $this;
+        return new Collection(array_chunk($this->collection, $length, $preserveKeys));
     }
 
     /**
@@ -403,9 +400,9 @@ class Collection extends AbstractCollectionImmutable
      *
      * @param int $count Number of chunks to split into.
      * @param bool $preserveKeys Whether to preserve original keys.
-     * @return $this
+     * @return Collection<int, non-empty-list<TValue>>
      */
-    public function split(int $count, bool $preserveKeys = true): self
+    public function split(int $count, bool $preserveKeys = true): Collection
     {
         $length = (int) ceil($this->length() / $count);
 
@@ -422,9 +419,14 @@ class Collection extends AbstractCollectionImmutable
      */
     public function except(array $excepts): self
     {
-        $this->filter(fn ($item, $key) => !in_array($key, $excepts));
+        $newCollection = [];
+        foreach ($this->collection as $key => $item) {
+            if (!in_array($key, $excepts, true)) {
+                $newCollection[$key] = $item;
+            }
+        }
 
-        return $this;
+        return $this->replace($newCollection);
     }
 
     /**
@@ -449,15 +451,15 @@ class Collection extends AbstractCollectionImmutable
      * If `$depth` is provided, flattening stops once the depth limit is reached.
      * By default, it flattens recursively without limit.
      *
+     * Flattening may change both the keys and the value types, so a **new**
+     * collection is returned rather than mutating the current one.
+     *
      * @param int|float $depth The depth to flatten to (use INF for unlimited).
-     * @return $this
+     * @return Collection<array-key, mixed>
      */
-    public function flatten(int|float $depth = INF): self
+    public function flatten(int|float $depth = INF): Collection
     {
-        $flatten = $this->flattenRecursing($this->collection, $depth);
-        $this->replace($flatten);
-
-        return $this;
+        return new self($this->flattenRecursing($this->collection, $depth));
     }
 
     /**
@@ -467,9 +469,9 @@ class Collection extends AbstractCollectionImmutable
      *
      * @internal
      *
-     * @param array<TKey, TValue> $array The array to flatten.
+     * @param array<array-key, mixed> $array The array to flatten.
      * @param float|int $depth Remaining flatten depth.
-     * @return array<TKey, TValue>
+     * @return array<array-key, mixed>
      */
     private function flattenRecursing(array $array, float|int $depth = INF): array
     {
@@ -541,19 +543,18 @@ class Collection extends AbstractCollectionImmutable
      * @template TKeyItem of array-key
      * @template TValueItem
      * @param callable(TValue, TKey=): array<TKeyItem, TValueItem> $callable
-     * @return $this
+     * @return Collection<TKeyItem, TValueItem>
      */
-    public function assocBy(callable $callable): self
+    public function assocBy(callable $callable): Collection
     {
-        /** @var array<TKeyItem, TValueItem> $newCollectionn */
         $newCollection = [];
         foreach ($this->collection as $key => $item) {
             $arrayAssoc          = $callable($item, $key);
-            $key                 = array_key_first($arrayAssoc);
-            $newCollection[$key] = $arrayAssoc[$key];
+            $newKey              = array_key_first($arrayAssoc);
+            $newCollection[$newKey] = $arrayAssoc[$newKey];
         }
 
-        return $this->replace($newCollection);
+        return new self($newCollection);
     }
 
     /**
@@ -603,9 +604,23 @@ class Collection extends AbstractCollectionImmutable
      */
     public function diff(array $collection): self
     {
-        return $this->replace(
-            array_diff($this->collection, $collection)
-        );
+        $exclude = [];
+        foreach ($collection as $value) {
+            $scalar = $this->toStringValue($value);
+            if (null !== $scalar) {
+                $exclude[$scalar] = true;
+            }
+        }
+
+        $newCollection = [];
+        foreach ($this->collection as $key => $value) {
+            $scalar = $this->toStringValue($value);
+            if (null === $scalar || !isset($exclude[$scalar])) {
+                $newCollection[$key] = $value;
+            }
+        }
+
+        return $this->replace($newCollection);
     }
 
     /**
@@ -629,9 +644,17 @@ class Collection extends AbstractCollectionImmutable
      */
     public function diffAssoc(array $collection): self
     {
-        return $this->replace(
-            array_diff_assoc($this->collection, $collection)
-        );
+        $exclude = $this->keyedScalars($collection);
+
+        $newCollection = [];
+        foreach ($this->collection as $key => $value) {
+            $pair = $this->assocPairKey($key, $value);
+            if (null === $pair || !isset($exclude[$pair])) {
+                $newCollection[$key] = $value;
+            }
+        }
+
+        return $this->replace($newCollection);
     }
 
     /**
@@ -642,9 +665,23 @@ class Collection extends AbstractCollectionImmutable
      */
     public function complement(array $collection): self
     {
-        return $this->replace(
-            array_diff($collection, $this->collection)
-        );
+        $exclude = [];
+        foreach ($this->collection as $value) {
+            $scalar = $this->toStringValue($value);
+            if (null !== $scalar) {
+                $exclude[$scalar] = true;
+            }
+        }
+
+        $newCollection = [];
+        foreach ($collection as $key => $value) {
+            $scalar = $this->toStringValue($value);
+            if (null === $scalar || !isset($exclude[$scalar])) {
+                $newCollection[$key] = $value;
+            }
+        }
+
+        return $this->replace($newCollection);
     }
 
     /**
@@ -668,9 +705,74 @@ class Collection extends AbstractCollectionImmutable
      */
     public function complementAssoc(array $collection): self
     {
-        return $this->replace(
-            array_diff_assoc($collection, $this->collection)
-        );
+        $exclude = $this->keyedScalars($this->collection);
+
+        $newCollection = [];
+        foreach ($collection as $key => $value) {
+            $pair = $this->assocPairKey($key, $value);
+            if (null === $pair || !isset($exclude[$pair])) {
+                $newCollection[$key] = $value;
+            }
+        }
+
+        return $this->replace($newCollection);
+    }
+
+    /**
+     * Convert a value to its string representation for comparison.
+     *
+     * Returns `null` for values that cannot be stringified (no `__toString`).
+     *
+     * @param mixed $value The value to stringify.
+     * @return string|null The string representation, or null if not castable.
+     */
+    private function toStringValue(mixed $value): ?string
+    {
+        if (is_int($value) || is_float($value) || is_string($value)) {
+            return (string) $value;
+        }
+
+        if (is_object($value) && method_exists($value, '__toString')) {
+            return (string) $value;
+        }
+
+        return null;
+    }
+
+    /**
+     * Build a lookup map of key/value pairs stringified for associative comparison.
+     *
+     * @param array<array-key, mixed> $collection The array to index.
+     * @return array<string, bool> Map of pair keys.
+     */
+    private function keyedScalars(array $collection): array
+    {
+        $map = [];
+        foreach ($collection as $key => $value) {
+            $pair = $this->assocPairKey($key, $value);
+            if (null !== $pair) {
+                $map[$pair] = true;
+            }
+        }
+
+        return $map;
+    }
+
+    /**
+     * Build a composite key representing a key/value pair for associative comparison.
+     *
+     * @param int|string $key The item key.
+     * @param mixed $value The item value.
+     * @return string|null The composite key, or null if the value cannot be stringified.
+     */
+    private function assocPairKey(int|string $key, mixed $value): ?string
+    {
+        $scalar = $this->toStringValue($value);
+        if (null === $scalar) {
+            return null;
+        }
+
+        return $key . "\x00" . $scalar;
     }
 
     /**
@@ -684,28 +786,44 @@ class Collection extends AbstractCollectionImmutable
     public function where(int|string $key, string $operator, mixed $value): self
     {
         if ('=' === $operator || '==' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] == $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] == $value
+            );
         }
         if ('===' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] === $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] === $value
+            );
         }
         if ('!=' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] != $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] != $value
+            );
         }
         if ('!==' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] !== $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] !== $value
+            );
         }
         if ('>' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] > $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] > $value
+            );
         }
         if ('>=' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] >= $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] >= $value
+            );
         }
         if ('<' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] < $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] < $value
+            );
         }
         if ('<=' === $operator) {
-            return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && $TValue[$key] <= $value);
+            return $this->filter(
+                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] <= $value
+            );
         }
 
         return $this->replace([]);
@@ -714,26 +832,30 @@ class Collection extends AbstractCollectionImmutable
     /**
      * Filter items where the value of the given key is in the provided range.
      *
-     * @param TKey $key The field to match.
-     * @param array<TValue> $range Accepted values.
+     * @param int|string $key The field to match.
+     * @param array<mixed> $range Accepted values.
      * @return $this
      */
     public function whereIn(int|string $key, array $range): self
     {
-        return $this->filter(fn ($TValue) => array_key_exists($key, $TValue) && in_array($TValue[$key], $range));
+        return $this->filter(
+            fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && in_array($TValue[$key], $range)
+        );
     }
 
     /**
      * Filter items where the value of the given key is not in the provided range.
      *
-     * @param TKey $key The field to match.
-     * @param array<TValue> $range Values to exclude.
+     * @param int|string $key The field to match.
+     * @param array<mixed> $range Values to exclude.
      * @return $this
      */
     public function whereNotIn(int|string $key, array $range): self
     {
         return $this->filter(
-            fn ($TValue) => array_key_exists($key, $TValue) && false === in_array($TValue[$key], $range)
+            fn ($TValue) => is_array($TValue)
+                && array_key_exists($key, $TValue)
+                && false === in_array($TValue[$key], $range)
         );
     }
 }

@@ -22,7 +22,6 @@ use ReturnTypeWillChange;
 use Traversable;
 
 use function array_column;
-use function array_count_values;
 use function array_key_exists;
 use function array_key_first;
 use function array_key_last;
@@ -36,14 +35,20 @@ use function count;
 use function current;
 use function in_array;
 use function is_array;
+use function is_float;
+use function is_int;
 use function is_null;
 use function is_object;
+use function is_string;
 use function json_encode;
 use function max;
+use function method_exists;
 use function min;
 use function next;
 use function prev;
 use function var_dump;
+
+use const JSON_THROW_ON_ERROR;
 
 /**
  * Base immutable collection implementation.
@@ -77,7 +82,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     /**
      * Create a new immutable collection instance.
      *
-     * @param iterable<TKey, TValue> $collection Initial collection items.
+     * @param array<TKey, TValue> $collection Initial collection items.
      * @return void
      */
     public function __construct(array $collection)
@@ -146,8 +151,8 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * This method is protected because immutability rules are enforced at the
      * concrete class level. Mutable or clone-based mutation implementations may override usage.
      *
-     * @param TKey $name The key to set.
-     * @param TValue $value The value to assign.
+     * @param TKey  $name  The key to set.
+     * @param mixed $value The value to assign.
      * @return $this
      */
     protected function set(int|string $name, $value): self
@@ -163,7 +168,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * Similar to {@see self::set()} but automatically assigns an incremental key.
      * Visibility is protected to allow controlled mutation in extending classes.
      *
-     * @param TValue $value The value to append.
+     * @param mixed $value The value to append.
      * @return $this
      */
     protected function push($value): self
@@ -181,6 +186,10 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function has(int|string|null $key): bool
     {
+        if (null === $key) {
+            return array_key_exists('', $this->collection);
+        }
+
         return array_key_exists($key, $this->collection);
     }
 
@@ -223,24 +232,42 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * If a second key is specified, the results will be keyed by that value.
      * Works with both arrays and objects.
      *
-     * @param TKey $value The property or array key to use as the extracted value.
-     * @param TKey|null $key Optional property or key to use as the index for the returned array.
-     * @return array<TKey, TValue> The resulting mapped array of extracted values.
+     * @param int|string $value The property or array key to use as the extracted value.
+     * @param int|string|null $key Optional property or key to use as the index for the returned array.
+     * @return array<int|string, mixed> The resulting mapped array of extracted values.
      */
     public function pluck(int|string $value, int|string|null $key = null): array
     {
         $results = [];
 
         foreach ($this->collection as $item) {
-            $itemValue = is_array($item) ? $item[$value] : $item->{$value};
+            $itemValue = null;
+            $itemKey   = null;
+
+            if (is_array($item)) {
+                $itemValue = $item[$value] ?? null;
+
+                if (null !== $key) {
+                    $itemKey = $item[$key] ?? null;
+                }
+            } elseif (is_object($item)) {
+                $itemValue = $item->{$value};
+
+                if (null !== $key) {
+                    $itemKey = $item->{$key};
+                }
+            } else {
+                continue;
+            }
 
             if (is_null($key)) {
                 $results[] = $itemValue;
                 continue;
             }
 
-            $itemKey           = is_array($item) ? $item[$key] : $item->{$key};
-            $results[$itemKey] = $itemValue;
+            if (is_int($itemKey) || is_string($itemKey)) {
+                $results[$itemKey] = $itemValue;
+            }
         }
 
         return $results;
@@ -282,11 +309,27 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      *
      * Values are compared loosely unless strict comparison is ensured by the data structure itself.
      *
-     * @return array<TKey, int> An associative array where keys are values and values are counts.
+     * @return array<int|string, int> An associative array where keys are values and values are counts.
      */
     public function countBy(): array
     {
-        return array_count_values($this->collection);
+        $counts = [];
+
+        foreach ($this->collection as $value) {
+            if (is_int($value) || is_string($value)) {
+                $countKey = $value;
+            } elseif (is_float($value)) {
+                $countKey = (string) $value;
+            } elseif (is_object($value) && method_exists($value, '__toString')) {
+                $countKey = (string) $value;
+            } else {
+                continue;
+            }
+
+            $counts[$countKey] = ($counts[$countKey] ?? 0) + 1;
+        }
+
+        return $counts;
     }
 
     /**
@@ -375,7 +418,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function json(): string
     {
-        return json_encode($this->collection);
+        return json_encode($this->collection, JSON_THROW_ON_ERROR);
     }
 
     /**
@@ -455,7 +498,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     /**
      * Get the current item in the collection's internal pointer position.
      *
-     * @return TValue The current item.
+     * @return TValue|false The current item, or false if the internal pointer is invalid.
      */
     public function current()
     {
@@ -465,7 +508,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     /**
      * Advance the internal pointer and return the next item.
      *
-     * @return TValue The next item.
+     * @return TValue|false The next item, or false if the pointer advanced past the end.
      */
     public function next()
     {
@@ -475,7 +518,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     /**
      * Move the internal pointer backward and return the previous item.
      *
-     * @return TValue The previous item.
+     * @return TValue|false The previous item, or false if the pointer moved before the start.
      */
     public function prev()
     {
@@ -485,7 +528,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     /**
      * Retrieve a random item from the collection.
      *
-     * @return TValue The randomly selected item.
+     * @return TValue|null The randomly selected item, or null if the collection is empty.
      */
     public function rand(): mixed
     {
@@ -521,9 +564,9 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      *
      * Non-numeric values will be ignored by `array_sum()`.
      *
-     * @return int The resulting sum of all numeric items.
+     * @return int|float The resulting sum of all numeric items.
      */
-    public function sum(): int
+    public function sum(): int|float
     {
         return array_sum($this->collection);
     }
@@ -535,9 +578,9 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * If the collection is empty, a division by zero error may occur,
      * so ensure the collection contains items before calling.
      *
-     * @return int The average (mean) of all items.
+     * @return int|float The average (mean) of all items.
      */
-    public function avg(): int
+    public function avg(): int|float
     {
         return $this->sum() / $this->count();
     }
@@ -553,7 +596,21 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function max(int|string|null $key = null): int
     {
-        return max(array_column($this->collection, $key));
+        $values = array_column($this->collection, $key);
+
+        if ([] === $values) {
+            return 0;
+        }
+
+        $maximum = null;
+
+        foreach ($values as $value) {
+            if (is_int($value) && (null === $maximum || $value > $maximum)) {
+                $maximum = $value;
+            }
+        }
+
+        return $maximum ?? 0;
     }
 
     /**
@@ -567,7 +624,21 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function min(int|string|null $key = null): int
     {
-        return min(array_column($this->collection, $key));
+        $values = array_column($this->collection, $key);
+
+        if ([] === $values) {
+            return 0;
+        }
+
+        $minimum = null;
+
+        foreach ($values as $value) {
+            if (is_int($value) && (null === $minimum || $value < $minimum)) {
+                $minimum = $value;
+            }
+        }
+
+        return $minimum ?? 0;
     }
 
     /**
@@ -641,36 +712,40 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function __clone()
     {
-        $this->collection = $this->deepClone($this->collection);
+        $collection = [];
+
+        foreach ($this->collection as $key => $value) {
+            $collection[$key] = $this->deepCloneValue($value);
+        }
+
+        $this->collection = $collection;
     }
 
     /**
-     * Recursively create a deep clone of the given collection.
+     * Recursively create a deep clone of the given value.
      *
      * Arrays are cloned element-by-element, and objects are cloned
-     * using PHP's native `clone` keyword.
+     * using PHP's native `clone` keyword. Scalar values are returned as-is.
      *
-     * @param array<TKey, TValue> $collection The collection to deep clone.
-     * @return array<TKey, TValue> The cloned collection.
+     * @param mixed $value The value to deep clone.
+     * @return mixed The cloned value.
      */
-    protected function deepClone(array $collection): array
+    protected function deepCloneValue(mixed $value): mixed
     {
-        $clone = [];
+        if (is_array($value)) {
+            $clone = [];
 
-        foreach ($collection as $key => $value) {
-            if (is_array($value)) {
-                $clone[$key] = $this->deepClone($value);
-                continue;
+            foreach ($value as $key => $item) {
+                $clone[$key] = $this->deepCloneValue($item);
             }
 
-            if (is_object($value)) {
-                $clone[$key] = clone $value;
-                continue;
-            }
-
-            $clone[$key] = $value;
+            return $clone;
         }
 
-        return $clone;
+        if (is_object($value)) {
+            return clone $value;
+        }
+
+        return $value;
     }
 }

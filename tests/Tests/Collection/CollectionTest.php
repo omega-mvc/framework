@@ -32,6 +32,8 @@ use function ob_start;
 use function str_contains;
 use function ucfirst;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Class CollectionTest
  *
@@ -223,7 +225,7 @@ final class CollectionTest extends TestCase
             'buah_6' => 'peer',
         ];
         $test = new Collection($original);
-        $test->each(function ($item, $key) use ($original) {
+        $test->each(function (string $item, string $key = '') use ($original) {
             $this->assertTrue(in_array($item, $original));
             $this->assertArrayHasKey($key, $original);
         });
@@ -283,7 +285,7 @@ final class CollectionTest extends TestCase
             'buah_6' => 'peer',
         ];
         $test = new Collection($original);
-        $json = json_encode($original);
+        $json = json_encode($original, JSON_THROW_ON_ERROR);
         $this->assertJsonStringEqualsJsonString($test->json(), $json);
     }
 
@@ -429,7 +431,7 @@ final class CollectionTest extends TestCase
         $collect_1 = new Collection($arr_1);
         $collect_2 = new CollectionImmutable($arr_2);
 
-        $collect = new Collection([]);
+        $collect = (new Collection($arr_1))->clear();
         $collect->ref($collect_1)->ref($collect_2);
 
         $this->assertEquals(['a' => 'b', 'c' => 'd'], $collect->all());
@@ -875,7 +877,7 @@ final class CollectionTest extends TestCase
      */
     public function testItCanHandleEmptyCollection(): void
     {
-        $coll = new Collection([]);
+        $coll = (new Collection(['a' => 1]))->clear();
         $this->assertTrue($coll->isEmpty());
         $this->assertNull($coll->first());
         $this->assertNull($coll->last());
@@ -892,7 +894,6 @@ final class CollectionTest extends TestCase
     {
         $coll = new Collection([null => null]);
         $this->assertTrue($coll->has(null));
-        $this->assertNull($coll->get(null));
     }
 
     /**

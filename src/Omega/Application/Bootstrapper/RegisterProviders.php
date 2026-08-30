@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\Application\Bootstrapper;
 
 use Omega\Application\ApplicationInterface;
+use Omega\Config\ConfigRepository;
 use Omega\Container\AbstractServiceProvider;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -91,13 +92,32 @@ class RegisterProviders
         $configProviders = [];
 
         if ($app->has('config')) {
-            $configProviders = $app->get('config')
-                ->get('app.providers', []);
+            $config = $app->get('config');
+
+            if ($config instanceof ConfigRepository) {
+                $configured = $config->get('providers', []);
+
+                if (is_array($configured)) {
+                    foreach ($configured as $provider) {
+                        if (is_string($provider) && is_subclass_of($provider, AbstractServiceProvider::class)) {
+                            $configProviders[] = $provider;
+                        }
+                    }
+                }
+            }
         }
 
-        $packageProviders = $app
-            ->make(ApplicationManifest::class)
-            ->providers() ?? [];
+        $packageProviders = [];
+
+        $manifest = $app->make(ApplicationManifest::class);
+
+        if ($manifest instanceof ApplicationManifest) {
+            foreach ($manifest->providers() as $provider) {
+                if (is_subclass_of($provider, AbstractServiceProvider::class)) {
+                    $packageProviders[] = $provider;
+                }
+            }
+        }
 
         return array_unique([
             ...$app->getCoreProviders(),

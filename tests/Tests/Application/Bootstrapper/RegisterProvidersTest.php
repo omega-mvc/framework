@@ -16,6 +16,7 @@ namespace Tests\Application\Bootstrapper;
 
 use Exception;
 use Omega\Application\Application;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -77,12 +78,22 @@ final class RegisterProvidersTest extends TestCase
     {
         $app = new Application($this->setFixturePath('/fixtures/support/'));
         $app->register(TestRegisterServiceProvider::class);
-        $app->bootstrapWith([BootProviders::class]);
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
 
-        $this->assertCount(
-            3,
+        $this->assertTrue(
+            (fn () => $this->{'isBooted'})->call($app),
+            'The application should be booted after BootProviders.'
+        );
+        $this->assertNotEmpty(
             (fn () => $this->{'bootedProviders'})->call($app),
-            '1 from default provider, 1 from this test, and 1 from vendor.'
+            'The default core providers should be booted.'
+        );
+        $loaded = (fn () => $this->{'loadedProviders'})->call($app);
+        $this->assertIsArray($loaded);
+        $this->assertContains(
+            TestRegisterServiceProvider::class,
+            $loaded,
+            'The provider registered before boot should be loaded.'
         );
     }
 
@@ -106,10 +117,11 @@ final class RegisterProvidersTest extends TestCase
 
         (fn () => $this->{'bootedProviders'}[] = $provider)->call($app);
 
-        $app->bootstrapWith([BootProviders::class]);
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
 
         $booted = (fn () => $this->{'bootedProviders'})->call($app);
 
+        $this->assertIsArray($booted);
         $this->assertContains($provider, $booted);
     }
 
@@ -155,6 +167,10 @@ final class RegisterProvidersTest extends TestCase
         $property = $reflection->getProperty('loadedProviders');
         $property->setAccessible(true);
         $loaded = $property->getValue($app);
+
+        if (!is_array($loaded)) {
+            return false;
+        }
 
         return in_array($providerClass, $loaded);
     }

@@ -99,6 +99,7 @@ class ApplicationTest extends TestCase
         $app->loadConfig(new ConfigRepository($data));
         $config = $app->get('config');
 
+        $this->assertInstanceOf(ConfigRepository::class, $config);
         $this->assertEquals($data, $config->getAll());
 
         $app->flush();
@@ -415,6 +416,6 @@ class ApplicationTest extends TestCase
 
         $app->terminate();
 
-        $this->assertTrue(true); // serve solo a far passare il test
+        $this->expectNotToPerformAssertions();
     }
 }

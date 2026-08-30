@@ -82,26 +82,44 @@ if (!function_exists('get_path')) {
      * - If a single identifier is provided, a string is returned.
      * - If multiple identifiers are provided (array), an array of paths is returned.
      *
-     * @param string|array $id The container binding key(s) used to retrieve the path(s).
+     * @param array<int, string>|string $id The container binding key(s) used to retrieve the path(s).
      * @param string $suffix_path Optional suffix to append to each resolved path.
-     * @return string|array The resolved path(s) with the appended suffix.
+     * @return array<int|string, string>|string The resolved path(s) with the appended suffix. An
+     *         associative array is returned when the resolved binding holds a map of paths.
      * @throws BindingResolutionException If the container binding cannot be resolved.
      * @throws CircularAliasException If a circular alias is detected.
      * @throws ContainerExceptionInterface For general container errors.
      * @throws EntryNotFoundException If no entry is found for the given identifier.
      * @throws ReflectionException If a reflection error occurs during resolution.
      */
-    function get_path(string|array $id, string $suffix_path = ''): string|array
+    function get_path(array|string $id, string $suffix_path = ''): array|string
     {
+        if (is_array($id)) {
+            $result = [];
+
+            foreach ($id as $single) {
+                $path = get_path($single, $suffix_path);
+
+                $result[] = is_string($path) ? $path : '';
+            }
+
+            return $result;
+        }
+
         $value = app()->get($id);
 
         $normalizedSuffix = slash(path: $suffix_path);
 
         if (is_array($value)) {
-            return array_map(fn ($v) => $v . $normalizedSuffix, $value);
+            return array_map(
+                static fn (mixed $element): string => is_string($element)
+                    ? $element . $normalizedSuffix
+                    : $normalizedSuffix,
+                $value
+            );
         }
 
-        return $value . $normalizedSuffix;
+        return is_string($value) ? $value . $normalizedSuffix : $normalizedSuffix;
     }
 }
 
@@ -186,13 +204,13 @@ if (!function_exists('path')) {
      * This function replaces dots in the given binding with the system's directory separator
      * and ensures the path ends with a directory separator.
      *
-     * @param string|array $binding The dot-notated binding (e.g., "app.config").
-     * @return string|array The resulting relative directory path with trailing separator.
+     * @param array<int, string>|string $binding The dot-notated binding (e.g., "app.config").
+     * @return ($binding is array<int, string> ? array<int, string> : string) Directory path with trailing separator.
      */
-    function path(string|array $binding): string|array
+    function path(array|string $binding): array|string
     {
         if (is_array($binding)) {
-            return array_map(fn($b) => path($b), $binding);
+            return array_map(static fn (string $part): string => path($part), $binding);
         }
 
         $relative_path = str_replace('.', DIRECTORY_SEPARATOR, $binding);
@@ -222,12 +240,12 @@ if (!function_exists('set_path')) {
      * Example:
      * - "app.config" => "/app/config/"
      *
-     * @param string|array $key The dot-notated path key(s).
-     * @return string|array The resulting normalized directory path(s).
+     * @param array<int, string>|string $key The dot-notated path key(s).
+     * @return ($key is array<int, string> ? array<int, string> : string) The resulting normalized directory path(s).
      *
      * @throws InvalidArgumentException If the given key is empty.
      */
-    function set_path(string|array $key): string|array
+    function set_path(array|string $key): array|string
     {
         if (empty($key)) {
             throw new InvalidArgumentException('The path key cannot be an empty string or an empty array.');
@@ -236,7 +254,7 @@ if (!function_exists('set_path')) {
         $ds = DIRECTORY_SEPARATOR;
 
         if (is_array($key)) {
-            return array_map(fn($k) => set_path($k), $key);
+            return array_map(static fn (string $part): string => set_path($part), $key);
         }
 
         return $ds . str_replace('.', $ds, $key) . $ds;
@@ -256,13 +274,16 @@ if (!function_exists('slash')) {
      * This function does not alter the semantic meaning of the path,
      * but ensures consistency across different operating systems.
      *
-     * @param string|array $path The path or list of paths to normalize.
-     * @return string|array The normalized path(s) with correct directory separators.
+     * @param array<int, string>|string $path The path or list of paths to normalize.
+     * @return ($path is array<int, string> ? array<int, string> : string) Normalized path(s) with correct separators.
      */
-    function slash(string|array $path): string|array
+    function slash(array|string $path): array|string
     {
         if (is_array($path)) {
-            return array_map(fn($p) => str_replace('/', DIRECTORY_SEPARATOR, $p), $path);
+            return array_map(
+                static fn (string $part): string => str_replace('/', DIRECTORY_SEPARATOR, $part),
+                $path
+            );
         }
 
         return str_replace('/', DIRECTORY_SEPARATOR, $path);

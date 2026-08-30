@@ -14,12 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
-use function array_column;
-use function array_filter;
-use function array_map;
-use function array_merge;
 use function array_reduce;
-use function array_values;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
@@ -52,7 +47,7 @@ final class ApplicationManifest
     /** @var string Path where cached package manifest is stored. */
     private readonly string $applicationCachePath;
 
-    /** @var array<string, array<string, array<int, string>>>|null Cached package manifest. */
+    /** @var array<mixed>|null Cached package manifest. */
     public ?array $applicationManifest = null;
 
     /**
@@ -92,28 +87,33 @@ final class ApplicationManifest
     {
         $manifest = $this->getApplicationManifest();
 
-        $values = array_column($manifest, $key);
+        $values = [];
 
-        $values = array_map(
-            static fn ($value): array => (array) $value,
-            array_filter(
-                $values,
-                static fn ($value): bool => $value !== null
-            )
-        );
+        foreach ($manifest as $package) {
+            if (!is_array($package) || !isset($package[$key])) {
+                continue;
+            }
 
-        return array_values(
-            array_filter(
-                array_merge(...$values),
-                static fn ($value): bool => false === empty($value)
-            )
-        );
+            $entry = $package[$key];
+
+            if (is_array($entry)) {
+                foreach ($entry as $value) {
+                    if (is_string($value) && '' !== $value) {
+                        $values[] = $value;
+                    }
+                }
+            } elseif (is_string($entry) && '' !== $entry) {
+                $values[] = $entry;
+            }
+        }
+
+        return $values;
     }
 
     /**
      * Get the cached package manifest, building it if it does not exist.
      *
-     * @return array<string, array<string, array<int, string>>> Cached package manifest.
+     * @return array<mixed> Cached package manifest.
      */
     private function getApplicationManifest(): array
     {
@@ -125,7 +125,13 @@ final class ApplicationManifest
             $this->build();
         }
 
-        return $this->applicationManifest = require $this->applicationCachePath . 'packages.php';
+        $manifest = require $this->applicationCachePath . 'packages.php';
+
+        if (!is_array($manifest)) {
+            $manifest = [];
+        }
+
+        return $this->applicationManifest = $manifest;
     }
 
     /**
@@ -140,14 +146,29 @@ final class ApplicationManifest
     {
         $file = $this->basePath . $this->vendorPath . 'installed.json';
 
-        $packages = file_exists($file)
-            ? json_decode(file_get_contents($file), true)['packages'] ?? []
-            : [];
+        $packages = [];
+
+        if (file_exists($file)) {
+            $contents = file_get_contents($file);
+
+            if (false !== $contents) {
+                $decoded = json_decode($contents, true);
+
+                if (is_array($decoded) && isset($decoded['packages']) && is_array($decoded['packages'])) {
+                    $packages = $decoded['packages'];
+                }
+            }
+        }
 
         $provider = array_reduce(
             $packages,
-            static function (array $carry, array $package): array {
-                if (isset($package['extra']['omega-mvc'])) {
+            static function (array $carry, mixed $package): array {
+                if (
+                    is_array($package)
+                    && is_string($package['name'] ?? null)
+                    && is_array($package['extra'] ?? null)
+                    && isset($package['extra']['omega-mvc'])
+                ) {
                     $carry[$package['name']] = $package['extra']['omega-mvc'];
                 }
                 return $carry;

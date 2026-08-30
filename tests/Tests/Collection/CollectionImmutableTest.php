@@ -26,6 +26,8 @@ use function in_array;
 use function json_encode;
 use function str_contains;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Class CollectionImmutableTest
  *
@@ -112,7 +114,7 @@ final class CollectionImmutableTest extends TestCase
         $this->assertEquals($items, $test->items(), 'get all item value in collection');
 
         // each function
-        $test->each(function ($item, $key) use ($original) {
+        $test->each(function (string $item, string $key = '') use ($original) {
             $this->assertTrue(in_array($item, $original), 'test each with value');
             $this->assertArrayHasKey($key, $original, 'test each with key');
         });
@@ -132,7 +134,7 @@ final class CollectionImmutableTest extends TestCase
         $this->assertTrue($every, 'collection every item dont have "x" letter');
 
         // json output
-        $json = json_encode($original);
+        $json = json_encode($original, JSON_THROW_ON_ERROR);
         $this->assertJsonStringEqualsJsonString($test->json(), $json, 'collection convert to json string');
     }
 

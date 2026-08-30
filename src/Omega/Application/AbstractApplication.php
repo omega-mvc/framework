@@ -61,10 +61,10 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     /** @var string Absolute base path of the application root directory. */
     protected string $basePath;
 
-    /** @var AbstractServiceProvider[] Service providers that have completed the boot phase. */
+    /** @var class-string<AbstractServiceProvider>[] Service providers that have completed the boot phase. */
     protected array $bootedProviders = [];
 
-    /** @var AbstractServiceProvider[] Service providers that have been registered. */
+    /** @var class-string<AbstractServiceProvider>[] Service providers that have been registered. */
     protected array $loadedProviders = [];
 
     /** @var bool Indicates whether the application has completed the boot phase. */
@@ -105,7 +105,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function __construct(?string $basePath = null)
     {
-        $this->basePath = str_replace('/', DIRECTORY_SEPARATOR, $basePath);
+        $this->basePath = str_replace('/', DIRECTORY_SEPARATOR, $basePath ?? '');
 
         $this->set('path.base', $this->basePath . DIRECTORY_SEPARATOR);
 
@@ -170,6 +170,10 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     {
         // The Application instance must be globally available before any container
         // bindings, helpers, or service providers are resolved.
+        if (!$this instanceof Application) {
+            throw new \LogicException('The application instance must be a concrete Application.');
+        }
+
         if (Application::$app !== null) {
             Application::$app->flush();
         }
@@ -201,7 +205,13 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     {
         $this->isBootstrapped = true;
 
-        array_walk($bootstrappers, fn($b) => $this->make($b)->bootstrap($this));
+        foreach ($bootstrappers as $bootstrapper) {
+            $instance = $this->make($bootstrapper);
+
+            if (is_object($instance) && method_exists($instance, 'bootstrap')) {
+                $instance->bootstrap($this);
+            }
+        }
     }
 
     /**
@@ -302,6 +312,9 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
     /**
      * {@inheritdoc}
+     *
+     * @param class-string<AbstractServiceProvider> $provider Service provider class name.
+     * @return AbstractServiceProvider The registered service provider instance.
      */
     public function register(string $provider): AbstractServiceProvider
     {
@@ -383,7 +396,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         AbstractFacade::flushInstance();
 
-        if (method_exists($this, 'bound') && $this->bound('view.instance')) {
+        if ($this->bound('view.instance')) {
             $templator = $this->get('view.instance');
             if ($templator instanceof Templator) {
                 $templator->clearDependencies();
@@ -415,6 +428,8 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<int, class-string<AbstractServiceProvider>> Registered core service provider class names.
      */
     public function getCoreProviders(): array
     {
@@ -433,7 +448,13 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getName(): string
     {
-        return $this->get('app.name');
+        if (!$this->bound('app.name')) {
+            return '';
+        }
+
+        $name = $this->get('app.name');
+
+        return is_string($name) ? $name : '';
     }
 
     /**
@@ -448,7 +469,13 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getVersion(): string
     {
-        return $this->get('app.version');
+        if (!$this->bound('app.version')) {
+            return '';
+        }
+
+        $version = $this->get('app.version');
+
+        return is_string($version) ? $version : '';
     }
 
     /**
@@ -485,6 +512,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     /**
      * {@inheritdoc}
      *
+     * @param ConfigRepository<string, mixed> $configs The configuration repository to bind.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      */
     public function loadConfig(ConfigRepository $configs): void
@@ -518,7 +546,9 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getApplicationCachePath(): string
     {
-        $base = rtrim(get_path('path.base'), "/\\");
+        $path = get_path('path.base');
+
+        $base = rtrim(is_string($path) ? $path : '', "/\\");
 
         return $base . set_path('bootstrap.cache');
     }
@@ -534,7 +564,13 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getEnvironment(): string
     {
-        return $this->get('environment');
+        if (!$this->bound('environment')) {
+            return '';
+        }
+
+        $environment = $this->get('environment');
+
+        return is_string($environment) ? $environment : '';
     }
 
     /**
@@ -548,7 +584,13 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function isDebugMode(): bool
     {
-        return $this->get('app.debug');
+        if (!$this->bound('app.debug')) {
+            return false;
+        }
+
+        $debug = $this->get('app.debug');
+
+        return is_bool($debug) ? $debug : false;
     }
 
     /**

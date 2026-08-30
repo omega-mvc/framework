@@ -48,10 +48,10 @@ if (!function_exists('collection')) {
      *
      * @template TKey of array-key
      * @template TValue
-     * @param iterable<TKey, TValue> $collection Initial items for the collection
+     * @param array<TKey, TValue> $collection Initial items for the collection
      * @return Collection<TKey, TValue> Returns a mutable Collection instance
      */
-    function collection(iterable $collection = []): Collection
+    function collection(array $collection = []): Collection
     {
         return new Collection($collection);
     }
@@ -63,12 +63,12 @@ if (!function_exists('collection_immutable')) {
      *
      * @template TKey of array-key
      * @template TValue
-     * @param iterable<TKey, TValue> $collection Initial items for the collection
-     * @return Collection<TKey, TValue> Returns an immutable Collection instance
+     * @param array<TKey, TValue> $collection Initial items for the collection
+     * @return CollectionImmutable<TKey, TValue> Returns an immutable Collection instance
      */
-    function collection_immutable(iterable $collection = []): Collection
+    function collection_immutable(array $collection = []): CollectionImmutable
     {
-        return new Collection($collection);
+        return new CollectionImmutable($collection);
     }
 }
 
@@ -97,30 +97,37 @@ if (!function_exists('data_get')) {
      * @param array<array-key, TValue> $array   The array to retrieve values from
      * @param array-key                $key     The key string using dot notation
      * @param TGetDefault              $default Default value if the key does not exist
-     * @return TGetDefault|array<array-key, TValue>|null Returns the value, multiple values, or the default
+     * @return TValue|list<mixed>|TGetDefault|null Returns the value, multiple values, or the default
      */
     function data_get(array $array, int|string $key, $default = null): mixed
     {
         $segments = explode('.', (string) $key);
-        foreach ($segments as $segment) {
-            if (array_key_exists($segment, $array)) {
-                $array = $array[$segment];
-            } elseif ('*' === $segment) {
+        $current  = $array;
+
+        foreach ($segments as $index => $segment) {
+            if (!is_array($current)) {
+                return $default;
+            }
+
+            if ('*' === $segment) {
                 $values = [];
-                foreach ($array as $item) {
-                    /** @phpstan-ignore-next-line */
-                    $value = data_get($item, implode('.', array_slice($segments, 1)));
+                foreach ($current as $item) {
+                    $value = data_get(is_array($item) ? $item : [], implode('.', array_slice($segments, $index + 1)));
                     if (null !== $value) {
                         $values[] = $value;
                     }
                 }
 
-                return count($values) > 0 ? $values : $default;
-            } else {
+                return $values ?: $default;
+            }
+
+            if (!array_key_exists($segment, $current)) {
                 return $default;
             }
+
+            $current = $current[$segment];
         }
 
-        return $array;
+        return $current;
     }
 }

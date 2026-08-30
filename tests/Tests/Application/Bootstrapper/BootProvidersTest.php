@@ -21,15 +21,14 @@ use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Container\AbstractServiceProvider;
 use Omega\Application\Bootstrapper\BootProviders;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use Tests\Application\Bootstrapper\Fixtures\BootCalledServiceProvider;
 use Tests\FixturesPathTrait;
-
-use function get_class;
 
 /**
  * Class BootProvidersTest
@@ -77,7 +76,7 @@ class BootProvidersTest extends TestCase
         $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->assertFalse($app->isBooted);
-        $app->bootstrapWith([BootProviders::class]);
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
         $this->assertTrue($app->isBooted);
     }
 
@@ -93,22 +92,9 @@ class BootProvidersTest extends TestCase
 
         $app->isBooted = true;
 
-        $provider = new class($app) extends AbstractServiceProvider {
+        $registered = $app->register(BootCalledServiceProvider::class);
 
-            public bool $bootCalled = false;
-
-            public function register(): void {}
-
-            public function boot(): void
-            {
-                $this->bootCalled = true;
-            }
-        };
-
-        $class = get_class($provider);
-
-        $registered = $app->register($class);
-
+        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
         $this->assertTrue($registered->bootCalled);
     }
 
@@ -122,22 +108,9 @@ class BootProvidersTest extends TestCase
     {
         $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-        $provider = new class($app) extends AbstractServiceProvider {
+        $registered = $app->register(BootCalledServiceProvider::class);
 
-            public bool $bootCalled = false;
-
-            public function register(): void {}
-
-            public function boot(): void
-            {
-                $this->bootCalled = true;
-            }
-        };
-
-        $class = get_class($provider);
-
-        $registered = $app->register($class);
-
+        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
         $this->assertFalse($registered->bootCalled);
     }
 }

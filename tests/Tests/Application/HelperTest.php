@@ -147,14 +147,14 @@ final class HelperTest extends TestCase
     public function testOsDetectIdentifiesAllSupportedFamilies(): void
     {
         $this->assertEquals('windows', os_detect('Windows'));
-        $this->assertEquals('linux',   os_detect('Linux'));
-        $this->assertEquals('mac',     os_detect('Darwin'));
-        $this->assertEquals('bsd',     os_detect('Bsd'));
+        $this->assertEquals('linux', os_detect('Linux'));
+        $this->assertEquals('mac', os_detect('Darwin'));
+        $this->assertEquals('bsd', os_detect('Bsd'));
         $this->assertEquals('solaris', os_detect('Solaris'));
         $this->assertEquals('unknown', os_detect('AmigaOS')); // Ramo default
 
         $currentOs = strtolower(PHP_OS_FAMILY);
-        $expected = match($currentOs) {
+        $expected = match ($currentOs) {
             'darwin' => 'mac',
             'windows', 'linux', 'bsd', 'solaris' => $currentOs,
             default => 'unknown'

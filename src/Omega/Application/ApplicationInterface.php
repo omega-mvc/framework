@@ -95,7 +95,7 @@ interface ApplicationInterface extends ContainerInterface
     /**
      * Register service provider.
      *
-     * @param string $provider Class-name service provider
+     * @param class-string<AbstractServiceProvider> $provider Class-name service provider
      * @return AbstractServiceProvider The instantiated and registered service provider.
      */
     public function register(string $provider): AbstractServiceProvider;
@@ -118,7 +118,7 @@ interface ApplicationInterface extends ContainerInterface
     /**
      * Get the list of core providers.
      *
-     * @return array Return an array of core providers.
+     * @return array<int, class-string<AbstractServiceProvider>> Registered core service provider class names.
      */
     public function getCoreProviders(): array;
 
@@ -139,7 +139,7 @@ interface ApplicationInterface extends ContainerInterface
     /**
      * Load the application configuration repository.
      *
-     * @param ConfigRepository $configs The configuration repository to bind.
+     * @param ConfigRepository<string, mixed> $configs The configuration repository to bind.
      * @return void
      */
     public function loadConfig(ConfigRepository $configs): void;

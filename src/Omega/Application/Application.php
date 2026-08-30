@@ -107,7 +107,9 @@ class Application extends AbstractApplication implements ApplicationInterface
      */
     public function isDownMaintenanceMode(): bool
     {
-        return file_exists(get_path('path.storage') . 'app/maintenance.php');
+        $storage = get_path('path.storage');
+
+        return is_string($storage) && file_exists($storage . 'app/maintenance.php');
     }
 
     /**
@@ -128,7 +130,8 @@ class Application extends AbstractApplication implements ApplicationInterface
             'template' => null,
         ];
 
-        $down = get_path('path.storage') . 'app/down';
+        $storage = get_path('path.storage');
+        $down = is_string($storage) ? $storage . 'app/down' : '';
         if (!file_exists($down)) {
             return $default;
         }
