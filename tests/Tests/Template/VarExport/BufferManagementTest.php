@@ -19,7 +19,7 @@ class BufferManagementTest extends TestCase
      *
      * @testdox Ensures buffer starts empty
      */
-    public function bufferStartsEmpty(): void
+    public function testItBufferStartsEmpty(): void
     {
         $varExport = new VarExport();
         $result    = $varExport->export([]);
@@ -31,7 +31,7 @@ class BufferManagementTest extends TestCase
      *
      * @testdox Ensures buffer resets after compile
      */
-    public function bufferResetsAfterCompile(): void
+    public function testItBufferResetsAfterCompile(): void
     {
         $varExport = new VarExport();
 

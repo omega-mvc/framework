@@ -19,7 +19,7 @@ class IndentationTest extends TestCase
      *
      * @testdox Uses 2-space indentation consistently
      */
-    public function usesTwoSpaceIndentationConsistently(): void
+    public function testItUsesTwoSpaceIndentationConsistently(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation('  '); // Two spaces
@@ -61,7 +61,7 @@ PHP;
      *
      * @testdox Uses 4-space indentation consistently
      */
-    public function usesFourSpaceIndentationConsistently(): void
+    public function testItUsesFourSpaceIndentationConsistently(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation('    '); // Four spaces
@@ -103,7 +103,7 @@ PHP;
      *
      * @testdox Uses 8-space indentation consistently
      */
-    public function usesEightSpaceIndentationConsistently(): void
+    public function testItUsesEightSpaceIndentationConsistently(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation('        '); // Eight spaces
@@ -145,7 +145,7 @@ PHP;
      *
      * @testdox Uses 1-tab indentation consistently
      */
-    public function usesOneTabIndentationConsistently(): void
+    public function testItUsesOneTabIndentationConsistently(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation("\t"); // One tab
@@ -187,7 +187,7 @@ PHP;
      *
      * @testdox Uses 2-tab indentation consistently
      */
-    public function usesTwoTabIndentationConsistently(): void
+    public function testItUsesTwoTabIndentationConsistently(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation("\t\t"); // Two tabs
@@ -229,7 +229,7 @@ PHP;
      *
      * @testdox Maintains nested array indentation levels
      */
-    public function maintainsNestedArrayIndentationLevels(): void
+    public function testIaintainsNestedArrayIndentationLevels(): void
     {
         $varExport = new VarExport();
         // Default indentation is 4 spaces
@@ -277,7 +277,7 @@ PHP;
      *
      * @testdox Normalizes closure indentation
      */
-    public function normalizesClosureIndentation(): void
+    public function testNormalizesClosureIndentation(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation('    '); // 4 spaces
@@ -313,7 +313,7 @@ PHP;
      *
      * @testdox Handles mixed indentation in source
      */
-    public function handlesMixedIndentationInSource(): void
+    public function testHandlesMixedIndentationInSource(): void
     {
         $varExport = new VarExport();
         $varExport->setIndentation('    '); // 4 spaces

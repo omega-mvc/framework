@@ -2,24 +2,26 @@
 
 declare(strict_types=1);
 
-namespace System\Test\Cache\Storage;
+namespace Tests\Cache\Storage;
 
+use DateInterval;
+use Exception;
+use Omega\Cache\Storage\Redis as RedisStorage;
+use Omega\Redis\Redis;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use System\Cache\Storage\RedisStorage;
-use System\Redis\Redis;
+use Psr\SimpleCache\InvalidArgumentException;
+use stdClass;
 
-/**
- * @coversDefaultClass \System\Cache\Storage\RedisStorage
- *
- * @group redis
- */
+#[CoversClass(Redis::class)]
+#[CoversClass(RedisStorage::class)]
 final class RedisStorageTest extends TestCase
 {
     /** @var Redis|null */
-    private $redis;
+    private ?Redis $redis;
 
     /** @var RedisStorage|null */
-    private $storage;
+    private ?RedisStorage $storage;
 
     protected function setUp(): void
     {
@@ -36,7 +38,7 @@ final class RedisStorageTest extends TestCase
                 'database' => 2,
             ]);
             $this->redis->command('ping');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->markTestSkipped('Could not connect to Redis server: ' . $e->getMessage());
         }
 
@@ -63,8 +65,9 @@ final class RedisStorageTest extends TestCase
      * @covers ::set
      * @covers ::get
      * @covers ::calculateTTLInSeconds
+     * @throws InvalidArgumentException
      */
-    public function itCanSetAndGetCache()
+    public function testItCanSetAndGetCache()
     {
         $this->assertTrue($this->storage->set('key', 'value'));
         $this->assertEquals('value', $this->storage->get('key'));
@@ -76,8 +79,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can get default value if key not found
      *
      * @covers ::get
+     * @throws InvalidArgumentException
      */
-    public function itCanGetDefaultIfKeyNotFound()
+    public function testItCanGetDefaultIfKeyNotFound()
     {
         $this->assertEquals('default', $this->storage->get('key', 'default'));
     }
@@ -88,8 +92,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can delete cache
      *
      * @covers ::delete
+     * @throws InvalidArgumentException
      */
-    public function itCanDeleteCache()
+    public function testItCanDeleteCache()
     {
         $this->storage->set('key', 'value');
         $this->assertTrue($this->storage->delete('key'));
@@ -102,8 +107,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can clear cache
      *
      * @covers ::clear
+     * @throws InvalidArgumentException
      */
-    public function itCanClearCache()
+    public function testItCanClearCache()
     {
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
@@ -118,8 +124,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can check if key exists
      *
      * @covers ::has
+     * @throws InvalidArgumentException
      */
-    public function itCanCheckIfKeyExists()
+    public function testItCanCheckIfKeyExists()
     {
         $this->storage->set('key', 'value');
         $this->assertTrue($this->storage->has('key'));
@@ -132,8 +139,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can increment cache value
      *
      * @covers ::increment
+     * @throws InvalidArgumentException
      */
-    public function itCanIncrementCache()
+    public function testItCanIncrementCache()
     {
         $this->storage->set('key', 10);
         $this->assertEquals(11, $this->storage->increment('key', 1));
@@ -146,8 +154,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can decrement cache value
      *
      * @covers ::decrement
+     * @throws InvalidArgumentException
      */
-    public function itCanDecrementCache()
+    public function testItCanDecrementCache()
     {
         $this->storage->set('key', 10);
         $this->assertEquals(9, $this->storage->decrement('key', 1));
@@ -160,8 +169,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can remember cache value
      *
      * @covers ::remember
+     * @throws InvalidArgumentException
      */
-    public function itCanRememberCache()
+    public function testItCanRememberCache()
     {
         $result = $this->storage->remember('key', 3600, fn () => 'value');
         $this->assertEquals('value', $result);
@@ -174,8 +184,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can get multiple cache values
      *
      * @covers ::getMultiple
+     * @throws InvalidArgumentException
      */
-    public function itCanGetMultipleCache()
+    public function testItCanGetMultipleCache()
     {
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
@@ -190,8 +201,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can set multiple cache values
      *
      * @covers ::setMultiple
+     * @throws InvalidArgumentException
      */
-    public function itCanSetMultipleCache()
+    public function testItCanSetMultipleCache()
     {
         $this->assertTrue($this->storage->setMultiple(['key1' => 'value1', 'key2' => 'value2'], 3600));
         $this->assertEquals('value1', $this->storage->get('key1'));
@@ -204,8 +216,9 @@ final class RedisStorageTest extends TestCase
      * @testdox it can delete multiple cache values
      *
      * @covers ::deleteMultiple
+     * @throws InvalidArgumentException
      */
-    public function itCanDeleteMultipleCache()
+    public function testItCanDeleteMultipleCache()
     {
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
@@ -221,10 +234,11 @@ final class RedisStorageTest extends TestCase
      * @testdox it should not unserialize objects by default for security
      *
      * @covers ::get
+     * @throws InvalidArgumentException
      */
-    public function itShouldNotUnserializeObjectsByDefaultForSecurity()
+    public function testItShouldNotUnserializeObjectsByDefaultForSecurity()
     {
-        $obj      = new \stdClass();
+        $obj      = new stdClass();
         $obj->foo = 'bar';
         $this->storage->set('key', $obj);
 
@@ -240,10 +254,11 @@ final class RedisStorageTest extends TestCase
      *
      * @covers ::calculateTTLInSeconds
      * @covers ::set
+     * @throws InvalidArgumentException
      */
-    public function itShouldHandleExpirationWithDateInterval()
+    public function testItShouldHandleExpirationWithDateInterval()
     {
-        $interval = new \DateInterval('PT1S');
+        $interval = new DateInterval('PT1S');
         $this->assertTrue($this->storage->set('expire_key', 'value', $interval));
         $this->assertEquals('value', $this->storage->get('expire_key'));
 

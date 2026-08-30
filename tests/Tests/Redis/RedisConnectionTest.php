@@ -28,7 +28,7 @@ class RedisConnectionTest extends TestCase
      *
      * @testdox Can connect using persistent connection
      */
-    public function itCanConnectUsingPersistentConnection(): void
+    public function testItCanConnectUsingPersistentConnection(): void
     {
         $redis = new Redis([
             'host'       => '127.0.0.1',
@@ -48,7 +48,7 @@ class RedisConnectionTest extends TestCase
      *
      * @testdox Can set read timeout
      */
-    public function itCanSetReadTimeout(): void
+    public function testItCanSetReadTimeout(): void
     {
         $redis = new Redis([
             'host'         => '127.0.0.1',
@@ -67,7 +67,7 @@ class RedisConnectionTest extends TestCase
      *
      * @testdox Throws exception on connection failure
      */
-    public function itThrowsExceptionOnConnectionFailure(): void
+    public function testItThrowsExceptionOnConnectionFailure(): void
     {
         $this->expectException(RedisException::class);
         $this->expectExceptionMessage('Could not connect to Redis');

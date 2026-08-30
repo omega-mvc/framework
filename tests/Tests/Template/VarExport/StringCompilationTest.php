@@ -16,7 +16,7 @@ final class StringCompilationTest extends TestCase
      *
      * @testdox Compiles string with unicode characters correctly
      */
-    public function compilesStringWithUnicodeCharacters(): void
+    public function testItCompilesStringWithUnicodeCharacters(): void
     {
         $varExport = new VarExport();
         $exported  = $varExport->export(['Hello, 世界']);
@@ -39,7 +39,7 @@ PHP;
      *
      * @testdox Compiles an empty string correctly
      */
-    public function compilesEmptyString(): void
+    public function testItCompilesEmptyString(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(['']);
@@ -61,7 +61,7 @@ PHP;
      *
      * @testdox Compiles string with single quotes correctly
      */
-    public function compilesStringWithSingleQuotes(): void
+    public function testItCompilesStringWithSingleQuotes(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(["it's a string"]);
@@ -83,7 +83,7 @@ PHP;
      *
      * @testdox Compiles string with double quotes correctly
      */
-    public function compilesStringWithDoubleQuotes(): void
+    public function testItCompilesStringWithDoubleQuotes(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(['This is a "quoted" string']);
@@ -105,7 +105,7 @@ PHP;
      *
      * @testdox Compiles string with backslashes correctly
      */
-    public function compilesStringWithBackslashes(): void
+    public function testItCompilesStringWithBackslashes(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(['a\\b']);
@@ -127,7 +127,7 @@ PHP;
      *
      * @testdox Compiles string with special characters correctly
      */
-    public function compilesStringWithSpecialCharacters(): void
+    public function testItCompilesStringWithSpecialCharacters(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(['!@#$%^&*()-=_+[]{}|;:,.<>/?']);
@@ -149,7 +149,7 @@ PHP;
      *
      * @testdox Compiles string with newlines correctly
      */
-    public function compilesStringWithNewlines(): void
+    public function testItCompilesStringWithNewlines(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(["First line\nSecond line"]);

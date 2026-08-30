@@ -133,7 +133,7 @@ final class FacadeTest extends TestCase
 
         $this->expectException(FacadeObjectNotSetException::class);
         $this->expectExceptionMessage(
-            'The facade instance for Tests\Support\Facades\Sample\FacadesTestClass has not been set.'
+            'The facade instance for Tests\Facades\Sample\FacadesTestClass has not been set.'
         );
 
         FacadesTestClass::has('php');
@@ -152,7 +152,6 @@ final class FacadeTest extends TestCase
         new TestAbstractFacade($app);
 
         $ref = new ReflectionProperty(AbstractFacade::class, 'app');
-        /** @noinspection PhpExpressionResultUnusedInspection */
         $ref->setAccessible(true);
 
         $this->assertSame($app, $ref->getValue());

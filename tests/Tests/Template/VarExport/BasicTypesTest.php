@@ -19,7 +19,7 @@ class BasicTypesTest extends TestCase
      *
      * @testdox Compiles a positive integer correctly
      */
-    public function compilesPositiveInteger(): void
+    public function testItCompilesPositiveInteger(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([123]);
@@ -41,7 +41,7 @@ PHP;
      *
      * @testdox Compiles a negative integer correctly
      */
-    public function compilesNegativeInteger(): void
+    public function testItCompilesNegativeInteger(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([-456]);
@@ -63,7 +63,7 @@ PHP;
      *
      * @testdox Compiles a zero integer correctly
      */
-    public function compilesZeroInteger(): void
+    public function testItCompilesZeroInteger(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([0]);
@@ -85,7 +85,7 @@ PHP;
      *
      * @testdox Compiles a positive float correctly
      */
-    public function compilesPositiveFloat(): void
+    public function testItCompilesPositiveFloat(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([123.45]);
@@ -107,7 +107,7 @@ PHP;
      *
      * @testdox Compiles a negative float correctly
      */
-    public function compilesNegativeFloat(): void
+    public function testItCompilesNegativeFloat(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([-67.89]);
@@ -129,7 +129,7 @@ PHP;
      *
      * @testdox Compiles a float with a decimal part correctly
      */
-    public function compilesFloatWithDecimal(): void
+    public function testItCompilesFloatWithDecimal(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([10.0]);
@@ -151,7 +151,7 @@ PHP;
      *
      * @testdox Compiles a whole number float correctly
      */
-    public function compilesWholeNumberFloat(): void
+    public function testItCompilesWholeNumberFloat(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([10.0]);
@@ -173,7 +173,7 @@ PHP;
      *
      * @testdox Compiles a float in scientific notation correctly
      */
-    public function compilesFloatScientificNotation(): void
+    public function testItCompilesFloatScientificNotation(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([1.23e4]);
@@ -195,7 +195,7 @@ PHP;
      *
      * @testdox Compiles a boolean true correctly
      */
-    public function compilesBooleanTrue(): void
+    public function testItCompilesBooleanTrue(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([true]);
@@ -217,7 +217,7 @@ PHP;
      *
      * @testdox Compiles a boolean false correctly
      */
-    public function compilesBooleanFalse(): void
+    public function testItCompilesBooleanFalse(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([false]);
@@ -239,7 +239,7 @@ PHP;
      *
      * @testdox Compiles null correctly
      */
-    public function compilesNull(): void
+    public function testItCompilesNull(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([null]);

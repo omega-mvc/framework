@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-namespace System\Tests\Template\VarExport\Compile;
+namespace Tests\Template\VarExport\Compile;
 
+use Omega\Template\VarExport\ClosureExtractor;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
-use System\Template\VarExport\ClosureExtractor;
+use ReflectionFunction;
 
 /**
- * @covers \System\Template\VarExport\ClosureExtractor
- *
- * @internal
- *
- * @testdox Tests for ClosureExtractor
  */
+#[CoversClass(ClosureExtractor::class)]
 final class ClosureExtractorTest extends TestCase
 {
     private ClosureExtractor $extractor;
@@ -27,14 +25,15 @@ final class ClosureExtractorTest extends TestCase
      * @test
      *
      * @testdox Extract simple single-line closure without prefix
+     * @throws \ReflectionException
      */
-    public function extractSimpleSingleLineClosureWithoutPrefix(): void
+    public function testExtractSimpleSingleLineClosureWithoutPrefix(): void
     {
         $closure = function () {
             return 'test';
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         // Check normalized output doesn't include key/arrow
@@ -51,7 +50,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract simple single-line closure from array context
      */
-    public function extractSimpleSingleLineClosureFromArrayContext(): void
+    public function testExtractSimpleSingleLineClosureFromArrayContext(): void
     {
         // This simulates the problematic case from the issue
         $arrayWithClosure = [
@@ -70,7 +69,7 @@ final class ClosureExtractorTest extends TestCase
 
         // Get reflection of the closure
         $closure    = $arrayWithClosure['closure'];
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         // Verify no array key remains
@@ -92,11 +91,11 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract arrow function without prefix
      */
-    public function extractArrowFunctionWithoutPrefix(): void
+    public function testExtractArrowFunctionWithoutPrefix(): void
     {
         $closure = fn () => 'test';
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         // Check normalized output doesn't include array key/arrow prefix
@@ -112,7 +111,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract multiline closure structure
      */
-    public function extractMultilineClosureStructure(): void
+    public function testExtractMultilineClosureStructure(): void
     {
         $closure = function () {
             $x = 10;
@@ -120,7 +119,7 @@ final class ClosureExtractorTest extends TestCase
             return $x * 2;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -140,7 +139,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Lines array doesn't contain duplicate closure key
      */
-    public function linesArrayNoduplicateClosureKey(): void
+    public function testLinesArrayNoduplicateClosureKey(): void
     {
         $arrayWithClosure = [
             'closure' => function () {
@@ -149,7 +148,7 @@ final class ClosureExtractorTest extends TestCase
         ];
 
         $closure    = $arrayWithClosure['closure'];
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $linesString = implode('', $result['lines']);
@@ -165,13 +164,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract closure with parameters
      */
-    public function extractClosureWithParameters(): void
+    public function testExtractClosureWithParameters(): void
     {
         $closure = function ($a, $b) {
             return $a + $b;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -185,13 +184,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract closure with return type
      */
-    public function extractClosureWithReturnType(): void
+    public function testExtractClosureWithReturnType(): void
     {
         $closure = function (): int {
             return 5;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -205,7 +204,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract closure with mixed content and comments
      */
-    public function extractClosureWithMixedContentAndComments(): void
+    public function testExtractClosureWithMixedContentAndComments(): void
     {
         $closure = function () {
             // This is a comment
@@ -215,7 +214,7 @@ final class ClosureExtractorTest extends TestCase
             return $result;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -231,13 +230,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Metadata contains correct line information
      */
-    public function metadataContainsCorrectLineInformation(): void
+    public function testMetadataContainsCorrectLineInformation(): void
     {
         $closure = function () {
             return 'test';
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $this->assertArrayHasKey('metadata', $result);
@@ -259,11 +258,11 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Arrow function metadata correctly identified
      */
-    public function arrowFunctionMetadataCorrectlyIdentified(): void
+    public function testArrowFunctionMetadataCorrectlyIdentified(): void
     {
         $closure = fn () => 42;
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $this->assertTrue($result['metadata']['isArrowFunction']);
@@ -274,13 +273,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Regular function metadata correctly identified
      */
-    public function regularFunctionMetadataCorrectlyIdentified(): void
+    public function testRegularFunctionMetadataCorrectlyIdentified(): void
     {
         $closure = function () {
             return 42;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $this->assertFalse($result['metadata']['isArrowFunction']);
@@ -291,14 +290,14 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Normalized code has correct indentation removed
      */
-    public function normalizedCodeHasCorrectIndentationRemoved(): void
+    public function tetsNormalizedCodeHasCorrectIndentationRemoved(): void
     {
         // This closure is indented at runtime
         $closure = function () {
             return 'test';
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $lines = $result['lines'];
@@ -317,7 +316,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Validate single line rejects multiple closures
      */
-    public function validateSingleLineRejectsMultipleClosures(): void
+    public function testValidateSingleLineRejectsMultipleClosures(): void
     {
         $line = 'function() {}, function() {}';
 
@@ -332,13 +331,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Original code preserved in output
      */
-    public function originalCodePreservedInOutput(): void
+    public function testOriginalCodePreservedInOutput(): void
     {
         $closure = function () {
             return 'test';
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $this->assertArrayHasKey('original', $result);
@@ -351,7 +350,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract from complex array scenario
      */
-    public function extractFromComplexArrayScenario(): void
+    public function testExtractFromComplexArrayScenario(): void
     {
         $config = [
             'name'     => 'app',
@@ -372,7 +371,7 @@ final class ClosureExtractorTest extends TestCase
         ];
 
         $closure    = $config['handlers']['closure'];
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -392,7 +391,7 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Extract closure with trailing comma in array
      */
-    public function extractClosureWithTrailingCommaInArray(): void
+    public function testExtractClosureWithTrailingCommaInArray(): void
     {
         $arrayWithClosure = [
             'closure' => function () {
@@ -401,7 +400,7 @@ final class ClosureExtractorTest extends TestCase
         ];
 
         $closure    = $arrayWithClosure['closure'];
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $normalized = $result['normalized'];
@@ -417,13 +416,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox Non-existent file throws exception
      */
-    public function nonExistentFileThrowsException(): void
+    public function testNonExistentFileThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('Source file not found');
 
         // Create a mock reflection with non-existent file
-        $reflection = $this->createMock(\ReflectionFunction::class);
+        $reflection = $this->createMock(ReflectionFunction::class);
         $reflection->method('getFileName')->willReturn('/non/existent/file.php');
         $reflection->method('getStartLine')->willReturn(1);
         $reflection->method('getEndLine')->willReturn(1);
@@ -436,13 +435,13 @@ final class ClosureExtractorTest extends TestCase
      *
      * @testdox AST contains correct structure
      */
-    public function astContainsCorrectStructure(): void
+    public function testAstContainsCorrectStructure(): void
     {
         $closure = function () {
             return 42;
         };
 
-        $reflection = new \ReflectionFunction($closure);
+        $reflection = new ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
 
         $this->assertArrayHasKey('ast', $result);

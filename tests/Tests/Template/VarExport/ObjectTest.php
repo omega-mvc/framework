@@ -7,6 +7,10 @@ namespace Tests\Template\VarExport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
+use stdClass;
+use Tests\Template\Fixtures\ObjectWithoutSetState;
+use Tests\Template\Fixtures\ObjectWithSetState;
+use Tests\Template\Fixtures\ObjectWithVisibility;
 
 #[CoversClass(VarExport::class)]
 class ObjectTest extends TestCase
@@ -14,7 +18,7 @@ class ObjectTest extends TestCase
     /**
      * @test
      */
-    public function itCanCompileObjectWithSetState()
+    public function testItCanCompileObjectWithSetState()
     {
         $obj      = new ObjectWithSetState();
         $exporter = new VarExport();
@@ -40,9 +44,9 @@ PHP;
     /**
      * @test
      */
-    public function itCanCompileStdClassObjectByDefault()
+    public function testItCanCompileStdClassObjectByDefault()
     {
-        $obj       = new \stdClass();
+        $obj       = new stdClass();
         $obj->name = 'test';
         $obj->age  = 99;
 
@@ -73,7 +77,7 @@ PHP;
     /**
      * @test
      */
-    public function itCanCompileObjectWithoutSetState()
+    public function testItCanCompileObjectWithoutSetState()
     {
         $obj    = new ObjectWithoutSetState();
         $obj->a = 10;
@@ -88,7 +92,7 @@ PHP;
     /**
      * @test
      */
-    public function itCanCompileObjectWithPrivateAndProtectedProperties()
+    public function testItCanCompileObjectWithPrivateAndProtectedProperties()
     {
         $obj = new ObjectWithVisibility();
 
@@ -114,57 +118,5 @@ PHP;
         $this->assertEquals(1, $imported[0]->getPublic());
         $this->assertEquals(2, $imported[0]->getProtected());
         $this->assertEquals(3, $imported[0]->getPrivate());
-    }
-}
-
-class ObjectWithSetState
-{
-    public $a = 1;
-    public $b = 2;
-
-    public static function __set_state($an_array)
-    {
-        $obj    = new static();
-        $obj->a = $an_array['a'];
-        $obj->b = $an_array['b'];
-
-        return $obj;
-    }
-}
-
-class ObjectWithoutSetState
-{
-    public $a;
-}
-
-class ObjectWithVisibility
-{
-    public $public       = 1;
-    protected $protected = 2;
-    private $private     = 3;
-
-    public static function __set_state($array)
-    {
-        $obj            = new self();
-        $obj->public    = $array['public'];
-        $obj->protected = $array['protected'];
-        $obj->private   = $array['private'];
-
-        return $obj;
-    }
-
-    public function getPublic(): int
-    {
-        return $this->public;
-    }
-
-    public function getProtected(): int
-    {
-        return $this->protected;
-    }
-
-    public function getPrivate(): int
-    {
-        return $this->private;
     }
 }

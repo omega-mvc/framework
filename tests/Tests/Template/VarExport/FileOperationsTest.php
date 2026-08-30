@@ -52,7 +52,7 @@ class FileOperationsTest extends TestCase
      *
      * @testdox Compiles to file successfully
      */
-    public function compilesToFileSuccessfully(): void
+    public function testItCompilesToFileSuccessfully(): void
     {
         $varExport = new VarExport();
         $data      = ['key' => 'value', 'number' => 123];
@@ -97,7 +97,7 @@ PHP;
      *
      * @testdox Compiles to file and creates directory if not exists
      */
-    public function compilesToFileCreatesDirectory(): void
+    public function testItCompilesToFileCreatesDirectory(): void
     {
         $varExport = new VarExport();
         $data      = ['item1' => 'value1'];
@@ -145,7 +145,7 @@ PHP;
      *
      * @testdox Compiles to string without headers
      */
-    public function compilesToStringWithoutHeaders(): void
+    public function testItCompilesToStringWithoutHeaders(): void
     {
         $varExport = new VarExport();
         $data      = ['test' => 'no headers'];
@@ -172,7 +172,7 @@ PHP;
      *
      * @testdox Ensures output file is valid PHP
      */
-    public function outputFileIsValidPhp(): void
+    public function testOutputFileIsValidPhp(): void
     {
         $varExport = new VarExport();
         $data      = ['valid' => true, 'nested' => ['foo' => 'bar']];
@@ -202,7 +202,7 @@ PHP;
      *
      * @testdox Ensures output file can be required and executed
      */
-    public function outputFileCanBeRequiredAndExecuted(): void
+    public function testOutputFileCanBeRequiredAndExecuted(): void
     {
         $varExport = new VarExport();
         $data      = ['foo' => 'bar', 'count' => 123, 'status' => true];
@@ -224,7 +224,7 @@ PHP;
      *
      * @testdox Ensures compiled array matches original array
      */
-    public function compiledArrayMatchesOriginalArray(): void
+    public function testCompiledArrayMatchesOriginalArray(): void
     {
         $varExport = new VarExport();
         $data      = ['foo' => 'baz', 'list' => [1, 2, 3]];

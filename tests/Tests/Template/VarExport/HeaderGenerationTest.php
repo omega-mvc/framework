@@ -17,7 +17,7 @@ class HeaderGenerationTest extends TestCase
      * @test
      * @throws ReflectionException
      */
-    public function itGeneratesHeader()
+    public function testItGeneratesHeader()
     {
         $exporter   = new VarExport();
         $reflection = new ReflectionClass($exporter);

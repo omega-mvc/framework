@@ -21,7 +21,7 @@ class ArrayCompilationTest extends TestCase
      *
      * @testdox Compiles an empty array correctly
      */
-    public function compilesEmptyArray(): void
+    public function testItCompilesEmptyArray(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([]);
@@ -41,7 +41,7 @@ PHP;
      *
      * @testdox Compiles an indexed array correctly
      */
-    public function compilesIndexedArray(): void
+    public function testItCompilesIndexedArray(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([1, 2, 3]);
@@ -65,7 +65,7 @@ PHP;
      *
      * @testdox Compiles an associative array correctly
      */
-    public function compilesAssociativeArray(): void
+    public function testItCompilesAssociativeArray(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -91,7 +91,7 @@ PHP;
      *
      * @testdox Compiles a mixed array correctly
      */
-    public function compilesMixedArray(): void
+    public function testItCompilesMixedArray(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -121,7 +121,7 @@ PHP;
      *
      * @testdox Compiles array with non-sequential numeric keys
      */
-    public function compilesArrayWithNonSequentialKeys(): void
+    public function testItCompilesArrayWithNonSequentialKeys(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -149,7 +149,7 @@ PHP;
      *
      * @testdox Compiles nested arrays (depth 2) correctly
      */
-    public function compilesNestedArraysDepth2(): void
+    public function testItCompilesNestedArraysDepth2(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -183,7 +183,7 @@ PHP;
      *
      * @testdox Compiles nested arrays (depth 5) correctly
      */
-    public function compilesNestedArraysDepth5(): void
+    public function testItCompilesNestedArraysDepth5(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -225,7 +225,7 @@ PHP;
      *
      * @testdox Compiles array with various value types mixed
      */
-    public function compilesArrayWithMixedValueTypes(): void
+    public function testItCompilesArrayWithMixedValueTypes(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export([
@@ -263,7 +263,7 @@ PHP;
      *
      * @testdox Compiles a large array correctly
      */
-    public function compilesLargeArray(): void
+    public function testItCompilesLargeArray(): void
     {
         $varExport = new VarExport();
 
@@ -292,7 +292,7 @@ PHP;
      *
      * @testdox Compiles an array containing a reference
      */
-    public function compilesArrayWithReference(): void
+    public function testItCompilesArrayWithReference(): void
     {
         $varExport = new VarExport();
 
@@ -325,7 +325,7 @@ PHP;
      *
      * @testdox Compiles an array containing a constant
      */
-    public function compilesArrayWithConstant(): void
+    public function testItCompilesArrayWithConstant(): void
     {
         $varExport = new VarExport();
         $output    = $varExport->export(['my_constant' => new Constant('MY_TEST_CONSTANT')]);

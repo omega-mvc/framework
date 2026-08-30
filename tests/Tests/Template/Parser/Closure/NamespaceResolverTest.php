@@ -5,10 +5,20 @@ declare(strict_types=1);
 namespace Tests\Template\Parser\Closure;
 
 use Closure;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\Template\Parser\Closure\NamespaceResolver;
 use ReflectionException;
 use ReflectionFunction;
+use Tests\Template\Fixtures\DummyParamClass;
+use Tests\Template\Fixtures\DummyReturnClass;
+use Tests\Template\Fixtures\DummyStaticClass;
+use Tests\Template\Fixtures\IntersectionAInterface;
+use Tests\Template\Fixtures\IntersectionBInterface;
+use Tests\Template\Fixtures\UnionA;
+use Tests\Template\Fixtures\UnionB;
+use Tests\Template\Fixtures\UnionC;
+use Tests\Template\Fixtures\UnionD;
 
 use function array_values;
 use function file_put_contents;
@@ -16,10 +26,13 @@ use function unlink;
 
 use const PHP_VERSION_ID;
 
+#[CoversClass(NamespaceResolver::class)]
 final class NamespaceResolverTest extends TestCase
 {
     /**
-     * @test
+     * Test it an resolve collects namespaces from parameters return and static variable.
+     *
+     * @return void
      * @throws ReflectionException
      */
     public function testItCanResolveCollectsNamespacesFromParametersReturnAndStaticVariables(): void
@@ -48,7 +61,9 @@ final class NamespaceResolverTest extends TestCase
     }
 
     /**
-     * @test
+     * Test it can resolve ignore builtint types.
+     *
+     * @return void
      * @throws ReflectionException
      */
     public function testItCanResolveIgnoresBuiltinTypes(): void
@@ -69,7 +84,9 @@ final class NamespaceResolverTest extends TestCase
     }
 
     /**
-     * @test
+     * It can resolve collects union types.
+     *
+     * @return void
      * @throws ReflectionException
      */
     public function testItCanResolveCollectsUnionTypes(): void
@@ -103,7 +120,9 @@ PHP;
     }
 
     /**
-     * @test
+     * Test it can resolve collects intersection types.
+     *
+     * @return void
      * @throws ReflectionException
      */
     public function testItCanResolveCollectsIntersectionTypes(): void
@@ -130,12 +149,14 @@ PHP;
         $result     = $resolver->resolve($reflection);
         unlink($file);
 
-        self::assertContains(IntersectionA::class, $result);
-        self::assertContains(IntersectionB::class, $result);
+        self::assertContains(IntersectionAInterface::class, $result);
+        self::assertContains(IntersectionBInterface::class, $result);
     }
 
     /**
-     * @test
+     * Test it can resolve remove duplicates and reindexes.
+     *
+     * @return void
      * @throws ReflectionException
      */
     public function testItCanResolveRemovesDuplicatesAndReindexes(): void
@@ -164,35 +185,4 @@ PHP;
             array_values($result)
         );
     }
-}
-// dummy
-
-final class DummyParamClass
-{
-}
-final class DummyReturnClass
-{
-}
-final class DummyStaticClass
-{
-}
-
-final class UnionA
-{
-}
-final class UnionB
-{
-}
-final class UnionC
-{
-}
-final class UnionD
-{
-}
-
-interface IntersectionA
-{
-}
-interface IntersectionB
-{
 }

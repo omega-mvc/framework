@@ -14,7 +14,7 @@ class EdgeCasesTest extends TestCase
     /**
      * @test
      */
-    public function itThrowsExceptionOnResourceType()
+    public function testItThrowsExceptionOnResourceType()
     {
         $resource = fopen('php://memory', 'r');
         $exporter = new VarExport();
@@ -29,7 +29,7 @@ class EdgeCasesTest extends TestCase
     /**
      * @test
      */
-    public function itCanHandleDeeplyNestedArray()
+    public function testItCanHandleDeeplyNestedArray()
     {
         $array   = [];
         $current = &$array;
@@ -49,7 +49,7 @@ class EdgeCasesTest extends TestCase
     /**
      * @test
      */
-    public function itCanHandleBinaryDataInStrings()
+    public function testItCanHandleBinaryDataInStrings()
     {
         $binary   = "\x00\x01\x02\x03\xff";
         $exporter = new VarExport();
@@ -68,7 +68,7 @@ class EdgeCasesTest extends TestCase
     /**
      * @test
      */
-    public function itCanHandleCircularReference()
+    public function testItCanHandleCircularReference()
     {
         $a       = new \stdClass();
         $a->self = $a;
