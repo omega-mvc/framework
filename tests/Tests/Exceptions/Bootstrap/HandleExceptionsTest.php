@@ -104,12 +104,9 @@ class HandleExceptionsTest extends TestCase
         $handle = new HandleExceptions();
         $handle->bootstrap($app);
 
-        /** @var TestHandleExceptions $handler */
-        $handler = $app[ExceptionHandler::class];
-        $handler->deprecated();
-        $this->expectException(ErrorException::class);
-        $this->expectExceptionMessage('deprecation');
-        $handle->handleError(E_USER_DEPRECATED, 'deprecation', __FILE__, __LINE__);
+        // Deprecations are logged, not thrown
+        $result = $handle->handleError(E_USER_DEPRECATED, 'deprecation', __FILE__, __LINE__);
+        $this->assertTrue($result);
 
         $app->flush();
     }

@@ -23,6 +23,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ExceptionHandler;
+use Omega\Http\Request;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Log\LogLevel;
 use ReflectionException;
@@ -67,7 +68,7 @@ use const E_USER_DEPRECATED;
  */
 class HandleExceptions
 {
-    /** @var Application The application instance used by this handler. */
+    /** @var ApplicationInterface The application instance used by this handler. */
     private ApplicationInterface $app;
 
     /** @var bool Whether the global handlers have already been registered this process (persists across requests). */
@@ -115,7 +116,6 @@ class HandleExceptions
 
         self::$reserveMemory = str_repeat('x', 32_768);
 
-        /** @phpstan-ignore-next-line */
         if ('testing' !== $app->getEnvironment()) {
             set_error_handler([$this, 'handleError']);
             set_exception_handler([$this, 'handleException']);
@@ -136,20 +136,23 @@ class HandleExceptions
      * @param int $level The error level
      * @param string $message The error message
      * @param string $file The file in which the error occurred
-     * @param int|null $line The line number of the error
-     * @return void
+     * @param int $line The line number of the error
+     * @return bool True if error was handled (should not propagate to internal handler), false otherwise
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ErrorException if a non-deprecated error occurs.
      */
-    public function handleError(int $level, string $message, string $file = '', ?int $line = 0): void
+    public function handleError(int $level, string $message, string $file = '', int $line = 0): bool
     {
         if ($this->isDeprecation($level)) {
             $this->handleDeprecationError($message, $file, $line, $level);
+            return true;
         }
 
         if (error_reporting() & $level) {
             throw new ErrorException($message, 0, $level, $file, $line);
         }
+
+        return false;
     }
 
     /**
@@ -182,7 +185,9 @@ class HandleExceptions
         $handler->report($th);
 
         if (php_sapi_name() !== 'cli') {
-            $handler->render($this->app['request'], $th)->send();
+            /** @var \Omega\Http\Request $request */
+            $request = $this->app->get('request');
+            $handler->render($request, $th)->send();
         }
     }
 
@@ -215,7 +220,9 @@ class HandleExceptions
     private function log(int $level, string $message): bool
     {
         if ($this->app->has('logging')) {
-            $this->app['logging']->log($this->mapLevel($level), $message);
+            /** @var \Psr\Log\LoggerInterface $logger */
+            $logger = $this->app->get('logging');
+            $logger->log($this->mapLevel($level), $message);
             return true;
         }
 
@@ -244,7 +251,9 @@ class HandleExceptions
      */
     private function getHandler(): ExceptionHandler
     {
-        return $this->app[ExceptionHandler::class];
+        /** @var ExceptionHandler $handler */
+        $handler = $this->app->get(ExceptionHandler::class);
+        return $handler;
     }
 
     /**

@@ -5,3 +5,5 @@ parameters:
 	tmpDir: cache/phpstan
 	excludePaths:
 		- tests/Tests/fixtures
+	bootstrapFiles:
+		- vendor/autoload.php

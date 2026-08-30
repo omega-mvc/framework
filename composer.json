@@ -39,7 +39,8 @@
         "symfony/console": "^v8.0.7",
         "symfony/finder": "^v8.0.8",
         "vlucas/phpdotenv": "^5.6",
-        "wixel/gump": "^v2.3.1"
+        "wixel/gump": "^v2.3.1",
+        "filp/whoops": "^2.18"
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0",

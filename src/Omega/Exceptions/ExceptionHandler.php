@@ -275,8 +275,14 @@ class ExceptionHandler
      */
     public function registerViewPath(): Templator
     {
-        $view_paths   = array_map(fn ($path): string => $path . 'pages/', get_path('paths.view'));
-        $view_paths[] = get_path('path.view');
+        $pathsView = get_path('paths.view');
+        $view_paths = is_array($pathsView)
+            ? array_map(fn ($path): string => $path . 'pages/', $pathsView)
+            : [];
+        $pathView = get_path('path.view');
+        if (is_string($pathView)) {
+            $view_paths[] = $pathView;
+        }
         /** @var TemplatorFinder $finder */
         $finder = $this->app->make(TemplatorFinder::class);
         $finder->setPaths($view_paths);
@@ -300,7 +306,7 @@ class ExceptionHandler
      */
     private function isDebug(): bool
     {
-        return $this->app->get('app.debug');
+        return (bool) $this->app->get('app.debug');
     }
 
     /**

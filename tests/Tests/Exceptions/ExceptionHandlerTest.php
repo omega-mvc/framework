@@ -357,10 +357,17 @@ final class ExceptionHandlerTest extends TestCase
 
         $this->app->set(
             'view.response',
-            fn () => fn (string $viewPath, array $portal = []): Response => new Response(
-                (string) ($this->app->make('view.instance') instanceof Templator ? $this->app->make('view.instance') : new Templator($this->app->make(TemplatorFinder::class) instanceof TemplatorFinder ? $this->app->make(TemplatorFinder::class) : $this->setFixturePath('/fixtures/exceptions'), $this->setFixturePath('/fixtures/exceptions')))->render($viewPath, (array) $portal)
-            )
-
+            fn () => function (string $viewPath, $portal = []): Response {
+                /** @var array<string, mixed> $portal */
+                $templator = $this->app->make('view.instance');
+                if (!$templator instanceof Templator) {
+                    $finder = $this->app->make(TemplatorFinder::class);
+                    $templator = $finder instanceof TemplatorFinder
+                        ? new Templator($finder, $this->setFixturePath('/fixtures/exceptions'))
+                        : new Templator($this->setFixturePath('/fixtures/exceptions'), $this->setFixturePath('/fixtures/exceptions'));
+                }
+                return new Response((string) $templator->render($viewPath, $portal));
+            }
         );
 
 
