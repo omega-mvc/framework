@@ -92,17 +92,15 @@ class HandleExceptions
      */
     public function bootstrap(ApplicationInterface $app): void
     {
-        if (self::$handlersRegistered) {
-            $this->app = $app;
+        $this->app = $app;
 
+        error_reporting(E_ALL);
+
+        if (self::$handlersRegistered) {
             return;
         }
 
         self::$reserveMemory = str_repeat('x', 32_768);
-
-        $this->app = $app;
-
-        error_reporting(E_ALL);
 
         /** @phpstan-ignore-next-line */
         if ('testing' !== $app->getEnvironment()) {
