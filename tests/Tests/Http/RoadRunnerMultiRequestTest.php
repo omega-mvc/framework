@@ -134,12 +134,20 @@ final class RoadRunnerMultiRequestTest extends TestCase
         $http->terminate($request, $response);
 
         // Router::reset() ran; without the fix the table is empty here.
-        $this->assertGreaterThan(0, count(Router::getRoutes()), 'Routes must be re-registered after the first request.');
+        $this->assertGreaterThan(
+            0,
+            count(Router::getRoutes()),
+            'Routes must be re-registered after the first request.'
+        );
 
         // Request 2 — the regression this test guards against.
         $request2  = new Request('/test');
         $response2 = $http->handle($request2);
-        $this->assertInstanceOf(Response::class, $response2, 'Second request must produce a Response, not a route miss.');
+        $this->assertInstanceOf(
+            Response::class,
+            $response2,
+            'Second request must produce a Response, not a route miss.'
+        );
         $http->terminate($request2, $response2);
     }
 }

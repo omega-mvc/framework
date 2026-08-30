@@ -105,7 +105,11 @@ final class Resolver
         $lastOverride = $this->container->getLastParameterOverride();
 
         return array_map(
-            fn(ReflectionParameter $dependency) => $this->resolveSingleDependency($dependency, $parameters, $lastOverride),
+            fn(ReflectionParameter $dependency) => $this->resolveSingleDependency(
+                $dependency,
+                $parameters,
+                $lastOverride
+            ),
             $dependencies
         );
     }
@@ -208,8 +212,11 @@ final class Resolver
         }
     }
 
-    private function resolveSingleDependency(ReflectionParameter $dependency, array $parameters, array $lastOverride): mixed
-    {
+    private function resolveSingleDependency(
+        ReflectionParameter $dependency,
+        array $parameters,
+        array $lastOverride
+    ): mixed {
         if (array_key_exists($dependency->name, $parameters)) {
             return $parameters[$dependency->name];
         }

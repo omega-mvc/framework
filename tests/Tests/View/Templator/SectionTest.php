@@ -250,7 +250,9 @@ final class SectionTest extends TestCase
      */
     public function testItThrowsWhenRequiredYieldSectionMissing(): void
     {
-        $this->expectExceptionMessage("Slot with extends 'sectionwithmissingyield.template' required 'missing_section'");
+        $this->expectExceptionMessage(
+            "Slot with extends 'sectionwithmissingyield.template' required 'missing_section'"
+        );
 
         $childTemplate  = '{% extend(\'sectionwithmissingyield.template\') %}';
         $this->templator->templates($childTemplate);

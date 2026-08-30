@@ -85,7 +85,11 @@ interface RouterInterface
      * The provided Closure is executed inside this temporary context and the
      * previous configuration is restored afterward.
      *
-     * @param array{prefix?: string, middleware?: array<int, class-string>, as?: string} $setupGroup Group configuration options.
+     * @param array{
+     *     prefix?: string,
+     *     middleware?: array<int, class-string>,
+     *     as?: string
+     * } $setupGroup Group configuration options.
      * @param Closure $group The callback defining grouped routes.
      * @return void
      */

@@ -190,7 +190,11 @@ PHP;
         // It outputs "No syntax errors detected" or similar on success to stderr (usually)
         // or stdout depending on PHP version and configuration.
         $this->assertEquals(0, $returnCode, 'Output file should be valid PHP syntax');
-        $this->assertStringContainsStringIgnoringCase('No syntax errors detected', implode("\n", $output), 'PHP linter should report no syntax errors');
+        $this->assertStringContainsStringIgnoringCase(
+            'No syntax errors detected',
+            implode("\n", $output),
+            'PHP linter should report no syntax errors'
+        );
     }
 
     /**
@@ -232,6 +236,10 @@ PHP;
 
         $requiredValue = require $filePath;
 
-        $this->assertEquals($data, $requiredValue, 'The required file should return an array identical to the original data');
+        $this->assertEquals(
+            $data,
+            $requiredValue,
+            'The required file should return an array identical to the original data'
+        );
     }
 }

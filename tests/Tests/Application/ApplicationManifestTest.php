@@ -170,7 +170,11 @@ class ApplicationManifestTest extends TestCase
      */
     public function testItCanGetConfig(): void
     {
-        $package_manifest = new ApplicationManifest($this->basePath, $this->applicationCachePath, slash(path: '/package/'));
+        $package_manifest = new ApplicationManifest(
+            $this->basePath,
+            $this->applicationCachePath,
+            slash(path: '/package/')
+        );
         $config = (fn () => $this->{'config'}('providers'))->call($package_manifest);
 
         $this->assertEquals([
@@ -187,7 +191,11 @@ class ApplicationManifestTest extends TestCase
      */
     public function testItCanGetProviders(): void
     {
-        $package_manifest = new ApplicationManifest($this->basePath, $this->applicationCachePath, slash(path: '/package/'));
+        $package_manifest = new ApplicationManifest(
+            $this->basePath,
+            $this->applicationCachePath,
+            slash(path: '/package/')
+        );
 
         $config = $package_manifest->providers();
 

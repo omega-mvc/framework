@@ -64,8 +64,9 @@ final class VendorPublishCommand extends AbstractCommand
             foreach ($module as $from => $to) {
                 $progressBar->setMessage("Publishing resources for tag: <comment>{$tag}</comment>");
 
+                // Qui il metodo del provider rimane import per ora
                 $success = is_dir($from)
-                    ? AbstractServiceProvider::importDir($from, $to, $force) // Qui il metodo del provider rimane import per ora
+                    ? AbstractServiceProvider::importDir($from, $to, $force)
                     : AbstractServiceProvider::importFile($from, $to, $force);
 
                 if ($success) {

@@ -66,7 +66,11 @@ use const ARRAY_FILTER_USE_KEY;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  *
- * @phpstan-type DispatchResult array{callable: callable, params: array<int, mixed>, middleware: array<int, class-string>}
+ * @phpstan-type DispatchResult array{
+ *     callable: callable,
+ *     params: array<int, mixed>,
+ *     middleware: array<int, class-string>
+ * }
  */
 final class RouteDispatcher
 {

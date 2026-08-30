@@ -46,13 +46,20 @@ final class HeaderCollectionTest extends TestCase
         $header = new HeaderCollection([
             'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
         ]);
-        $this->assertEquals('Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000', (string) $header);
+        $this->assertEquals(
+            'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+            (string) $header
+        );
 
         // with multi value
         $header = new HeaderCollection([
             'Cache-Control' => 'no-cache="http://example.com, http://example2.com"',
         ]);
-        $this->assertEquals('Cache-Control: no-cache="http://example.com, http://example2.com"', (string) $header, 'with multi value');
+        $this->assertEquals(
+            'Cache-Control: no-cache="http://example.com, http://example2.com"',
+            (string) $header,
+            'with multi value'
+        );
     }
 
     /**
@@ -65,7 +72,10 @@ final class HeaderCollectionTest extends TestCase
     {
         $header = new HeaderCollection([]);
         $header->setRaw('Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000');
-        $this->assertEquals('Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000', (string) $header);
+        $this->assertEquals(
+            'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+            (string) $header
+        );
     }
 
     /**

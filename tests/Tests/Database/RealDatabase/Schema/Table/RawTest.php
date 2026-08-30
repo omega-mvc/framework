@@ -28,7 +28,10 @@ final class RawTest extends AbstractTestDatabase
      */
     public function testItCanGenerateCreateDatabase()
     {
-        $schema = new Raw('CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )', $this->pdoSchema);
+        $schema = new Raw(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+            $this->pdoSchema
+        );
 
         $this->assertTrue($schema->execute());
     }

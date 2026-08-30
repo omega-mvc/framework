@@ -64,9 +64,9 @@ abstract class AbstractCommand extends Command
     protected Terminal $terminal;
 
     /** @var ApplicationInterface The Omega application instance */
-    public ApplicationInterface $app {
-        set(ApplicationInterface $app) {
-            $this->app = $app;
+    public ApplicationInterface $app { // phpcs:ignore
+        set(ApplicationInterface $app) { // phpcs:ignore
+            $this->app = $app; // phpcs:ignore
         }
     }
 
@@ -169,7 +169,8 @@ abstract class AbstractCommand extends Command
         foreach ($settings->arguments as $name => $config) {
             if (!is_array($config) || count($config) < 2 || count($config) > 3) {
                 throw new InvalidArgumentException(
-                    "Argument configuration for '$name' must be an array with 2 or 3 elements: [mode:int, description:string, default?]"
+                    "Argument configuration for '$name' must be an array with 2 or 3 elements: "
+                    . '[mode:int, description:string, default?]'
                 );
             }
 
@@ -189,7 +190,8 @@ abstract class AbstractCommand extends Command
         foreach ($settings->options as $name => $config) {
             if (!is_array($config) || count($config) < 3 || count($config) > 5) {
                 throw new InvalidArgumentException(
-                    "Option configuration for '$name' must be an array with 3-5 elements: [shortcut:string|array|null, mode:int, description:string, default?, suggestedValues?]"
+                    "Option configuration for '$name' must be an array with 3-5 elements: "
+                    . '[shortcut:string|array|null, mode:int, description:string, default?, suggestedValues?]'
                 );
             }
 

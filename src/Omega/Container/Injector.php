@@ -210,8 +210,12 @@ final class Injector
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    private function invokeMethodWithDependencies(object $instance, ReflectionMethod $method, array $parameters, mixed $injectConfig): void
-    {
+    private function invokeMethodWithDependencies(
+        object $instance,
+        ReflectionMethod $method,
+        array $parameters,
+        mixed $injectConfig
+    ): void {
         try {
             $dependencies = array_map(fn($param) => $this->resolveParam($param, $injectConfig), $parameters);
             $method->invokeArgs($instance, $dependencies);

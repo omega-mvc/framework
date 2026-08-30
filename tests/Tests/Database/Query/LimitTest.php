@@ -21,7 +21,8 @@ final class LimitTest extends TestDatabaseQuery
             ->order('column_1', Query::ORDER_ASC);
 
         $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC LIMIT 1, 10',
+            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+            . 'ORDER BY test.column_1 ASC LIMIT 1, 10',
             $select->__toString(),
             'select with where statment is between'
         );
@@ -43,7 +44,8 @@ final class LimitTest extends TestDatabaseQuery
             ->order('column_1', Query::ORDER_ASC);
 
         $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC LIMIT 2, 0',
+            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+            . 'ORDER BY test.column_1 ASC LIMIT 2, 0',
             $select->__toString(),
             'select with where statment is between'
         );
@@ -86,7 +88,8 @@ final class LimitTest extends TestDatabaseQuery
             ->order('column_1', Query::ORDER_ASC);
 
         $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10',
+            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+            . 'ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10',
             $select->__toString()
         );
 

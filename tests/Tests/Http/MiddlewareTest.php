@@ -138,7 +138,8 @@ final class MiddlewareTest extends TestCase
         $out = ob_get_clean();
 
         $this->assertEquals(
-            'middleware.A.before/middleware.B.before/middleware.C.before/final response/middleware.C.after/middleware.A.after/',
+            'middleware.A.before/middleware.B.before/middleware.C.before/final response/'
+                . 'middleware.C.after/middleware.A.after/',
             $out,
             'middleware must be called in order and reversible using function'
         );

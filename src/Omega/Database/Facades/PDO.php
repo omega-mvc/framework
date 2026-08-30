@@ -40,7 +40,7 @@ use Omega\Facade\AbstractFacade;
  * @method static ConnectionInterface   getInstance()
  * @method static array        configs()
  * @method static ConnectionInterface   query(string $query)
- * @method static ConnectionInterface   bind(string|int|bool|null $param, mixed $value, string|int|bool|null $type = null)
+ * @method static ConnectionInterface bind(string|int|bool|null $param, mixed $value, string|int|bool|null $type = null)
  * @method static bool         execute()
  * @method static array|false  resultset()
  * @method static mixed        single()

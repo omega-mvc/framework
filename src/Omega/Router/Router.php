@@ -97,7 +97,11 @@ class Router extends AbstractRouter
      *
      * Each element of the array is passed to addRoutes().
      *
-     * @param array<int, array{expression:string, function:callable, method:string}> $arrayRoutes  An array of route definitions.
+     * @param array<int, array{
+     *     expression: string,
+     *     function: callable,
+     *     method: string
+     * }> $arrayRoutes  An array of route definitions.
      * @return void
      */
     public static function mergeRoutes(array $arrayRoutes): void
@@ -275,7 +279,9 @@ class Router extends AbstractRouter
             ->multiMatch($multiMatch)
             ->run(
                 fn (callable $current, array $params) => call_user_func_array($current, $params),
-                fn (string $path)        => self::$pathNotFound ? call_user_func_array(self::$pathNotFound, [$path]) : null,
+                fn (string $path)        => self::$pathNotFound
+                    ? call_user_func_array(self::$pathNotFound, [$path])
+                    : null,
                 fn (string $path, string $method) =>
                     self::$methodNotAllowed ? call_user_func_array(self::$methodNotAllowed, [$path, $method]) : null
             );

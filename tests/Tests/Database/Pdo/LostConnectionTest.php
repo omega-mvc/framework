@@ -125,7 +125,8 @@ final class LostConnectionTest extends AbstractTestDatabase
      */
     public function testItThrowExceptionCausedByLostConnectionWithLongMessage(): void
     {
-        $longMessage = str_repeat('Some long error message ', 100) . 'MySQL server has gone away' . str_repeat(' with more details', 50);
+        $longMessage = str_repeat('Some long error message ', 100) . 'MySQL server has gone away'
+            . str_repeat(' with more details', 50);
         $exception   = new PDOException($longMessage);
 
         $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);

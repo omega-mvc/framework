@@ -562,7 +562,18 @@ final class RequestTest extends TestCase
      */
     public function testItCanModifyRequest(): void
     {
-        $request  = new Request('test.test', ['query' => 'old'], [], [], [], [], ['content-type' => 'app/json'], 'PUT', '::1', '');
+        $request  = new Request(
+            'test.test',
+            ['query' => 'old'],
+            [],
+            [],
+            [],
+            [],
+            ['content-type' => 'app/json'],
+            'PUT',
+            '::1',
+            ''
+        );
         $request2 = $request->duplicate(['query' => 'new']);
 
         $this->assertEquals('old', $request->getQuery('query'));
@@ -576,7 +587,18 @@ final class RequestTest extends TestCase
      */
     public function testItCanGetMimeType(): void
     {
-        $request  = new Request('test.test', ['query' => 'old'], [], [], [], [], ['content-type' => 'app/json'], 'PUT', '::1', '');
+        $request  = new Request(
+            'test.test',
+            ['query' => 'old'],
+            [],
+            [],
+            [],
+            [],
+            ['content-type' => 'app/json'],
+            'PUT',
+            '::1',
+            ''
+        );
 
         $mimetypes = $request->getMimeTypes('html');
         $this->assertEquals(['text/html', 'application/xhtml+xml'], $mimetypes);
@@ -592,7 +614,18 @@ final class RequestTest extends TestCase
      */
     public function testItCanGetFormat(): void
     {
-        $request  = new Request('test.test', ['query' => 'old'], [], [], [], [], ['content-type' => 'app/json'], 'PUT', '::1', '');
+        $request  = new Request(
+            'test.test',
+            ['query' => 'old'],
+            [],
+            [],
+            [],
+            [],
+            ['content-type' => 'app/json'],
+            'PUT',
+            '::1',
+            ''
+        );
 
         $format = $request->getFormat('text/html');
         $this->assertEquals('html', $format);
@@ -608,7 +641,18 @@ final class RequestTest extends TestCase
      */
     public function testItCanGetRequestFormat(): void
     {
-        $request  = new Request('test.test', ['query' => 'old'], [], [], [], [], ['content-type' => 'application/json'], 'PUT', '::1', '');
+        $request  = new Request(
+            'test.test',
+            ['query' => 'old'],
+            [],
+            [],
+            [],
+            [],
+            ['content-type' => 'application/json'],
+            'PUT',
+            '::1',
+            ''
+        );
 
         $this->assertEquals('json', $request->getRequestFormat());
     }

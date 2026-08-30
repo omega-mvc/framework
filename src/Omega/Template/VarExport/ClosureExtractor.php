@@ -113,7 +113,9 @@ final class ClosureExtractor
         $file = $reflection->getFileName();
 
         if (false === $file) {
-            throw new InvalidArgumentException('Cannot extract runtime-created closure. Closure must be defined in a source file.');
+            throw new InvalidArgumentException(
+                'Cannot extract runtime-created closure. Closure must be defined in a source file.'
+            );
         }
 
         if (false === file_exists($file)) {
@@ -493,7 +495,10 @@ final class ClosureExtractor
         }
 
         if ($closureCount > 1) {
-            throw new InvalidArgumentException("Multiple closures detected on line {$lineNumber}. Each closure must be on separate line(s).\n" . 'Line: ' . trim($line));
+            throw new InvalidArgumentException(
+                "Multiple closures detected on line {$lineNumber}. Each closure must be on separate line(s).\n" .
+                'Line: ' . trim($line)
+            );
         }
     }
 }

@@ -24,8 +24,6 @@ use PHPUnit\Framework\TestCase;
 use function Omega\Http\redirect;
 use function Omega\Http\redirect_route;
 
-;
-
 /**
  * Test suite for redirect helper functions and RedirectResponse behavior.
  *

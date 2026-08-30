@@ -121,7 +121,8 @@ final class NamingTest extends TestCase
             '<html><head></head><body><h1>time: }{{ now()->getTimestamp() }}</h1></body></html>'
         );
         $this->assertEquals(
-            '<html><head></head><body><h1>time: }<?php echo htmlspecialchars(now()->getTimestamp()); ?></h1></body></html>',
+            '<html><head></head><body><h1>time: }<?php echo htmlspecialchars'
+            . '(now()->getTimestamp()); ?></h1></body></html>',
             $out
         );
     }

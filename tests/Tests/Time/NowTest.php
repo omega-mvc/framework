@@ -378,7 +378,8 @@ final class NowTest extends TestCase
      *
      * Each entry is an array where:
      *   - [0] => int $month The numeric month (1-12).
-     *   - [1] => string $expectedTrueMethod The name of the month helper method expected to return true (e.g., 'isJan').
+     *   - [1] => string $expectedTrueMethod The name of the month helper method
+     *     expected to return true (e.g., 'isJan').
      *
      * @return array<int, array{int, string}>
      */
@@ -407,7 +408,8 @@ final class NowTest extends TestCase
      * returns true, while all other month-check methods return false.
      *
      * @param int $month The numeric month (1-12) to test.
-     * @param string $expectedTrueMethod The name of the helper method that should return true for this month (e.g., 'isJan').
+     * @param string $expectedTrueMethod The name of the helper method that should
+     *     return true for this month (e.g., 'isJan').
      * @return void
      * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      * @throws DateInvalidTimeZoneException Thrown when a provided timezone is invalid.
@@ -447,7 +449,8 @@ final class NowTest extends TestCase
      *
      * Each entry is an array where:
      *   - [0] => string $date The date in 'Y-m-d' format.
-     *   - [1] => string $expectedTrueMethod The name of the weekday helper method expected to return true (e.g., 'isMonday').
+     *   - [1] => string $expectedTrueMethod The name of the weekday helper method
+     *     expected to return true (e.g., 'isMonday').
      *
      * @return array<int, array{string, string}>
      */
@@ -471,7 +474,8 @@ final class NowTest extends TestCase
      * returns true, while all other weekday-check methods return false.
      *
      * @param string $date The date string to test (format: 'Y-m-d').
-     * @param string $expectedTrueMethod The name of the helper method that should return true for this weekday (e.g., 'isMonday').
+     * @param string $expectedTrueMethod The name of the helper method that should
+     *     return true for this weekday (e.g., 'isMonday').
      * @return void
      * @throws DateMalformedStringException Thrown when a date string cannot be parsed correctly.
      * @throws DateInvalidTimeZoneException Thrown when a provided timezone is invalid.

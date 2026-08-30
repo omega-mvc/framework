@@ -123,7 +123,12 @@ final class ViewWatchCommand extends AbstractCommand
             $time = round((microtime(true) - $start) * 1000, 2);
 
             $dots = str_repeat('.', max(2, $this->width - strlen($filename) - 10));
-            $this->io->text(sprintf(" <info>%s</info> <fg=gray>%s</> <comment>%s ms</comment>", $filename, $dots, $time));
+            $this->io->text(sprintf(
+                " <info>%s</info> <fg=gray>%s</> <comment>%s ms</comment>",
+                $filename,
+                $dots,
+                $time
+            ));
 
             return $templator->getDependency($filePath);
         } catch (Throwable $e) {
@@ -151,7 +156,11 @@ final class ViewWatchCommand extends AbstractCommand
         }
 
         $time = round((microtime(true) - $start) * 1000, 2);
-        $this->io->text(sprintf("<fg=yellow;options=bold>PRE-COMPILE</> %s <comment>%s ms</comment>", str_repeat('.', 50), $time));
+        $this->io->text(sprintf(
+            "<fg=yellow;options=bold>PRE-COMPILE</> %s <comment>%s ms</comment>",
+            str_repeat('.', 50),
+            $time
+        ));
 
         return $compiledMap;
     }

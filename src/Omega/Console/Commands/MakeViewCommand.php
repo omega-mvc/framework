@@ -12,7 +12,8 @@ use Symfony\Component\Console\Input\InputArgument;
     name: 'make:view',
     description: 'Generate new view template.',
     arguments: [
-        'name' => [InputArgument::REQUIRED, 'The name of the view. <bg=red;options=bold>WARNING: This command is case-sensitive: Prova and prova are different)</>']
+        'name' => [InputArgument::REQUIRED, 'The name of the view. <bg=red;options=bold>WARNING: '
+            . 'This command is case-sensitive: Prova and prova are different)</>']
     ]
 )]
 #[Make(
