@@ -122,9 +122,12 @@ final class LoggerTest extends TestCase
      */
     public function testStaticCallWithoutApplicationThrows(): void
     {
-        $this->expectException(FacadeObjectNotSetException::class);
-
-        Logger::info('no application');
+        try {
+            Logger::info('no application');
+            $this->fail('Expected FacadeObjectNotSetException was not thrown');
+        } catch (FacadeObjectNotSetException $e) {
+            $this->assertInstanceOf(FacadeObjectNotSetException::class, $e);
+        }
     }
 
     /**

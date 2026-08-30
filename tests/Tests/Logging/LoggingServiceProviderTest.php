@@ -144,10 +144,12 @@ final class LoggingServiceProviderTest extends TestCase
 
         $app = $this->makeApp($config);
 
-        $this->expectException(LogArgumentException::class);
-        $this->expectExceptionMessage('Unsupported logger type [unsupported].');
-
-        $app->get('logging.bogus');
+        try {
+            $app->get('logging.bogus');
+            $this->fail('Expected LogArgumentException was not thrown');
+        } catch (LogArgumentException $e) {
+            $this->assertSame('Unsupported logger type [unsupported].', $e->getMessage());
+        }
     }
 
     /**

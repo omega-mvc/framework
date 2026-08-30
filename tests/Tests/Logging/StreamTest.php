@@ -182,10 +182,12 @@ final class StreamTest extends TestCase
     {
         $logger = new Stream($this->tempDir . '/invalid.log');
 
-        $this->expectException(LogArgumentException::class);
-        $this->expectExceptionMessage('Invalid log level: invalid');
-
-        $logger->log('invalid', 'message');
+        try {
+            $logger->log('invalid', 'message');
+            $this->fail('Expected LogArgumentException was not thrown');
+        } catch (LogArgumentException $e) {
+            $this->assertSame('Invalid log level: invalid', $e->getMessage());
+        }
     }
 
     /**
@@ -201,10 +203,12 @@ final class StreamTest extends TestCase
         $property->setAccessible(true);
         $property->setValue($logger, [0 => 0] + $property->getValue($logger));
 
-        $this->expectException(LogArgumentException::class);
-        $this->expectExceptionMessage('Log level must be a string, integer given.');
-
-        $logger->log(0, 'message');
+        try {
+            $logger->log(0, 'message');
+            $this->fail('Expected LogArgumentException was not thrown');
+        } catch (LogArgumentException $e) {
+            $this->assertSame('Log level must be a string, integer given.', $e->getMessage());
+        }
     }
 
     /**

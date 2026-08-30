@@ -22,6 +22,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LogLevel;
 use Psr\Log\LoggerInterface;
 
+use function count;
+
 /**
  * Class LoggingManagerTest
  *
@@ -47,7 +49,7 @@ final class LoggingManagerTest extends TestCase
      */
     public function testDefaultDriverIsRegisteredOnConstruction(): void
     {
-        $driver  = $this->createMock(LoggerInterface::class);
+        $driver  = $this->createStub(LoggerInterface::class);
         $manager = new LoggingManager('stream', $driver);
 
         $this->assertSame($driver, $manager->getDriver());
@@ -62,12 +64,14 @@ final class LoggingManagerTest extends TestCase
      */
     public function testUnknownDriverThrows(): void
     {
-        $manager = new LoggingManager('stream', $this->createMock(LoggerInterface::class));
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
 
-        $this->expectException(UnknownDriverException::class);
-        $this->expectExceptionMessage('The log driver "missing" could not be resolved or is not registered.');
-
-        $manager->getDriver('missing');
+        try {
+            $manager->getDriver('missing');
+            $this->fail('Expected UnknownDriverException was not thrown');
+        } catch (UnknownDriverException $e) {
+            $this->assertSame('The log driver "missing" could not be resolved or is not registered.', $e->getMessage());
+        }
     }
 
     /**
@@ -77,8 +81,8 @@ final class LoggingManagerTest extends TestCase
      */
     public function testSetDriverWithInstance(): void
     {
-        $driver  = $this->createMock(LoggerInterface::class);
-        $manager = new LoggingManager('stream', $this->createMock(LoggerInterface::class));
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
 
         $this->assertSame($manager, $manager->setDriver('custom', $driver));
         $this->assertSame($driver, $manager->getDriver('custom'));
@@ -91,8 +95,8 @@ final class LoggingManagerTest extends TestCase
      */
     public function testSetDriverWithClosureIsCached(): void
     {
-        $driver  = $this->createMock(LoggerInterface::class);
-        $manager = new LoggingManager('stream', $this->createMock(LoggerInterface::class));
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
         $calls   = 0;
 
         $manager->setDriver('lazy', static function () use (&$calls, $driver): LoggerInterface {
@@ -113,8 +117,8 @@ final class LoggingManagerTest extends TestCase
      */
     public function testSetDefaultDriver(): void
     {
-        $initial = $this->createMock(LoggerInterface::class);
-        $driver  = $this->createMock(LoggerInterface::class);
+        $initial = $this->createStub(LoggerInterface::class);
+        $driver  = $this->createStub(LoggerInterface::class);
         $manager = new LoggingManager('stream', $initial);
 
         $this->assertSame($manager, $manager->setDefaultDriver($driver));
@@ -128,13 +132,15 @@ final class LoggingManagerTest extends TestCase
      */
     public function testClosureResolvingToNullThrows(): void
     {
-        $manager = new LoggingManager('stream', $this->createMock(LoggerInterface::class));
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
         $manager->setDriver('broken', static fn (): ?LoggerInterface => null);
 
-        $this->expectException(UnknownDriverException::class);
-        $this->expectExceptionMessage('The log driver "broken" could not be resolved or is not registered.');
-
-        $manager->getDriver('broken');
+        try {
+            $manager->getDriver('broken');
+            $this->fail('Expected UnknownDriverException was not thrown');
+        } catch (UnknownDriverException $e) {
+            $this->assertSame('The log driver "broken" could not be resolved or is not registered.', $e->getMessage());
+        }
     }
 
     /**
