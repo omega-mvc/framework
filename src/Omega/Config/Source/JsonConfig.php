@@ -42,12 +42,15 @@ class JsonConfig extends AbstractSource
     /**
      * {@inhertdoc}
      *
+     * @return array<string, mixed>
      * @throws MalformedJsonException If unable to produce the content.
      */
     public function fetch(): array
     {
         try {
-            return (array)json_decode($this->fetchContent(), true, 512, JSON_THROW_ON_ERROR);
+            return $this->normalizeConfig(
+                json_decode($this->fetchContent(), true, 512, JSON_THROW_ON_ERROR)
+            );
         } catch (JsonException) {
             throw new MalformedJsonException('Invalid JSON format in configuration file.');
         }

@@ -34,7 +34,7 @@ interface ConfigRepositoryInterface
     /**
      * Retrieves all configuration settings.
      *
-     * @return array The entire configuration data as an associative array.
+     * @return array<string, mixed> The entire configuration data as an associative array.
      */
     public function getAll(): array;
 

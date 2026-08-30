@@ -22,7 +22,6 @@ use IteratorAggregate;
 use Traversable;
 
 use function count;
-use function is_array;
 use function is_null;
 
 /**
@@ -35,6 +34,9 @@ use function is_null;
  * - Allows merging configurations using different strategies.
  * - Enables iteration over stored configuration values.
  * - Implements a countable mechanism for determining the number of stored settings.
+ *
+ * @implements ArrayAccess<string, mixed>
+ * @implements IteratorAggregate<string, mixed>
  *
  * @category  Omega
  * @package   Config
@@ -66,12 +68,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
         ?string $key = null,
         MergeStrategy|string|int|null $strategy = null
     ): void {
-        $config = !is_null($key) ? $this->get($key) : $this->getAll();
-
-        if (!is_array($config)) {
-            $config = [];
-        }
-
+        $config = $this->normalizeConfigArray(!is_null($key) ? $this->get($key) : $this->getAll());
         if (!$strategy instanceof MergeStrategy) {
             $strategy = $strategy !== null ? MergeStrategy::from($strategy) : MergeStrategy::REPLACE_INDEXED;
         }
@@ -92,7 +89,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
      *
      * This method enables the usage of `isset($config[$key])`.
      *
-     * @param mixed $offset The configuration key.
+     * @param string $offset The configuration key.
      * @return bool True if the key exists, false otherwise.
      */
     public function offsetExists(mixed $offset): bool
@@ -105,7 +102,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
      *
      * This method enables the usage of `$value = $config[$key]`.
      *
-     * @param mixed $offset The configuration key.
+     * @param string $offset The configuration key.
      * @return mixed The configuration value.
      */
     public function offsetGet(mixed $offset): mixed
@@ -118,8 +115,8 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
      *
      * This method enables the usage of `$config[$key] = $value`.
      *
-     * @param mixed $offset The configuration key.
-     * @param mixed $value  The value to set.
+     * @param string $offset The configuration key.
+     * @param mixed  $value  The value to set.
      * @return void
      */
     public function offsetSet(mixed $offset, mixed $value): void
@@ -132,7 +129,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
      *
      * This method enables the usage of `unset($config[$key])`.
      *
-     * @param mixed $offset The configuration key.
+     * @param string $offset The configuration key.
      * @return void
      */
     public function offsetUnset(mixed $offset): void
@@ -145,7 +142,7 @@ class ConfigRepository extends AbstractConfigRepository implements ArrayAccess, 
      *
      * This method allows the configuration object to be used in `foreach` loops.
      *
-     * @return Traversable An iterator for the configuration values.
+     * @return ArrayIterator<string, mixed> An iterator for the configuration values.
      * @throws Exception If an iterator cannot be created.
      */
     public function getIterator(): Traversable

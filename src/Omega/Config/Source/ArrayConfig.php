@@ -40,7 +40,7 @@ readonly class ArrayConfig implements SourceInterface
     /**
      * Creates a new configuration source instance.
      *
-     * @param array $content The configuration source content.
+     * @param array<string, mixed> $content The configuration source content.
      * @return void
      */
     public function __construct(private array $content)
@@ -50,6 +50,7 @@ readonly class ArrayConfig implements SourceInterface
     /**
      * {@inheritdoc}
      *
+     * @return array<string, mixed>
      * @throws InvalidArrayCOnfigException if file is empty or not an associative array.
      */
     public function fetch(): array

@@ -42,6 +42,8 @@ final class TestConfigurationSource extends AbstractSource
 {
     /**
      * {@inheritdoc}
+     *
+     * @return array<string, mixed> The configuration data as an associative array.
      */
     public function fetch(): array
     {

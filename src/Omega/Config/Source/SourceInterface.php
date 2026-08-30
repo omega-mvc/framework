@@ -35,7 +35,7 @@ interface SourceInterface
     /**
      * Retrieves the configuration content from the source.
      *
-     * @return array The configuration data as an associative array.
+     * @return array<string, mixed> The configuration data as an associative array.
      */
     public function fetch(): array;
 }

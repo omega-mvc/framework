@@ -19,6 +19,9 @@ use function array_key_exists;
 use function array_keys;
 use function count;
 use function is_array;
+use function is_string;
+
+use const SORT_REGULAR;
 
 /**
  * Provides configuration merging functionalities.
@@ -43,10 +46,10 @@ trait ConfigTrait
      * - `MERGE_INDEXED`: Merges indexed arrays and removes duplicates.
      * - `MERGE_ADD_NEW`: Adds new elements without modifying existing ones.
      *
-     * @param array         $a        The first array.
-     * @param array         $b        The second array.
-     * @param MergeStrategy $strategy The merge strategy to apply.
-     * @return array The result of merging the two arrays.
+     * @param array<string, mixed> $a        The first array.
+     * @param array<string, mixed> $b        The second array.
+     * @param MergeStrategy        $strategy The merge strategy to apply.
+     * @return array<string, mixed> The result of merging the two arrays.
      */
     protected function mergeArrays(array $a, array $b, MergeStrategy $strategy): array
     {
@@ -58,8 +61,17 @@ trait ConfigTrait
             }
 
             // If both values are associative arrays, recursively merge them
-            if ($this->isAssociative($a[$key]) && $this->isAssociative($value)) {
-                $a[$key] = $this->mergeArrays($a[$key], $value, $strategy);
+            if (
+                is_array($a[$key]) &&
+                is_array($value) &&
+                $this->isAssociative($a[$key]) &&
+                $this->isAssociative($value)
+            ) {
+                $a[$key] = $this->mergeArrays(
+                    $this->normalizeConfigArray($a[$key]),
+                    $this->normalizeConfigArray($value),
+                    $strategy
+                );
                 continue;
             }
 
@@ -69,7 +81,7 @@ trait ConfigTrait
                 is_array($a[$key]) &&
                 is_array($value)
             ) {
-                $a[$key] = array_values(array_unique(array_merge($a[$key], $value)));
+                $a[$key] = array_values(array_unique(array_merge($a[$key], $value), SORT_REGULAR));
                 continue;
             }
 
@@ -87,6 +99,32 @@ trait ConfigTrait
         }
 
         return $a;
+    }
+
+    /**
+     * Normalizes a value into a string-keyed configuration array.
+     *
+     * Configuration data is expected to be keyed by string keys. This helper
+     * rebuilds an array keeping only its string-keyed entries, which lets the
+     * analyzer treat the result as a string-keyed configuration array.
+     *
+     * @param mixed $value The raw value to normalize.
+     * @return array<string, mixed> The value as a string-keyed array, or an empty array.
+     */
+    protected function normalizeConfigArray(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $result[$key] = $item;
+            }
+        }
+
+        return $result;
     }
 
     /**

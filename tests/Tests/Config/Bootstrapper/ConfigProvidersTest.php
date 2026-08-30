@@ -16,10 +16,11 @@ namespace Tests\Config\Bootstrapper;
 
 use Exception;
 use Omega\Application\Application;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
+use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
@@ -84,6 +85,7 @@ class ConfigProvidersTest extends TestCase
         new ConfigBootstrapper()->bootstrap($app);
         $config = $app->get('config');
 
+        $this->assertInstanceOf(ConfigRepository::class, $config);
         $this->assertEquals('prod', $config->get('environment'));
 
         $app->flush();
@@ -108,6 +110,7 @@ class ConfigProvidersTest extends TestCase
         new ConfigBootstrapper()->bootstrap($app);
         $config = $app->get('config');
 
+        $this->assertInstanceOf(ConfigRepository::class, $config);
         $this->assertEquals('prod', $config->get('environment'));
 
         $app->flush();
@@ -126,7 +129,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItThrowsExceptionOnInvalidConfigFile(): void
     {
-        $app = new Application($this->setFixtureBasePath());
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
 
         $tempConfigDir = $this->setFixturePath('/fixtures/application-write/config_test/');
 
@@ -215,6 +218,7 @@ class ConfigProvidersTest extends TestCase
 
         $config = $app->get('config');
 
+        $this->assertInstanceOf(ConfigRepository::class, $config);
         $this->assertSame('cached', $config->get('environment'));
 
         unlink($cacheFile);
@@ -233,7 +237,7 @@ class ConfigProvidersTest extends TestCase
      */
     public function testItReturnsEmptyArrayWhenNoConfigFilesFound(): void
     {
-        $app = new Application($this->setFixtureBasePath());
+        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
 
         $emptyDir = $this->setFixturePath('/fixtures/application-write/empty_config_test/');
 
@@ -246,6 +250,7 @@ class ConfigProvidersTest extends TestCase
         new ConfigBootstrapper()->bootstrap($app);
 
         $config = $app->get('config');
+        $this->assertInstanceOf(ConfigRepository::class, $config);
         $this->assertEmpty($config->getAll());
 
         rmdir($emptyDir);

@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Omega\Config;
 
-use Closure;
 use Omega\Config\Source\SourceInterface;
 
 use function array_reduce;
@@ -47,12 +46,9 @@ class ConfigBuilder
      * - An optional section name
      * - A priority value
      *
-     * @var array
+     * @var array<int, array{0: SourceInterface, 1: string|null, 2: int}>
      */
     private array $sources = [];
-
-    /** @var int Default priority value for configuration sources. */
-    private int $priority = 0;
 
     /**
      * Adds a configuration source to the builder.
@@ -93,28 +89,17 @@ class ConfigBuilder
         // Reduce the sources into a single configuration object
         return array_reduce(
             $this->sources,
-            $this->createConfiguration($strategy),
+            function (
+                ConfigRepositoryInterface $configuration,
+                array $configurationSource
+            ) use ($strategy): ConfigRepositoryInterface {
+                list($source, $section) = $configurationSource;
+
+                $configuration->merge(new ConfigRepository($source->fetch()), $section, $strategy);
+
+                return $configuration;
+            },
             new ConfigRepository()
         );
-    }
-
-    /**
-     * Creates an accumulator function for merging configuration sources.
-     *
-     * The returned closure takes a `ConfigRepositoryInterface` instance and a
-     * configuration source, then merges the source data into the repository.
-     *
-     * @param MergeStrategy $strategy The merge strategy to apply.
-     * @return Closure A closure that merges a configuration source into the repository.
-     */
-    private function createConfiguration(MergeStrategy $strategy): Closure
-    {
-        return function (ConfigRepositoryInterface $configuration, array $configurationSource) use ($strategy) {
-            list($source, $section) = $configurationSource;
-
-            $configuration->merge(new ConfigRepository($source->fetch()), $section, $strategy);
-
-            return $configuration;
-        };
     }
 }

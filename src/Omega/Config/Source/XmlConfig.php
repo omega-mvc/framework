@@ -21,6 +21,8 @@ use function json_decode;
 use function json_encode;
 use function simplexml_load_string;
 
+use const JSON_THROW_ON_ERROR;
+
 /**
  * Configuration source that loads data from an XML file.
  *
@@ -42,13 +44,21 @@ class XmlConfig extends AbstractSource
     /**
      * {@inheritdoc}
      *
+     * @return array<string, mixed>
      * @throws MalformedXmlException If unable to produce the content.
      */
     public function fetch(): array
     {
         try {
             $xml = simplexml_load_string($this->fetchContent());
-            return json_decode(json_encode($xml), true) ?? [];
+            $decoded = json_decode(
+                json_encode($xml, JSON_THROW_ON_ERROR),
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+
+            return $this->normalizeConfig($decoded);
         } catch (Exception) {
             throw new MalformedXmlException('Invalid XML format in configuration file.');
         }

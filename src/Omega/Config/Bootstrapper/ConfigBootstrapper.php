@@ -30,6 +30,7 @@ use function file_exists;
 use function gettype;
 use function glob;
 use function is_array;
+use function is_string;
 use function Omega\Environment\env;
 use function Omega\Application\get_path;
 
@@ -65,7 +66,7 @@ class ConfigBootstrapper
      * single global array, and so that an invalid configuration for a fresh
      * application still surfaces its runtime exception.
      *
-     * @var array<string, array>
+     * @var array<string, array<string, mixed>>
      */
     protected static array $cachedConfigs = [];
 
@@ -94,7 +95,8 @@ class ConfigBootstrapper
 
         $app->loadConfig(new ConfigRepository($config));
 
-        date_default_timezone_set(env('APP_TIMEZONE') ?? 'UTC');
+        $timezone = env('APP_TIMEZONE');
+        date_default_timezone_set(is_string($timezone) ? $timezone : 'UTC');
     }
 
     /**
@@ -111,7 +113,7 @@ class ConfigBootstrapper
      *
      * @param ApplicationInterface $app The application instance used to resolve the
      *                         cache location and configuration paths.
-     * @return array The fully resolved configuration array that will be
+     * @return array<string, mixed> The fully resolved configuration array that will be
      *               injected into the application's configuration repository.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -126,7 +128,9 @@ class ConfigBootstrapper
             return $cache;
         }
 
-        return $this->loadConfigFiles(get_path('path.config'));
+        $configPath = get_path('path.config');
+
+        return is_string($configPath) ? $this->loadConfigFiles($configPath) : [];
     }
 
     /**
@@ -143,7 +147,7 @@ class ConfigBootstrapper
      *
      * @param ApplicationInterface $app The application instance used to determine the
      *                         location of the configuration cache file.
-     * @return array|null The cached configuration array when available,
+     * @return array<string, mixed>|null The cached configuration array when available,
      *                    or null when the cache file does not exist.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -168,7 +172,7 @@ class ConfigBootstrapper
             );
         }
 
-        return $cached;
+        return $this->normalizeConfig($cached);
     }
 
     /**
@@ -185,7 +189,7 @@ class ConfigBootstrapper
      *
      * @param string $path The absolute path to the directory containing
      *                     configuration PHP files.
-     * @return array The merged configuration array constructed from all
+     * @return array<string, mixed> The merged configuration array constructed from all
      *               discovered configuration files.
      */
     private function loadConfigFiles(string $path): array
@@ -196,8 +200,10 @@ class ConfigBootstrapper
             return [];
         }
 
-        return array_replace_recursive(
-            ...array_map([$this, 'requireConfig'], $files)
+        return $this->normalizeConfig(
+            array_replace_recursive(
+                ...array_map([$this, 'requireConfig'], $files)
+            )
         );
     }
 
@@ -213,7 +219,7 @@ class ConfigBootstrapper
      * that may return invalid data types.
      *
      * @param string $file The absolute path to the configuration file to load.
-     * @return array The configuration array returned by the required file.
+     * @return array<string, mixed> The configuration array returned by the required file.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
@@ -231,6 +237,28 @@ class ConfigBootstrapper
             );
         }
 
-        return $config;
+        return $this->normalizeConfig($config);
+    }
+
+    /**
+     * Normalizes a value into a string-keyed configuration array.
+     *
+     * @param mixed $value The raw value to normalize.
+     * @return array<string, mixed> The value as a string-keyed array, or an empty array.
+     */
+    private function normalizeConfig(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $result[$key] = $item;
+            }
+        }
+
+        return $result;
     }
 }

@@ -39,7 +39,7 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
 {
     use ConfigTrait;
 
-    /** @var array The store holding all configuration variables. */
+    /** @var array<string, mixed> The store holding all configuration variables. */
     protected array $config = [];
 
     /**
@@ -55,6 +55,8 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<string, mixed> The entire configuration data as an associative array.
      */
     public function getAll(): array
     {
@@ -105,7 +107,7 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
         $config = &$this->config;
 
         foreach (explode('.', $key) as $section) {
-            if (!$this->isAssociative($config)) {
+            if (!is_array($config)) {
                 $config = [];
             }
 
@@ -120,20 +122,19 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
      */
     public function remove(string $key): void
     {
-        $config        = &$this->config;
-        $sections      = explode('.', $key);
-        $section_count = count($sections);
-        $section       = reset($sections);
+        $config   = &$this->config;
+        $sections = explode('.', $key);
+        $last     = count($sections) - 1;
 
-        for ($i = 0; $i < $section_count; $section = $sections[++$i]) {
-            if (!array_key_exists($section, $config)) {
-                break;
+        foreach ($sections as $i => $section) {
+            if (!is_array($config) || !array_key_exists($section, $config)) {
+                return;
             }
 
-            if (count($sections) === $i + 1) {
+            if ($i === $last) {
                 unset($config[$section]);
 
-                break;
+                return;
             }
 
             $config = &$config[$section];
