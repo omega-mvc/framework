@@ -73,6 +73,19 @@ class HandleExceptions
     /** @var bool Whether the global handlers have already been registered this process (persists across requests). */
     private static bool $handlersRegistered = false;
 
+    /**
+     * Reset the handlers registered state.
+     *
+     * Used for testing to allow re-registration of handlers in a clean state.
+     *
+     * @return void
+     */
+    public static function resetHandlersState(): void
+    {
+        self::$handlersRegistered = false;
+        self::$reserveMemory = null;
+    }
+
     /** @var string|null Reserved memory buffer to allow handling fatal errors without running out of memory. */
     public static ?string $reserveMemory = null;
 

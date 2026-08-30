@@ -20,11 +20,16 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ExceptionHandler;
+use Omega\Exceptions\Bootstrapper\HandleExceptions;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Application\ApplicationManifest;
+use Omega\Application\Bootstrapper\BootProviders;
+use Omega\Application\Bootstrapper\RegisterProviders;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
+use Omega\Facade\Bootstrapper\FacadeBootstrapper;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
@@ -99,8 +104,14 @@ final class ExceptionHandlerTest extends TestCase
     {
         $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
+        $this->app->set('environment', 'testing');
+
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: $this->app->get('path.base'),
+            basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
+
+
+
+
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));
@@ -116,6 +127,13 @@ final class ExceptionHandlerTest extends TestCase
         );
 
         $this->http = new class ($this->app) extends Http {
+            protected array $bootstrappers = [
+                ConfigBootstrapper::class,
+                FacadeBootstrapper::class,
+                RegisterProviders::class,
+                BootProviders::class,
+            ];
+
             protected function dispatcher(Request $request): array
             {
                 throw new HttpException(429, 'Too Many Request');
@@ -159,6 +177,7 @@ final class ExceptionHandlerTest extends TestCase
         $this->app->flush();
 
         ExceptionHandlerTest::$logs = [];
+        HandleExceptions::resetHandlersState();
     }
 
     /**
@@ -173,6 +192,7 @@ final class ExceptionHandlerTest extends TestCase
      */
     public function testItCanRenderException(): void
     {
+        /** @var Http $http */
         $http     = $this->app->make(Http::class);
         $response =   $http->handle(new Request('/test'));
 
@@ -192,8 +212,9 @@ final class ExceptionHandlerTest extends TestCase
      */
     public function testItCanReportException(): void
     {
+        /** @var Http $http */
         $http     = $this->app->make(Http::class);
-          $http->handle(new Request('/test'));
+        $http->handle(new Request('/test'));
 
         $this->assertEquals(['Too Many Request'], ExceptionHandlerTest::$logs);
     }
@@ -214,6 +235,7 @@ final class ExceptionHandlerTest extends TestCase
             $this->app->set('app.debug', false);
         });
 
+        /** @var Http $http */
         $http     = $this->app->make(Http::class);
         $response    =   $http->handle(new Request('/test', [], [], [], [], [], [
             'content-type' => 'application/json',
@@ -245,6 +267,8 @@ final class ExceptionHandlerTest extends TestCase
         });
 
         $http = $this->app->make(Http::class);
+        /** @var Http $http */
+
 
         $response = $http->handle(new Request(
             '/test',
@@ -257,6 +281,9 @@ final class ExceptionHandlerTest extends TestCase
         ));
 
         $content = $response->getContent();
+        /** @var array{messages: array{message: string, exception: string, line: int}} $content */
+
+
 
         // Verifiche principali
         $this->assertEquals('Too Many Request', $content['messages']['message']);
@@ -267,16 +294,25 @@ final class ExceptionHandlerTest extends TestCase
 
         // 🔎 Calcolo dinamico della riga del throw
         $reflection = new ReflectionMethod($this->http, 'dispatcher');
-        $source     = file($reflection->getFileName());
+        $fileName    = $reflection->getFileName();
+        /** @var list<string>|false $source */
+        $source      = ($fileName !== false) ? file($fileName) : [];
+
+
+
+
 
         $expectedLine = null;
 
-        foreach ($source as $number => $line) {
-            if (str_contains($line, 'throw new HttpException')) {
+        foreach (($source ?: []) as $number => $line) {
+            if (str_contains((string)$line, 'throw new HttpException')) {
                 $expectedLine = $number + 1; // file() è 0-indexed
                 break;
             }
         }
+
+
+
 
         $this->assertNotNull(
             $expectedLine,
@@ -307,8 +343,12 @@ final class ExceptionHandlerTest extends TestCase
         ]);
         $this->app->set(
             TemplatorFinder::class,
-            fn () => new TemplatorFinder($this->app->get('paths.view'), ['.php', '.template.php'])
+            fn () => new TemplatorFinder(array_map(fn($item) => is_string($item) ? $item : '', (array) ($this->app->get('paths.view') ?? [])), ['.php', '.template.php'])
         );
+
+
+
+
 
         $this->app->set(
             'view.instance',
@@ -318,15 +358,31 @@ final class ExceptionHandlerTest extends TestCase
         $this->app->set(
             'view.response',
             fn () => fn (string $viewPath, array $portal = []): Response => new Response(
-                $this->app->make(Templator::class)->render($viewPath, $portal)
+                (string) ($this->app->make('view.instance') instanceof Templator ? $this->app->make('view.instance') : new Templator($this->app->make(TemplatorFinder::class) instanceof TemplatorFinder ? $this->app->make(TemplatorFinder::class) : $this->setFixturePath('/fixtures/exceptions'), $this->setFixturePath('/fixtures/exceptions')))->render($viewPath, (array) $portal)
             )
+
         );
 
+
+
+
+
+        $this->app->set(ExceptionHandler::class, fn () => new ExceptionHandler($this->app));
+
         $handler = $this->app->make(ExceptionHandler::class);
+        /** @var ExceptionHandler $handler */
+
 
         $exception = new HttpException(429, 'Internal Error', null, []);
-        $render    = (fn () => $this->{'handleHttpException'}($exception))->call($handler);
+        /** @var Response $render */
+        $render    = $handler->render(new Request('/test'), $exception);
 
-        $this->assertTrue(Str::contains($render->getContent(), '<h1>Too Many Request</h1>'));
+
+        $content = $render->getContent();
+        $this->assertTrue(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'));
+
+
+
+
     }
 }
