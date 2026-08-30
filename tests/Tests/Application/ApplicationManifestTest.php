@@ -260,7 +260,9 @@ class ApplicationManifestTest extends TestCase
      */
     public function testGetApplicationManifestWhenCacheFileExists(): void
     {
-        if (!is_dir($this->applicationCachePath)) mkdir($this->applicationCachePath, 0777, true);
+        if (!is_dir($this->applicationCachePath)) {
+            mkdir($this->applicationCachePath, 0777, true);
+        }
         file_put_contents($this->applicationCachePath . 'packages.php', "<?php return ['test' => 'data'];");
 
         $applicationManifest = new ApplicationManifest($this->basePath, $this->applicationCachePath);

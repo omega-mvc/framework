@@ -1,64 +1,66 @@
-<?php return array (
-  0 => 
+<?php
+
+return array (
+  0 =>
   array (
-    'method' => 
+    'method' =>
     array (
       0 => 'get',
       1 => 'head',
     ),
     'uri' => '/test',
     'expression' => '/test',
-    'function' => 
+    'function' =>
     array (
       0 => '',
       1 => '',
     ),
-    'middleware' => 
+    'middleware' =>
     array (
       0 => 'test',
     ),
     'name' => 'test',
-    'patterns' => 
+    'patterns' =>
     array (
     ),
   ),
-  1 => 
+  1 =>
   array (
-    'method' => 
+    'method' =>
     array (
       0 => 'get',
       1 => 'head',
     ),
     'uri' => '/test/(:id)',
     'expression' => '/test/(\\d+)',
-    'function' => 
+    'function' =>
     array (
       0 => '',
       1 => 'empty',
     ),
-    'middleware' => 
+    'middleware' =>
     array (
     ),
     'name' => '',
-    'patterns' => 
+    'patterns' =>
     array (
     ),
   ),
-  2 => 
+  2 =>
   array (
     'method' => 'post',
     'uri' => 'test//test/post',
     'expression' => 'test//test/post',
-    'function' => 
+    'function' =>
     array (
       0 => '',
       1 => 'post',
     ),
-    'middleware' => 
+    'middleware' =>
     array (
     ),
     'name' => 'post',
-    'patterns' => 
+    'patterns' =>
     array (
     ),
   ),

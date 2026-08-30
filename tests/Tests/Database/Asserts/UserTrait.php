@@ -11,6 +11,7 @@
  */
 
 declare(strict_types=1);
+
 namespace Tests\Database\Asserts;
 
 use Omega\Database\Query\Query;

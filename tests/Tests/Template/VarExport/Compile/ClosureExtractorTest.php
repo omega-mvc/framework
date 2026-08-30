@@ -30,7 +30,9 @@ final class ClosureExtractorTest extends TestCase
      */
     public function extractSimpleSingleLineClosureWithoutPrefix(): void
     {
-        $closure = function () { return 'test'; };
+        $closure = function () {
+            return 'test';
+        };
 
         $reflection = new \ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
@@ -141,7 +143,9 @@ final class ClosureExtractorTest extends TestCase
     public function linesArrayNoduplicateClosureKey(): void
     {
         $arrayWithClosure = [
-            'closure' => function () { return 42; },
+            'closure' => function () {
+                return 42;
+            },
         ];
 
         $closure    = $arrayWithClosure['closure'];
@@ -229,7 +233,9 @@ final class ClosureExtractorTest extends TestCase
      */
     public function metadataContainsCorrectLineInformation(): void
     {
-        $closure = function () { return 'test'; };
+        $closure = function () {
+            return 'test';
+        };
 
         $reflection = new \ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
@@ -270,7 +276,9 @@ final class ClosureExtractorTest extends TestCase
      */
     public function regularFunctionMetadataCorrectlyIdentified(): void
     {
-        $closure = function () { return 42; };
+        $closure = function () {
+            return 42;
+        };
 
         $reflection = new \ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
@@ -297,8 +305,11 @@ final class ClosureExtractorTest extends TestCase
 
         // First line should be the function() declaration without leading spaces
         $firstLine = $lines[0];
-        $this->assertEquals(0, strlen($firstLine) - strlen(ltrim($firstLine)),
-            'First line should not have leading indentation');
+        $this->assertEquals(
+            0,
+            strlen($firstLine) - strlen(ltrim($firstLine)),
+            'First line should not have leading indentation'
+        );
     }
 
     /**
@@ -323,7 +334,9 @@ final class ClosureExtractorTest extends TestCase
      */
     public function originalCodePreservedInOutput(): void
     {
-        $closure = function () { return 'test'; };
+        $closure = function () {
+            return 'test';
+        };
 
         $reflection = new \ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);
@@ -382,7 +395,9 @@ final class ClosureExtractorTest extends TestCase
     public function extractClosureWithTrailingCommaInArray(): void
     {
         $arrayWithClosure = [
-            'closure' => function () { return 'test'; },
+            'closure' => function () {
+                return 'test';
+            },
         ];
 
         $closure    = $arrayWithClosure['closure'];
@@ -423,7 +438,9 @@ final class ClosureExtractorTest extends TestCase
      */
     public function astContainsCorrectStructure(): void
     {
-        $closure = function () { return 42; };
+        $closure = function () {
+            return 42;
+        };
 
         $reflection = new \ReflectionFunction($closure);
         $result     = $this->extractor->extract($reflection);

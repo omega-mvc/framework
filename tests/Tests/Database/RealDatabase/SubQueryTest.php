@@ -197,8 +197,7 @@ final class SubQueryTest extends AbstractTestDatabase
 
         $users = new Select('users', ['name', 'email'], $this->pdo);
         $users->whereIn('id', (new Select('orders', ['user_id'], $this->pdo))
-            ->compare('total_amount', '>', 1000)
-        );
+            ->compare('total_amount', '>', 1000));
         $users = $users->get();
 
         $this->assertCount(2, $users);

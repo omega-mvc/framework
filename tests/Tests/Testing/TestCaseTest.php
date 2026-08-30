@@ -119,13 +119,15 @@ final class TestCaseTest extends TestCase
      */
     public function testCallMethodReturnsTestResponse(): void
     {
-        $this->app->set(Http::class, fn() => new class($this->app) extends Http {
+        $this->app->set(Http::class, fn() => new class ($this->app) extends Http {
             public function handle($request): Response
             {
                 return new Response(['ok' => true]);
             }
 
-            public function terminate($request, $response): void {}
+            public function terminate($request, $response): void
+            {
+            }
         });
 
         $response = $this->call('/dummy-url');
@@ -148,12 +150,14 @@ final class TestCaseTest extends TestCase
      */
     public function testGetMethod(): void
     {
-        $this->app->set(Http::class, fn() => new class($this->app) extends Http {
+        $this->app->set(Http::class, fn() => new class ($this->app) extends Http {
             public function handle($request): Response
             {
                 return new Response(['method' => $request->getMethod()]);
             }
-            public function terminate($request, $response): void {}
+            public function terminate($request, $response): void
+            {
+            }
         });
 
         $response = $this->get('/dummy-get');
@@ -176,12 +180,14 @@ final class TestCaseTest extends TestCase
      */
     public function testPostMethod(): void
     {
-        $this->app->set(Http::class, fn() => new class($this->app) extends Http {
+        $this->app->set(Http::class, fn() => new class ($this->app) extends Http {
             public function handle($request): Response
             {
                 return new Response(['method' => $request->getMethod()]);
             }
-            public function terminate($request, $response): void {}
+            public function terminate($request, $response): void
+            {
+            }
         });
 
         $response = $this->post('/dummy-post', ['foo' => 'bar']);
@@ -204,12 +210,14 @@ final class TestCaseTest extends TestCase
      */
     public function testPutMethod(): void
     {
-        $this->app->set(Http::class, fn() => new class($this->app) extends Http {
+        $this->app->set(Http::class, fn() => new class ($this->app) extends Http {
             public function handle($request): Response
             {
                 return new Response(['method' => $request->getMethod()]);
             }
-            public function terminate($request, $response): void {}
+            public function terminate($request, $response): void
+            {
+            }
         });
 
         $response = $this->put('/dummy-put', ['foo' => 'bar']);
@@ -232,12 +240,14 @@ final class TestCaseTest extends TestCase
      */
     public function testDeleteMethod(): void
     {
-        $this->app->set(Http::class, fn() => new class($this->app) extends Http {
+        $this->app->set(Http::class, fn() => new class ($this->app) extends Http {
             public function handle($request): Response
             {
                 return new Response(['method' => $request->getMethod()]);
             }
-            public function terminate($request, $response): void {}
+            public function terminate($request, $response): void
+            {
+            }
         });
 
         $response = $this->delete('/dummy-delete', []);

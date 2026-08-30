@@ -19,7 +19,6 @@ use Omega\Http\JsonResponse;
 use PHPUnit\Framework\TestCase;
 
 use function json_decode;
-
 use function ob_get_clean;
 use function ob_start;
 
@@ -143,7 +142,7 @@ final class JsonResponseTest extends TestCase
     {
         $response = new JsonResponse();
 
-        $this->assertEquals(JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_AMP|JSON_HEX_QUOT, $response->getEncodingOptions());
+        $this->assertEquals(JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT, $response->getEncodingOptions());
     }
 
     /**

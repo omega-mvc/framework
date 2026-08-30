@@ -106,7 +106,7 @@ final class KernelHandleExceptionTest extends TestCase
          * Overrides the dispatcher to always throw a HttpException for testing kernel
          * exception handling. Returns a standard callable and parameters array structure.
          */
-        $this->http = new class($this->app) extends Http {
+        $this->http = new class ($this->app) extends Http {
             /**
              * Dispatches a request and triggers an exception.
              *
@@ -126,7 +126,7 @@ final class KernelHandleExceptionTest extends TestCase
          * Overrides the render method to return a response containing the exception message
          * and status 500, allowing testing of exception handling in the kernel.
          */
-        $this->exceptionHandler = new class($this->app) extends ExceptionHandler {
+        $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
             /**
              * Renders a response for the given exception.
              *

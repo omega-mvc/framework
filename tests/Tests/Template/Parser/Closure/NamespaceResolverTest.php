@@ -9,9 +9,11 @@ use PHPUnit\Framework\TestCase;
 use Omega\Template\Parser\Closure\NamespaceResolver;
 use ReflectionException;
 use ReflectionFunction;
+
 use function array_values;
 use function file_put_contents;
 use function unlink;
+
 use const PHP_VERSION_ID;
 
 final class NamespaceResolverTest extends TestCase

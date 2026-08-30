@@ -263,7 +263,8 @@ final class SelectTest extends TestDatabaseQuery
         $select = Query::from(
             new InnerQuery(
                 (new Select('base_2', ['id'], $this->pdo))
-                    ->in('test', ['success']), 'user'
+                    ->in('test', ['success']),
+                'user'
             ),
             $this->pdo
         )

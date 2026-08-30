@@ -439,10 +439,14 @@ class Collection extends AbstractCollectionImmutable
      */
     public function only(array $only): self
     {
-        /* @phpstan-ignore-next-line */
-        $this->filter(fn ($item, $key) => in_array($key, $only));
+        $newCollection = [];
+        foreach ($this->collection as $key => $item) {
+            if (in_array($key, $only, true)) {
+                $newCollection[$key] = $item;
+            }
+        }
 
-        return $this;
+        return $this->replace($newCollection);
     }
 
     /**

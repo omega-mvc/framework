@@ -392,7 +392,7 @@ final class BaseModelTest extends AbstractTestDatabase
         // tranform to column
         $arr = [];
         foreach ($models as $new) {
-            $arr[]= (fn () => $this->{'columns'})->call($new)[0];
+            $arr[] = (fn () => $this->{'columns'})->call($new)[0];
         }
         $this->assertEquals($columns, $arr);
     }
@@ -428,7 +428,7 @@ final class BaseModelTest extends AbstractTestDatabase
         // tranform to column
         $arr = [];
         foreach ($models as $new) {
-            $arr[]= (fn () => $this->{'columns'})->call($new)[0];
+            $arr[] = (fn () => $this->{'columns'})->call($new)[0];
         }
         $this->assertEquals($columns, $arr);
     }

@@ -204,7 +204,7 @@ abstract class AbstractRouter implements RouterInterface
             function () use ($grouped) {
                 self::$group = $grouped;
             },
-        // reset
+            // reset
             function () use ($resetGroup) {
                 self::$group = $resetGroup;
             }

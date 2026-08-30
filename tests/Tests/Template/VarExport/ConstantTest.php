@@ -8,10 +8,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 use Omega\Template\VarExport\Value\Constant;
+
 use function file_put_contents;
 use function sys_get_temp_dir;
 use function tempnam;
 use function unlink;
+
 use const DIRECTORY_SEPARATOR;
 use const PHP_VERSION;
 

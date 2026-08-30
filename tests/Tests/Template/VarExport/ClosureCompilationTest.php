@@ -40,7 +40,9 @@ final class ClosureCompilationTest extends TestCase
      */
     public function testCompilesSimpleClosureOneLine(): void
     {
-        $closure = function () { return 'test'; };
+        $closure = function () {
+            return 'test';
+        };
 
         $expected = <<<'PHP'
 [
@@ -472,8 +474,12 @@ PHP;
      */
     public function compilesClosureOnSameLineWithAnother(): void
     {
-        $closure1 = function () { return 'first'; };
-        $closure2 = function () { return 'second'; };
+        $closure1 = function () {
+            return 'first';
+        };
+        $closure2 = function () {
+            return 'second';
+        };
 
         $output = $this->exporter->export([
             'first'  => $closure1,

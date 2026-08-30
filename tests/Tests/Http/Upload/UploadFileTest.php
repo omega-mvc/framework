@@ -148,8 +148,7 @@ final class UploadFileTest extends TestCase
         $this->assertEquals('success', $this->upload->getError());
         $this->assertEquals(
             'This is a story about something that happened long ago when your grandfather was a child.',
-            trim($this->upload->get()
-            )
+            trim($this->upload->get())
         );
     }
 

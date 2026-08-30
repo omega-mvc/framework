@@ -6,6 +6,7 @@ namespace App\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Traits\PrinterTrait;
+
 use function Omega\Console\style;
 
 class AssetCommand extends AbstractCommand
@@ -30,13 +31,13 @@ class AssetCommand extends AbstractCommand
      * @return array<string, array<string, string|string[]>>
      */
     public function printHelp(): array
-      {
+    {
           return [
               'commands' => [],
               'options'  => [],
               'relation' => [],
           ];
-      }
+    }
 
     public function main(): int
     {

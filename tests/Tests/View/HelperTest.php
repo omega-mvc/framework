@@ -29,8 +29,8 @@ use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-
 use Tests\FixturesPathTrait;
+
 use function Omega\View\view;
 use function Omega\View\vite;
 

@@ -307,7 +307,8 @@ class InjectOnTest extends AbstractTestContainer
              * @noinspection PhpUnusedParameterInspection
              */
             #[Inject]
-            public function setDependency(ArrayAccess $dependency): void {
+            public function setDependency(ArrayAccess $dependency): void
+            {
                 $this->resolved = true;
             }
         };
@@ -352,7 +353,8 @@ class InjectOnTest extends AbstractTestContainer
                 string $builtin,        // built-in
                 ArrayAccess $interface, // non-builtin
                 int $otherBuiltin       // built-in
-            ) {}
+            ) {
+            }
         };
 
         $reflector = new ReflectionClass($dummy);

@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpExpressionResultUnusedInspection */
+<?php
+
+/** @noinspection PhpExpressionResultUnusedInspection */
 
 /**
  * Part of Omega - Tests\Container Package.

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\Query;
-use PHPUnit\Framework\Attributes\CoversClass;use Tests\Database\Asserts\UserTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\Database\Asserts\UserTrait;
 use Tests\Database\AbstractTestDatabase;
 
 #[CoversClass(Query::class)]

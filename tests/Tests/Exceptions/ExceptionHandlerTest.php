@@ -115,14 +115,14 @@ final class ExceptionHandlerTest extends TestCase
             fn () => $this->exceptionHandler
         );
 
-        $this->http = new class($this->app) extends Http {
+        $this->http = new class ($this->app) extends Http {
             protected function dispatcher(Request $request): array
             {
                 throw new HttpException(429, 'Too Many Request');
             }
         };
 
-        $this->exceptionHandler = new class($this->app) extends ExceptionHandler {
+        $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
             public function render(Request $request, Throwable $th): Response
             {
                 // try to bypass test for json format

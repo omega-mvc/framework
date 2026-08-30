@@ -188,7 +188,7 @@ final class MacroableTest extends TestCase
 
         $class::macro('foo', fn() => 'bar');
 
-        $instance = new $class;
+        $instance = new $class();
 
         $this->assertTrue($instance::hasMacro('foo'));
     }

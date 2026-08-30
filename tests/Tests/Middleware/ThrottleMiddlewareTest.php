@@ -47,8 +47,8 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RateLimiter::class)]
 final class ThrottleMiddlewareTest extends TestCase
 {
-	/** @var int Number of simulated requests for the test, adapted for Android environments. */
-	private int $clock;
+    /** @var int Number of simulated requests for the test, adapted for Android environments. */
+    private int $clock;
 
     /**
      * Sets up the environment before each test method.

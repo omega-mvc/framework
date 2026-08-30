@@ -322,11 +322,11 @@ final class BasicRouteTest extends TestCase
         $delete  = $this->getResponse('get', '/delete');
         $options = $this->getResponse('get', '/options');
 
-        $this->assertEquals('method not allowed', $get,     'method not allowed');
-        $this->assertEquals('method not allowed', $post,    'method not allowed');
-        $this->assertEquals('method not allowed', $put,     'method not allowed');
-        $this->assertEquals('method not allowed', $patch,   'method not allowed');
-        $this->assertEquals('method not allowed', $delete,  'method not allowed');
+        $this->assertEquals('method not allowed', $get, 'method not allowed');
+        $this->assertEquals('method not allowed', $post, 'method not allowed');
+        $this->assertEquals('method not allowed', $put, 'method not allowed');
+        $this->assertEquals('method not allowed', $patch, 'method not allowed');
+        $this->assertEquals('method not allowed', $delete, 'method not allowed');
         $this->assertEquals('method not allowed', $options, 'method not allowed');
     }
 

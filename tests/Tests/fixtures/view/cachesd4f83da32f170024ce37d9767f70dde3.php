@@ -1,1 +1,3 @@
-<?php throw new RuntimeException("boom");
+<?php
+
+throw new RuntimeException("boom");

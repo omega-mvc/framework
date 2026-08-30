@@ -145,8 +145,12 @@ class ConfigProvidersTest extends TestCase
         try {
             new ConfigBootstrapper()->bootstrap($app);
         } finally {
-            if (file_exists($filePath)) unlink($filePath);
-            if (is_dir($tempConfigDir)) rmdir($tempConfigDir);
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+            if (is_dir($tempConfigDir)) {
+                rmdir($tempConfigDir);
+            }
         }
     }
 

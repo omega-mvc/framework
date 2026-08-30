@@ -81,8 +81,7 @@ final class RoadRunnerMultiRequestTest extends TestCase
          * Anonymous Http subclass using Router::run() as its dispatcher,
          * mirroring how a real application's kernel dispatches requests.
          */
-        $this->http = new class($this->app) extends Http {
-
+        $this->http = new class ($this->app) extends Http {
             /**
              * Resolve the request through the static route table.
              *
