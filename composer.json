@@ -44,8 +44,8 @@
     },
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0",
-        "phpunit/phpunit": "^13.0",
-        "phpstan/phpstan": "^2.2"
+        "phpstan/phpstan": "^2.2",
+        "pestphp/pest": "^5.1"
     },
     "autoload": {
         "psr-4": {
@@ -78,9 +78,10 @@
         "phpcbf": "vendor/bin/phpcbf --standard=PSR12 src/ tests/",
         "fix": "composer run phpcbf",
         "test:phpunit": "vendor/bin/phpunit tests",
+        "test:pest": "vendor/bin/pest",
         "test": [
             "composer run lint",
-            "composer run test:phpunit"
+            "composer run test:pest"
         ],
         "check": "composer run test",
         "ci": [

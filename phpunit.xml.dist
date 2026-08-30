@@ -8,8 +8,6 @@
          beStrictAboutOutputDuringTests="true"
          failOnRisky="true"
          failOnWarning="true"
-         testdox="true"
-         testdoxSummary="true"
          colors="true"
 >
     <testsuites>
@@ -27,9 +25,6 @@
             <html outputDirectory="cache/coverage-report"/>
         </report>
     </coverage>
-    <logging>
-        <testdoxHtml outputFile="cache/coverage-report/testdox.html"/>
-    </logging>
     <php>
         <env name="APP_ENV" value="testing"/>
         <env name="OMEGA_TEST_MODE" value="normal"/>

@@ -110,7 +110,7 @@ class RedisManagerTest extends TestCase
     /** @test */
     public function testItCanConnectViaUnixSocket(): void
     {
-        $socket_path = '/var/run/redis/redis-server.sock';
+        $socket_path = '/var/run/redis/redis.sock';
 
         if (false === file_exists($socket_path)) {
             $this->markTestSkipped(

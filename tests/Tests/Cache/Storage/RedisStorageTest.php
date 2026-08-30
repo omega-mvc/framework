@@ -43,7 +43,7 @@ final class RedisStorageTest extends TestCase
         }
 
         $this->redis->flushdb();
-        $this->storage = new RedisStorage($this->redis);
+        $this->storage = new RedisStorage(['ttl' => 3600], $this->redis);
     }
 
     protected function tearDown(): void
@@ -173,7 +173,7 @@ final class RedisStorageTest extends TestCase
      */
     public function testItCanRememberCache()
     {
-        $result = $this->storage->remember('key', 3600, fn () => 'value');
+        $result = $this->storage->remember('key', fn () => 'value', 3600);
         $this->assertEquals('value', $result);
         $this->assertEquals('value', $this->storage->get('key'));
     }
