@@ -7,3 +7,4 @@ phpunit.xml
 note.txt
 LLM.md
 /cache
+dump.rdb
