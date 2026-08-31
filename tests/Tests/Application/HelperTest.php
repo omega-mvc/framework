@@ -365,7 +365,7 @@ final class HelperTest extends TestCase
     public function testSetPathThrowsExceptionOnEmptyString(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('The path key cannot be an empty string');
+        $this->expectExceptionMessageIsOrContains('The path key cannot be an empty string');
 
         set_path('');
     }

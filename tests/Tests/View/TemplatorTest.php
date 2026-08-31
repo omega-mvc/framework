@@ -608,7 +608,7 @@ final class TemplatorTest extends TestCase
 
         try {
             $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessage('boom');
+            $this->expectExceptionMessageIsOrContains('boom');
 
             $view->render('bad.php', []);
         } finally {

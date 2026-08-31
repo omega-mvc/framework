@@ -143,7 +143,7 @@ class ConfigProvidersTest extends TestCase
         $app->set('path.config', $tempConfigDir);
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid config file');
+        $this->expectExceptionMessageIsOrContains('Invalid config file');
 
         try {
             new ConfigBootstrapper()->bootstrap($app);
@@ -181,7 +181,7 @@ class ConfigProvidersTest extends TestCase
         file_put_contents($cacheFile, "<?php return 'not-an-array';");
 
         $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessage('Invalid config cache file');
+        $this->expectExceptionMessageIsOrContains('Invalid config cache file');
 
         new ConfigBootstrapper()->bootstrap($app);
 

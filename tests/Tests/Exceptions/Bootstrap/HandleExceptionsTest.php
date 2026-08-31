@@ -81,7 +81,7 @@ class HandleExceptionsTest extends TestCase
         $handle->bootstrap($app);
 
         $this->expectException(ErrorException::class);
-        $this->expectExceptionMessage(__CLASS__);
+        $this->expectExceptionMessageIsOrContains(__CLASS__);
         $handle->handleError(E_ERROR, __CLASS__, __FILE__, __LINE__);
 
         $app->flush();

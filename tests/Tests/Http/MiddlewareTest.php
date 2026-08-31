@@ -165,7 +165,7 @@ final class MiddlewareTest extends TestCase
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Middleware must be a class with handle method');
+        $this->expectExceptionMessageIsOrContains('Middleware must be a class with handle method');
 
         $pipe = (fn () => $this->{'middlewarePipeline'}($middleware, $dispatcher))->call($this->app[Http::class]);
         $pipe(new Request('/'));

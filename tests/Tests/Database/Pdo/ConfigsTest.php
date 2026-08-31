@@ -188,7 +188,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('MySQL requires host and database.');
+        $this->expectExceptionMessageIsOrContains('MySQL requires host and database.');
         $this->buildDsn(MysqlConnection::class, $config);
     }
 
@@ -205,7 +205,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('MySQL requires host and database.');
+        $this->expectExceptionMessageIsOrContains('MySQL requires host and database.');
         $this->buildDsn(MysqlConnection::class, $config);
     }
 
@@ -245,7 +245,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('MariaDB requires host and database.');
+        $this->expectExceptionMessageIsOrContains('MariaDB requires host and database.');
         $this->buildDsn(MariadbConnection::class, $config);
     }
 
@@ -365,7 +365,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('PostgreSQL requires host and database.');
+        $this->expectExceptionMessageIsOrContains('PostgreSQL requires host and database.');
         $this->buildDsn(PgsqlConnection::class, $config);
     }
 
@@ -383,7 +383,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('PostgreSQL requires host and database.');
+        $this->expectExceptionMessageIsOrContains('PostgreSQL requires host and database.');
         $this->buildDsn(PgsqlConnection::class, $config);
     }
 
@@ -456,7 +456,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('SQLite requires path.');
+        $this->expectExceptionMessageIsOrContains('SQLite requires path.');
         $this->buildDsn(SqliteConnection::class, $config);
     }
 
@@ -473,7 +473,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('SQLite requires valid file path.');
+        $this->expectExceptionMessageIsOrContains('SQLite requires valid file path.');
         $this->buildDsn(SqliteConnection::class, $config);
     }
 
@@ -492,7 +492,7 @@ final class ConfigsTest extends TestCase
         ];
 
         $this->expectException(\Error::class);
-        $this->expectExceptionMessage('OracleConnection');
+        $this->expectExceptionMessageIsOrContains('OracleConnection');
         ConnectionFactory::make($config);
     }
 }

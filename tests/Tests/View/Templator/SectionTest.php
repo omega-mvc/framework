@@ -224,7 +224,7 @@ final class SectionTest extends TestCase
      */
     public function testItWillThrowErrorHaveTwoDefault(): void
     {
-        $this->expectExceptionMessage('The yield statement cannot have both a default value and content.');
+        $this->expectExceptionMessageIsOrContains('The yield statement cannot have both a default value and content.');
         $this->templator->templates('{% extend(\'sectiondefaultandmultilines.template\') %}');
     }
 
@@ -250,7 +250,7 @@ final class SectionTest extends TestCase
      */
     public function testItThrowsWhenRequiredYieldSectionMissing(): void
     {
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             "Slot with extends 'sectionwithmissingyield.template' required 'missing_section'"
         );
 

@@ -240,7 +240,7 @@ final class TestJsonResponseTest extends TestCase
     public function testConstructorThrowsExceptionIfContentIsNotArray(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Response body is not Array.');
+        $this->expectExceptionMessageIsOrContains('Response body is not Array.');
 
         new TestJsonResponse(new Response('not-an-array'));
     }

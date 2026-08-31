@@ -321,7 +321,7 @@ final class ClosureExtractorTest extends TestCase
         $line = 'function() {}, function() {}';
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Multiple closures detected');
+        $this->expectExceptionMessageIsOrContains('Multiple closures detected');
 
         $this->extractor->validateSingleLine($line, 42);
     }
@@ -419,7 +419,7 @@ final class ClosureExtractorTest extends TestCase
     public function testNonExistentFileThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Source file not found');
+        $this->expectExceptionMessageIsOrContains('Source file not found');
 
         // Create a mock reflection with non-existent file
         $reflection = $this->createMock(ReflectionFunction::class);

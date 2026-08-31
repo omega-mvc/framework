@@ -168,7 +168,7 @@ final class UrlBuilderInvalidArgumentTest extends TestCase
     public function testInvalidArguments(array $route, array $parameters, string $expectedMessage): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage($expectedMessage);
+        $this->expectExceptionMessageIsOrContains($expectedMessage);
 
         $route   = new Route($route);
         $builder = new RouteUrlBuilder([

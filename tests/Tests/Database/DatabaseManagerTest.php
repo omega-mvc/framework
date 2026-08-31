@@ -117,7 +117,7 @@ final class DatabaseManagerTest extends AbstractTestDatabase
         ]);
 
         $this->expectException(InvalidConfigurationException::class);
-        $this->expectExceptionMessage('Database connection [invalid] not configured.');
+        $this->expectExceptionMessageIsOrContains('Database connection [invalid] not configured.');
 
         $this->assertTrue($db->connection('invalid')->query('SELECT * FROM users')->execute());
     }

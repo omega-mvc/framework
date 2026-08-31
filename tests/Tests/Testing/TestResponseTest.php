@@ -86,7 +86,7 @@ final class TestResponseTest extends TestCase
     public function testOffsetSetThrowsLogicException(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('TestResponse is read-only.');
+        $this->expectExceptionMessageIsOrContains('TestResponse is read-only.');
 
         $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
         $response['foo'] = 'new value';
@@ -95,7 +95,7 @@ final class TestResponseTest extends TestCase
     public function testOffsetUnsetThrowsLogicException(): void
     {
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('TestResponse is read-only.');
+        $this->expectExceptionMessageIsOrContains('TestResponse is read-only.');
 
         $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
         unset($response['foo']);

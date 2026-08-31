@@ -131,7 +131,7 @@ final class FacadeTest extends TestCase
         AbstractFacade::setFacadeBase(null);
 
         $this->expectException(FacadeObjectNotSetException::class);
-        $this->expectExceptionMessage(
+        $this->expectExceptionMessageIsOrContains(
             'The facade instance for Tests\Facades\Sample\FacadesTestClass has not been set.'
         );
 

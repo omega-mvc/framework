@@ -116,7 +116,7 @@ final class IncludeTest extends TestCase
     public function testItThrowsExceptionWhenIncludeNotFound(): void
     {
         $this->expectException(ViewFileNotFoundException::class);
-        $this->expectExceptionMessage('View file not found: `nonexistent.php`');
+        $this->expectExceptionMessageIsOrContains('View file not found: `nonexistent.php`');
 
         $this->templator->templates(
             '<html>{% include(\'nonexistent.php\') %}</html>'

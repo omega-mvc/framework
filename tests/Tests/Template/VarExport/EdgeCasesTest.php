@@ -20,7 +20,7 @@ class EdgeCasesTest extends TestCase
         $exporter = new VarExport();
 
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Cannot compile resource type');
+        $this->expectExceptionMessageIsOrContains('Cannot compile resource type');
 
         $exporter->export([$resource]);
         fclose($resource);

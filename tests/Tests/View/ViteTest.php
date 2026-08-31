@@ -258,7 +258,7 @@ final class ViteTest extends TestCase
     public function testItThrowsExceptionIfManifestFileNotFound(): void
     {
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Manifest file not found');
+        $this->expectExceptionMessageIsOrContains('Manifest file not found');
 
         $vite = new Vite(__DIR__ . '/fixtures', 'build');
 
@@ -364,7 +364,7 @@ final class ViteTest extends TestCase
         $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Resource file not found non-existent-file.js');
+        $this->expectExceptionMessageIsOrContains('Resource file not found non-existent-file.js');
 
         $asset->getManifest('non-existent-file.js');
     }
@@ -397,7 +397,7 @@ final class ViteTest extends TestCase
         $asset = new Vite($this->setFixturePath('/fixtures/application-write/public/'), 'build/');
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('Failed to read hot file');
+        $this->expectExceptionMessageIsOrContains('Failed to read hot file');
 
         $asset->getHmrUrl();
     }

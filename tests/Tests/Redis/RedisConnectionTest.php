@@ -70,7 +70,7 @@ class RedisConnectionTest extends TestCase
     public function testItThrowsExceptionOnConnectionFailure(): void
     {
         $this->expectException(RedisException::class);
-        $this->expectExceptionMessage('Could not connect to Redis');
+        $this->expectExceptionMessageIsOrContains('Could not connect to Redis');
 
         new Redis([
             'host'    => '127.0.0.1',

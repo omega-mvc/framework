@@ -437,7 +437,7 @@ PHP;
     public function closureFromNonExistentFileThrowsException(): void
     {
         $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Source file not found');
+        $this->expectExceptionMessageIsOrContains('Source file not found');
 
         $reflection = $this->createMock(\ReflectionFunction::class);
         $reflection->method('getFileName')->willReturn('/non/existent/file.php');
@@ -457,7 +457,7 @@ PHP;
     {
         $this->expectException(\InvalidArgumentException::class);
         // Mock reflection with non-existent file path
-        $this->expectExceptionMessage('Source file not found');
+        $this->expectExceptionMessageIsOrContains('Source file not found');
 
         $reflection = $this->createMock(\ReflectionFunction::class);
         // Use __FILE__ which exists but will be marked as unreadable in the mock

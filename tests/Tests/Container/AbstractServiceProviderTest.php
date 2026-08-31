@@ -271,7 +271,7 @@ final class AbstractServiceProviderTest extends TestCase
         copy($source, $target);
 
         $this->expectException(Exception::class);
-        $this->expectExceptionMessage('You do not have permission to overwrite the destination file.');
+        $this->expectExceptionMessageIsOrContains('You do not have permission to overwrite the destination file.');
 
         AbstractServiceProvider::importFile($source, $target, false);
 

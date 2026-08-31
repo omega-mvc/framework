@@ -123,7 +123,7 @@ class ReflectionClassTest extends AbstractTestContainer
     public function testReflectionInvalidClass(): void
     {
         $this->expectException(ReflectionException::class);
-        $this->expectExceptionMessage('Class NonExistentClass does not exist');
+        $this->expectExceptionMessageIsOrContains('Class NonExistentClass does not exist');
 
         $this->callProtected('getReflectionClass', ['NonExistentClass']);
     }

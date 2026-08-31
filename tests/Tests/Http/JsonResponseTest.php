@@ -77,7 +77,7 @@ final class JsonResponseTest extends TestCase
      */
     public function testItWillThrowsInvalidException(): void
     {
-        $this->expectExceptionMessage('Invalid encode data.');
+        $this->expectExceptionMessageIsOrContains('Invalid encode data.');
         new JsonResponse(['say' => "Hello \x80 World"]);
     }
 

@@ -100,7 +100,7 @@ final class ResolverTest extends TestCase
     public function testCircularDependencyThrowsException()
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessage('Circular dependency detected');
+        $this->expectExceptionMessageIsOrContains('Circular dependency detected');
 
         $container = new Container();
         $resolver  = new Resolver($container);
