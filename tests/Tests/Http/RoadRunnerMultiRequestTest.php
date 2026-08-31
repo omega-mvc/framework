@@ -20,6 +20,7 @@ use Omega\Application\ApplicationManifest;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Exceptions\Bootstrapper\HandleExceptions;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
@@ -107,6 +108,7 @@ final class RoadRunnerMultiRequestTest extends TestCase
     protected function tearDown(): void
     {
         $this->app->flush();
+        HandleExceptions::resetHandlersState();
     }
 
     /**
@@ -125,7 +127,7 @@ final class RoadRunnerMultiRequestTest extends TestCase
      */
     public function testRoutesSurviveAcrossRequests(): void
     {
-        $http = $this->app->make(Http::class);
+        $http = $this->http;
 
         // Request 1
         $request  = new Request('/test');

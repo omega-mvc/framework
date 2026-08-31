@@ -2,8 +2,8 @@
 
 use Omega\Router\Router;
 
-Router::get('/test', [__CLASS__, __FUNCTION__])->name('test')->middleware(['test']);
-Router::get('/test/(:id)', [__CLASS__, 'empty']);
+Router::get('/test', fn () => 'test')->name('test')->middleware(['test']);
+Router::get('/test/(:id)', fn () => 'empty');
 Router::prefix('test/')->group(function () {
-    Router::post('/test/post', [__CLASS__, 'post'])->name('post');
+    Router::post('/test/post', fn () => 'post')->name('post');
 });

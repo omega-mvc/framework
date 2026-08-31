@@ -129,14 +129,24 @@ class RouteServiceProvider extends AbstractServiceProvider
         $expression = $route['expression'] ?? '';
         $method     = $route['method'] ?? '';
 
-        if (!is_callable($callable) || !is_string($expression) || !is_string($method)) {
+        if (!is_callable($callable) || !is_string($expression) || (is_array($method) ? empty($method) : !is_string($method))) {
             return;
         }
 
-        Router::addRoutes([
-            'expression' => $expression,
-            'function'   => $callable,
-            'method'     => $method,
-        ]);
+        if (is_array($method)) {
+            foreach ($method as $m) {
+                Router::addRoutes([
+                    'expression' => $expression,
+                    'function'   => $callable,
+                    'method'     => $m,
+                ]);
+            }
+        } else {
+            Router::addRoutes([
+                'expression' => $expression,
+                'function'   => $callable,
+                'method'     => $method,
+            ]);
+        }
     }
 }
