@@ -400,6 +400,47 @@ class ApplicationTest extends TestCase
     }
 
     /**
+     * Test it returns false when the storage path is not a string.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testItReturnsFalseWhenStoragePathIsNotAString(): void
+    {
+        $app = new Application('/');
+        $app->set('path.storage', ['array', 'storage']);
+
+        $this->assertFalse($app->isDownMaintenanceMode());
+    }
+
+    /**
+     * Test it returns the default down data when the storage path is not a string.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testItReturnsDefaultDownDataWhenStoragePathIsNotAString(): void
+    {
+        $app = new Application('/');
+        $app->set('path.storage', ['array', 'storage']);
+
+        $this->assertEquals([
+            'redirect' => null,
+            'retry'    => null,
+            'status'   => 503,
+            'template' => null,
+        ], $app->getDownData());
+    }
+
+    /**
      * Test terminate with no callbacks.
      *
      * @return void

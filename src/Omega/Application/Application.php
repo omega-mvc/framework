@@ -133,7 +133,13 @@ class Application extends AbstractApplication implements ApplicationInterface
         ];
 
         $storage = get_path('path.storage');
-        $down = is_string($storage) ? $storage . 'app/down' : '';
+
+        if (!is_string($storage)) {
+            return $default;
+        }
+
+        $down = $storage . 'app/down';
+
         if (!file_exists($down)) {
             return $default;
         }
