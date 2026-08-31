@@ -14,6 +14,7 @@ use ReflectionUnionType;
 use function array_unique;
 use function array_values;
 use function is_object;
+use function strtolower;
 
 final class NamespaceResolver
 {
@@ -22,32 +23,51 @@ final class NamespaceResolver
      */
     public function resolve(ReflectionFunction $reflection): array
     {
-        /** @var array<int, class-string> $classes */
-        $classes = [];
+        /** @var array<int, class-string> $neededClasses */
+        $neededClasses = [];
 
-        // class file parse
-        $classParse = new ParseNamespace();
-        foreach ($classParse->resolveFile($reflection->getFileName()) as $parse) {
-            $classes[] = $parse;
-        }
-
-        // Parameter types
+        // Collect types actually used by the closure from reflection
         foreach ($reflection->getParameters() as $parameter) {
-            $this->collectFromType($parameter->getType(), $classes);
+            $this->collectFromType($parameter->getType(), $neededClasses);
         }
 
-        // Return type
-        $this->collectFromType($reflection->getReturnType(), $classes);
+        $this->collectFromType($reflection->getReturnType(), $neededClasses);
 
-        // Static variables
         foreach ($reflection->getStaticVariables() as $value) {
             if (true === is_object($value)) {
-                /* @var class-string $classes */
-                $classes[] = $value::class;
+                $neededClasses[] = $value::class;
             }
         }
 
-        return array_values(array_unique($classes));
+        // Get all class imports from the file
+        $classParse = new ParseNamespace();
+        $fileImports = $classParse->resolveClasses($reflection->getFileName());
+
+        // Filter file imports to only those that match needed classes (case-insensitive)
+        $neededLower = array_map('strtolower', $neededClasses);
+        $result = [];
+        foreach ($fileImports as $import) {
+            if (in_array(strtolower($import), $neededLower, true)) {
+                $result[] = $import;
+            }
+        }
+
+        // Also add any needed classes that weren't in file imports (e.g., same namespace)
+        foreach ($neededClasses as $needed) {
+            $neededLower = strtolower($needed);
+            $found = false;
+            foreach ($fileImports as $import) {
+                if (strtolower($import) === $neededLower) {
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $result[] = $needed;
+            }
+        }
+
+        return array_values(array_unique($result));
     }
 
     /**

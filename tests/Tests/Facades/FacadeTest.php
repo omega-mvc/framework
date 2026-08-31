@@ -80,7 +80,6 @@ use Tests\Facades\Support\TestAbstractFacade;
 #[CoversClass(Collection::class)]
 #[CoversClass(Config::class)]
 #[CoversClass(ConfigRepository::class)]
-#[CoversClass(ConnectionInterface::class)]
 #[CoversClassesThatImplementInterface(FacadeInterface::class)]
 #[CoversClass(FacadeObjectNotSetException::class)]
 #[CoversClass(Hash::class)]

@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Facades\Support;
 
+use Omega\Application\ApplicationInterface;
 use Omega\Facade\AbstractFacade;
 
 /**
@@ -34,6 +35,8 @@ use Omega\Facade\AbstractFacade;
  */
 class NullFacade extends AbstractFacade
 {
+    protected static ?ApplicationInterface $app = null;
+
     /**
      * Get the service container key that this facade resolves.
      *

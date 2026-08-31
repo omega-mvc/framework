@@ -61,7 +61,9 @@ final class NamespaceResolverTest extends TestCase
     }
 
     /**
-     * Test it can resolve ignore builtint types.
+     * Test it can resolve ignores builtin types.
+     * Builtin types (int, string, bool, etc.) should not appear in results.
+     * Since the closure uses only builtin types, no class imports are needed.
      *
      * @return void
      * @throws ReflectionException
@@ -77,10 +79,13 @@ final class NamespaceResolverTest extends TestCase
         $reflection = new ReflectionFunction($fn);
         $result     = $resolver->resolve($reflection);
 
-        self::assertSame([
-            'PHPUnit\Framework\TestCase', // use by this test class
-            'Omega\Template\Parser\Closure\NamespaceResolver', // use by this test class
-        ], $result);
+        // Closure uses only builtin types - no class imports needed
+        self::assertEmpty($result);
+
+        // Should NOT contain builtin types
+        self::assertNotContains('int', $result);
+        self::assertNotContains('string', $result);
+        self::assertNotContains('bool', $result);
     }
 
     /**
@@ -100,6 +105,12 @@ final class NamespaceResolverTest extends TestCase
         $code = <<<'PHP'
 <?php
 namespace Tests\Template\Parser\Closure;
+
+use Tests\Template\Fixtures\UnionA;
+use Tests\Template\Fixtures\UnionB;
+use Tests\Template\Fixtures\UnionC;
+use Tests\Template\Fixtures\UnionD;
+
 return static function (UnionA|UnionB $param): UnionC|UnionD {
     return new UnionC();
 };
@@ -136,8 +147,12 @@ PHP;
         $code = <<<'PHP'
 <?php
 namespace Tests\Template\Parser\Closure;
-return static function (IntersectionA&IntersectionB $param): IntersectionA&IntersectionB {
-    return new class implements IntersectionA, IntersectionB {};
+
+use Tests\Template\Fixtures\IntersectionAInterface;
+use Tests\Template\Fixtures\IntersectionBInterface;
+
+return static function (IntersectionAInterface&IntersectionBInterface $param): IntersectionAInterface&IntersectionBInterface {
+    return new class implements IntersectionAInterface, IntersectionBInterface {};
 };
 PHP;
         $file = __DIR__ . '/intersection_closure.php';
@@ -176,10 +191,9 @@ PHP;
         $reflection = new ReflectionFunction($fn);
         $result     = $resolver->resolve($reflection);
 
+        // Only DummyParamClass is used by the closure
         self::assertSame(
             [
-                'PHPUnit\Framework\TestCase', // use by this test class
-                'Omega\Template\Parser\Closure\NamespaceResolver', // use by this test class
                 DummyParamClass::class,
             ],
             array_values($result)

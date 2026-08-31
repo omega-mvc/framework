@@ -183,8 +183,21 @@ class Stream extends AbstractLogger
             ? dirname($logDirectory)
             : $logDirectory;
 
+        if (file_exists($directory) && !is_dir($directory)) {
+            throw new RuntimeException(
+                'Unable to create log directory: ' . $directory . ' (exists as file)'
+            );
+        }
+
+        $parentDir = dirname($directory);
+        if (file_exists($parentDir) && !is_dir($parentDir)) {
+            throw new RuntimeException(
+                'Unable to create log directory: ' . $directory . ' (parent exists as file)'
+            );
+        }
+
         if (!file_exists($directory)) {
-            if (!mkdir($directory, $this->defaultPermissions, true) && !is_dir($directory)) {
+            if (!@mkdir($directory, $this->defaultPermissions, true) && !is_dir($directory)) {
                 throw new RuntimeException(
                     'Unable to create log directory: ' . $directory
                 );
@@ -272,7 +285,13 @@ class Stream extends AbstractLogger
      */
     public function setFileHandle(string $writeMode): void
     {
-        $handle = fopen($this->logFilePath, $writeMode);
+        if (is_dir($this->logFilePath)) {
+            throw new RuntimeException(
+                'Failed to open log file for writing: path is a directory.'
+            );
+        }
+
+        $handle = @fopen($this->logFilePath, $writeMode);
 
         if ($handle === false) {
             throw new RuntimeException(
@@ -315,7 +334,7 @@ class Stream extends AbstractLogger
     public function write(string $message): void
     {
         if (null !== $this->fileHandle) {
-            if (is_resource($this->fileHandle) && fwrite($this->fileHandle, $message) === false) {
+            if (is_resource($this->fileHandle) && @fwrite($this->fileHandle, $message) === false) {
                 throw new RuntimeException(
                     'The file could not be written to. Check that appropriate permissions have been set.'
                 );

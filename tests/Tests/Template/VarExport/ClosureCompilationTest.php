@@ -46,7 +46,9 @@ final class ClosureCompilationTest extends TestCase
 
         $expected = <<<'PHP'
 [
-    'closure' => function () { return 'test'; },
+    'closure' => function () {
+        return 'test';
+    },
 ]
 PHP;
 
