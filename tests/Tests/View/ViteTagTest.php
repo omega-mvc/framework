@@ -366,7 +366,9 @@ final class ViteTagTest extends TestCase
     public function testGetCustomTagsWithHmr(): void
     {
         $tmpDir = $this->setFixturePath('/fixtures/application-write/manifest1/public');
-        @mkdir($tmpDir, 0777, true);
+        if (!is_dir($tmpDir)) {
+            @mkdir($tmpDir, 0777, true);
+        }
 
         file_put_contents($tmpDir . '/hot', 'http://localhost:5173');
 

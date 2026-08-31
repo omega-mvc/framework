@@ -312,7 +312,11 @@ class Vite
      */
     private function readManifestFile(string $fileName): string
     {
-        $content = @file_get_contents($fileName);
+        if (!is_readable($fileName)) {
+            throw new Exception("Failed to read manifest file: {$fileName}");
+        }
+
+        $content = file_get_contents($fileName);
 
         if ($content === false) {
             throw new Exception("Failed to read manifest file: {$fileName}");
@@ -499,7 +503,12 @@ class Vite
         }
 
         $hotFile = "{$this->publicPath}/hot";
-        $hot     = @file_get_contents($hotFile);
+
+        if (!is_readable($hotFile)) {
+            throw new Exception("Failed to read hot file: {$hotFile}");
+        }
+
+        $hot = file_get_contents($hotFile);
 
         if ($hot === false) {
             throw new Exception("Failed to read hot file: {$hotFile}");

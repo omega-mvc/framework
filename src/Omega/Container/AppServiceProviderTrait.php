@@ -59,6 +59,10 @@ trait AppServiceProviderTrait
      */
     private static function fileWrite(string $from, string $to): bool
     {
+        if (!is_readable($from)) {
+            return false;
+        }
+
         $path = pathinfo($to, PATHINFO_DIRNAME);
 
         if (!file_exists($path)) {
@@ -79,7 +83,7 @@ trait AppServiceProviderTrait
      */
     public static function importDir(string $from, string $to, bool $overwrite = false): bool
     {
-        if (!is_dir($from)) {
+        if (!is_dir($from) || !is_readable($from)) {
             return false;
         }
 

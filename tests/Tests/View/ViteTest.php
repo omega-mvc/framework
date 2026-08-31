@@ -467,7 +467,9 @@ final class ViteTest extends TestCase
     public function testGetPreloadTagsReturnsEmptyStringWhenHmrIsRunning(): void
     {
         $publicPath = $this->setFixturePath('/fixtures/application-write/manifest/public');
-        @mkdir($publicPath, 0777, true);
+        if (!is_dir($publicPath)) {
+            @mkdir($publicPath, 0777, true);
+        }
 
         file_put_contents("{$publicPath}/hot", 'http://localhost:3000');
 
