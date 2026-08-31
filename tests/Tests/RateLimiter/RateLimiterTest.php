@@ -16,7 +16,7 @@ namespace Tests\RateLimiter;
 
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\Policy\FixedWindow;
 use Omega\RateLimiter\RateLimiter;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -50,7 +50,7 @@ use PHPUnit\Framework\TestCase;
  * @version   2.0.0
  */
 #[CoversClass(FixedWindow::class)]
-#[CoversClass(Memory::class)]
+#[CoversClass(MemoryStorage::class)]
 #[CoversClass(RateLimiter::class)]
 final class RateLimiterTest extends TestCase
 {
@@ -58,7 +58,7 @@ final class RateLimiterTest extends TestCase
      * Rate limiter instance used throughout the test suite.
      *
      * This instance is configured with a `FixedWindow` rate limiting strategy backed by
-     * in-memory storage (`Memory`). The limiter allows only one action per minute for the
+     * in-memory storage (`MemoryStorage`). The limiter allows only one action per minute for the
      * test scenarios, enabling validation of consumption, blocking behavior, retry timing,
      * and state reset operations.
      *
@@ -80,7 +80,7 @@ final class RateLimiterTest extends TestCase
         parent::setUp();
         $this->rateLimiter = new RateLimiter(
             new FixedWindow(
-                cache: new Memory(['ttl' => 3600]),
+                cache: new MemoryStorage(['ttl' => 3600]),
                 limit: 1,
                 windowSeconds: 60
             )

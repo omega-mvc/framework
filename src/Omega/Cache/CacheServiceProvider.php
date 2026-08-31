@@ -14,10 +14,11 @@ declare(strict_types=1);
 
 namespace Omega\Cache;
 
-use Omega\Cache\Storage\Apcu;
-use Omega\Cache\Storage\File;
-use Omega\Cache\Storage\Memory;
-use Omega\Cache\Storage\Redis;
+use Omega\Cache\Storage\ApcuStorage;
+use Omega\Cache\Storage\FileStorage;
+use Omega\Cache\Storage\MemcachedStorage;
+use Omega\Cache\Storage\MemoryStorage;
+use Omega\Cache\Storage\RedisStorage;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -75,9 +76,10 @@ class CacheServiceProvider extends AbstractServiceProvider
         foreach ($adapters as $name => $options) {
             $this->app->set("cache.$name", function () use ($name, $options) {
                 return match ($name) {
-                    'apcu'      => new Apcu($options),
-                    'file'      => new File($options),
-                    'memory'    => new Memory($options),
+                    'apcu'      => new ApcuStorage($options),
+                    'file'      => new FileStorage($options),
+                    'memory'    => new MemoryStorage($options),
+                    'memcached' => new MemcachedStorage($options),
                     'redis'     => $this->createRedis($options),
                     default     => throw new RuntimeException("Unknown cache adapter: $name"),
                 };
@@ -97,7 +99,7 @@ class CacheServiceProvider extends AbstractServiceProvider
         });
     }
 
-    private function createRedis(array $options): Redis
+    private function createRedis(array $options): RedisStorage
     {
         $config = $this->app->get('config')['redis'];
 
@@ -107,7 +109,7 @@ class CacheServiceProvider extends AbstractServiceProvider
             ->get(RedisManager::class)
             ->connection($connectionName);
 
-        return new Redis(
+        return new RedisStorage(
             $options,
             $connection
         );

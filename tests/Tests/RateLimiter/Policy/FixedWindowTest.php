@@ -16,7 +16,7 @@ namespace Tests\RateLimiter\Policy;
 
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\Policy\FixedWindow;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -38,7 +38,7 @@ use function Omega\Time\now;
  * - Inspecting the current rate limit state without modifying it (`peek()`).
  * - Resetting the usage count for a given key.
  *
- * An in-memory storage (`Memory`) is used to keep the tests fast and deterministic,
+ * An in-memory storage (`MemoryStorage`) is used to keep the tests fast and deterministic,
  * avoiding external dependencies or persistent state.
  *
  * @category   Tests
@@ -51,18 +51,18 @@ use function Omega\Time\now;
  * @version    2.0.0
  */
 #[CoversClass(FixedWindow::class)]
-#[CoversClass(Memory::class)]
+#[CoversClass(MemoryStorage::class)]
 final class FixedWindowTest extends TestCase
 {
     /**
      * In-memory storage used by the rate limiter during testing.
      *
-     * The Memory driver simulates cache behavior without writing to disk or external services,
+     * The MemoryStorage driver simulates cache behavior without writing to disk or external services,
      * ensuring that rate limit operations remain isolated, fast, and easily resettable between tests.
      *
-     * @var Memory
+     * @var MemoryStorage
      */
-    private Memory $cache;
+    private MemoryStorage $cache;
 
     /**
      * Sets up the environment before each test method.
@@ -76,7 +76,7 @@ final class FixedWindowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->cache = new Memory(['ttl' => 3600]);
+        $this->cache = new MemoryStorage(['ttl' => 3600]);
     }
 
     /**

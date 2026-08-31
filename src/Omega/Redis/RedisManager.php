@@ -14,10 +14,28 @@ class RedisManager implements RedisInterface
     /** @var array<string, RedisInterface|Closure(): RedisInterface> */
     private array $driver = [];
 
-    private RedisInterface $defaultDriver;
+    /** @var array{default?: string, connections?: array<string, array<string, mixed>>} */
+    private array $config = [];
+
+    private ?RedisInterface $defaultDriver = null;
+
+    public static function isSupported(): bool
+    {
+        return extension_loaded('redis');
+    }
 
     public function __construct()
     {
+    }
+
+    /**
+     * @param array{default?: string, connections?: array<string, array<string, mixed>>} $config
+     */
+    public function setConfig(array $config): self
+    {
+        $this->config = $config;
+
+        return $this;
     }
 
     public function setDefaultDriver(RedisInterface $driver): self
@@ -61,14 +79,51 @@ class RedisManager implements RedisInterface
     public function driver(?string $driverName = null): RedisInterface
     {
         if ($driverName === null) {
-            return $this->defaultDriver;
+            return $this->defaultDriver ?? $this->connection($this->defaultConnectionName());
         }
 
         if (isset($this->driver[$driverName])) {
             return $this->resolve($driverName);
         }
 
-        return $this->defaultDriver;
+        return $this->defaultDriver ?? $this->connection($this->defaultConnectionName());
+    }
+
+    /**
+     * Resolve a Redis connection by name.
+     *
+     * If the connection name matches a registered driver, that driver is used.
+     * Otherwise the connection is lazily built from the provided configuration
+     * and cached for subsequent calls. A null name resolves the default connection.
+     *
+     * @throws Exception
+     */
+    public function connection(?string $connectionName = null): RedisInterface
+    {
+        $connectionName = $connectionName ?? $this->defaultConnectionName();
+
+        if (isset($this->driver[$connectionName])) {
+            return $this->resolve($connectionName);
+        }
+
+        $connections = $this->config['connections'] ?? [];
+
+        if (!isset($connections[$connectionName])) {
+            throw new Exception("Can not use connection $connectionName.");
+        }
+
+        $driver = new Redis($connections[$connectionName]);
+
+        return $this->driver[$connectionName] = $driver;
+    }
+
+    private function defaultConnectionName(): string
+    {
+        if (isset($this->config['default'])) {
+            return (string) $this->config['default'];
+        }
+
+        throw new Exception('No default Redis connection has been configured.');
     }
 
     /**

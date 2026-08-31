@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Middleware;
 
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\MemoryStorage;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Middleware\ThrottleMiddleware;
@@ -39,7 +39,7 @@ use PHPUnit\Framework\TestCase;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-#[CoversClass(Memory::class)]
+#[CoversClass(MemoryStorage::class)]
 #[CoversClass(Request::class)]
 #[CoversClass(Response::class)]
 #[CoversClass(ThrottleMiddleware::class)]
@@ -78,7 +78,7 @@ final class ThrottleMiddlewareTest extends TestCase
      */
     public function testItCanThrottleRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl' => 3_600]), 60, $this->clock));
+        $limiter    = new RateLimiter(new FixedWindow(new MemoryStorage(['ttl' => 3_600]), 60, $this->clock));
         $middleware = new ThrottleMiddleware($limiter);
         $request    = new Request('/');
 
@@ -102,7 +102,7 @@ final class ThrottleMiddlewareTest extends TestCase
      */
     public function testItCanPassRequest(): void
     {
-        $limiter    = new RateLimiter(new FixedWindow(new Memory(['ttl'  => 3_600]), 60, $this->clock));
+        $limiter    = new RateLimiter(new FixedWindow(new MemoryStorage(['ttl'  => 3_600]), 60, $this->clock));
         $middleware = new ThrottleMiddleware($limiter);
         $request    = new Request('/');
 

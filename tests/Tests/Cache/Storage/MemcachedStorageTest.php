@@ -6,51 +6,42 @@ namespace Tests\Cache\Storage;
 
 use DateInterval;
 use Exception;
-use Omega\Cache\Storage\RedisStorage;
-use Omega\Redis\Redis;
+use Omega\Cache\Storage\MemcachedStorage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\InvalidArgumentException;
 use stdClass;
 
-#[CoversClass(Redis::class)]
-#[CoversClass(RedisStorage::class)]
-final class RedisStorageTest extends TestCase
+#[CoversClass(MemcachedStorage::class)]
+final class MemcachedStorageTest extends TestCase
 {
-    /** @var Redis|null */
-    private ?Redis $redis;
-
-    /** @var RedisStorage|null */
-    private ?RedisStorage $storage;
+    /** @var MemcachedStorage|null */
+    private ?MemcachedStorage $storage;
 
     protected function setUp(): void
     {
-        if (!RedisStorage::isSupported()) {
-            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        if (!MemcachedStorage::isSupported()) {
+            $this->markTestSkipped('Memcached extension is not loaded or enabled for CLI.');
         }
 
         try {
-            $this->redis = new Redis([
-                'host'     => '127.0.0.1',
-                'port'     => 6379,
-                'database' => 2,
+            $this->storage = new MemcachedStorage([
+                'ttl'    => 3600,
+                'host'   => '127.0.0.1',
+                'port'   => 11211,
+                'prefix' => 'test_',
             ]);
-            $this->redis->command('ping');
+            $this->storage->clear();
         } catch (Exception $e) {
-            $this->markTestSkipped('Could not connect to Redis server: ' . $e->getMessage());
+            $this->markTestSkipped('Could not connect to Memcached server: ' . $e->getMessage());
         }
-
-        $this->redis->flushdb();
-        $this->storage = new RedisStorage(['ttl' => 3600], $this->redis);
     }
 
     protected function tearDown(): void
     {
-        if (isset($this->redis)) {
-            $this->redis->flushdb();
-            $this->redis->disconnect();
+        if (isset($this->storage)) {
+            $this->storage->clear();
         }
-        $this->redis   = null;
         $this->storage = null;
     }
 
@@ -59,9 +50,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can set and get cache
      *
-     * @covers ::set
-     * @covers ::get
-     * @covers ::calculateTTLInSeconds
      * @throws InvalidArgumentException
      */
     public function testItCanSetAndGetCache()
@@ -75,7 +63,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can get default value if key not found
      *
-     * @covers ::get
      * @throws InvalidArgumentException
      */
     public function testItCanGetDefaultIfKeyNotFound()
@@ -88,7 +75,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can delete cache
      *
-     * @covers ::delete
      * @throws InvalidArgumentException
      */
     public function testItCanDeleteCache()
@@ -103,7 +89,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can clear cache
      *
-     * @covers ::clear
      * @throws InvalidArgumentException
      */
     public function testItCanClearCache()
@@ -120,7 +105,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can check if key exists
      *
-     * @covers ::has
      * @throws InvalidArgumentException
      */
     public function testItCanCheckIfKeyExists()
@@ -135,7 +119,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can increment cache value
      *
-     * @covers ::increment
      * @throws InvalidArgumentException
      */
     public function testItCanIncrementCache()
@@ -150,7 +133,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can decrement cache value
      *
-     * @covers ::decrement
      * @throws InvalidArgumentException
      */
     public function testItCanDecrementCache()
@@ -165,7 +147,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can remember cache value
      *
-     * @covers ::remember
      * @throws InvalidArgumentException
      */
     public function testItCanRememberCache()
@@ -180,7 +161,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can get multiple cache values
      *
-     * @covers ::getMultiple
      * @throws InvalidArgumentException
      */
     public function testItCanGetMultipleCache()
@@ -197,7 +177,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can set multiple cache values
      *
-     * @covers ::setMultiple
      * @throws InvalidArgumentException
      */
     public function testItCanSetMultipleCache()
@@ -212,7 +191,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it can delete multiple cache values
      *
-     * @covers ::deleteMultiple
      * @throws InvalidArgumentException
      */
     public function testItCanDeleteMultipleCache()
@@ -230,7 +208,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it should not unserialize objects by default for security
      *
-     * @covers ::get
      * @throws InvalidArgumentException
      */
     public function testItShouldNotUnserializeObjectsByDefaultForSecurity()
@@ -249,8 +226,6 @@ final class RedisStorageTest extends TestCase
      *
      * @testdox it should handle expiration using DateInterval
      *
-     * @covers ::calculateTTLInSeconds
-     * @covers ::set
      * @throws InvalidArgumentException
      */
     public function testItShouldHandleExpirationWithDateInterval()

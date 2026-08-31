@@ -24,7 +24,7 @@ use function apcu_store;
 use function array_key_exists;
 use function extension_loaded;
 
-class Apcu extends AbstractCache
+class ApcuStorage extends AbstractCache
 {
     private string $prefix = '';
 

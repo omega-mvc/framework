@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Cache\Storage;
 
 use PHPUnit\Framework\TestCase;
-use Omega\Cache\Storage\Apcu;
+use Omega\Cache\Storage\ApcuStorage;
 
 /**
  * @group apcu
@@ -14,21 +14,21 @@ use Omega\Cache\Storage\Apcu;
  */
 class ApcuStorageTest extends TestCase
 {
-    protected Apcu $storage;
+    protected ApcuStorage $storage;
 
     protected function setUp(): void
     {
-        if (!Apcu::isSupported()) {
+        if (!ApcuStorage::isSupported()) {
             $this->markTestSkipped('APCu extension is not loaded or enabled for CLI.');
         }
 
-        $this->storage = new Apcu(['ttl' => 3600, 'prefix' => 'test_']);
+        $this->storage = new ApcuStorage(['ttl' => 3600, 'prefix' => 'test_']);
         $this->storage->clear();
     }
 
     protected function tearDown(): void
     {
-        if (Apcu::isSupported()) {
+        if (ApcuStorage::isSupported()) {
             $this->storage->clear();
         }
     }

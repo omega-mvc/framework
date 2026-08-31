@@ -16,7 +16,7 @@ namespace Tests\Cache\Storage;
 
 use DateInterval;
 use DateTime;
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\MemoryStorage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -25,7 +25,7 @@ use function time;
 /**
  * Class MemoryTest
  *
- * Unit tests for the Memory cache storage implementation.
+ * Unit tests for the MemoryStorage cache storage implementation.
  *
  * @category   Tests
  * @package    Cache
@@ -36,11 +36,11 @@ use function time;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-#[CoversClass(Memory::class)]
+#[CoversClass(MemoryStorage::class)]
 final class MemoryTest extends TestCase
 {
-    /** @var Memory Memory storage instance. Used for temporary, in-memory storage operations. */
-    protected Memory $storage;
+    /** @var MemoryStorage MemoryStorage storage instance. Used for temporary, in-memory storage operations. */
+    protected MemoryStorage $storage;
 
     /**
      * Sets up the environment before each test method.
@@ -53,7 +53,7 @@ final class MemoryTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->storage = new Memory(['ttl' => 3600]);
+        $this->storage = new MemoryStorage(['ttl' => 3600]);
     }
 
     /**

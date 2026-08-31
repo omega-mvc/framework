@@ -18,8 +18,8 @@ use Omega\Cache\CacheManager;
 use Omega\Cache\CacheInterface;
 use Omega\Cache\Exceptions\CachePathException;
 use Omega\Cache\Exceptions\UnknownStorageException;
-use Omega\Cache\Storage\File;
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\FileStorage;
+use Omega\Cache\Storage\MemoryStorage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use PHPUnit\Framework\TestCase;
@@ -53,8 +53,8 @@ use function Omega\Application\slash;
  * @version   2.0.0
  */
 #[CoversClass(CacheManager::class)]
-#[CoversClass(File::class)]
-#[CoversClass(Memory::class)]
+#[CoversClass(FileStorage::class)]
+#[CoversClass(MemoryStorage::class)]
 #[CoversFunction('Omega\Application\slash')]
 final class CacheFactoryTest extends TestCase
 {
@@ -67,7 +67,7 @@ final class CacheFactoryTest extends TestCase
      */
     public function testFileFactory(): void
     {
-        $cache = new CacheManager('array1', new File(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
+        $cache = new CacheManager('array1', new FileStorage(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array1'));
 
         $this->assertTrue($cache->getDriver('array1')->set('key1', 'value1'));
@@ -82,7 +82,7 @@ final class CacheFactoryTest extends TestCase
      */
     public function testMemoryFactory(): void
     {
-        $cache = new CacheManager('array2', new Memory(['ttl' => 3_600]));
+        $cache = new CacheManager('array2', new MemoryStorage(['ttl' => 3_600]));
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array2'));
 
         $this->assertTrue($cache->getDriver('array2')->set('key1', 'value1'));

@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\RateLimiter;
 
-use Omega\Cache\Storage\Memory;
+use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\RateLimiterFactory;
 use Omega\RateLimiter\RateLimiterInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
  * correctly instantiates different rate limiter implementations based on the requested
  * strategy.
  *
- * The factory is initialized with a cache backend (in this case `Memory`), which is used
+ * The factory is initialized with a cache backend (in this case `MemoryStorage`), which is used
  * by limiters such as `FixedWindow` to track consumption state. The tests verify that:
  *
  * - `createFixedWindow()` returns a valid implementation of `RateLimiterInterface`
@@ -46,7 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  */
-#[CoversClass(Memory::class)]
+#[CoversClass(MemoryStorage::class)]
 #[CoversClass(RateLimiterFactory::class)]
 final class RateLimiterFactoryTest extends TestCase
 {
@@ -57,7 +57,7 @@ final class RateLimiterFactoryTest extends TestCase
      */
     public function testItCanCreateRateLimiter(): void
     {
-        $factory = new RateLimiterFactory(new Memory(['ttl' => 3600]));
+        $factory = new RateLimiterFactory(new MemoryStorage(['ttl' => 3600]));
 
         $this->assertInstanceOf(
             RateLimiterInterface::class,

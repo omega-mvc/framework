@@ -15,7 +15,7 @@ declare(strict_types=1);
 namespace Tests\Cache\Storage;
 
 use Omega\Cache\Exceptions\CachePathException;
-use Omega\Cache\Storage\File;
+use Omega\Cache\Storage\FileStorage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
@@ -34,13 +34,13 @@ use Tests\FixturesPathTrait;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  */
-#[CoversClass(File::class)]
+#[CoversClass(FileStorage::class)]
 final class FileTest extends TestCase
 {
     use FixturesPathTrait;
 
-    /** @var File File storage instance. Used for persistent storage operations on the filesystem. */
-    protected File $storage;
+    /** @var FileStorage File storage instance. Used for persistent storage operations on the filesystem. */
+    protected FileStorage $storage;
 
     /**
      * Sets up the environment before each test method.
@@ -54,7 +54,7 @@ final class FileTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->storage = new File(['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]);
+        $this->storage = new FileStorage(['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]);
     }
 
     /**
@@ -85,7 +85,7 @@ final class FileTest extends TestCase
      */
     public function testSetWithTtl(): void
     {
-        $storage = $this->getMockBuilder(File::class)
+        $storage = $this->getMockBuilder(FileStorage::class)
             ->setConstructorArgs([['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]])
             ->onlyMethods(['calculateExpirationTimestamp'])
             ->getMock();

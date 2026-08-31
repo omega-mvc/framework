@@ -7,7 +7,7 @@ namespace Omega\Cache\Storage;
 use Omega\Cache\AbstractCache;
 use Omega\Redis\RedisInterface;
 
-class Redis extends AbstractCache
+class RedisStorage extends AbstractCache
 {
     public function __construct(array $options, private RedisInterface $redis)
     {
@@ -123,7 +123,20 @@ class Redis extends AbstractCache
 
     public static function isSupported(): bool
     {
-        return extension_loaded('redis');
+        if (!extension_loaded('redis')) {
+            return false;
+        }
+
+        try {
+            $redis = new \Redis();
+            $redis->connect('127.0.0.1', 6379, 1.0);
+            $result = $redis->ping();
+            $redis->close();
+
+            return $result === '+PONG' || $result === 'PONG';
+        } catch (\RedisException) {
+            return false;
+        }
     }
 
     private function calculateTTLInSeconds(int|\DateInterval|null $ttl): int

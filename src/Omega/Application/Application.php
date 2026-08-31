@@ -31,6 +31,7 @@ use Omega\Http\MacroServiceProvider;
 use Omega\Http\Request;
 use Omega\Logging\LoggingServiceProvider;
 use Omega\RateLimiter\RateLimiterServiceProvider;
+use Omega\Redis\RedisServiceProvider;
 use Omega\Router\RouteServiceProvider;
 use Omega\Security\HashServiceProvider;
 use Omega\View\Templator;
@@ -76,6 +77,7 @@ class Application extends AbstractApplication implements ApplicationInterface
         ViewServiceProvider::class,
         CacheServiceProvider::class,
         RateLimiterServiceProvider::class,
+        RedisServiceProvider::class,
         MacroServiceProvider::class,
     ];
 
