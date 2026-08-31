@@ -41,7 +41,7 @@
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0",
         "phpstan/phpstan": "^2.2",
-        "phpunit/phpunit": "^13.0"
+        "pestphp/pest": "^5.1"
     },
     "autoload": {
         "psr-4": {
@@ -101,6 +101,8 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "config": {
-        "allow-plugins": {}
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
     }
 }
