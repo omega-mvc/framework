@@ -114,7 +114,11 @@ final class ApplicationManifest
      */
     private function configValues(mixed $package, string $key): array
     {
-        if (!is_array($package) || !isset($package[$key])) {
+        if (!is_array($package)) {
+            return [];
+        }
+
+        if (!isset($package[$key])) {
             return [];
         }
 
@@ -138,17 +142,17 @@ final class ApplicationManifest
             return $this->applicationManifest;
         }
 
-        if (false === file_exists($this->applicationCachePath . 'packages.php')) {
+        $cacheFile = $this->applicationCachePath . 'packages.php';
+
+        if (false === file_exists($cacheFile)) {
             $this->build();
+
+            return $this->applicationManifest = require $cacheFile;
         }
 
-        $manifest = require $this->applicationCachePath . 'packages.php';
+        $manifest = require $cacheFile;
 
-        if (!is_array($manifest)) {
-            $manifest = [];
-        }
-
-        return $this->applicationManifest = $manifest;
+        return $this->applicationManifest = is_array($manifest) ? $manifest : [];
     }
 
     /**
@@ -163,31 +167,29 @@ final class ApplicationManifest
     {
         $file = $this->basePath . $this->vendorPath . 'installed.json';
 
-        $packages = [];
-
-        if (file_exists($file)) {
-            $contents = file_get_contents($file);
-
-            if (false !== $contents) {
-                $decoded = json_decode($contents, true);
-
-                if (is_array($decoded) && isset($decoded['packages']) && is_array($decoded['packages'])) {
-                    $packages = $decoded['packages'];
-                }
-            }
-        }
+        $packages = $this->readPackages($file);
 
         $provider = array_reduce(
             $packages,
             static function (array $carry, mixed $package): array {
-                if (
-                    is_array($package)
-                    && is_string($package['name'] ?? null)
-                    && is_array($package['extra'] ?? null)
-                    && isset($package['extra']['omega-mvc'])
-                ) {
-                    $carry[$package['name']] = $package['extra']['omega-mvc'];
+                if (!is_array($package)) {
+                    return $carry;
                 }
+
+                if (!is_string($package['name'] ?? null)) {
+                    return $carry;
+                }
+
+                if (!is_array($package['extra'] ?? null)) {
+                    return $carry;
+                }
+
+                if (!isset($package['extra']['omega-mvc'])) {
+                    return $carry;
+                }
+
+                $carry[$package['name']] = $package['extra']['omega-mvc'];
+
                 return $carry;
             },
             []
@@ -197,5 +199,40 @@ final class ApplicationManifest
             $this->applicationCachePath . 'packages.php',
             '<?php return ' . var_export($provider, true) . ';' . PHP_EOL
         );
+    }
+
+    /**
+     * Read the installed packages from the composer installed.json file.
+     *
+     * @param string $file The path to the installed.json file.
+     * @return array<mixed> The decoded package list, or an empty array.
+     */
+    private function readPackages(string $file): array
+    {
+        if (!file_exists($file)) {
+            return [];
+        }
+
+        $contents = file_get_contents($file);
+
+        if (false === $contents) {
+            return [];
+        }
+
+        $decoded = json_decode($contents, true);
+
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        if (!isset($decoded['packages'])) {
+            return [];
+        }
+
+        if (!is_array($decoded['packages'])) {
+            return [];
+        }
+
+        return $decoded['packages'];
     }
 }

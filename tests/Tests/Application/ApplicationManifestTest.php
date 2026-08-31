@@ -23,12 +23,16 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Tests\FixturesPathTrait;
 
+use function chmod;
 use function file_exists;
 use function file_put_contents;
 use function is_dir;
 use function json_encode;
 use function mkdir;
 use function rmdir;
+use function restore_error_handler;
+use function set_error_handler;
+use function str_contains;
 use function unlink;
 use function var_export;
 use function Omega\Application\slash;
@@ -365,6 +369,128 @@ class ApplicationManifestTest extends TestCase
         @rmdir($tempBase . '/package/composer');
         @rmdir($tempBase . '/package');
         @rmdir($tempBase);
+        @rmdir($tempCachePath);
+    }
+
+    /**
+     * Test building filters out packages failing each validation guard.
+     *
+     * @return void
+     */
+    public function testBuildFiltersInvalidPackages(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-filters/');
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/filters-base/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        if (!is_dir($tempBase . '/package/composer/')) {
+            mkdir($tempBase . '/package/composer/', 0777, true);
+        }
+
+        file_put_contents(
+            $tempBase . '/package/composer/installed.json',
+            json_encode(['packages' => [
+                'not-an-array',
+                ['version' => '1.0'],
+                ['name' => 123],
+                ['name' => 'ok', 'version' => '1.0'],
+                ['name' => 'ok2', 'extra' => 'not-array'],
+                ['name' => 'ok3', 'extra' => ['a' => 1]],
+                ['name' => 'valid', 'extra' => ['omega-mvc' => ['providers' => ['X']]]],
+            ]])
+        );
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $applicationManifest->build();
+
+        $manifest = require $tempCachePath . 'packages.php';
+
+        $this->assertSame(['valid' => ['providers' => ['X']]], $manifest);
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @unlink($tempCachePath . 'packages.php');
+        @unlink($tempBase . '/package/composer/installed.json');
+        @rmdir($tempBase . '/package/composer');
+        @rmdir($tempBase . '/package');
+        @rmdir($tempBase);
+        @rmdir($tempCachePath);
+    }
+
+    /**
+     * Test building when the decoded packages key is not an array.
+     *
+     * @return void
+     */
+    public function testBuildWithJsonPackagesNotAnArray(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-not-array/');
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/not-array-base/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        if (!is_dir($tempBase . '/package/composer/')) {
+            mkdir($tempBase . '/package/composer/', 0777, true);
+        }
+        file_put_contents(
+            $tempBase . '/package/composer/installed.json',
+            json_encode(['packages' => 'not-an-array'])
+        );
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $applicationManifest->build();
+
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @unlink($tempCachePath . 'packages.php');
+        @unlink($tempBase . '/package/composer/installed.json');
+        @rmdir($tempBase . '/package/composer');
+        @rmdir($tempBase . '/package');
+        @rmdir($tempBase);
+        @rmdir($tempCachePath);
+    }
+
+    /**
+     * Test building when the installed.json file cannot be read.
+     *
+     * @return void
+     */
+    public function testBuildWithUnreadableInstalledJson(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-unreadable/');
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/unreadable-base/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        if (!is_dir($tempBase . '/package/composer/')) {
+            mkdir($tempBase . '/package/composer/', 0777, true);
+        }
+        file_put_contents($tempBase . '/package/composer/installed.json', '{"packages":[]}');
+        chmod($tempBase . '/package/composer/installed.json', 0000);
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+
+        set_error_handler(static function (int $severity, string $message): bool {
+            return str_contains($message, 'file_get_contents');
+        });
+
+        try {
+            $applicationManifest->build();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @chmod($tempBase . '/package/composer/installed.json', 0644);
+        @unlink($tempBase . '/package/composer/installed.json');
+        @rmdir($tempBase . '/package/composer');
+        @rmdir($tempBase . '/package');
+        @rmdir($tempBase);
+        @unlink($tempCachePath . 'packages.php');
         @rmdir($tempCachePath);
     }
 
