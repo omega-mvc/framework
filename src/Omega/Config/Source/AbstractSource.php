@@ -57,8 +57,16 @@ abstract class AbstractSource implements SourceInterface
      */
     protected function fetchContent(): string
     {
-        // phpcs:ignore WordPress
-        $fileContent = @file_get_contents($this->file);
+        if (!is_readable($this->file)) {
+            throw new FileReadException(
+                sprintf(
+                    "Failed to read configuration file: %s",
+                    $this->file
+                )
+            );
+        }
+
+        $fileContent = file_get_contents($this->file);
 
         if (false === $fileContent) {
             throw new FileReadException(
