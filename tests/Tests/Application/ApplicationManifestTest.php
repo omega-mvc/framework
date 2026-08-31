@@ -23,6 +23,14 @@ use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
 use Tests\FixturesPathTrait;
 
+use function file_exists;
+use function file_put_contents;
+use function is_dir;
+use function json_encode;
+use function mkdir;
+use function rmdir;
+use function unlink;
+use function var_export;
 use function Omega\Application\slash;
 
 /**
@@ -207,6 +215,67 @@ class ApplicationManifestTest extends TestCase
     }
 
     /**
+     * Test it filters out incomplete packages, string entries and empty values.
+     *
+     * @return void
+     */
+    public function testItFiltersIncompleteAndStringPackages(): void
+    {
+        file_put_contents(
+            $this->applicationCachePath . 'packages.php',
+            '<?php return ' . var_export([
+                'pkg_not_array' => 'plain-string',
+                'pkg_no_key'    => ['name' => 'x'],
+                'pkg_string'    => ['providers' => 'SingleProvider'],
+                'pkg_array'     => ['providers' => ['A', '', 'B']],
+            ], true) . ';'
+        );
+
+        $manifest = new ApplicationManifest($this->basePath, $this->applicationCachePath);
+
+        $this->assertSame(['SingleProvider', 'A', 'B'], $manifest->providers());
+    }
+
+    /**
+     * Test it treats a non-array cached manifest as empty.
+     *
+     * @return void
+     */
+    public function testItTreatsNonArrayManifestAsEmpty(): void
+    {
+        file_put_contents(
+            $this->applicationCachePath . 'packages.php',
+            "<?php return 'not-an-array';"
+        );
+
+        $manifest = new ApplicationManifest($this->basePath, $this->applicationCachePath);
+
+        $this->assertSame([], $manifest->providers());
+    }
+
+    /**
+     * Test collecting config values across varied package shapes.
+     *
+     * @return void
+     */
+    public function testItCollectsVariedConfigValues(): void
+    {
+        file_put_contents(
+            $this->applicationCachePath . 'packages.php',
+            '<?php return ' . var_export([
+                'pkg_object' => (object) ['providers' => ['Kept']],
+                'pkg_list'   => ['providers' => ['Keep', 5, '', 'Yes']],
+                'pkg_int'    => ['providers' => 123],
+                'pkg_empty'  => ['providers' => ''],
+            ], true) . ';'
+        );
+
+        $manifest = new ApplicationManifest($this->basePath, $this->applicationCachePath);
+
+        $this->assertSame(['Keep', 'Yes'], $manifest->providers());
+    }
+
+    /**
      * Test custom vendor path.
      *
      * @return void
@@ -235,6 +304,68 @@ class ApplicationManifestTest extends TestCase
         $reflection->setAccessible(true);
 
         $this->assertSame(slash('/vendor/composer/'), $reflection->getValue($manifest));
+    }
+
+    /**
+     * Test building when the installed.json is not a packages array.
+     *
+     * @return void
+     */
+    public function testBuildWithMalformedInstalledJson(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-malformed/');
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/malformed-base/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        if (!is_dir($tempBase . '/package/composer/')) {
+            mkdir($tempBase . '/package/composer/', 0777, true);
+        }
+        file_put_contents($tempBase . '/package/composer/installed.json', 'not-valid-json');
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $applicationManifest->build();
+
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @unlink($tempCachePath . 'packages.php');
+        @unlink($tempBase . '/package/composer/installed.json');
+        @rmdir($tempBase . '/package/composer');
+        @rmdir($tempBase . '/package');
+        @rmdir($tempBase);
+        @rmdir($tempCachePath);
+    }
+
+    /**
+     * Test building when installed.json decodes without a packages array.
+     *
+     * @return void
+     */
+    public function testBuildWithDecodedJsonMissingPackages(): void
+    {
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-malformed-2/');
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/malformed-base-2/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        if (!is_dir($tempBase . '/package/composer/')) {
+            mkdir($tempBase . '/package/composer/', 0777, true);
+        }
+        file_put_contents($tempBase . '/package/composer/installed.json', json_encode(['foo' => 'bar']));
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $applicationManifest->build();
+
+        $this->assertFileExists($tempCachePath . 'packages.php');
+
+        @unlink($tempCachePath . 'packages.php');
+        @unlink($tempBase . '/package/composer/installed.json');
+        @rmdir($tempBase . '/package/composer');
+        @rmdir($tempBase . '/package');
+        @rmdir($tempBase);
+        @rmdir($tempCachePath);
     }
 
     /**

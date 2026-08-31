@@ -14,10 +14,15 @@ declare(strict_types=1);
 
 namespace Omega\Application;
 
+use function array_filter;
+use function array_map;
 use function array_reduce;
+use function array_values;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
+use function is_array;
+use function is_string;
 use function json_decode;
 use function var_export;
 use function Omega\Application\slash;
@@ -85,29 +90,41 @@ final class ApplicationManifest
      */
     private function config(string $key): array
     {
-        $manifest = $this->getApplicationManifest();
+        $flattened = array_reduce(
+            array_map(
+                fn (mixed $package): array => $this->configValues($package, $key),
+                $this->getApplicationManifest()
+            ),
+            static fn (array $carry, array $item): array => [...$carry, ...$item],
+            []
+        );
 
-        $values = [];
+        return array_values(array_filter(
+            $flattened,
+            static fn (mixed $value): bool => is_string($value) && '' !== $value
+        ));
+    }
 
-        foreach ($manifest as $package) {
-            if (!is_array($package) || !isset($package[$key])) {
-                continue;
-            }
-
-            $entry = $package[$key];
-
-            if (is_array($entry)) {
-                foreach ($entry as $value) {
-                    if (is_string($value) && '' !== $value) {
-                        $values[] = $value;
-                    }
-                }
-            } elseif (is_string($entry) && '' !== $entry) {
-                $values[] = $entry;
-            }
+    /**
+     * Collect the configured values for a single package.
+     *
+     * @param mixed  $package The package manifest entry.
+     * @param string $key     The configuration key to collect.
+     * @return array<mixed> The raw values defined on the package for the given key.
+     */
+    private function configValues(mixed $package, string $key): array
+    {
+        if (!is_array($package) || !isset($package[$key])) {
+            return [];
         }
 
-        return $values;
+        $entry = $package[$key];
+
+        if (is_array($entry)) {
+            return $entry;
+        }
+
+        return is_string($entry) ? [$entry] : [];
     }
 
     /**

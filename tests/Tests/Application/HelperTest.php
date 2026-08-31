@@ -257,6 +257,76 @@ final class HelperTest extends TestCase
     }
 
     /**
+     * Test get path with array of string identifiers.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occurred.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testGetPathWithArrayOfIdentifiers(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
+
+        $app->set('a_path', 'a/');
+        $app->set('b_path', 'b/');
+
+        $result = get_path(['a_path', 'b_path'], 'x/');
+
+        $this->assertSame(["a/x{$ds}", "b/x{$ds}"], $result);
+    }
+
+    /**
+     * Test get path with non-string binding value.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occurred.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testGetPathWithNonStringBindingValue(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
+
+        $app->set('int_path', 42);
+
+        $result = get_path('int_path', 'suf/');
+
+        $this->assertSame("suf{$ds}", $result);
+    }
+
+    /**
+     * Test get path with non-string element inside an array value.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occurred.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testGetPathWithNonStringArrayElement(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
+
+        $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
+
+        $result = get_path('mixed_path', 'suf/');
+
+        $this->assertSame(['str' => "app/suf{$ds}", 'num' => "suf{$ds}"], $result);
+    }
+
+    /**
      * Test set path with single string.
      *
      * @return void

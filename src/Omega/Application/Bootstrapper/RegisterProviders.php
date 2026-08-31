@@ -25,6 +25,13 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 
+use function array_filter;
+use function array_map;
+use function array_values;
+use function is_array;
+use function is_string;
+use function is_subclass_of;
+
 /**
  * Handles the registration phase of the application’s service providers.
  *
@@ -62,9 +69,12 @@ class RegisterProviders
      */
     public function bootstrap(ApplicationInterface $app): void
     {
-        foreach ($this->resolveProviders($app) as $provider) {
-            $app->register($provider);
-        }
+        array_map(
+            static function (string $provider) use ($app): void {
+                $app->register($provider);
+            },
+            $this->resolveProviders($app)
+        );
     }
 
     /**
@@ -89,40 +99,78 @@ class RegisterProviders
      */
     private function resolveProviders(ApplicationInterface $app): array
     {
-        $configProviders = [];
-
-        if ($app->has('config')) {
-            $config = $app->get('config');
-
-            if ($config instanceof ConfigRepository) {
-                $configured = $config->get('providers', []);
-
-                if (is_array($configured)) {
-                    foreach ($configured as $provider) {
-                        if (is_string($provider) && is_subclass_of($provider, AbstractServiceProvider::class)) {
-                            $configProviders[] = $provider;
-                        }
-                    }
-                }
-            }
-        }
-
-        $packageProviders = [];
-
-        $manifest = $app->make(ApplicationManifest::class);
-
-        if ($manifest instanceof ApplicationManifest) {
-            foreach ($manifest->providers() as $provider) {
-                if (is_subclass_of($provider, AbstractServiceProvider::class)) {
-                    $packageProviders[] = $provider;
-                }
-            }
-        }
-
         return array_unique([
             ...$app->getCoreProviders(),
-            ...$configProviders,
-            ...$packageProviders,
+            ...$this->resolveConfigProviders($app),
+            ...$this->resolvePackageProviders($app),
         ]);
+    }
+
+    /**
+     * Resolve providers defined in the application configuration.
+     *
+     * Only provider class names that are subclasses of the abstract service
+     * provider contract are collected.
+     *
+     * @param ApplicationInterface $app The application instance used to resolve the configuration.
+     * @return array<int, class-string<AbstractServiceProvider>> The list of configuration-defined providers.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    private function resolveConfigProviders(ApplicationInterface $app): array
+    {
+        if (!$app->has('config')) {
+            return [];
+        }
+
+        $config = $app->get('config');
+
+        if (!$config instanceof ConfigRepository) {
+            return [];
+        }
+
+        $configured = $config->get('providers', []);
+
+        if (!is_array($configured)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $configured,
+            static fn (mixed $provider): bool =>
+                is_string($provider) && is_subclass_of($provider, AbstractServiceProvider::class)
+        ));
+    }
+
+    /**
+     * Resolve providers discovered through the application manifest.
+     *
+     * Only provider class names that are subclasses of the abstract service
+     * provider contract are collected.
+     *
+     * @param ApplicationInterface $app The application instance used to resolve the manifest.
+     * @return array<int, class-string<AbstractServiceProvider>> The list of package-defined providers.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws NotFoundExceptionInterface Thrown when no entry exists for the requested identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    private function resolvePackageProviders(ApplicationInterface $app): array
+    {
+        $providerList = $app->make(ApplicationManifest::class)->providers();
+
+        if (!is_array($providerList)) {
+            return [];
+        }
+
+        return array_values(array_filter(
+            $providerList,
+            static fn (mixed $provider): bool => is_subclass_of($provider, AbstractServiceProvider::class)
+        ));
     }
 }

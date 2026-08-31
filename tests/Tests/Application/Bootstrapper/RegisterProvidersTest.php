@@ -22,6 +22,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\AbstractServiceProvider;
+use Omega\Application\ApplicationManifest;
 use Omega\Application\Bootstrapper\BootProviders;
 use Omega\Application\Bootstrapper\RegisterProviders;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -152,6 +153,87 @@ final class RegisterProvidersTest extends TestCase
             $this->isProviderLoaded($app, TestRegisterServiceProvider::class),
             'The provider was not loaded correctly.'
         );
+    }
+
+    /**
+     * Test that resolving providers with no config binding yields core providers only.
+     *
+     * @return void
+     * @throws Exception if a generic error occurred
+     */
+    public function testResolveProvidersWithoutConfigBinding(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertIsArray($providers);
+        foreach ($app->getCoreProviders() as $core) {
+            $this->assertContains($core, $providers);
+        }
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    /**
+     * Test that a config binding which is not a ConfigRepository is ignored.
+     *
+     * @return void
+     * @throws Exception if a generic error occurred
+     */
+    public function testResolveConfigProvidersWithNonRepositoryConfig(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+        $app->set('config', static fn () => ['providers' => [TestRegisterServiceProvider::class]]);
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertIsArray($providers);
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    /**
+     * Test that a config 'providers' entry that is not an array is ignored.
+     *
+     * @return void
+     * @throws Exception if a generic error occurred
+     */
+    public function testResolveConfigProvidersWithNonArrayProviders(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+        $app->loadConfig(new ConfigRepository([
+            'providers' => 'not-an-array',
+        ]));
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertIsArray($providers);
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    /**
+     * Test that a package provider list that is not an array is ignored.
+     *
+     * @return void
+     * @throws Exception if a generic error occurred
+     */
+    public function testResolvePackageProvidersWithNonArrayList(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/support/'));
+        $app->set(ApplicationManifest::class, static fn () => new class {
+            public function providers(): mixed
+            {
+                return 'not-an-array';
+            }
+        });
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertIsArray($providers);
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
     }
 
     /**
