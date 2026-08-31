@@ -19,6 +19,7 @@ use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Omega\Exceptions\Bootstrapper\HandleExceptions;
 use Omega\Exceptions\ExceptionHandler;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Http;
@@ -31,6 +32,8 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
 use Throwable;
+use function restore_error_handler;
+use function restore_exception_handler;
 
 /**
  * KernelHandleExceptionTest class.
@@ -83,6 +86,8 @@ final class KernelHandleExceptionTest extends TestCase
     protected function setUp(): void
     {
         $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+
+        HandleExceptions::resetHandlersState();
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
             basePath: $this->app->get('path.base'),
@@ -154,6 +159,9 @@ final class KernelHandleExceptionTest extends TestCase
     protected function tearDown(): void
     {
         $this->app->flush();
+
+        restore_error_handler();
+        restore_exception_handler();
     }
 
     /**
