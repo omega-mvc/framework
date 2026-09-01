@@ -12,6 +12,8 @@ use Omega\View\Templator;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
+use function Omega\Application\os_detect;
+
 #[AsCommand(
     name: 'view:watch',
     description: 'Watch view files and recompile them on change',
@@ -33,6 +35,13 @@ final class ViewWatchCommand extends AbstractCommand
     {
         $this->io->info('Watching view files in ' . '<options=bold>' . $this->app->get('path.view') . '</>');
         $this->io->info('Press CTRL+C to stop watching.');
+
+        if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {
+            pcntl_async_signals(true);
+            pcntl_signal(SIGINT, function (): void {
+                $this->shouldExit = true;
+            });
+        }
 
         /** @var Templator $templator */
         $templator = $this->app[Templator::class];
