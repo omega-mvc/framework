@@ -205,13 +205,18 @@ abstract class AbstractApplication extends Container implements ApplicationInter
     {
         $this->isBootstrapped = true;
 
-        foreach ($bootstrappers as $bootstrapper) {
-            $instance = $this->make($bootstrapper);
+        array_walk(
+            $bootstrappers,
+            function (mixed $bootstrapper): void {
+                $instance = $this->make($bootstrapper);
 
-            if (is_object($instance) && method_exists($instance, 'bootstrap')) {
+                if (!is_object($instance) || !method_exists($instance, 'bootstrap')) {
+                    return;
+                }
+
                 $instance->bootstrap($this);
             }
-        }
+        );
     }
 
     /**
@@ -546,9 +551,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getApplicationCachePath(): string
     {
-        $path = get_path('path.base');
-
-        $base = rtrim(is_string($path) ? $path : '', "/\\");
+        $base = rtrim((string) get_path('path.base'), "/\\");
 
         return $base . set_path('bootstrap.cache');
     }

@@ -16,10 +16,12 @@ namespace Tests\Application;
 
 use Omega\Application\AbstractApplication;
 use Omega\Application\Application;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\View\Templator;
+use Tests\FixturesPathTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
@@ -43,6 +45,8 @@ use ReflectionException;
 #[CoversClass(AbstractApplication::class)]
 class AbstractApplicationTest extends TestCase
 {
+    use FixturesPathTrait;
+
     /**
      * Test getName returns an empty string when no name is bound.
      *
@@ -379,6 +383,121 @@ class AbstractApplicationTest extends TestCase
         $app->set('app.debug', false);
 
         $this->assertFalse($app->isDebugMode());
+
+        $app->flush();
+    }
+
+    /**
+     * Test setBaseBinding throws a logic exception when the concrete instance
+     * is not an Application.
+     *
+     * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
+     */
+    public function testSetBaseBindingThrowsWhenNotConcreteApplication(): void
+    {
+        $this->expectException(\LogicException::class);
+
+        new class ('/') extends AbstractApplication {
+            public function registerAlias(): void
+            {
+            }
+
+            public function isDownMaintenanceMode(): bool
+            {
+                return false;
+            }
+
+            public function getDownData(): array
+            {
+                return [];
+            }
+
+            public function abort(int $code, string $message = '', array $headers = []): void
+            {
+            }
+        };
+    }
+
+    /**
+     * Test bootProvider is a no-op when the application is already booted.
+     *
+     * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
+     */
+    public function testBootProviderIsNoOpWhenAlreadyBooted(): void
+    {
+        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+
+        new ConfigBootstrapper()->bootstrap($app);
+
+        $app->bootProvider();
+        $app->bootProvider();
+
+        $this->assertTrue($app->isBooted);
+
+        $app->flush();
+    }
+
+    /**
+     * Test bootstrapWith ignores non-object instances and objects without a
+     * bootstrap method.
+     *
+     * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
+     */
+    public function testBootstrapWithIgnoresNonObjectAndObjectsWithoutBootstrapMethod(): void
+    {
+        $app = new Application('/');
+
+        $app->set('plain.value', 'some-string');
+
+        ob_start();
+        $app->bootstrapWith([
+            'plain.value',
+            \stdClass::class,
+            Fixtures\TestBootstrapProvider::class,
+        ]);
+        $out = ob_get_clean();
+
+        $this->assertSame('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap', $out);
+        $this->assertTrue($app->bootstrapped);
+
+        $app->flush();
+    }
+
+    /**
+     * Test resetForRequest keeps working when the view instance is bound but is
+     * not a Templator.
+     *
+     * @return void
+     * @throws BindingResolutionException
+     * @throws CircularAliasException
+     * @throws ContainerExceptionInterface
+     * @throws EntryNotFoundException
+     * @throws ReflectionException
+     */
+    public function testResetForRequestWithNonTemplatorViewInstance(): void
+    {
+        $app = new Application('/');
+
+        $app->set('view.instance', new \stdClass());
+
+        $app->resetForRequest();
+
+        $this->assertFalse($app->isBooted);
 
         $app->flush();
     }
