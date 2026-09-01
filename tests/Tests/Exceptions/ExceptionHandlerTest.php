@@ -108,10 +108,6 @@ final class ExceptionHandlerTest extends TestCase
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
             basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
-
-
-
-
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));
@@ -343,7 +339,10 @@ final class ExceptionHandlerTest extends TestCase
         ]);
         $this->app->set(
             TemplatorFinder::class,
-            fn () => new TemplatorFinder(array_map(fn($item) => is_string($item) ? $item : '', (array) ($this->app->get('paths.view') ?? [])), ['.php', '.template.php'])
+            fn () => new TemplatorFinder(
+                array_map(fn($item) => is_string($item) ? $item : '', (array) ($this->app->get('paths.view') ?? [])),
+                ['.php', '.template.php']
+            )
         );
 
 
@@ -364,7 +363,10 @@ final class ExceptionHandlerTest extends TestCase
                     $finder = $this->app->make(TemplatorFinder::class);
                     $templator = $finder instanceof TemplatorFinder
                         ? new Templator($finder, $this->setFixturePath('/fixtures/exceptions'))
-                        : new Templator($this->setFixturePath('/fixtures/exceptions'), $this->setFixturePath('/fixtures/exceptions'));
+                        : new Templator(
+                            $this->setFixturePath('/fixtures/exceptions'),
+                            $this->setFixturePath('/fixtures/exceptions')
+                        );
                 }
                 return new Response((string) $templator->render($viewPath, $portal));
             }
@@ -387,9 +389,5 @@ final class ExceptionHandlerTest extends TestCase
 
         $content = $render->getContent();
         $this->assertTrue(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'));
-
-
-
-
     }
 }

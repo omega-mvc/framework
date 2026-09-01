@@ -246,8 +246,14 @@ final class NamespaceResolver
      * @param array<int, mixed> $tokens
      * @param string[]          $uses
      */
-    private function parseGroupedClassUse(array $tokens, int &$i, string $base, array &$uses, bool $isFunction, bool $isConst): void
-    {
+    private function parseGroupedClassUse(
+        array $tokens,
+        int &$i,
+        string $base,
+        array &$uses,
+        bool $isFunction,
+        bool $isConst
+    ): void {
         $i++;
 
         while (isset($tokens[$i])) {
@@ -263,7 +269,11 @@ final class NamespaceResolver
                         $childIsFunc = true;
                     } elseif (T_CONST === $token[0]) {
                         $childIsConst = true;
-                    } elseif (T_STRING === $token[0] || T_NS_SEPARATOR === $token[0] || T_NAME_QUALIFIED === $token[0]) {
+                    } elseif (
+                        T_STRING === $token[0]
+                        || T_NS_SEPARATOR === $token[0]
+                        || T_NAME_QUALIFIED === $token[0]
+                    ) {
                         $class .= $token[1];
                     }
                 } else {

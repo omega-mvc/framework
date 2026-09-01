@@ -32,6 +32,7 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
 use Throwable;
+
 use function restore_error_handler;
 use function restore_exception_handler;
 

@@ -181,7 +181,9 @@ class CallTest extends AbstractTestContainer
     public function testCallUnresolvableParameter(): void
     {
         $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessageIsOrContains('Unable to resolve dependency [Parameter #0 [ <required> $param ]] in callable');
+        $this->expectExceptionMessageIsOrContains(
+            'Unable to resolve dependency [Parameter #0 [ <required> $param ]] in callable'
+        );
 
         $this->container->call(function ($param) {
         });

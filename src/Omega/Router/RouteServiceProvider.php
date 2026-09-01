@@ -129,7 +129,11 @@ class RouteServiceProvider extends AbstractServiceProvider
         $expression = $route['expression'] ?? '';
         $method     = $route['method'] ?? '';
 
-        if (!is_callable($callable) || !is_string($expression) || (is_array($method) ? empty($method) : !is_string($method))) {
+        if (
+            !is_callable($callable)
+            || !is_string($expression)
+            || (is_array($method) ? empty($method) : !is_string($method))
+        ) {
             return;
         }
 

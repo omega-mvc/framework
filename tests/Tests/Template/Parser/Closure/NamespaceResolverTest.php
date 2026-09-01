@@ -151,7 +151,9 @@ namespace Tests\Template\Parser\Closure;
 use Tests\Template\Fixtures\IntersectionAInterface;
 use Tests\Template\Fixtures\IntersectionBInterface;
 
-return static function (IntersectionAInterface&IntersectionBInterface $param): IntersectionAInterface&IntersectionBInterface {
+return static function (
+    IntersectionAInterface&IntersectionBInterface $param
+): IntersectionAInterface&IntersectionBInterface {
     return new class implements IntersectionAInterface, IntersectionBInterface {};
 };
 PHP;
