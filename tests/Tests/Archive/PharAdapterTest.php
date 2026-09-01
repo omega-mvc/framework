@@ -14,7 +14,6 @@ declare(strict_types=1);
 
 namespace Tests\Archive;
 
-use Omega\Archive\Exception\PharRenameException;
 use Omega\Archive\PharAdapter;
 use Phar;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -418,7 +417,7 @@ final class PharAdapterTest extends TestCase
     {
         $adapter = new PharAdapter($this->samplePath());
 
-        $this->expectException(PharRenameException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('does not exist');
 
         $adapter->rename('missing.txt', 'renamed.txt');
@@ -433,7 +432,7 @@ final class PharAdapterTest extends TestCase
     {
         $adapter = new PharAdapter($this->samplePath());
 
-        $this->expectException(PharRenameException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('already exists');
 
         $adapter->rename('hello.txt', 'hello.txt');
@@ -466,7 +465,7 @@ final class PharAdapterTest extends TestCase
         });
 
         try {
-            $this->expectException(PharRenameException::class);
+            $this->expectException(RuntimeException::class);
             $this->expectExceptionMessage('Failed to rename');
 
             $adapter->rename('mydir', 'renamed');

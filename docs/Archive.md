@@ -42,8 +42,6 @@ Every adapter implements `Omega\Archive\AdapterInterface` and shares this surfac
 | `rename(string $sourceKey, string $targetKey): bool` | Rename a member. |
 
 All adapters throw `RuntimeException` on unsupported operations or failure conditions.
-`PharAdapter::rename()` throws `Omega\Archive\Exception\PharRenameException` for rename
-failures.
 
 ## Bz2Adapter
 
@@ -140,8 +138,8 @@ Behavior notes:
 - `read()`, `write()`, `delete()` and `mtime()` throw when the key does not exist.
 - `keys()` returns key names usable with `read()`; internally they map to
   `phar://` stream paths.
-- `rename()` cannot copy the body of a directory member; renaming a directory throws
-  `Omega\Archive\Exception\PharRenameException`.
+- `rename()` cannot copy the body of a directory member; renaming a directory throws a
+  `RuntimeException`.
 - PHAR keeps its members in memory, so the archive stays readable after the
   underlying file is deleted.
 
@@ -170,5 +168,4 @@ class BackupService
 
 - Interface: `src/Omega/Archive/AdapterInterface.php`
 - Adapters: `Bz2Adapter.php`, `ZipAdapter.php`, `PharAdapter.php`
-- Exception: `src/Omega/Archive/Exception/PharRenameException.php`
 - License: GPL-3.0+

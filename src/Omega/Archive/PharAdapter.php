@@ -17,7 +17,6 @@ namespace Omega\Archive;
 
 use Phar;
 use RuntimeException;
-use Omega\Archive\Exception\PharRenameException;
 
 use function array_keys;
 use function file_exists;
@@ -177,31 +176,30 @@ class PharAdapter implements AdapterInterface
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException
-     * @throws PharRenameException if the renaming operation fails due to file not existing, target file existing, or
-     *                             any other failure.
+     * @throws RuntimeException if the renaming operation fails due to file not existing, target file existing, or
+     *                          any other failure.
      */
     public function rename(string $sourceKey, string $targetKey): bool
     {
         if (!$this->phar->offsetExists($sourceKey)) {
-            throw new PharRenameException("Source file '$sourceKey' does not exist.");
+            throw new RuntimeException("Source file '$sourceKey' does not exist.");
         }
 
         if ($this->phar->offsetExists($targetKey)) {
-            throw new PharRenameException("Target file '$targetKey' already exists.");
+            throw new RuntimeException("Target file '$targetKey' already exists.");
         }
 
         try {
             $content = file_get_contents($this->phar[$sourceKey]->getPathname());
 
             if ($content === false) {
-                throw new PharRenameException("Failed to read content from '$sourceKey' before renaming.");
+                throw new RuntimeException("Failed to read content from '$sourceKey' before renaming.");
             }
 
             $this->phar[$targetKey] = $content;
             unset($this->phar[$sourceKey]);
         } catch (RuntimeException $e) {
-            throw new PharRenameException("Failed to rename '$sourceKey' to '$targetKey'. " . $e->getMessage(), 0, $e);
+            throw new RuntimeException("Failed to rename '$sourceKey' to '$targetKey'. " . $e->getMessage(), 0, $e);
         }
 
         return true;
