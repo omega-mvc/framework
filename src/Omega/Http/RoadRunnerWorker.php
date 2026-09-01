@@ -15,8 +15,11 @@ declare(strict_types=1);
 namespace Omega\Http;
 
 use Closure;
+use InvalidArgumentException;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Throwable;
 
 /**
@@ -51,21 +54,57 @@ class RoadRunnerWorker
     /**
      * Converts an Omega Response to a PSR-7 ResponseInterface.
      *
-     * @var Closure(Response): ResponseInterface
+     * @var Closure(Response): ResponseInterface|null
      */
-    protected Closure $responseFactory;
+    protected ?Closure $responseFactory;
+
+    /**
+     * PSR-17 factory used by the native responder.
+     *
+     * @var ResponseFactoryInterface|null
+     */
+    protected ?ResponseFactoryInterface $psr7Factory;
+
+    /**
+     * PSR-17 factory used by the native responder to build the body stream.
+     *
+     * @var StreamFactoryInterface|null
+     */
+    protected ?StreamFactoryInterface $streamFactory;
 
     /**
      * Create a new RoadRunner worker.
      *
-     * @param Http     $http            The Http kernel.
-     * @param Closure  $responseFactory Maps an Omega Response to a PSR-7 ResponseInterface.
-     *                                  The application supplies its own PSR-7 implementation.
+     * When no custom `$responseFactory` is supplied, the native
+     * {@see ResponseFactory} is used; in that case both PSR-17 factories
+     * must be provided.
+     *
+     * @param Http                          $http            The Http kernel.
+     * @param Closure|null                  $responseFactory Maps an Omega Response to a
+     *                                                       PSR-7 ResponseInterface. Optional;
+     *                                                       defaults to the native responder.
+     * @param ResponseFactoryInterface|null $psr7Factory     PSR-17 factory used when relying on
+     *                                                       the native responder.
+     * @param StreamFactoryInterface|null   $streamFactory   PSR-17 factory used when relying on
+     *                                                       the native responder.
      */
-    public function __construct(Http $http, Closure $responseFactory)
-    {
-        $this->http = $http;
+    public function __construct(
+        Http $http,
+        ?Closure $responseFactory = null,
+        ?ResponseFactoryInterface $psr7Factory = null,
+        ?StreamFactoryInterface $streamFactory = null
+    ) {
+        if ($responseFactory === null && ($psr7Factory === null || $streamFactory === null)) {
+            throw new InvalidArgumentException(
+                'When no custom responseFactory is provided, both psr7Factory and '
+                . 'streamFactory must be supplied for the native responder.'
+            );
+        }
+
+        $this->http           = $http;
         $this->responseFactory = $responseFactory;
+        $this->psr7Factory    = $psr7Factory;
+        $this->streamFactory  = $streamFactory;
     }
 
     /**
@@ -90,7 +129,7 @@ class RoadRunnerWorker
             try {
                 $omegaRequest  = $this->makeRequest($request);
                 $omegaResponse = $this->http->handle($omegaRequest);
-                $responder->respond(($this->responseFactory)($omegaResponse));
+                $responder->respond($this->toPsr7($omegaResponse));
             } catch (Throwable $th) {
                 $responder->respond($this->errorResponse($th));
             } finally {
@@ -126,6 +165,30 @@ class RoadRunnerWorker
             $content = 'Internal Server Error';
         }
 
-        return ($this->responseFactory)(new Response($content, 500));
+        return $this->toPsr7(new Response($content, 500));
+    }
+
+    /**
+     * Convert an Omega Response into a PSR-7 ResponseInterface.
+     *
+     * Uses the application-supplied closure when present, otherwise falls
+     * back to the native {@see ResponseFactory} with the PSR-17 factories.
+     *
+     * @param Response $response The Omega response to convert.
+     * @return ResponseInterface
+     */
+    protected function toPsr7(Response $response): ResponseInterface
+    {
+        if ($this->responseFactory !== null) {
+            return ($this->responseFactory)($response);
+        }
+
+        if ($this->psr7Factory === null || $this->streamFactory === null) {
+            throw new InvalidArgumentException(
+                'The native responder requires both psr7Factory and streamFactory to be set.'
+            );
+        }
+
+        return ResponseFactory::toPsr7($response, $this->psr7Factory, $this->streamFactory);
     }
 }
