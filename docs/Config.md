@@ -116,7 +116,93 @@ $config = $builder
     ->build();
 ```
 
-Call `build(MergeStrategy::MERGE_INDEXED)` to override the default merge strategy.
+Call `build(MergeStrategy::MERGE_INDEXED)` (or `MERGE_ADD_NEW`, `REPLACE_INDEXED`)
+to override the default merge strategy for the whole build.
+
+### Using merge strategies alongside sources
+
+`MergeStrategy` also drives merging into a specific section, and works with any
+repository — so you can layer configs with different semantics per source:
+
+```php
+use Omega\Config\ConfigBuilder;
+use Omega\Config\ConfigRepository;
+use Omega\Config\MergeStrategy;
+use Omega\Config\Source\ArrayConfig;
+use Omega\Config\Source\JsonConfig;
+
+$builder = new ConfigBuilder();
+
+// lower priority first; higher priority later sources win on conflicts
+$config = $builder
+    ->addConfiguration(new JsonConfig(base_path('config/defaults.json')), 'app', 10)
+    ->addConfiguration(new ArrayConfig(['debug' => true]), 'app', 50)
+    ->addConfiguration(new ArrayConfig(['cache.stores' => ['array']]), null, 100)
+    ->build(MergeStrategy::REPLACE_INDEXED);
+
+// or merge with per-section strategy on an existing repository:
+$repo = new ConfigRepository(['cache.stores' => ['file', 'redis']]);
+$repo->merge(
+    new ConfigRepository(['cache.stores' => ['array']]),
+    'cache',
+    MergeStrategy::MERGE_INDEXED
+);
+```
+
+### Note — these are public, standalone APIs
+
+The injection-based classes (`ConfigBuilder`, `MergeStrategy`, and the `Source\`
+implementations `ArrayConfig`, `JsonConfig`, `XmlConfig`) are fully public and can
+be composed by application code, but they are **not** invoked by the framework
+bootstrap. The default `ConfigBootstrapper` loads only `*.php` files from
+`path.config` (or the cached `config.php`) and merges them with
+`array_replace_recursive` — it never reads JSON/XML files or consults
+`ConfigBuilder`. Use the sources/builder directly when you need non-PHP formats,
+layered/priority merging, or a repository assembled at runtime.
+
+## ConfigSource — macro-ready API
+
+`ConfigSource` is a convenient, macroable facade-friendly entry point over
+`ConfigBuilder` and the `Source\` implementations. It lets you assemble a
+repository from array/JSON/XML sources with section grouping and priority, and
+extend it at runtime with custom formats via `Macroable`:
+
+```php
+use Omega\Config\ConfigSource;
+
+$config = (new ConfigSource())
+    ->fromArray(['debug' => true])
+    ->fromJson(base_path('config/secrets.json'), 'secrets', 50)
+    ->fromXml(base_path('config/security.xml'))
+    ->build();
+```
+
+Higher-priority sources win on conflicting keys (the default strategy is
+`REPLACE_INDEXED`; pass `MergeStrategy::MERGE_INDEXED` to `build()` to merge
+indexed arrays).
+
+Extend it with a macro for any other format (YAML, INI, ...):
+
+```php
+ConfigSource::macro('fromYaml', function (string $file, ?string $section = null): ConfigSource {
+    return $this->fromArray(yaml_parse_file($file), $section);
+});
+
+$config = ConfigSource::fromYaml(base_path('config/deploy.yml'))->build();
+```
+
+The `Config` facade resolves `ConfigSource::class` from the container, so the
+same call surface (including registered macros) is available statically —
+provided the facade has an application set:
+
+```php
+use Omega\Config\Facade\ConfigSource as ConfigSourceFacade;
+
+ConfigSourceFacade::fromJson(base_path('config/extra.json'), 'extra', 20)->build();
+```
+
+`ConfigSource::macro()`, `ConfigSource::hasMacro()` and `ConfigSource::resetMacro()`
+(delegated to `Macroable`) are available for registration and lifecycle control.
 
 ## Bootstrapping
 
@@ -144,9 +230,9 @@ does not return an array.
 ## Reference
 
 - `ConfigRepository.php`, `AbstractConfigRepository.php`, `ConfigRepositoryInterface.php`
-- `ConfigTrait.php`, `MergeStrategy.php`, `ConfigBuilder.php`
+- `ConfigTrait.php`, `MergeStrategy.php`, `ConfigBuilder.php`, `ConfigSource.php`
 - `Source/` — `SourceInterface`, `AbstractSource`, `ArrayConfig`, `JsonConfig`, `XmlConfig`
 - `Bootstrapper/ConfigBootstrapper.php`
-- Facade: `Facade/Config.php` (accessor `ConfigRepository::class`)
+- Facades: `Facade/Config.php` (accessor `ConfigRepository::class`), `Facade/ConfigSource.php` (accessor `ConfigSource::class`)
 - Exceptions: `Exceptions/`
 - License: GPL-3.0+

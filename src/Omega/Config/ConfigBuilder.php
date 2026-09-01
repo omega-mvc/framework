@@ -58,7 +58,7 @@ class ConfigBuilder
      *
      * @param SourceInterface $source   The configuration source instance.
      * @param string|null     $section  (Optional) Section to group the source under.
-     * @param int             $priority (Optional) The priority of the source (higher means processed first).
+     * @param int             $priority (Optional) The priority of the source (higher wins on conflicts).
      * @return ConfigBuilder The same instance for method chaining.
      */
     public function addConfiguration(SourceInterface $source, ?string $section = null, int $priority = 0): self
@@ -83,8 +83,9 @@ class ConfigBuilder
             $strategy = MergeStrategy::REPLACE_INDEXED;
         }
 
-        // Sort sources by priority (descending order)
-        usort($this->sources, fn($a, $b) => $b[2] <=> $a[2]);
+        // Sort sources by priority (ascending order) so that a higher priority is
+        // merged last and therefore wins on conflicting keys.
+        usort($this->sources, fn($a, $b) => $a[2] <=> $b[2]);
 
         // Reduce the sources into a single configuration object
         return array_reduce(
