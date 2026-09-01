@@ -2,7 +2,7 @@
 
 /**
  * Part of Omega MVC - Archive Package
- * php version 8.3
+ * php version 8.4
  *
  * @link        https://omegamvc.github.io
  * @author      Adriano Giovannini <agisoftt@gmail.com>
@@ -20,7 +20,6 @@ use RuntimeException;
 use Omega\Archive\Exception\PharRenameException;
 
 use function array_keys;
-use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function iterator_to_array;
@@ -74,14 +73,16 @@ class PharAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if failed to open Phar archive.
+     * @throws RuntimeException if the Phar file not exists or failed to open the archive.
      */
     public function open(string $file): void
     {
+        if (!file_exists($file)) {
+            throw new RuntimeException("The Phar file '$file' does not exist.");
+        }
+
         try {
-            $this->phar->startBuffering();
-            $this->phar->buildFromDirectory(dirname($file));
-            $this->phar->stopBuffering();
+            $this->phar = new Phar($file);
         } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to open Phar archive '$file'. " . $e->getMessage(), 0, $e);
         }
@@ -96,7 +97,7 @@ class PharAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if the key not exists in Phar archive or failed to read from the key.
+     * @throws RuntimeException if the key not exists in Phar archive.
      */
     public function read(string $key): string|bool
     {
@@ -104,25 +105,17 @@ class PharAdapter extends AbstractAdapter
             throw new RuntimeException("The key '$key' does not exist in the Phar archive.");
         }
 
-        try {
-            return file_get_contents($this->phar[$key]->getPathname());
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to read from the key '$key'. " . $e->getMessage(), 0, $e);
-        }
+        return file_get_contents($this->phar[$key]->getPathname());
     }
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if failed to write the key.
      */
     public function write(string $key, string $content): int|bool
     {
-        try {
-            $this->phar[$key] = $content;
-            return strlen($content);
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to write to the key '$key'. " . $e->getMessage(), 0, $e);
-        }
+        $this->phar[$key] = $content;
+
+        return strlen($content);
     }
 
     /**
@@ -150,15 +143,10 @@ class PharAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if failed to retrieve key from the Phar archive.
      */
     public function keys(): array
     {
-        try {
-            return array_keys(iterator_to_array($this->phar));
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to retrieve keys from the Phar archive. " . $e->getMessage(), 0, $e);
-        }
+        return array_keys(iterator_to_array($this->phar));
     }
 
     /**
@@ -176,7 +164,7 @@ class PharAdapter extends AbstractAdapter
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if the key not exists or failed to retrieve the modification time for the key.
+     * @throws RuntimeException if the key not exists.
      */
     public function mtime(string $key): int|bool
     {
@@ -184,11 +172,7 @@ class PharAdapter extends AbstractAdapter
             throw new RuntimeException("The key '$key' does not exist.");
         }
 
-        try {
-            return $this->phar[$key]->getMTime();
-        } catch (RuntimeException $e) {
-            throw new RuntimeException("Failed to retrieve modification time for '$key'. " . $e->getMessage(), 0, $e);
-        }
+        return $this->phar[$key]->getMTime();
     }
 
     /**
@@ -215,7 +199,7 @@ class PharAdapter extends AbstractAdapter
             }
 
             $this->phar[$targetKey] = $content;
-            //unset($this->phar[$sourceKey]);
+            unset($this->phar[$sourceKey]);
         } catch (RuntimeException $e) {
             throw new PharRenameException("Failed to rename '$sourceKey' to '$targetKey'. " . $e->getMessage(), 0, $e);
         }

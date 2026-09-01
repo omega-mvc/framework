@@ -2,7 +2,7 @@
 
 /**
  * Part of Omega MVC - Archive Package
- * php version 8.3
+ * php version 8.4
  *
  * @link        https://omegamvc.github.io
  * @author      Adriano Giovannini <agisoftt@gmail.com>
@@ -19,6 +19,7 @@ use RuntimeException;
 
 use function bzcompress;
 use function bzdecompress;
+use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function filemtime;
@@ -98,26 +99,22 @@ class Bz2Adapter extends AbstractAdapter
 
         $content = @bzdecompress($fileContent);
 
-        return ($content !== false && is_string($content)) ? $content : false;
+        return is_string($content) ? $content : false;
     }
 
     /**
      * {@inheritdoc}
-     * @throws RuntimeException if compression fails or if the file cannot be written.
+     * @throws RuntimeException if the file cannot be written.
      */
     public function write(string $key, string $content): int|bool
     {
         $compressedContent = bzcompress($content);
 
-        if (!is_string($compressedContent) || $compressedContent === '') {
-            throw new RuntimeException(sprintf("Failed to compress content for %s.", $this->bz2File));
-        }
-
         if (file_put_contents($this->bz2File, $compressedContent) === false) {
             throw new RuntimeException(sprintf("Failed to write to the file %s.", $this->bz2File));
         }
 
-        return strlen($compressedContent);
+        return strlen((string) $compressedContent);
     }
 
     /**
