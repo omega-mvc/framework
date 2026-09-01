@@ -16,11 +16,13 @@ namespace Omega\Application;
 
 use function array_filter;
 use function array_map;
+use function array_merge;
 use function array_reduce;
 use function array_values;
 use function file_exists;
 use function file_get_contents;
 use function file_put_contents;
+use function glob;
 use function is_array;
 use function is_string;
 use function json_decode;
@@ -156,18 +158,20 @@ final class ApplicationManifest
     /**
      * Build the package manifest cache from installed Composer packages.
      *
-     * Scans the composer installed.json file, extracts 'omega-mvc' extra data,
-     * and writes a cached PHP file for future access.
+     * Scans the composer installed.json file and the omega-mvc vendor directory,
+     * extracts 'omega-mvc' extra data, and writes a cached PHP file for future
+     * access.
      *
      * @return array<mixed> The built package manifest.
      */
     public function build(): array
     {
-        $file = $this->basePath . $this->vendorPath . 'installed.json';
+        $provider = $this->scanOmegaMvcPackages();
 
+        $file     = $this->basePath . $this->vendorPath . 'installed.json';
         $packages = $this->readPackages($file);
 
-        $provider = array_reduce(
+        $installed = array_reduce(
             $packages,
             static function (array $carry, mixed $package): array {
                 if (!is_array($package)) {
@@ -193,10 +197,58 @@ final class ApplicationManifest
             []
         );
 
+        $result = array_merge($provider, $installed);
+
+        $this->applicationManifest = $result;
+
         file_put_contents(
             $this->applicationCachePath . 'packages.php',
-            '<?php return ' . var_export($provider, true) . ';' . PHP_EOL
+            '<?php return ' . var_export($result, true) . ';' . PHP_EOL
         );
+
+        return $result;
+    }
+
+    /**
+     * Scan the omega-mvc vendor directory for packages exposing 'omega-mvc' extra data.
+     *
+     * Looks for a composer.json file in every subdirectory of the
+     * vendor/omega-mvc directory and collects the 'omega-mvc' extra data
+     * defined by each package.
+     *
+     * @return array<mixed> The collected package manifest entries.
+     */
+    private function scanOmegaMvcPackages(): array
+    {
+        $provider = [];
+
+        foreach (glob($this->basePath . '/vendor/omega-mvc/*/composer.json') ?: [] as $file) {
+            $contents = file_get_contents($file);
+
+            if (false === $contents) {
+                continue;
+            }
+
+            $composer = json_decode($contents, true);
+
+            if (!is_array($composer)) {
+                continue;
+            }
+
+            if (!is_string($composer['name'] ?? null)) {
+                continue;
+            }
+
+            if (!is_array($composer['extra'] ?? null)) {
+                continue;
+            }
+
+            if (!isset($composer['extra']['omega-mvc'])) {
+                continue;
+            }
+
+            $provider[$composer['name']] = $composer['extra']['omega-mvc'];
+        }
 
         return $provider;
     }

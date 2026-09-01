@@ -6,6 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Omega\Application\ApplicationManifest;
 use Throwable;
 
@@ -15,6 +16,8 @@ use Throwable;
 )]
 final class PackageDiscoverCommand extends AbstractCommand
 {
+    use InteractsWithConsoleOutputTrait;
+
     /**
      * @return int Exit code
      */
@@ -37,13 +40,10 @@ final class PackageDiscoverCommand extends AbstractCommand
             }
 
             foreach (array_keys($packages) as $name) {
-                $dots = str_repeat('.', max(2, 50 - strlen($name)));
+                $left  = '<fg=white>' . $name . '</>';
+                $right = '<fg=green>DONE</>';
 
-                $this->io->text(sprintf(
-                    ' <info>%s</info> <fg=gray>%s</> <fg=green>DONE</>',
-                    $name,
-                    $dots
-                ));
+                $this->componentsTwoColumns($left, $right, 2, 50);
             }
 
             $this->io->newLine();
