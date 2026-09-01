@@ -169,7 +169,6 @@ class BackupService
 ## Reference
 
 - Interface: `src/Omega/Archive/AdapterInterface.php`
-- Base class: `src/Omega/Archive/AbstractAdapter.php`
 - Adapters: `Bz2Adapter.php`, `ZipAdapter.php`, `PharAdapter.php`
 - Exception: `src/Omega/Archive/Exception/PharRenameException.php`
 - License: GPL-3.0+
