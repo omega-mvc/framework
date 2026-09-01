@@ -162,15 +162,17 @@ class RegisterProviders
      */
     private function resolvePackageProviders(ApplicationInterface $app): array
     {
-        $providerList = $app->make(ApplicationManifest::class)->providers();
+        $manifest = $app->make(ApplicationManifest::class);
 
-        if (!is_array($providerList)) {
+        if (!$manifest instanceof ApplicationManifest) {
             return [];
         }
 
+        $providerList = $manifest->providers();
+
         return array_values(array_filter(
             $providerList,
-            static fn (mixed $provider): bool => is_subclass_of($provider, AbstractServiceProvider::class)
+            static fn (string $provider): bool => is_subclass_of($provider, AbstractServiceProvider::class)
         ));
     }
 }

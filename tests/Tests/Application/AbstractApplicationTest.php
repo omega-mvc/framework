@@ -462,11 +462,11 @@ class AbstractApplicationTest extends TestCase
     {
         $app = new Application('/');
 
-        $app->set('plain.value', 'some-string');
+        $app->set(\ArrayObject::class, 'scalar-value');
 
         ob_start();
         $app->bootstrapWith([
-            'plain.value',
+            \ArrayObject::class,
             \stdClass::class,
             Fixtures\TestBootstrapProvider::class,
         ]);

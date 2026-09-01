@@ -145,9 +145,7 @@ final class ApplicationManifest
         $cacheFile = $this->applicationCachePath . 'packages.php';
 
         if (false === file_exists($cacheFile)) {
-            $this->build();
-
-            return $this->applicationManifest = require $cacheFile;
+            return $this->applicationManifest = $this->build();
         }
 
         $manifest = require $cacheFile;
@@ -161,9 +159,9 @@ final class ApplicationManifest
      * Scans the composer installed.json file, extracts 'omega-mvc' extra data,
      * and writes a cached PHP file for future access.
      *
-     * @return void
+     * @return array<mixed> The built package manifest.
      */
-    public function build(): void
+    public function build(): array
     {
         $file = $this->basePath . $this->vendorPath . 'installed.json';
 
@@ -199,6 +197,8 @@ final class ApplicationManifest
             $this->applicationCachePath . 'packages.php',
             '<?php return ' . var_export($provider, true) . ';' . PHP_EOL
         );
+
+        return $provider;
     }
 
     /**

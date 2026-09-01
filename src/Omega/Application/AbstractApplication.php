@@ -551,7 +551,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
      */
     public function getApplicationCachePath(): string
     {
-        $base = rtrim((string) get_path('path.base'), "/\\");
+        $base = rtrim($this->basePath, "/\\");
 
         return $base . set_path('bootstrap.cache');
     }

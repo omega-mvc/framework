@@ -327,6 +327,28 @@ final class HelperTest extends TestCase
     }
 
     /**
+     * Test get path with an array of identifiers containing an array value binding.
+     *
+     * @return void
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws Exception Throw when a generic error occurred.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function testGetPathWithArrayIdentifierContainingArrayValue(): void
+    {
+        $app = new Application(__DIR__);
+
+        $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
+
+        $result = get_path(['mixed_path'], 'suf/');
+
+        $this->assertSame([''], $result);
+    }
+
+    /**
      * Test set path with single string.
      *
      * @return void

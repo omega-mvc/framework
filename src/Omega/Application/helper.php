@@ -94,7 +94,9 @@ function get_path(array|string $id, string $suffix_path = ''): array|string
 {
     if (is_array($id)) {
         return array_map(
-            static fn (array|string $single): string => (string) get_path($single, $suffix_path),
+            static fn (array|string $single): string => is_string($path = get_path($single, $suffix_path))
+                ? $path
+                : '',
             $id
         );
     }
