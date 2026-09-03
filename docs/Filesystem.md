@@ -31,7 +31,6 @@ For a config-driven multi-driver setup, use `FilesystemMap`:
 use Omega\Filesystem\Filesystem;
 use Omega\Filesystem\FilesystemMap;
 use Omega\Filesystem\Adapter\Local\Local;
-use Omega\Filesystem\Factory\FilesystemFactory;
 
 $map = new FilesystemMap();
 $map->set('local', new Filesystem(new Local('/var/www/storage')));
@@ -51,7 +50,7 @@ $map->clear();
 
 ```php
 $fs->has('uploads/photo.jpg');              // bool
-$fs->read('config/app.php');                // string|null
+$fs->read('config/app.php');                // string (throws RuntimeException if unreadable)
 $fs->write('logs/run.log', "line\n");       // int bytes (throws if exists & !$overwrite)
 $fs->write('logs/run.log', "line\n", true); // overwrite allowed
 $fs->rename('tmp/a.txt', 'final/a.txt');    // bool (target must NOT exist)
@@ -157,7 +156,7 @@ Invalid URLs throw `InvalidArgumentException('The specified path (%s) is invalid
 | `Adapter\Local\Local` | — | `(string $directory, bool $create = false, int $mode = 0777)` |
 | `Adapter\Sftp\Sftp` | `phpseclib/phpseclib` | `(SecLibSFTP $sftp, ?string $directory = null, bool $create = false)` |
 | `Adapter\Ftp\Ftp` | `ext-ftp` | `(array $config)` — `host`/`username`/`password`/`port`(21)/`passive`/`create`/`mode`/`ssl`/`timeout`(90)/`utf8`/`directory` |
-| `Adapter\Amazon\AwsS3` | `aws/aws-sdk-php` | `(array $config)` — `bucket`+`key`+`secret` (+`region` default `us-west-2`, `token`, `detectContentType`, `options['create'|'directory'|'acl'='private']`) |
+| `Adapter\Amazon\AwsS3` | `aws/aws-sdk-php` | `(array $config)` — `bucket`+`key`+`secret` (+`region` default `us-west-2`, `token`, `detectContentType`, `create`, `directory`, `acl`, `options`) |
 | `Adapter\Amazon\AsyncAwsS3` | `async-aws/simple-s3` | same as `AwsS3` |
 | `Adapter\Memory\InMemory` | — | `(array $files = [])` — value `string` or `['content'=>..,'mtime'=>int]`; `setFiles()`/`setFile()` |
 
@@ -183,16 +182,6 @@ base directory throw `OutOfBoundsException('The path "%s" is out of the filesyst
 It auto-creates parent directories on write/rename. `computeKey(string $absolutePath)`
 returns the relative key for an absolute path.
 
-## Factory
-
-`FilesystemFactory` is **legacy code**: it implements `FilesystemFactoryInterface`,
-whose `extends Omega\Container\Contracts\Factory\GenericFactoryInterface` references
-an interface that does **not exist anywhere** in `src/` — loading the interface or
-the factory fatals. The class body (a `match` on `type` returning `local`/`s3`/
-`asyncs3`/`ftp` adapters via `UnsupportedAdapterException` for missing/unknown
-types, with `'local'` taking `$config['path']`) is copied from an old session
-driver factory (see its docblock). Do not use it; construct adapters directly.
-
 ## Utility classes
 
 - `Util\Path` (static): `normalize($path)` (backslash → slash, resolves `.`/`..`),
@@ -215,11 +204,13 @@ S3 remaps `contentType` → `ContentType`), `SizeCalculatorInterface`, `ListKeys
 
 ## AppServiceProviderTrait
 
-The package ships its own `AppServiceProviderTrait` (mirrors the one in
-`Omega\Container`; composer publishes via the same module registry):
+This package used to ship its own `Omega\Filesystem\AppServiceProviderTrait`, but
+that copy was removed: it was an outdated duplicate of the one in
+`Omega\Container` (missing `is_readable` checks in `fileWrite`/`importDir`). Use
+`Omega\Container\AppServiceProviderTrait` instead:
 
 ```php
-use Omega\Filesystem\AppServiceProviderTrait;
+use Omega\Container\AppServiceProviderTrait;
 
 final class MyProvider extends AbstractServiceProvider
 {
@@ -249,29 +240,39 @@ Everything under `Omega\Filesystem\Exception` implements `ExceptionInterface`:
 | `FileNotFoundException` | `RuntimeException` | Operation expects a file that is missing (`The file "%s" was not found.`) |
 | `FileAlreadyExistsException` | `RuntimeException` | `write()` with `$overwrite = false` on an existing file |
 | `UnexpectedFileExcption` (sic, class name typo in source) | `RuntimeException` | `rename()` target already exists (`was not supposed to exist`) |
-| `UnsupportedAdapterException` | `InvalidArgumentException` | Factory `create()` with missing/unknown `type` |
 | `+ LogicException` | | MIME type requested from an adapter without support |
 | `+ OutOfBoundsException` | | Local adapter path escaping its base directory |
 
 ## Notes
 
-- **No tests** exist for this package (`tests/Tests/Filesystem/` is absent) even
-  though the rest of the framework is fully covered; gaps above were inferred from
-  source.
-- **The container binding is broken as shipped.** `FilesystemServiceProvider`
-  implements `ServiceProviderInterface` (method `bind(Application $app)`) and
-  calls `$app->alias('filesystem', function () {...})`, but `Container::alias()`
-  only accepts `string` aliases; the `Config` facade it imports
-  (`Omega\Support\Facade\Facades\Config`) does not exist; and the provider is
-  **not** registered in `Omega\Application\Application::$providers`. Treat
-  `app('filesystem')` as unavailable and construct `Filesystem` directly.
-- **The Factory is equally legacy.** `FilesystemFactoryInterface` extends a
-  non-existent `Omega\Container\Contracts\Factory\GenericFactoryInterface`, so it
-  cannot even be type-loaded; build adapters with `new Local(...)` etc. instead.
+- The `UnsupportedAdapterException` still exists under `Omega\Filesystem\Exception`,
+  but it is **unused** — it was only referenced by the legacy `FilesystemFactory`
+  (see below), which has been removed.
+- **The container binding is no longer shipped.** The legacy `FilesystemServiceProvider`
+  (which implemented a non-existent `ServiceProviderInterface` and called
+  `$app->alias('filesystem', Closure)`, importing a non-existent
+  `Omega\Support\Facade\Facades\Config` facade) was removed. Treat `app('filesystem')`
+  as unavailable and construct `Filesystem` directly.
+- **The Factory is gone.** `FilesystemFactory`/`FilesystemFactoryInterface` were
+  deleted — they referenced a non-existent `Omega\Container\Contracts\Factory\GenericFactoryInterface`
+  and the old `Omega\Support\...` facade. Build adapters with `new Local(...)` etc.
+  directly.
+- **Tests exist now.** `tests/Tests/Filesystem/` covers the whole package (181 Pest
+  tests targeting 100% line/branch/path coverage): `Filesystem`, `File`,
+  `FilesystemMap`, the `Local` and `InMemory` adapters, `StreamMode`/`Local`/
+  `InMemoryBuffer`, and the `Util` helpers. FTP, SFTP and the Amazon S3 adapters
+  are not covered (they require external services / package SDKs).
 - Helper file: none. Facade: none. Register `filesystem`-specific config via the
-  standard `config/filesystem.php` if the factory is driven from config.
-- Source typos to be aware of: class `UnexpectedFileExcption`, and the import
-  `Omega\Filesystem\Uti\Path` in `Stream\Local`.
+  standard `config/filesystem.php`.
+- Source typo to be aware of: class `UnexpectedFileExcption` (missing 'e' in
+  "Exception"). The former `Omega\Filesystem\Uti\Path` typo in `Stream\Local` has
+  been fixed to `Util\Path`.
+- The `Path::normalize()` helper is a pure string resolver (no filesystem I/O): it
+  replaces backslashes, resolves `.`/`..` segments and collapses duplicate slashes;
+  `getAbsolutePrefix()` recognizes drive letters (e.g. `c:`) with optional slashes;
+  `dirname()` normalizes backslashes before delegating to PHP's `dirname()`.
+- `InMemory::read()` returns `false` for keys that do not exist (was `null`), and
+  `InMemory::delete()` always returns `true`.
 
 ## Reference
 
@@ -279,6 +280,5 @@ Everything under `Omega\Filesystem\Exception` implements `ExceptionInterface`:
 - `FilesystemMap.php`, `FilesystemMapInterface.php`
 - `Adapter/` (`FilesystemAdapterInterface`, `Local`, `Sftp`, `Ftp`, `Amazon/AwsS3`,
   `Amazon/AsyncAwsS3`, `Memory/InMemory`)
-- `Contracts/`, `Factory/`, `ServiceProvider/`, `Stream/`, `Util/`
-- `Exception/`, `AppServiceProviderTrait.php`
+- `Contracts/`, `Stream/`, `Util/`, `Exception/`
 - License: GPL-3.0+

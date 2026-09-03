@@ -124,7 +124,7 @@ class InMemory implements
      */
     public function read(string $key): string|false
     {
-        return $this->files[$key]['content'];
+        return $this->files[$key]['content'] ?? false;
     }
 
     /**

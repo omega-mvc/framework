@@ -15,11 +15,12 @@ declare(strict_types=1);
 
 namespace Omega\Filesystem\Util;
 
-use function array_diff;
+use function array_pop;
+use function count;
 use function dirname;
+use function explode;
 use function implode;
 use function preg_match;
-use function scandir;
 use function strlen;
 use function str_replace;
 use function strtolower;
@@ -58,11 +59,25 @@ class Path
     {
         $path = str_replace('\\', '/', $path);
         $prefix = static::getAbsolutePrefix($path);
-        $path = substr($path, strlen($prefix));
+        $relativePath = substr($path, strlen($prefix));
+
+        $parts = explode('/', $relativePath);
         $tokens = [];
 
-        foreach (array_diff(scandir($path), ['.', '..']) as $entry) {
-            $tokens[] = $entry;
+        foreach ($parts as $part) {
+            if ('' === $part || '.' === $part) {
+                continue;
+            }
+
+            if ('..' === $part) {
+                if (count($tokens) > 0) {
+                    array_pop($tokens);
+                }
+
+                continue;
+            }
+
+            $tokens[] = $part;
         }
 
         return $prefix . implode('/', $tokens);
@@ -93,7 +108,7 @@ class Path
      */
     public static function getAbsolutePrefix(string $path): string
     {
-        preg_match('|^(?P<prefix>([a-zA-Z]+:)?//?)|', $path, $matches);
+        preg_match('|^(?P<prefix>([a-zA-Z]+:)?(//?)?)|', $path, $matches);
 
         if (empty($matches['prefix'])) {
             return '';
@@ -114,6 +129,6 @@ class Path
      */
     public static function dirname(string $path): string
     {
-        return str_replace('\\', '/', dirname($path));
+        return dirname(str_replace('\\', '/', $path));
     }
 }
