@@ -119,7 +119,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         array_walk(
             $definitions,
-            fn ($value, $key) => $this->set($key, $value)
+            fn (mixed $value, string $key) => $this->set($key, $value)
         );
     }
 
@@ -237,10 +237,10 @@ abstract class AbstractApplication extends Container implements ApplicationInter
 
         $providers = array_filter(
             $this->getCoreProviders(),
-            fn ($provider) => ! in_array($provider, $this->bootedProviders, true)
+            fn (string $provider) => ! in_array($provider, $this->bootedProviders, true)
         );
 
-        array_walk($providers, function ($provider) {
+        array_walk($providers, function (string $provider) {
             $this->call([$provider, 'boot']);
             $this->bootedProviders[] = $provider;
         });
@@ -508,7 +508,7 @@ abstract class AbstractApplication extends Container implements ApplicationInter
             'path.compiled_view_path' => $this->basePath . set_path('storage.app.view'),
             'path.database'           => $this->basePath . set_path('database'),
             'paths.view'              => array_map(
-                fn ($p) => $this->basePath . $p,
+                fn (string $p) => $this->basePath . $p,
                 [set_path('resources.views')]
             ),
         ];
