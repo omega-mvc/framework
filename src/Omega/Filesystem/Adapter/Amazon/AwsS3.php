@@ -21,10 +21,9 @@ use RuntimeException;
 use Aws\S3\S3Client;
 use Omega\Filesystem\Util\Size;
 
-use function array_key_exists;
+use function array_merge;
 use function count;
 use function is_array;
-use function is_resource;
 use function rtrim;
 use function sprintf;
 use function strtotime;
@@ -34,6 +33,8 @@ use function strtotime;
  *
  * This class implements the necessary methods to interact with
  * Amazon S3.
+ *
+ * @extends AbstractAmazonS3<\Aws\S3\S3Client>
  *
  * @category    Omega
  * @package     Filesystem
@@ -47,10 +48,15 @@ use function strtotime;
 class AwsS3 extends AbstractAmazonS3
 {
     /**
-     * Initializes the AsyncAwsS3 adapter with the provided configuration.
+     * Initializes the AWS S3 adapter with the provided configuration.
      *
-     * @param array $config Configuration options for connecting to S3.
-     *                      Must include 'bucket', 'key', and 'secret'.
+     * @param array{bucket: string, key: string, secret: string,
+     *     region?: string, token?: string|null,
+     *     detectContentType?: bool, create?: bool,
+     *     directory?: string, acl?: string,
+     *     options?: array<string, mixed>} $config
+     *     Configuration options for connecting to S3.
+     *     Must include 'bucket', 'key', and 'secret'.
      */
     public function __construct(array $config)
     {
@@ -76,20 +82,22 @@ class AwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
         $this->ensureBucketExists();
         $options = $this->getOptions($key);
 
         try {
             $object = $this->service->getObject($options);
-            if (!array_key_exists($key, $this->content) || !is_array($this->content[$key])) {
-                $this->content[$key] = [];
-            }
-
             $this->content[$key]['ContentType'] = $object->get('ContentType');
 
-            return (string) $object->get('Body');
+            $body = $object->get('Body');
+
+            if (!is_string($body)) {
+                return false;
+            }
+
+            return $body;
         } catch (Exception) {
             return false;
         }
@@ -98,7 +106,7 @@ class AwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function write(string $key, string $content): int|bool
+    public function write(string $key, string $content): int|false
     {
         $this->ensureBucketExists();
         $options = $this->getOptions($key, ['Body' => $content]);
@@ -113,10 +121,6 @@ class AwsS3 extends AbstractAmazonS3
 
         try {
             $this->service->putObject($options);
-
-            if (is_resource($content)) {
-                return Size::fromResource($content);
-            }
 
             return Size::fromContent($content);
         } catch (Exception) {
@@ -135,12 +139,18 @@ class AwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         try {
             $result = $this->service->headObject($this->getOptions($key));
 
-            return strtotime($result['LastModified']);
+            $lastModified = $result['LastModified'] ?? null;
+
+            if (!is_string($lastModified)) {
+                return false;
+            }
+
+            return strtotime($lastModified);
         } catch (Exception) {
             return false;
         }
@@ -154,7 +164,13 @@ class AwsS3 extends AbstractAmazonS3
         try {
             $result = $this->service->headObject($this->getOptions($key));
 
-            return $result['ContentLength'];
+            $contentLength = $result['ContentLength'] ?? null;
+
+            if (!is_int($contentLength)) {
+                return false;
+            }
+
+            return $contentLength;
         } catch (Exception) {
             return false;
         }
@@ -177,10 +193,17 @@ class AwsS3 extends AbstractAmazonS3
         $keys = [];
         $iter = $this->service->getIterator('ListObjects', $options);
         foreach ($iter as $file) {
-            $keys[] = $this->computeKey($file['Key']);
+            if (!$file instanceof \ArrayAccess) {
+                continue;
+            }
+
+            $key = $file['Key'] ?? null;
+            if (is_string($key)) {
+                $keys[] = $this->computeKey($key);
+            }
         }
 
-        return $keys;
+        return ['keys' => $keys, 'dirs' => []];
     }
 
     /**
@@ -241,7 +264,48 @@ class AwsS3 extends AbstractAmazonS3
         try {
             $result = $this->service->headObject($this->getOptions($key));
 
-            return $result['ContentType'];
+            $contentType = $result['ContentType'] ?? null;
+
+            if (!is_string($contentType)) {
+                return false;
+            }
+
+            return $contentType;
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rename(string $sourceKey, string $targetKey): bool
+    {
+        $this->ensureBucketExists();
+
+        $options = $this->getOptions(
+            $targetKey,
+            ['CopySource' => $this->bucket . '/' . $this->computePath($sourceKey)]
+        );
+
+        try {
+            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey)));
+
+            return $this->delete($sourceKey);
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete(string $key): bool
+    {
+        try {
+            $this->service->deleteObject($this->getOptions($key));
+
+            return true;
         } catch (Exception) {
             return false;
         }

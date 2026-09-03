@@ -17,6 +17,7 @@ namespace Omega\Filesystem;
 
 use InvalidArgumentException;
 use RuntimeException;
+use Omega\Filesystem\Adapter\FilesystemAdapterInterface;
 use Omega\Filesystem\Exception\FileAlreadyExistsException;
 use Omega\Filesystem\Exception\FileNotFoundException;
 use Omega\Filesystem\Exception\UnexpectedFileExcption;
@@ -44,6 +45,16 @@ use Omega\Filesystem\Stream\StreamInterface;
  */
 interface FilesystemInterface
 {
+    /**
+     * Returns the adapter instance associated with the filesystem.
+     *
+     * This method allows access to the underlying adapter, enabling
+     * direct interaction with the storage backend if needed.
+     *
+     * @return FilesystemAdapterInterface The adapter used by the filesystem.
+     */
+    public function getAdapter(): FilesystemAdapterInterface;
+
     /**
      * Check if a file exists in the filesystem.
      *
@@ -119,7 +130,7 @@ interface FilesystemInterface
     /**
      * Retrieve an array of all file keys in the filesystem.
      *
-     * @return array An array of file keys.
+     * @return array<string> An array of file keys.
      */
     public function keys(): array;
 
@@ -131,7 +142,7 @@ interface FilesystemInterface
      * retrieved and filtered.
      *
      * @param string $prefix The prefix to filter keys.
-     * @return array An array of file keys matching the prefix.
+     * @return array{keys: array<string>, dirs: array<string>} A structured list of keys and directories.
      */
     public function listKeys(string $prefix = ''): array;
 

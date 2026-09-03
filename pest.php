@@ -18,11 +18,5 @@ coverage()
     ->html('cache/coverage-report')
     ->minimum(80);
 
-// Test environment variables
-dataset('env', [
-    'APP_ENV' => 'testing',
-    'OMEGA_TEST_MODE' => 'light',
-]);
-
 // Parallel testing (requires pestphp/pest-parallel plugin)
 // uses()->parallel();

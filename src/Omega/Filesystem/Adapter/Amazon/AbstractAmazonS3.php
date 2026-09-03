@@ -15,7 +15,6 @@ declare(strict_types=1);
 
 namespace Omega\Filesystem\Adapter\Amazon;
 
-use Exception;
 use finfo;
 use LogicException;
 use RuntimeException;
@@ -26,10 +25,9 @@ use Omega\Filesystem\Contracts\MimeTypeProviderInterface;
 use Omega\Filesystem\Contracts\SizeCalculatorInterface;
 
 use function array_merge;
-use function is_resource;
+use function is_string;
 use function ltrim;
 use function sprintf;
-use function stream_get_meta_data;
 use function strlen;
 use function substr;
 
@@ -41,6 +39,8 @@ use function substr;
  * deleting, and renaming files. It also supports metadata management, size calculation,
  * mime type detection, and listing keys. Specific functionality, such as the S3 client
  * creation, is left to the implementing classes.
+ *
+ * @template TService of object
  *
  * @category   Omega
  * @package    Filesystem
@@ -61,7 +61,7 @@ abstract class AbstractAmazonS3 implements
     /**
      * The S3 service client.
      *
-     * @var object Holds the S3 service client.
+     * @var TService Holds the S3 service client.
      */
     protected object $service;
 
@@ -75,21 +75,21 @@ abstract class AbstractAmazonS3 implements
     /**
      * Options for the S3 adapter
      *
-     * @var array Holds the options for the S3 adapter.
+     * @var array<string, mixed> Holds the options for the S3 adapter.
      */
-    protected array $options;
+    protected array $options = [];
 
     /**
      * Indicates whether the bucket exists.
      *
      *  @var bool Indicates whether the bucket exists.
      */
-    protected bool $bucketExists;
+    protected bool $bucketExists = false;
 
     /**
      * Metadata content.
      *
-     * @var array Holds the metadata array content.
+     * @var array<string, array<string, mixed>> Holds the metadata array content.
      */
     protected array $content = [];
 
@@ -107,7 +107,18 @@ abstract class AbstractAmazonS3 implements
      * credentials, and optional settings. Throws an exception if the required config
      * parameters are missing.
      *
-     * @param array $config The configuration array with bucket, key, secret, and other options.
+     * @param array{
+     *   bucket: string,
+     *   key: string,
+     *   secret: string,
+     *   region?: string,
+     *   token?: string|null,
+     *   detectContentType?: bool,
+     *   create?: bool,
+     *   directory?: string,
+     *   acl?: string,
+     *   options?: array<string, mixed>,
+     * } $config The configuration array with bucket, key, secret, and other options.
      * @return void
      * @throws LogicException If the configuration lacks required parameters.
      */
@@ -126,14 +137,9 @@ abstract class AbstractAmazonS3 implements
 
         $this->service = $this->createClient($config);
 
-        $this->options = array_replace(
-            [
-                'create'    => false,
-                'directory' => '',
-                'acl'       => 'private',
-            ],
-            $config['options'] ?? []
-        );
+        foreach ($config['options'] ?? [] as $name => $value) {
+            $this->options[$name] = $value;
+        }
     }
 
     /**
@@ -160,51 +166,19 @@ abstract class AbstractAmazonS3 implements
     /**
      * {@inheritdoc}
      */
-    public function rename(string $sourceKey, string $targetKey): bool
-    {
-        $this->ensureBucketExists();
-        $options = $this->getOptions(
-            $targetKey,
-            ['CopySource' => $this->bucket . '/' . $this->computePath($sourceKey)]
-        );
-
-        try {
-            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey)));
-
-            return $this->delete($sourceKey);
-        } catch (Exception) {
-            return false;
-        }
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function keys(): array
     {
-        return $this->listKeys();
-    }
+        $keys = $this->listKeys();
 
-    /**
-     * {@inheritdoc}
-     */
-    public function delete(string $key): bool
-    {
-        try {
-            $this->service->deleteObject($this->getOptions($key));
-
-            return true;
-        } catch (Exception) {
-            return false;
-        }
+        return $keys['keys'];
     }
 
     /**
      * Combines and merges global options, key-specific options, and metadata.
      *
-     * @param string $key     The file key.
-     * @param array  $options Additional options to be merged.
-     * @return array The merged options.
+     * @param string              $key     The file key.
+     * @param array<string, mixed> $options Additional options to be merged.
+     * @return array<string, mixed> The merged options.
      */
     protected function getOptions(string $key, array $options = []): array
     {
@@ -214,7 +188,6 @@ abstract class AbstractAmazonS3 implements
 
         return array_merge($this->options, $options, $this->getMetadata($key));
     }
-
     /**
      * Computes the full path for the specified key.
      *
@@ -223,11 +196,12 @@ abstract class AbstractAmazonS3 implements
      */
     protected function computePath(string $key): string
     {
-        if (empty($this->options['directory'])) {
+        $directory = $this->options['directory'] ?? '';
+        if (!is_string($directory) || '' === $directory) {
             return $key;
         }
 
-        return sprintf('%s/%s', $this->options['directory'], $key);
+        return $directory . '/' . $key;
     }
 
     /**
@@ -238,7 +212,12 @@ abstract class AbstractAmazonS3 implements
      */
     protected function computeKey(string $path): string
     {
-        return ltrim(substr($path, strlen($this->options['directory'])), '/');
+        $directory = $this->options['directory'] ?? '';
+        if (!is_string($directory)) {
+            return $path;
+        }
+
+        return ltrim(substr($path, strlen($directory)), '/');
     }
 
     /**
@@ -246,27 +225,30 @@ abstract class AbstractAmazonS3 implements
      *
      * @param string $content The content or resource to guess the mime type for.
      * @return string The mime type.
+     * @throws RuntimeException if the mime type could not be determined.
      */
     protected function guessContentType(string $content): string
     {
         $fileInfo = new finfo(FILEINFO_MIME_TYPE);
 
-        if (is_resource($content)) {
-            return $fileInfo->file(stream_get_meta_data($content)['uri']);
+        $mimeType = $fileInfo->buffer($content);
+
+        if (false === $mimeType) {
+            throw new RuntimeException('Could not determine the content type.');
         }
 
-        return $fileInfo->buffer($content);
+        return $mimeType;
     }
 
     /**
      * {@inheritdoc}
      */
-    abstract public function read(string $key): string|bool;
+    abstract public function read(string $key): string|false;
 
     /**
      * {@inheritdoc}
      */
-    abstract public function write(string $key, string $content): int|bool;
+    abstract public function write(string $key, string $content): int|false;
 
     /**
      * {@inheritdoc}
@@ -276,7 +258,7 @@ abstract class AbstractAmazonS3 implements
     /**
      * {@inheritdoc}
      */
-    abstract public function mtime(string $key): int|bool;
+    abstract public function mtime(string $key): int|false;
 
     /**
      * {@inheritdoc}
@@ -311,10 +293,10 @@ abstract class AbstractAmazonS3 implements
     abstract public function mimeType(string $key): string|false;
 
     /**
-     * Creates a new SimpleS3Client instance based on the provided configuration.
+     * Creates a new S3 client instance based on the provided configuration.
      *
-     * @param array $config Configuration options for the S3 client.
-     * @return object An instance of SimpleS3Client.
+     * @param array<string, mixed> $config Configuration options for the S3 client.
+     * @return TService An instance of the S3 client.
      */
     abstract protected function createClient(array $config): object;
 }

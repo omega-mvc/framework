@@ -21,6 +21,7 @@ use function extension_loaded;
 use function filesize;
 use function fstat;
 use function mb_strlen;
+use function sprintf;
 use function strlen;
 
 /**
@@ -76,7 +77,15 @@ class Size
      */
     public static function fromFile(string $filename): int
     {
-        return filesize($filename);
+        $size = filesize($filename);
+
+        if (false === $size) {
+            throw new InvalidArgumentException(
+                sprintf('The file "%s" does not exist or cannot be accessed.', $filename)
+            );
+        }
+
+        return $size;
     }
 
     /**

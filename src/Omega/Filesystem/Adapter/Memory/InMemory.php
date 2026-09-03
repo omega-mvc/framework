@@ -25,6 +25,7 @@ use function array_key_exists;
 use function array_merge;
 use function clearstatcache;
 use function is_array;
+use function sprintf;
 use function time;
 
 /**
@@ -50,6 +51,13 @@ class InMemory implements
     MimeTypeProviderInterface
 {
     /**
+     * The in-memory file storage.
+     *
+     * @var array<string, array{content: string, mtime: int}>
+     */
+    protected array $files = [];
+
+    /**
      * Constructor for the InMemory adapter.
      *
      * Initializes the in-memory filesystem adapter with an optional array of files.
@@ -57,24 +65,21 @@ class InMemory implements
      * 'content' and optional 'mtime' (last modified time). If no files are provided,
      * the adapter will start with an empty file storage.
      *
-     * @param array $files An optional array of files to initialize the adapter with.
-     *                     Each file can be represented as a string or an associative
-     *                     array with 'content' and optional 'mtime'.
+     * @param array<string, string|array{content?: string|null, mtime?: int|null}> $files An optional array of files.
      *
      * @return void
      */
     public function __construct(
-        protected array $files = []
+        array $files = []
     ) {
+        $this->files = [];
         $this->setFiles($files);
     }
 
     /**
      * Defines the files stored in memory.
      *
-     * @param array $files An array of files to store in memory. Each file can be
-     *                     represented as a string or an associative array with
-     *                     'content' and optional 'mtime' (modification time).
+     * @param array<string, string|array{content?: string|null, mtime?: int|null}> $files An array of files.
      * @return void
      */
     public function setFiles(array $files): void
@@ -117,7 +122,7 @@ class InMemory implements
     /**
      * {@inheritdoc}
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
         return $this->files[$key]['content'];
     }
@@ -128,6 +133,11 @@ class InMemory implements
     public function rename(string $sourceKey, string $targetKey): bool
     {
         $content = $this->read($sourceKey);
+
+        if (false === $content) {
+            return false;
+        }
+
         $this->delete($sourceKey);
 
         return (bool) $this->write($targetKey, $content);
@@ -135,8 +145,10 @@ class InMemory implements
 
     /**
      * {@inheritdoc}
+     *
+     * @param array<string, mixed>|null $metadata Optional file metadata.
      */
-    public function write(string $key, string $content, array $metadata = null): int|bool
+    public function write(string $key, string $content, ?array $metadata = null): int|false
     {
         $this->files[$key]['content'] = $content;
         $this->files[$key]['mtime']   = time();
@@ -163,7 +175,7 @@ class InMemory implements
     /**
      * {@inheritdoc}
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         return $this->files[$key]['mtime'] ?? false;
     }
@@ -194,6 +206,17 @@ class InMemory implements
     {
         $fileInfo = new finfo(FILEINFO_MIME_TYPE);
 
-        return $fileInfo->buffer($this->files[$key]['content']);
+        $mimeType = $fileInfo->buffer($this->files[$key]['content']);
+
+        if (false === $mimeType) {
+            throw new \LogicException(
+                sprintf(
+                    'Could not determine the MIME type of "%s".',
+                    $key
+                )
+            );
+        }
+
+        return $mimeType;
     }
 }

@@ -41,24 +41,24 @@ class File
     /**
      * The content of the file. It is lazy-loaded and will be retrieved from the filesystem on first request.
      *
-     * @var mixed|null
+     * @var string|null
      */
-    protected mixed $content = null;
+    protected ?string $content = null;
 
     /**
      * Metadata associated with the file, stored as an associative array.
      * This is only applicable for adapters that support metadata.
      *
-     * @var array|null
+     * @var array<string, mixed>|null
      */
     protected ?array $metadata = null;
 
     /**
      * The human-readable name of the file, usually derived from the end of the key.
      *
-     * @var string|null
+     * @var string
      */
-    protected ?string $name = null;
+    protected string $name;
 
     /**
      * The size of the file in bytes.
@@ -100,7 +100,7 @@ class File
     /**
      * Retrieve the content of the file. The content is loaded lazily on the first call.
      *
-     * @param array $metadata Optional metadata to be set when reading.
+     * @param array<string, mixed> $metadata Optional metadata to be set when reading.
      * @return string The content of the file.
      * @throws FileNotFoundException If the file cannot be found in the filesystem.
      */
@@ -167,8 +167,8 @@ class File
     /**
      * Set the content of the file. This will also update the size and metadata.
      *
-     * @param string $content  The content to be written to the file.
-     * @param array  $metadata Optional metadata to be sent when writing.
+     * @param string               $content  The content to be written to the file.
+     * @param array<string, mixed> $metadata Optional metadata to be sent when writing.
      * @return int The number of bytes written to the file, or FALSE on failure.
      */
     public function setContent(string $content, array $metadata = []): int
@@ -202,7 +202,7 @@ class File
     /**
      * Delete the file from the filesystem.
      *
-     * @param array $metadata Optional metadata to be sent when deleting.
+     * @param array<string, mixed> $metadata Optional metadata to be sent when deleting.
      * @return bool TRUE on success, FALSE on failure.
      * @throws FileNotFoundException If the file cannot be found.
      * @throws RuntimeException      If the file cannot be deleted.
@@ -240,27 +240,19 @@ class File
     /**
      * Set the metadata for the file if the filesystem adapter supports it.
      *
-     * @param array $metadata The metadata to be set.
+     * @param array<string, mixed> $metadata The metadata to be set.
      * @return bool TRUE if metadata was set, FALSE otherwise.
      */
     protected function setMetadata(array $metadata): bool
     {
-        if ($metadata && $this->supportsMetadata()) {
-            $this->filesystem->getAdapter()->setMetadata($this->key, $metadata);
+        $adapter = $this->filesystem->getAdapter();
+
+        if ($metadata && $adapter instanceof MetadataSupporterInterface) {
+            $adapter->setMetadata($this->key, $metadata);
 
             return true;
         }
 
         return false;
-    }
-
-    /**
-     * Check if the filesystem adapter supports metadata.
-     *
-     * @return bool TRUE if metadata is supported, FALSE otherwise.
-     */
-    private function supportsMetadata(): bool
-    {
-        return $this->filesystem->getAdapter() instanceof MetadataSupporterInterface;
     }
 }

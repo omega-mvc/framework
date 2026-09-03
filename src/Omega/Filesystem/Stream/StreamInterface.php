@@ -123,7 +123,7 @@ interface StreamInterface
      * This method returns an array containing various statistics about
      * the stream. If the statistics cannot be gathered, it should return FALSE.
      *
-     * @return array|false An associative array of stream statistics, or FALSE on failure.
+     * @return array<int|string, int|bool>|false An associative array of stream statistics, or FALSE on failure.
      */
     public function stat(): array|false;
 

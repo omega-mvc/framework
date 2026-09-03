@@ -22,8 +22,9 @@ use AsyncAws\SimpleS3\SimpleS3Client;
 use Omega\Filesystem\Util\Size;
 
 use function array_key_exists;
+use function array_merge;
 use function is_array;
-use function is_resource;
+use function is_string;
 use function rtrim;
 use function sprintf;
 
@@ -33,6 +34,8 @@ use function sprintf;
  * This class implements the necessary methods to interact with
  * Amazon S3 using the AsyncAws SDK, providing an asynchronous
  * interface for file operations.
+ *
+ * @extends AbstractAmazonS3<\AsyncAws\SimpleS3\SimpleS3Client>
  *
  * @category    Omega
  * @package     Filesystem
@@ -49,8 +52,19 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * Initializes the AsyncAwsS3 adapter with the provided configuration.
      *
-     * @param array $config Configuration options for connecting to S3.
-     *                      Must include 'bucket', 'key', and 'secret'.
+     * @param array{
+     *   bucket: string,
+     *   key: string,
+     *   secret: string,
+     *   region?: string,
+     *   token?: string|null,
+     *   detectContentType?: bool,
+     *   create?: bool,
+     *   directory?: string,
+     *   acl?: string,
+     *   options?: array<string, mixed>,
+     * } $config Configuration options for connecting to S3.
+     *            Must include 'bucket', 'key', and 'secret'.
      */
     public function __construct(array $config)
     {
@@ -62,30 +76,40 @@ class AsyncAwsS3 extends AbstractAmazonS3
      */
     protected function createClient(array $config): object
     {
+        $region     = $config['region'] ?? 'us-west-2';
+        $accessKey  = $config['key'];
+        $secret     = $config['secret'];
+        $token      = $config['token'] ?? null;
+
+        if (
+            !is_string($region)
+            || !is_string($accessKey)
+            || !is_string($secret)
+            || (null !== $token && !is_string($token))
+        ) {
+            throw new RuntimeException('Invalid S3 client credentials provided.');
+        }
+
         return new SimpleS3Client([
-            'version'     => 'latest',
-            'region'      => $config['region'] ?? 'us-west-2',
-            'credentials' => [
-                'key'    => $config['key'],
-                'secret' => $config['secret'],
-                'token'  => $config['token'] ?? null,
-            ],
+            'region'          => $region,
+            'accessKeyId'     => $accessKey,
+            'accessKeySecret' => $secret,
+            'sessionToken'    => $token,
         ]);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
         $this->ensureBucketExists();
-        $options = $this->getOptions($key);
 
         try {
-            $object = $this->service->getObject($options);
-            if (!array_key_exists($key, $this->content) || !is_array($this->content[$key])) {
-                $this->content[$key] = [];
-            }
+            $object = $this->service->getObject([
+                'Bucket' => $this->bucket,
+                'Key'    => $this->computePath($key),
+            ]);
 
             $this->content[$key]['ContentType'] = $object->getContentType();
 
@@ -98,26 +122,22 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function write(string $key, string $content): int|bool
+    public function write(string $key, string $content): int|false
     {
         $this->ensureBucketExists();
-        $options = $this->getOptions($key);
-        unset($options['Bucket'], $options['Key']);
 
-        /*
-         * If the ContentType was not already set in the metadata, then we autodetect
-         * it to prevent everything being served up as binary/octet-stream.
-         */
-        if (!isset($options['ContentType']) && $this->detectContentType) {
-            $options['ContentType'] = $this->guessContentType($content);
+        $uploadOptions = [];
+        if ($this->detectContentType) {
+            $uploadOptions['ContentType'] = $this->guessContentType($content);
         }
 
         try {
-            $this->service->upload($this->bucket, $this->computePath($key), $content, $options);
-
-            if (is_resource($content)) {
-                return (int) Size::fromResource($content);
-            }
+            $this->service->upload(
+                $this->bucket,
+                $this->computePath($key),
+                $content,
+                $uploadOptions
+            );
 
             return Size::fromContent($content);
         } catch (Exception) {
@@ -128,7 +148,7 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function exists($key): bool
+    public function exists(string $key): bool
     {
         return $this->service->has($this->bucket, $this->computePath($key));
     }
@@ -136,12 +156,21 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         try {
-            $result = $this->service->headObject($this->getOptions($key));
+            $result = $this->service->headObject([
+                'Bucket' => $this->bucket,
+                'Key'    => $this->computePath($key),
+            ]);
 
-            return $result->getLastModified()->getTimestamp();
+            $lastModified = $result->getLastModified();
+
+            if (null === $lastModified) {
+                return false;
+            }
+
+            return $lastModified->getTimestamp();
         } catch (Exception) {
             return false;
         }
@@ -150,11 +179,24 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function size(string $key): int
+    public function size(string $key): int|false
     {
-        $result = $this->service->headObject($this->getOptions($key));
+        try {
+            $result = $this->service->headObject([
+                'Bucket' => $this->bucket,
+                'Key'    => $this->computePath($key),
+            ]);
 
-        return (int) $result->getContentLength();
+            $contentLength = $result->getContentLength();
+
+            if (null === $contentLength) {
+                return false;
+            }
+
+            return $contentLength;
+        } catch (Exception) {
+            return false;
+        }
     }
 
     /**
@@ -167,17 +209,20 @@ class AsyncAwsS3 extends AbstractAmazonS3
         $options = ['Bucket' => $this->bucket];
         if ($prefix != '') {
             $options['Prefix'] = $this->computePath($prefix);
-        } elseif (!empty($this->options['directory'])) {
+        } elseif (!empty($this->options['directory']) && is_string($this->options['directory'])) {
             $options['Prefix'] = $this->options['directory'];
         }
 
         $keys   = [];
         $result = $this->service->listObjectsV2($options);
         foreach ($result->getContents() as $file) {
-            $keys[] = $this->computeKey($file->getKey());
+            $fileKey = $file->getKey();
+            if (is_string($fileKey)) {
+                $keys[] = $this->computeKey($fileKey);
+            }
         }
 
-        return $keys;
+        return ['keys' => $keys, 'dirs' => []];
     }
 
     /**
@@ -229,10 +274,60 @@ class AsyncAwsS3 extends AbstractAmazonS3
     /**
      * {@inheritdoc}
      */
-    public function mimeType(string $key): string
+    public function mimeType(string $key): string|false
     {
-        $result = $this->service->headObject($this->getOptions($key));
+        try {
+            $result = $this->service->headObject([
+                'Bucket' => $this->bucket,
+                'Key'    => $this->computePath($key),
+            ]);
 
-        return $result->getContentType();
+            $contentType = $result->getContentType();
+
+            if (null === $contentType) {
+                return false;
+            }
+
+            return $contentType;
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rename(string $sourceKey, string $targetKey): bool
+    {
+        $this->ensureBucketExists();
+
+        try {
+            $this->service->copyObject([
+                'Bucket'     => $this->bucket,
+                'Key'        => $this->computePath($targetKey),
+                'CopySource' => $this->bucket . '/' . $this->computePath($sourceKey),
+            ]);
+
+            return $this->delete($sourceKey);
+        } catch (Exception) {
+            return false;
+        }
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function delete(string $key): bool
+    {
+        try {
+            $this->service->deleteObject([
+                'Bucket' => $this->bucket,
+                'Key'    => $this->computePath($key),
+            ]);
+
+            return true;
+        } catch (Exception) {
+            return false;
+        }
     }
 }

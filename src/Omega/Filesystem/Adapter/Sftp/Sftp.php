@@ -26,8 +26,10 @@ use Omega\Filesystem\Filesystem;
 use Omega\Filesystem\Util\Path;
 
 use function array_merge;
-use function array_merge_recursive;
 use function class_exists;
+use function is_array;
+use function is_int;
+use function is_string;
 use function ltrim;
 use function preg_match;
 use function rtrim;
@@ -63,6 +65,16 @@ class Sftp implements
     protected bool $initialized = false;
 
     /**
+     * SFTP file type identifier for a directory.
+     *
+     * Matches the runtime-defined phpseclib global constant `NET_SFTP_TYPE_DIRECTORY`
+     * (see `phpseclib\Net\SFTP::$file_types`), which is not statically analysable.
+     *
+     * @var int
+     */
+    private const TYPE_DIRECTORY = 2;
+
+    /**
      * Constructor for the Sftp adapter.
      *
      * Initializes an instance of the Sftp adapter with the provided SFTP connection,
@@ -89,9 +101,15 @@ class Sftp implements
     /**
      * {@inheritdoc}
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
-        return $this->sftp->get($this->computePath($key));
+        $content = $this->sftp->get($this->computePath($key));
+
+        if (!is_string($content)) {
+            return false;
+        }
+
+        return $content;
     }
 
     /**
@@ -112,17 +130,24 @@ class Sftp implements
     /**
      * {@inheritdoc}
      */
-    public function write(string $key, string $content): int|bool
+    public function write(string $key, string $content): int|false
     {
         $this->initialize();
 
         $path = $this->computePath($key);
         $this->ensureDirectoryExists(Path::dirname($path), true);
-        if ($this->sftp->put($path, $content)) {
-            return $this->sftp->size($path);
+
+        if (!$this->sftp->put($path, $content)) {
+            return false;
         }
 
-        return false;
+        $size = $this->sftp->size($path);
+
+        if (!is_int($size)) {
+            return false;
+        }
+
+        return $size;
     }
 
     /**
@@ -143,6 +168,10 @@ class Sftp implements
         $this->initialize();
 
         $pwd = $this->sftp->pwd();
+        if (!is_string($pwd)) {
+            return false;
+        }
+
         if ($this->sftp->chdir($this->computePath($key))) {
             $this->sftp->chdir($pwd);
 
@@ -167,7 +196,10 @@ class Sftp implements
      */
     public function listKeys(string $prefix = ''): array
     {
-        preg_match('/(.*?)[^\/]*$/', $prefix, $match);
+        if (!preg_match('/(.*?)[^\/]*$/', $prefix, $match)) {
+            return ['keys' => [], 'dirs' => []];
+        }
+
         $directory = rtrim($match[1], '/');
 
         $keys = $this->fetchKeys($directory, false);
@@ -176,9 +208,8 @@ class Sftp implements
             return $keys;
         }
 
-        $filteredKeys = [];
+        $filteredKeys = ['keys' => [], 'dirs' => []];
         foreach (['keys', 'dirs'] as $hash) {
-            $filteredKeys[$hash] = [];
             foreach ($keys[$hash] as $key) {
                 if (str_starts_with($key, $prefix)) {
                     $filteredKeys[$hash][] = $key;
@@ -192,13 +223,23 @@ class Sftp implements
     /**
      * {@inheritdoc}
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         $this->initialize();
 
         $stat = $this->sftp->stat($this->computePath($key));
 
-        return $stat['mtime'] ?? false;
+        if (!is_array($stat)) {
+            return false;
+        }
+
+        $mtime = $stat['mtime'] ?? false;
+
+        if (!is_int($mtime)) {
+            return false;
+        }
+
+        return $mtime;
     }
 
     /**
@@ -217,7 +258,7 @@ class Sftp implements
         $file = new File($key, $filesystem);
 
         $stat = $this->sftp->stat($this->computePath($key));
-        if (isset($stat['size'])) {
+        if (is_array($stat) && isset($stat['size']) && is_int($stat['size'])) {
             $file->setSize($stat['size']);
         }
 
@@ -237,7 +278,9 @@ class Sftp implements
             return;
         }
 
-        $this->ensureDirectoryExists($this->directory, $this->create);
+        if (null !== $this->directory) {
+            $this->ensureDirectoryExists($this->directory, $this->create);
+        }
 
         $this->initialized = true;
     }
@@ -255,6 +298,10 @@ class Sftp implements
     protected function ensureDirectoryExists(string $directory, bool $create): void
     {
         $pwd = $this->sftp->pwd();
+        if (!is_string($pwd)) {
+            throw new RuntimeException('Unable to determine the current SFTP directory.');
+        }
+
         if ($this->sftp->chdir($directory)) {
             $this->sftp->chdir($pwd);
         } elseif ($create) {
@@ -293,7 +340,7 @@ class Sftp implements
      *
      * @param string $directory The directory to fetch keys from.
      * @param bool   $onlyKeys  Whether to only fetch file keys.
-     * @return array An associative array containing keys and directories.
+     * @return array{keys: array<string>, dirs: array<string>} An associative array containing keys and directories.
      */
     protected function fetchKeys(string $directory = '', bool $onlyKeys = true): array
     {
@@ -305,13 +352,21 @@ class Sftp implements
         }
 
         $list = $this->sftp->rawlist($computedPath);
-        foreach ((array) $list as $filename => $stat) {
+        if (!is_array($list)) {
+            return $keys;
+        }
+
+        foreach ($list as $filename => $stat) {
             if ('.' === $filename || '..' === $filename) {
                 continue;
             }
 
+            if (!is_array($stat)) {
+                continue;
+            }
+
             $path = ltrim($directory . '/' . $filename, '/');
-            if (isset($stat['type']) && $stat['type'] === NET_SFTP_TYPE_DIRECTORY) {
+            if (isset($stat['type']) && $stat['type'] === self::TYPE_DIRECTORY) {
                 $keys['dirs'][] = $path;
             } else {
                 $keys['keys'][] = $path;
@@ -326,7 +381,9 @@ class Sftp implements
         }
 
         foreach ($dirs as $dir) {
-            $keys = array_merge_recursive($keys, $this->fetchKeys($dir, $onlyKeys));
+            $nested            = $this->fetchKeys($dir, $onlyKeys);
+            $keys['keys']      = array_merge($keys['keys'], $nested['keys']);
+            $keys['dirs']      = array_merge($keys['dirs'], $nested['dirs']);
         }
 
         return $keys;

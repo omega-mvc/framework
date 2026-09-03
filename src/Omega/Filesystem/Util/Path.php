@@ -15,11 +15,11 @@ declare(strict_types=1);
 
 namespace Omega\Filesystem\Util;
 
-use FilesystemIterator;
-
+use function array_diff;
 use function dirname;
 use function implode;
 use function preg_match;
+use function scandir;
 use function strlen;
 use function str_replace;
 use function strtolower;
@@ -61,14 +61,8 @@ class Path
         $path = substr($path, strlen($prefix));
         $tokens = [];
 
-        $iterator = new FilesystemIterator($path);
-
-        foreach ($iterator as $fileInfo) {
-            if ($fileInfo->isDot()) {
-                continue;
-            }
-
-            $tokens[] = $fileInfo->getFilename();
+        foreach (array_diff(scandir($path), ['.', '..']) as $entry) {
+            $tokens[] = $entry;
         }
 
         return $prefix . implode('/', $tokens);

@@ -63,7 +63,7 @@ class Filesystem implements FilesystemInterface
     /**
      * File register array.
      *
-     * @var array An associative array that stores `File` objects created with
+     * @var array<string, \Omega\Filesystem\File> An associative array that stores `File` objects created with
      *            the `createFile()` method. The key is the file key, and
      *            the value is the corresponding `File` instance.
      */
@@ -232,6 +232,8 @@ class Filesystem implements FilesystemInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return array{keys: array<string>, dirs: array<string>} A structured list of keys and directories.
      */
     public function listKeys(string $prefix = ''): array
     {
@@ -267,7 +269,18 @@ class Filesystem implements FilesystemInterface
 
         $this->assertHasFile($key);
 
-        return $this->adapter->mtime($key);
+        $mtime = $this->adapter->mtime($key);
+
+        if (false === $mtime) {
+            throw new RuntimeException(
+                sprintf(
+                    'Could not retrieve the last modified time of the "%s" key.',
+                    $key
+                )
+            );
+        }
+
+        return $mtime;
     }
 
     /**
@@ -296,7 +309,18 @@ class Filesystem implements FilesystemInterface
         $this->assertHasFile($key);
 
         if ($this->adapter instanceof SizeCalculatorInterface) {
-            return $this->adapter->size($key);
+            $size = $this->adapter->size($key);
+
+            if (false === $size) {
+                throw new RuntimeException(
+                    sprintf(
+                        'Could not determine the size of the "%s" key.',
+                        $key
+                    )
+                );
+            }
+
+            return $size;
         }
 
         return Size::fromContent($this->read($key));
@@ -344,7 +368,19 @@ class Filesystem implements FilesystemInterface
         $this->assertHasFile($key);
 
         if ($this->adapter instanceof MimeTypeProviderInterface) {
-            return $this->adapter->mimeType($key);
+            $mimeType = $this->adapter->mimeType($key);
+
+            if (false === $mimeType) {
+                throw new LogicException(
+                    sprintf(
+                        'Adapter "%s" could not determine the MIME type of the "%s" key.',
+                        get_class($this->adapter),
+                        $key
+                    )
+                );
+            }
+
+            return $mimeType;
         }
 
         throw new LogicException(

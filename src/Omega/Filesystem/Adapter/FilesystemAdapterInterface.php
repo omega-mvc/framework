@@ -40,9 +40,9 @@ interface FilesystemAdapterInterface
      * be read, it returns false.
      *
      * @param string $key The key or path of the file to read.
-     * @return string|bool The content of the file or false if it cannot be read.
+     * @return string|false The content of the file or false if it cannot be read.
      */
-    public function read(string $key): string|bool;
+    public function read(string $key): string|false;
 
     /**
      * Writes the given content into the file.
@@ -52,9 +52,9 @@ interface FilesystemAdapterInterface
      *
      * @param string $key     The key or path of the file to write.
      * @param string $content The content to write into the file.
-     * @return int|bool The number of bytes written or false on failure.
+     * @return int|false The number of bytes written or false on failure.
      */
-    public function write(string $key, string $content): int|bool;
+    public function write(string $key, string $content): int|false;
 
     /**
      * Indicates whether the file exists.
@@ -72,7 +72,7 @@ interface FilesystemAdapterInterface
      * This method retrieves a list of all keys (representing files and directories)
      * managed by the filesystem.
      *
-     * @return array The list of keys.
+     * @return array<string> The list of keys.
      */
     public function keys(): array;
 
@@ -83,9 +83,9 @@ interface FilesystemAdapterInterface
      * the file cannot be found or accessed, it returns false.
      *
      * @param string $key The key or path of the file.
-     * @return int|bool The last modified time as a UNIX timestamp, or false on failure.
+     * @return int|false The last modified time as a UNIX timestamp, or false on failure.
      */
-    public function mtime(string $key): int|bool;
+    public function mtime(string $key): int|false;
 
     /**
      * Deletes the file.

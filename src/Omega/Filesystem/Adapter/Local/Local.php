@@ -106,7 +106,11 @@ class Local implements
         $this->directory = Path::normalize($directory);
 
         if (is_link($this->directory)) {
-            $this->directory = realpath($this->directory);
+            $resolved = realpath($this->directory);
+
+            if (false !== $resolved) {
+                $this->directory = $resolved;
+            }
         }
     }
 
@@ -116,7 +120,7 @@ class Local implements
      * @throws InvalidArgumentException if the directory already exists
      * @throws RuntimeException         if the directory could not be created
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
         if ($this->isDirectory($key)) {
             return false;
@@ -131,7 +135,7 @@ class Local implements
      * @throws InvalidArgumentException if the directory already exists
      * @throws RuntimeException         if the directory could not be created
      */
-    public function write(string $key, string $content): int|bool
+    public function write(string $key, string $content): int|false
     {
         $path = $this->computePath($key);
         $this->ensureDirectoryExists(Path::dirname($path), true);
@@ -185,7 +189,9 @@ class Local implements
 
         $keys = [];
         foreach ($files as $file) {
-            $keys[] = $this->computeKey($file);
+            if ($file instanceof \SplFileInfo) {
+                $keys[] = $this->computeKey($file->getPathname());
+            }
         }
         sort($keys);
 
@@ -198,7 +204,7 @@ class Local implements
      * @throws InvalidArgumentException if the directory already exists
      * @throws RuntimeException         if the directory could not be created
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         return filemtime($this->computePath($key));
     }
@@ -271,7 +277,18 @@ class Local implements
     {
         $fileInfo = new finfo(FILEINFO_MIME_TYPE);
 
-        return $fileInfo->file($this->computePath($key));
+        $mimeType = $fileInfo->file($this->computePath($key));
+
+        if (false === $mimeType) {
+            throw new RuntimeException(
+                sprintf(
+                    'Could not determine the MIME type of "%s".',
+                    $key
+                )
+            );
+        }
+
+        return $mimeType;
     }
 
     /**
@@ -398,10 +415,14 @@ class Local implements
             );
 
             foreach ($iterator as $item) {
-                if ($item->isDir()) {
-                    $status = $status && rmdir(strval($item));
-                } else {
-                    $status = $status && unlink(strval($item));
+                if ($item instanceof \SplFileInfo) {
+                    $path = $item->getPathname();
+
+                    if ($item->isDir()) {
+                        $status = $status && rmdir($path);
+                    } else {
+                        $status = $status && unlink($path);
+                    }
                 }
             }
 

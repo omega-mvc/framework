@@ -43,8 +43,8 @@ interface MetadataSupporterInterface
      * file in the filesystem. The metadata could include custom information like
      * timestamps, file ownership, or any other descriptive data.
      *
-     * @param string $key     The file key for which the metadata is being set.
-     * @param array  $content An associative array containing the metadata to set.
+     * @param string              $key     The file key for which the metadata is being set.
+     * @param array<string, mixed> $content An associative array containing the metadata to set.
      * @return void
      */
     public function setMetadata(string $key, array $content): void;
@@ -58,7 +58,7 @@ interface MetadataSupporterInterface
      *
      * @param string $key The file key for which metadata is being retrieved.
      *
-     * @return array An associative array containing the metadata of the file.
+     * @return array<string, mixed> An associative array containing the metadata of the file.
      */
     public function getMetadata(string $key): array;
 }

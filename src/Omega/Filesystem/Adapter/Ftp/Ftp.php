@@ -28,7 +28,6 @@ use Omega\Filesystem\Util\Path;
 use function array_key_exists;
 use function array_keys;
 use function array_merge;
-use function array_merge_recursive;
 use function basename;
 use function count;
 use function extension_loaded;
@@ -50,6 +49,7 @@ use function ftp_ssl_connect;
 use function ftp_fput;
 use function function_exists;
 use function fwrite;
+use function is_string;
 use function ltrim;
 use function preg_match;
 use function preg_quote;
@@ -143,7 +143,7 @@ class Ftp implements
     /**
      * The mode for file transfers.
      *
-     * @var int Holds the mode for file transfers (`default: FTP_BINARY`).
+     * @var \FTP_ASCII|\FTP_BINARY Holds the mode for file transfers (`default: FTP_BINARY`).
      */
     protected int $mode;
 
@@ -178,7 +178,7 @@ class Ftp implements
     /**
      * Stores the file metadata.
      *
-     * @var array Stores the file metadata.
+     * @var array<string, array{name: string, path: string, time: int|false, size: int}>
      */
     protected array $fileData = [];
 
@@ -187,18 +187,12 @@ class Ftp implements
      *
      * Initializes the FTP adapter with the specified configuration options.
      *
-     * @param array $config Configuration options for the FTP connection.
-     *                      Supported options include:
-     *                      - 'host': The FTP server host (default: 'localhost').
-     *                      - 'username': The FTP username (default: 'anonymous').
-     *                      - 'password': The FTP password (default: '').
-     *                      - 'port': The FTP port (default: 21).
-     *                      - 'passive': Use passive mode (default: false).
-     *                      - 'create': Create directories if not exists (default: false).
-     *                      - 'mode': File transfer mode (default: FTP_BINARY).
-     *                      - 'ssl': Use SSL (default: false).
-     *                      - 'timeout': Connection timeout in seconds (default: 90).
-     *                      - 'utf8': Enable UTF-8 encoding for file names (default: false).
+     * @param array{host?: string, username?: string,
+     *     password?: string, port?: int, passive?: bool,
+     *     create?: bool, mode?: \FTP_ASCII|\FTP_BINARY,
+     *     ssl?: bool, timeout?: int, utf8?: bool,
+     *     directory?: string} $config
+     *     Configuration options for the FTP connection.
      *
      * @throws RuntimeException if the FTP extension is not loaded.
      */
@@ -226,13 +220,19 @@ class Ftp implements
     /**
      * {@inheritdoc}
      */
-    public function read(string $key): string|bool
+    public function read(string $key): string|false
     {
         $this->ensureDirectoryExists($this->directory, $this->create);
 
         $temp = fopen('php://temp', 'r+');
 
+        if (false === $temp) {
+            throw new RuntimeException('Unable to create a temporary stream for reading.');
+        }
+
         if (!ftp_fget($this->getConnection(), $temp, $this->computePath($key), $this->mode)) {
+            fclose($temp);
+
             return false;
         }
 
@@ -246,7 +246,7 @@ class Ftp implements
     /**
      * {@inheritdoc}
      */
-    public function write(string $key, string $content): int|bool
+    public function write(string $key, string $content): int|false
     {
         $this->ensureDirectoryExists($this->directory, $this->create);
 
@@ -256,6 +256,11 @@ class Ftp implements
         $this->ensureDirectoryExists($directory, true);
 
         $temp = fopen('php://temp', 'r+');
+
+        if (false === $temp) {
+            throw new RuntimeException('Unable to create a temporary stream for writing.');
+        }
+
         $size = fwrite($temp, $content);
         rewind($temp);
 
@@ -328,7 +333,10 @@ class Ftp implements
     {
         $this->ensureDirectoryExists($this->directory, $this->create);
 
-        preg_match('/(.*?)[^\/]*$/', $prefix, $match);
+        if (!preg_match('/(.*?)[^\/]*$/', $prefix, $match)) {
+            return ['keys' => [], 'dirs' => []];
+        }
+
         $directory = rtrim($match[1], '/');
 
         $keys = $this->fetchKeys($directory, false);
@@ -337,13 +345,17 @@ class Ftp implements
             return $keys;
         }
 
-        $filteredKeys = [];
-        foreach (['keys', 'dirs'] as $hash) {
-            $filteredKeys[$hash] = [];
-            foreach ($keys[$hash] as $key) {
-                if (str_starts_with($key, $prefix)) {
-                    $filteredKeys[$hash][] = $key;
-                }
+        $filteredKeys = ['keys' => [], 'dirs' => []];
+
+        foreach ($keys['keys'] as $key) {
+            if (str_starts_with($key, $prefix)) {
+                $filteredKeys['keys'][] = $key;
+            }
+        }
+
+        foreach ($keys['dirs'] as $key) {
+            if (str_starts_with($key, $prefix)) {
+                $filteredKeys['dirs'][] = $key;
             }
         }
 
@@ -353,7 +365,7 @@ class Ftp implements
     /**
      * {@inheritdoc}
      */
-    public function mtime(string $key): int|bool
+    public function mtime(string $key): int|false
     {
         $this->ensureDirectoryExists($this->directory, $this->create);
 
@@ -397,7 +409,8 @@ class Ftp implements
      * Lists the contents of the specified directory.
      *
      * @param string $directory The directory to list. If empty, uses the default directory.
-     * @return array An array containing 'keys' (file paths) and 'dirs' (subdirectory paths).
+     * @return array{keys: array<string>, dirs: array<string>}
+     *     An array containing 'keys' (file paths) and 'dirs' (subdirectory paths).
      * @throws RuntimeException if the directory does not exist and cannot be created.
      */
     public function listDirectory(string $directory = ''): array
@@ -406,11 +419,16 @@ class Ftp implements
 
         $directory = preg_replace('/^[\/]*([^\/].*)$/', '/$1', $directory);
 
+        if (!is_string($directory)) {
+            $directory = '';
+        }
+
         $items = $this->parseRawlist(
             ftp_rawlist($this->getConnection(), '-al ' . $this->directory . $directory) ?: []
         );
 
-        $fileData = $dirs = [];
+        $fileData = [];
+        $dirs     = [];
         foreach ($items as $itemData) {
             if ('..' === $itemData['name'] || '.' === $itemData['name']) {
                 continue;
@@ -420,7 +438,7 @@ class Ftp implements
                 'name' => $itemData['name'],
                 'path' => trim(($directory ? $directory . '/' : '') . $itemData['name'], '/'),
                 'time' => $itemData['time'],
-                'size' => $itemData['size'],
+                'size' => (int) $itemData['size'],
             ];
 
             if (str_starts_with($itemData['perms'], '-')) {
@@ -470,7 +488,7 @@ class Ftp implements
     {
         $this->ensureDirectoryExists($this->directory, $this->create);
 
-        if (-1 === $size = ftp_size($this->connection, $key)) {
+        if (-1 === $size = ftp_size($this->getConnection(), $key)) {
             throw new RuntimeException(
                 sprintf(
                     'Unable to fetch the size of "%s".',
@@ -560,11 +578,16 @@ class Ftp implements
      *
      * @param string $directory The directory to fetch keys from.
      * @param bool   $onlyKeys  Whether to return only file keys.
-     * @return array An array containing 'keys' (file paths) and 'dirs' (subdirectory paths).
+     * @return array{keys: array<string>, dirs: array<string>}
+     *     An array containing 'keys' (file paths) and 'dirs' (subdirectory paths).
      */
-    private function fetchKeys(string $directory = '', $onlyKeys = true): array
+    private function fetchKeys(string $directory = '', bool $onlyKeys = true): array
     {
         $directory = preg_replace('/^[\/]*([^\/].*)$/', '/$1', $directory);
+
+        if (!is_string($directory)) {
+            $directory = '';
+        }
 
         $lines = ftp_rawlist($this->getConnection(), '-alR ' . $this->directory . $directory);
 
@@ -616,7 +639,10 @@ class Ftp implements
         }
 
         foreach (array_keys($directories) as $directory) {
-            $keys = array_merge_recursive($keys, $this->fetchKeys($directory, $onlyKeys));
+            $nested = $this->fetchKeys($directory, $onlyKeys);
+
+            $keys['keys'] = array_merge($keys['keys'], $nested['keys']);
+            $keys['dirs'] = array_merge($keys['dirs'], $nested['dirs']);
         }
 
         return $keys;
@@ -625,14 +651,20 @@ class Ftp implements
     /**
      * Parses the raw listing of files and directories from the FTP server.
      *
-     * @param array $rawlist The raw list of files and directories.
-     * @return array An array of parsed file and directory information.
+     * @param array<int, string> $rawlist The raw list of files and directories.
+     * @return array<int, array{perms: string, num: string, size: string,
+     *     time: int|false, name: string}>
+     *     An array of parsed file and directory information.
      */
     private function parseRawlist(array $rawlist): array
     {
         $parsed = [];
         foreach ($rawlist as $line) {
             $infos = preg_split("/[\s]+/", $line, 9);
+
+            if (false === $infos) {
+                continue;
+            }
 
             if ($this->isLinuxListing($infos)) {
                 $infos[7] = (strrpos($infos[7], ':') != 2) ? ($infos[7] . ' 00:00') : (date('Y') . ' ' . $infos[7]);
@@ -690,10 +722,10 @@ class Ftp implements
     /**
      * Retrieves the current FTP connection, establishing it if necessary.
      *
-     * @return Connection|null The current FTP connection or null if not connected.
+     * @return Connection The current FTP connection.
      * @throws RuntimeException if unable to establish a connection.
      */
-    private function getConnection(): ?Connection
+    private function getConnection(): Connection
     {
         if (!$this->isConnected()) {
             try {
@@ -704,6 +736,10 @@ class Ftp implements
                     . $e->getMessage()
                 );
             }
+        }
+
+        if (!$this->connection instanceof Connection) {
+            throw new RuntimeException('Unable to establish FTP connection.');
         }
 
         return $this->connection;
@@ -723,17 +759,17 @@ class Ftp implements
             );
         }
 
-        if (!$this->ssl) {
-            $this->connection = ftp_connect($this->host, $this->port, $this->timeout);
-        } else {
-            $this->connection = ftp_ssl_connect($this->host, $this->port, $this->timeout);
-        }
+        $connection = $this->ssl
+            ? ftp_ssl_connect($this->host, $this->port, $this->timeout)
+            : ftp_connect($this->host, $this->port, $this->timeout);
 
-        if (!$this->connection) {
+        if (false === $connection) {
             throw new RuntimeException(
                 sprintf('Could not connect to %s (port: %s).', $this->host, $this->port)
             );
         }
+
+        $this->connection = $connection;
 
         if (!@ftp_login($this->connection, $this->username, $this->password)) {
             $this->close();
@@ -760,7 +796,7 @@ class Ftp implements
                 throw $e;
             }
 
-            if (!ftp_chdir($this->connection, $this->directory)) {
+            if (!ftp_chdir($connection, $this->directory)) {
                 $this->close();
 
                 throw new RuntimeException(sprintf('Could not change directory to %s.', $this->directory));
@@ -775,15 +811,19 @@ class Ftp implements
      */
     public function close(): void
     {
-        if ($this->isConnected()) {
-            ftp_close($this->connection);
+        $connection = $this->connection;
+
+        if (!($connection instanceof Connection)) {
+            return;
         }
+
+        ftp_close($connection);
     }
 
     /**
      * Checks if the raw listing follows the Linux format.
      *
-     * @param array $info The array of information from the raw listing.
+     * @param array<int, string> $info The array of information from the raw listing.
      * @return bool True if the listing is in Linux format, false otherwise.
      */
     private function isLinuxListing(array $info): bool

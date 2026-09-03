@@ -61,8 +61,9 @@ class FilesystemMap implements FilesystemMapInterface
     /**
      *  An associative array that stores the registered filesystems.
      *
-     * @var array Holds an associarive array that stores registered filesystem, where the key is the name of the
-     *            filesystem and the value is the instance of the filesystem.
+     * @var array<string, FilesystemInterface>
+     *     Holds an associative array of registered filesystems,
+     *     where the key is the name and the value is the instance.
      */
     private array $filesystems = [];
 
@@ -72,7 +73,7 @@ class FilesystemMap implements FilesystemMapInterface
      * Each entry in the array has the filesystem name as the key
      * and the corresponding filesystem instance as the value.
      *
-     * @return array Return an array of registered filesystem.
+     * @return array<string, FilesystemInterface> Return an array of registered filesystem.
      */
     public function all(): array
     {

@@ -19,6 +19,7 @@ use RuntimeException;
 
 use function md5;
 use function md5_file;
+use function sprintf;
 
 /**
  * Class Checksum.
@@ -72,6 +73,14 @@ class Checksum
      */
     public static function fromFile(string $filename): string
     {
-        return md5_file($filename);
+        $hash = md5_file($filename);
+
+        if (false === $hash) {
+            throw new RuntimeException(
+                sprintf('Unable to calculate checksum for "%s".', $filename)
+            );
+        }
+
+        return $hash;
     }
 }

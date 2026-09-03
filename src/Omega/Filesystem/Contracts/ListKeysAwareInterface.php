@@ -42,7 +42,7 @@ interface ListKeysAwareInterface
      * support wildcard or regex matching, only simple prefix-based filtering.
      *
      * @param string $prefix The prefix to filter the keys (optional, defaults to an empty string).
-     * @return array An array of keys starting with the specified prefix.
+     * @return array{keys: array<string>, dirs: array<string>} A structured list of keys and directories.
      */
     public function listKeys(string $prefix = ''): array;
 }

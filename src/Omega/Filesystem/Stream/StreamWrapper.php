@@ -18,6 +18,7 @@ namespace Omega\Filesystem\Stream;
 use InvalidArgumentException;
 use RuntimeException;
 use Omega\Filesystem\Filesystem;
+use Omega\Filesystem\FilesystemMap;
 
 use function array_merge;
 use function in_array;
@@ -49,7 +50,7 @@ class StreamWrapper
      *
      * @var FilesystemMap Holds the map of filesystems used by the stream wrapper.
      */
-    private static FilesystemMap $filesystemMap;
+    private static ?FilesystemMap $filesystemMap = null;
 
     /**
      * The current stream being manipulated by this wrapper.
@@ -171,9 +172,9 @@ class StreamWrapper
      * Writes data to the stream.
      *
      * @param string $data The data to write.
-     * @return int The number of bytes written.
+     * @return int|false The number of bytes written, or false on failure.
      */
-    public function stream_write(string $data): int
+    public function stream_write(string $data): int|false
     {
         return $this->stream->write($data);
     }
@@ -213,9 +214,9 @@ class StreamWrapper
     /**
      * Retrieves the current position of the stream pointer.
      *
-     * @return int The current position.
+     * @return int|false The current position, or false on failure.
      */
-    public function stream_tell(): int
+    public function stream_tell(): int|false
     {
         return $this->stream->tell();
     }
@@ -233,7 +234,7 @@ class StreamWrapper
     /**
      * Retrieves stream metadata.
      *
-     * @return array|false An array of metadata or false on failure.
+     * @return array<int|string, int|bool>|false An array of metadata or false on failure.
      */
     public function stream_stat(): array|false
     {
@@ -245,7 +246,7 @@ class StreamWrapper
      *
      * @param string $path The resource path.
      * @param int $flags URL stat flags.
-     * @return array|false Stream metadata or false on failure.
+     * @return array<int|string, int|bool>|false Stream metadata or false on failure.
      */
     public function url_stat(string $path, int $flags): array|false
     {

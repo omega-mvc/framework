@@ -18,7 +18,7 @@ namespace Omega\Filesystem\Stream;
 use Exception;
 use LogicException;
 use RuntimeException;
-use Omega\Filesystem\Uti\Path;
+use Omega\Filesystem\Util\Path;
 
 use function fclose;
 use function feof;
@@ -62,9 +62,9 @@ class Local implements StreamInterface
     private ?StreamMode $mode = null;
 
     /**
-     * @var mixed The file handle resource used for stream operations.
+     * @var resource|null The file handle resource used for stream operations.
      */
-    private mixed $fileHandle;
+    private $fileHandle = null;
 
     /**
      * Constructs a Local stream instance.
@@ -115,7 +115,7 @@ class Local implements StreamInterface
      */
     public function read(int $count): string|false
     {
-        if (!$this->fileHandle) {
+        if (null === $this->mode || !$this->fileHandle) {
             return false;
         }
 
@@ -123,6 +123,10 @@ class Local implements StreamInterface
             throw new LogicException(
                 'The stream does not allow read.'
             );
+        }
+
+        if ($count < 1) {
+            return '';
         }
 
         return fread($this->fileHandle, $count);
@@ -133,7 +137,7 @@ class Local implements StreamInterface
      */
     public function write(string $data): int|false
     {
-        if (!$this->fileHandle) {
+        if (null === $this->mode || !$this->fileHandle) {
             return false;
         }
 
@@ -215,12 +219,14 @@ class Local implements StreamInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<int|string, int|bool>|false An associative array of stream statistics, or false.
      */
     public function stat(): array|false
     {
         if ($this->fileHandle) {
             return fstat($this->fileHandle);
-        } elseif (!is_resource($this->fileHandle) && is_dir($this->path)) {
+        } elseif (is_dir($this->path)) {
             return stat($this->path);
         }
 
@@ -244,7 +250,7 @@ class Local implements StreamInterface
      */
     public function unlink(): bool
     {
-        if ($this->mode->impliesExistingContentDeletion()) {
+        if (null !== $this->mode && $this->mode->impliesExistingContentDeletion()) {
             return @unlink($this->path);
         }
 
