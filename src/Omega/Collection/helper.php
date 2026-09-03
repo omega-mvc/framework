@@ -99,7 +99,7 @@ if (!function_exists('data_get')) {
      * @param TGetDefault              $default Default value if the key does not exist
      * @return TValue|list<mixed>|TGetDefault|null Returns the value, multiple values, or the default
      */
-    function data_get(array $array, int|string $key, $default = null): mixed
+    function data_get(array $array, int|string $key, mixed $default = null): mixed
     {
         $segments = explode('.', (string) $key);
         $current  = $array;

@@ -140,7 +140,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param TGetDefault|null $default The default value to return if the key is not present.
      * @return TValue|TGetDefault|null The retrieved value or the provided default.
      */
-    public function get(int|string|null $name, $default = null): mixed
+    public function get(int|string|null $name, mixed $default = null): mixed
     {
         return $this->collection[$name] ?? $default;
     }
@@ -155,7 +155,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param mixed $value The value to assign.
      * @return $this
      */
-    protected function set(int|string $name, $value): self
+    protected function set(int|string $name, mixed $value): self
     {
         $this->collection[$name] = $value;
 
@@ -171,7 +171,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param mixed $value The value to append.
      * @return $this
      */
-    protected function push($value): self
+    protected function push(mixed $value): self
     {
         $this->collection[] = $value;
 
@@ -200,7 +200,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param bool $strict Whether to use strict comparison during lookup.
      * @return bool True if the value exists, false otherwise.
      */
-    public function contain($item, bool $strict = false): bool
+    public function contain(mixed $item, bool $strict = false): bool
     {
         return in_array($item, $this->collection, $strict);
     }
@@ -430,7 +430,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param TGetDefault|null $default The value to return if the collection has no items.
      * @return TValue|TGetDefault|null The first item or the default value.
      */
-    public function first($default = null): mixed
+    public function first(mixed $default = null): mixed
     {
         $key = array_key_first($this->collection) ?? 0;
 
@@ -457,7 +457,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * @param TGetDefault|null $default The value to return when the collection is empty.
      * @return TValue|TGetDefault|null The last item or the default value.
      */
-    public function last($default = null): mixed
+    public function last(mixed $default = null): mixed
     {
         $key = array_key_last($this->collection);
 
@@ -500,7 +500,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      *
      * @return TValue|false The current item, or false if the internal pointer is invalid.
      */
-    public function current()
+    public function current(): mixed
     {
         return current($this->collection);
     }
@@ -510,7 +510,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      *
      * @return TValue|false The next item, or false if the pointer advanced past the end.
      */
-    public function next()
+    public function next(): mixed
     {
         return next($this->collection);
     }
@@ -520,7 +520,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      *
      * @return TValue|false The previous item, or false if the pointer moved before the start.
      */
-    public function prev()
+    public function prev(): mixed
     {
         return prev($this->collection);
     }

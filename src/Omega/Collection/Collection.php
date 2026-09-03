@@ -88,7 +88,7 @@ class Collection extends AbstractCollectionImmutable
      * @param mixed $value The value to set.
      * @return void
      */
-    public function __set(int|string $name, $value): void
+    public function __set(int|string $name, mixed $value): void
     {
         $this->set($name, $value);
     }
@@ -791,42 +791,42 @@ class Collection extends AbstractCollectionImmutable
     {
         if ('=' === $operator || '==' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] == $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] == $value
             );
         }
         if ('===' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] === $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] === $value
             );
         }
         if ('!=' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] != $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] != $value
             );
         }
         if ('!==' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] !== $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] !== $value
             );
         }
         if ('>' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] > $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] > $value
             );
         }
         if ('>=' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] >= $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] >= $value
             );
         }
         if ('<' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] < $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] < $value
             );
         }
         if ('<=' === $operator) {
             return $this->filter(
-                fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] <= $value
+                fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && $TValue[$key] <= $value
             );
         }
 
@@ -843,7 +843,7 @@ class Collection extends AbstractCollectionImmutable
     public function whereIn(int|string $key, array $range): self
     {
         return $this->filter(
-            fn ($TValue) => is_array($TValue) && array_key_exists($key, $TValue) && in_array($TValue[$key], $range)
+            fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && in_array($TValue[$key], $range)
         );
     }
 
@@ -857,7 +857,7 @@ class Collection extends AbstractCollectionImmutable
     public function whereNotIn(int|string $key, array $range): self
     {
         return $this->filter(
-            fn ($TValue) => is_array($TValue)
+            fn (mixed $TValue) => is_array($TValue)
                 && array_key_exists($key, $TValue)
                 && false === in_array($TValue[$key], $range)
         );
