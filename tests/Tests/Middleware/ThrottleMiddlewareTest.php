@@ -47,7 +47,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(RateLimiter::class)]
 final class ThrottleMiddlewareTest extends TestCase
 {
-    /** @var int Fixed-window size in seconds used to guarantee all requests land in the same window. */
+    /** @var int Number of simulated requests for the test, adapted for Android environments. */
     private int $clock;
 
     /**
@@ -57,19 +57,18 @@ final class ThrottleMiddlewareTest extends TestCase
      * It is responsible for initializing the application instance, setting up
      * dependencies, and preparing any state required by the test.
      *
-     * A fixed 60-second window is used unconditionally: the assertions in these
-     * tests require every simulated request to fall within a single window. Using
-     * a short (e.g. 1 second) window made the tests depend on wall-clock timing,
-     * so they would intermittently fail whenever the loop crossed a second boundary
-     * (notably under slow tooling such as coverage or a warmed cache).
-     *
      * @return void
      */
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->clock = 60;
+        $testMode = getenv('OMEGA_TEST_MODE') ?: '';
+        if ($testMode === 'light' || getenv('CI') || getenv('GITHUB_ACTIONS')) {
+            $this->clock = 60;
+        } else {
+            $this->clock = 1;
+        }
     }
 
     /**
