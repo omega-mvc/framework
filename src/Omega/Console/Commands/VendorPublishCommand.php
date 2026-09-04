@@ -47,7 +47,7 @@ final class VendorPublishCommand extends AbstractCommand
         // Filtering modules by tag
         $filtered = ($targetTag === '*')
             ? $modules
-            : array_filter($modules, fn($tag) => $tag === $targetTag, ARRAY_FILTER_USE_KEY);
+            : array_filter($modules, fn(string $tag): bool => $tag === $targetTag, ARRAY_FILTER_USE_KEY);
 
         if (empty($filtered)) {
             $this->io->error("No publishable resources found for tag: {$targetTag}");

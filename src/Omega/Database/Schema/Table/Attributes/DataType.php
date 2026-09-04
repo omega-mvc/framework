@@ -182,7 +182,7 @@ class DataType
      */
     public function enum(array $enums): Constraint
     {
-        $enums = array_map(fn ($item) => "'{$item}'", $enums);
+        $enums = array_map(fn (string $item): string => "'{$item}'", $enums);
         $enum  = implode(', ', $enums);
 
         return $this->datatype = new Constraint("ENUM ({$enum})");

@@ -37,7 +37,7 @@ final class Rule extends \GUMP
      *
      * @return array<string, string>
      */
-    protected function get_messages()
+    protected function get_messages(): array
     {
         $messages = parent::get_messages();
 

@@ -466,7 +466,7 @@ class Container implements ArrayAccess, ContainerInterface
      */
     protected function getClosure(string $abstract, string $concrete): Closure
     {
-        return function ($container, $parameters = []) use ($abstract, $concrete) {
+        return function (self $container, array $parameters = []) use ($abstract, $concrete): mixed {
             if ($abstract == $concrete) {
                 return $container->build($concrete, $parameters);
             }

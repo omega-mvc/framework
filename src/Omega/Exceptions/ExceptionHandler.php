@@ -175,7 +175,7 @@ class ExceptionHandler
                 $this->dontReport,
                 $this->dontReportInternal
             ),
-            fn($report) => $th instanceof $report
+            fn(string $report): bool => $th instanceof $report
         );
     }
 
@@ -277,7 +277,7 @@ class ExceptionHandler
     {
         $pathsView = get_path('paths.view');
         $view_paths = is_array($pathsView)
-            ? array_map(fn ($path): string => $path . 'pages/', $pathsView)
+            ? array_map(fn (string $path): string => $path . 'pages/', $pathsView)
             : [];
         $pathView = get_path('path.view');
         if (is_string($pathView)) {

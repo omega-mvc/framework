@@ -169,7 +169,7 @@ class Method
         $return .= $this->returnType;
 
         // body
-        $bodies = array_map(fn ($x) => $tabDept(2) . $x, $this->body);
+        $bodies = array_map(fn (string $x): string => $tabDept(2) . $x, $this->body);
         $body   = implode("\n", $bodies);
 
         return str_replace(

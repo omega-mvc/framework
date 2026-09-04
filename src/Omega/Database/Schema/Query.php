@@ -81,7 +81,7 @@ abstract class Query
     {
         return implode(
             $separator,
-            array_filter($array, fn ($item) => $item !== '')
+            array_filter($array, fn (string $item): bool => $item !== '')
         );
     }
 }

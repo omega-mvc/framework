@@ -161,7 +161,7 @@ class Update extends AbstractExecute
 
         $queryParts = implode(
             ' ',
-            array_filter($build, fn ($item) => $item !== '')
+            array_filter($build, fn (string $item): bool => $item !== '')
         );
 
         return $this->query = "UPDATE {$this->table} {$queryParts}";

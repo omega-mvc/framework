@@ -59,7 +59,7 @@ final class FilterPool
     {
         $this->pool = array_filter(
             $this->pool,
-            fn ($field) => in_array($field['field'], $fields)
+            fn (array $field): bool => in_array($field['field'], $fields)
         );
 
         return $this;
@@ -74,7 +74,7 @@ final class FilterPool
     {
         $this->pool = array_filter(
             $this->pool,
-            fn ($field) => !in_array($field['field'], $fields)
+            fn (array $field): bool => !in_array($field['field'], $fields)
         );
 
         return $this;

@@ -51,7 +51,7 @@ readonly class RouteGroup
      * @param callable(): T $callback Callback that defines routes inside the group.
      * @return T Returns the result of the callback execution.
      */
-    public function group(callable $callback)
+    public function group(callable $callback): mixed
     {
         // Execute setup callback
         ($this->setup)();

@@ -127,7 +127,7 @@ class RouteUrlBuilder
 
         $result = preg_replace_callback(
             '/\(([^:)]+):([^)]+)\)/',
-            function ($matches) use ($parameters, $isAssociative, &$paramIndex, $patternMap) {
+            function (array $matches) use ($parameters, $isAssociative, &$paramIndex, $patternMap) {
                 $paramName   = $matches[1];
                 $patternType = $matches[2];
                 $patternKey  = "(:{$patternType})";

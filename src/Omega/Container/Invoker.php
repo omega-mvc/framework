@@ -166,7 +166,7 @@ final readonly class Invoker
     private function resolveFunctionDependencies(ReflectionFunctionAbstract $reflection, array $parameters = []): array
     {
         $resolved = array_map(
-            fn($parameter) => $this->resolveParameter($parameter, $parameters),
+            fn(ReflectionParameter $parameter): mixed => $this->resolveParameter($parameter, $parameters),
             $reflection->getParameters()
         );
 
@@ -215,6 +215,10 @@ final readonly class Invoker
         }
 
         $type = $parameter->getType();
+        if ($name === 'container' && $type instanceof ReflectionNamedType && 'self' === $type->getName()) {
+            return $this->container;
+        }
+
         if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
             return $this->container->get($type->getName());
         }

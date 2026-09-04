@@ -711,7 +711,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @throws Exception Throws if an error occurs while retrieving input.
      * @noinspection PhpMissingParamTypeInspection
      */
-    public function input(?string $key = null, $default = null): Collection|string
+    public function input(?string $key = null, mixed $default = null): Collection|string
     {
         $input = $this->source()->add($this->query->all());
         if (null === $key) {

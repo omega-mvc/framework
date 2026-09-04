@@ -223,7 +223,7 @@ abstract class AbstractQuery
     {
         [$binds, $values] = $this->bindsDestructor();
 
-        $quoteValues = array_map(function ($value) {
+        $quoteValues = array_map(function (mixed $value) {
             if (is_string($value)) {
                 return "'" . $value . "'";
             }

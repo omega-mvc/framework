@@ -162,7 +162,7 @@ class Property
             $singleLine  = $this->expecting[0] ?? '';
             $multiLine   = implode(
                 "\n" . $tabDept(1),
-                array_filter($this->expecting, fn ($key) => $key > 0, ARRAY_FILTER_USE_KEY)
+                array_filter($this->expecting, fn (int|string $key): bool => $key > 0, ARRAY_FILTER_USE_KEY)
             );
             $expecting = count($this->expecting) > 1
             ? ' ' . $singleLine . "\n" . $tabDept(1) . $multiLine

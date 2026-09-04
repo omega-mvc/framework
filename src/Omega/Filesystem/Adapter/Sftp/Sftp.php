@@ -72,7 +72,7 @@ class Sftp implements
      *
      * @var int
      */
-    private const TYPE_DIRECTORY = 2;
+    private const int TYPE_DIRECTORY = 2;
 
     /**
      * Constructor for the Sftp adapter.

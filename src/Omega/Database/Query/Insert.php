@@ -167,7 +167,7 @@ class Insert extends AbstractExecute
 
         $stringBuild = implode(
             ' ',
-            array_filter($builds, fn ($item) => $item !== '')
+            array_filter($builds, fn (string $item): bool => $item !== '')
         );
 
         $this->query = "INSERT INTO {$this->table} {$stringBuild}";

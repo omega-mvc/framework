@@ -14,6 +14,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Database\Schema\SchemaConnection;
+use Omega\Database\Schema\Query;
 use Omega\Database\Facades\DB;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -177,7 +178,7 @@ abstract class AbstractMigration extends AbstractCommand
         $migrate = $this->baseMigrate($batch);
 
         $migrate = $migrate
-            ->filter(static fn ($value): bool => (int) $value['batch'] === (int) $batch)
+            ->filter(static fn (array $value): bool => (int) $value['batch'] === (int) $batch)
             ->sort();
 
         if ($migrate->isEmpty()) {
@@ -192,7 +193,7 @@ abstract class AbstractMigration extends AbstractCommand
             $up = new Collection($schema['up'] ?? []);
 
             if ($this->getOption('dry-run')) {
-                $up->each(function ($item) {
+                $up->each(function (Query $item): bool {
                     $this->io->writeln("<fg=gray>{$item->__toString()}</>");
                     $this->io->newLine();
                     return true;
@@ -210,7 +211,7 @@ abstract class AbstractMigration extends AbstractCommand
             }
 
             try {
-                $success = $up->every(fn ($item) => $item->execute());
+                $success = $up->every(fn (Query $item): bool => $item->execute());
 
                 if ($success) {
                     $this->io->writeln(' <info>DONE</info>');
@@ -279,7 +280,7 @@ abstract class AbstractMigration extends AbstractCommand
         $pair = DB::table('migration')
             ->select()
             ->get()
-            ->assocBy(static fn ($item) => [$item['migration'] => (int) $item['batch']]);
+            ->assocBy(static fn (array $item): array => [$item['migration'] => (int) $item['batch']]);
 
         return $pair;
     }
@@ -335,14 +336,14 @@ abstract class AbstractMigration extends AbstractCommand
         $migrate = false === $batch
             ? $this->baseMigrate($batch, false)
             : $this->baseMigrate($batch, false)
-                ->filter(static fn ($value): bool => $value['batch'] >= $batch - $take);
+                ->filter(static fn (array $value): bool => $value['batch'] >= $batch - $take);
 
         foreach ($migrate->sortDesc() as $key => $val) {
             $schema = require_once $val['file_name'];
             $down   = new Collection($schema['down'] ?? []);
 
             if ($this->getOption('dry-run')) {
-                $down->each(function ($item) {
+                $down->each(function (Query $item): bool {
                     $this->io->writeln("<fg=gray>{$item->__toString()}</>");
                     $this->io->newLine(2);
                     return true;
@@ -358,7 +359,7 @@ abstract class AbstractMigration extends AbstractCommand
             }
 
             try {
-                $success = $down->every(fn ($item) => $item->execute());
+                $success = $down->every(fn (Query $item): bool => $item->execute());
 
                 if ($success) {
                     $success = $this->deleteMigrationTable((int) $val['batch']);

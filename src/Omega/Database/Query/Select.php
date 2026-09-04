@@ -297,7 +297,7 @@ final class Select extends AbstractFetch
             'limit'      => $this->getLimit(),
         ];
 
-        $condition = implode(' ', array_filter($build, fn ($item) => $item !== ''));
+        $condition = implode(' ', array_filter($build, fn (string $item): bool => $item !== ''));
 
         return $this->query = "SELECT {$column} FROM {$this->subQuery} {$condition}";
     }

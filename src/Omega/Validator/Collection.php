@@ -19,12 +19,12 @@ final class Collection implements CollectionInterface
     /**
      * @var array<TKey, TValue>
      */
-    private $collection = [];
+    private array $collection = [];
 
     /**
      * @param array<TKey, TValue> $collection Array Collection
      */
-    public function __construct($collection = [])
+    public function __construct(array $collection = [])
     {
         $this->replace($collection);
     }
@@ -36,7 +36,7 @@ final class Collection implements CollectionInterface
      *
      * @return Collection<TKey, TValue>
      */
-    public static function make($collection = [])
+    public static function make(array $collection = []): static
     {
         return new static($collection);
     }
@@ -55,7 +55,7 @@ final class Collection implements CollectionInterface
      *
      * @return void
      */
-    public function __set($key, $item)
+    public function __set(mixed $key, mixed $item): void
     {
         $this->set($key, $item);
     }
@@ -65,7 +65,7 @@ final class Collection implements CollectionInterface
      *
      * @return TValue|null Items from collection
      */
-    public function __get($key)
+    public function __get(mixed $key): mixed
     {
         return $this->get($key);
     }
@@ -77,7 +77,7 @@ final class Collection implements CollectionInterface
      *
      * @return $this
      */
-    public function replace($collection)
+    public function replace(array $collection): static
     {
         foreach ($collection as $key => $item) {
             $this->set($key, $item);
@@ -91,7 +91,7 @@ final class Collection implements CollectionInterface
      *
      * @return bool True if Key is exist
      */
-    public function has($key): bool
+    public function has(mixed $key): bool
     {
         return array_key_exists($key, $this->collection);
     }
@@ -106,7 +106,7 @@ final class Collection implements CollectionInterface
      *
      * @return TValue|TGetDefault|null Items from collection
      */
-    public function get($key, $default = null)
+    public function get(mixed $key, mixed $default = null): mixed
     {
         return $this->collection[$key] ?? $default;
     }
@@ -119,7 +119,7 @@ final class Collection implements CollectionInterface
      *
      * @return $this
      */
-    public function set($key, $item)
+    public function set(mixed $key, mixed $item): static
     {
         $this->collection[$key] = $item;
 
@@ -156,7 +156,7 @@ final class Collection implements CollectionInterface
      * @return TValue|null
      */
     #[\ReturnTypeWillChange]
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->get($offset);
     }

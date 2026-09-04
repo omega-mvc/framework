@@ -23,6 +23,7 @@ use ReflectionException;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
 use ReflectionParameter;
+use ReflectionType;
 use ReflectionUnionType;
 
 use function array_filter;
@@ -257,11 +258,11 @@ final class Resolver
         // Filtriamo solo le classi (non i tipi built-in)
         $classTypes = array_filter(
             $types,
-            fn ($t): bool => $t instanceof ReflectionNamedType && !$t->isBuiltin()
+            fn (ReflectionType $t): bool => $t instanceof ReflectionNamedType && !$t->isBuiltin()
         );
 
         // Estrarre il primo match dal container (il primo che risulta bound)
-        $resolved = array_reduce($classTypes, function ($carry, $classType) {
+        $resolved = array_reduce($classTypes, function (mixed $carry, ReflectionNamedType $classType): mixed {
             if ($carry !== null) {
                 return $carry;
             }

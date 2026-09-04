@@ -79,7 +79,7 @@ class ModelCollection extends Collection
      */
     public function isClean(?string $column = null): bool
     {
-        return $this->every(fn ($model) => $model->isClean($column));
+        return $this->every(fn (Model $model): bool => $model->isClean($column));
     }
 
     /**

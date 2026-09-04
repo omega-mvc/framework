@@ -27,7 +27,7 @@ final class RouteListCommand extends AbstractCommand
         }
 
         // 1. Prepariamo i dati formattati
-        $formattedRoutes = array_map(function ($route) {
+        $formattedRoutes = array_map(function (array $route): array {
             $methods = is_array($route['method']) ? $route['method'] : [$route['method']];
             return [
                 'method' => $this->formatMethods($methods),
@@ -63,7 +63,7 @@ final class RouteListCommand extends AbstractCommand
 
     private function formatMethods(array $methods): string
     {
-        return implode('|', array_map(fn($m) => $this->colorMethod($m), $methods));
+        return implode('|', array_map(fn(string $m): string => $this->colorMethod($m), $methods));
     }
 
     private function colorMethod(string $method): string

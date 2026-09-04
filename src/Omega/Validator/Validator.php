@@ -22,24 +22,24 @@ final class Validator
     private Rule $Rule;
 
     /** @var array<string, mixed> */
-    private $fields = [];
+    private array $fields = [];
     /** @var ValidPool Valid rule collection */
-    private $valid_pool;
+    private ValidPool $valid_pool;
     /** @var FilterPool Filter rule collection */
-    private $filter_pool;
+    private FilterPool $filter_pool;
 
     /** @var bool Check rule validate has run or not */
-    private $has_run_validate = false;
+    private bool $has_run_validate = false;
 
     /** @var MessagePool[] */
-    private $messages = [];
+    private array $messages = [];
 
     /**
      * Create validation and filter.
      *
      * @param array<string, mixed> $fileds Field array to validate
      */
-    public function __construct($fileds = [])
+    public function __construct(array $fileds = [])
     {
         $this->Rule        = new Rule();
         $this->fields($fileds);
@@ -56,7 +56,7 @@ final class Validator
      *
      * @return static
      */
-    public static function make($fileds = [], $validate_pool = null, $filter_pool = null)
+    public static function make($fileds = [], $validate_pool = null, $filter_pool = null): static
     {
         $validate = new static($fileds);
         if ($validate_pool !== null) {
@@ -78,7 +78,7 @@ final class Validator
      *
      * @return void
      */
-    public function __set($name, $value)
+    public function __set(string $name, string $value): void
     {
         $this->field($name)->raw($value);
     }
@@ -90,7 +90,7 @@ final class Validator
      *
      * @return Valid|Collection<string, mixed>|mixed New rule Validation
      */
-    public function __get($name)
+    public function __get(string $name): mixed
     {
         if ($name === 'errors') {
             return $this->errors();
@@ -146,7 +146,7 @@ final class Validator
      *
      * @param array<string, mixed> $fields Field array to validate
      */
-    public function fields($fields): self
+    public function fields(array $fields): self
     {
         foreach ($fields as $key => $field) {
             $this->fields[$key] = $field;
@@ -263,7 +263,7 @@ final class Validator
      *
      * @throws \Exception
      */
-    public function validOrException(?\Exception $exception = null)
+    public function validOrException(?\Exception $exception = null): bool
     {
         if ($this->Rule->validate($this->fields, $this->valid_pool->get_pool()) === true) {
             return true;
@@ -277,7 +277,7 @@ final class Validator
      *
      * @return bool|array<int, string> Return true if validation valid
      */
-    public function validOrError(?\Exception $exception = null)
+    public function validOrError(?\Exception $exception = null): bool|array
     {
         return $this->Rule->validate($this->fields, $this->valid_pool->get_pool());
     }
@@ -289,7 +289,7 @@ final class Validator
      *
      * @return array<string, mixed> Fields input after filter
      */
-    public function filter_out($rule_filter = null)
+    public function filter_out($rule_filter = null): array
     {
         if ($rule_filter === null) {
             /** @var array<string, mixed> */
@@ -317,7 +317,7 @@ final class Validator
      * @return bool|mixed True if validation failed,
      *                    array filter if validation valid
      */
-    public function failedOrFilter()
+    public function failedOrFilter(): array|bool
     {
         if ($this->Rule->validate($this->fields, $this->valid_pool->get_pool()) === true) {
             return $this->filter_out();
@@ -443,7 +443,7 @@ final class Validator
      *
      * @param array<string, array<string, string>> $messages
      */
-    public function setErrorMessages($messages): void
+    public function setErrorMessages(array $messages): void
     {
         foreach ($messages as $field => $message_string) {
             $message_pool = new MessagePool();

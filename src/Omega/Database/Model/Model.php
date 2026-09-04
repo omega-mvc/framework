@@ -874,9 +874,9 @@ class Model implements ArrayAccess, IteratorAggregate
     protected function getColumns(): array
     {
         return array_map(
-            fn ($column) => array_filter(
+            fn (array $column): array => array_filter(
                 $column,
-                fn ($k) => !in_array($k, $this->stash, true),
+                fn (int|string $k): bool => !in_array($k, $this->stash, true),
                 ARRAY_FILTER_USE_KEY
             ),
             $this->columns

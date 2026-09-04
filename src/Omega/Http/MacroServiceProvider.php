@@ -28,7 +28,7 @@ class MacroServiceProvider extends AbstractServiceProvider
 
         Request::macro(
             'upload',
-            function ($fileName) {
+            function (string $fileName) {
                 $files = $this->{'getFile'}();
 
                 return new UploadFile($files[$fileName]);

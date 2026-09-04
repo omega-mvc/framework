@@ -105,7 +105,7 @@ class Constraint
             $this->comment,
         ];
 
-        return implode(' ', array_filter($column, fn ($item) => $item !== ''));
+        return implode(' ', array_filter($column, fn (string $item): bool => $item !== ''));
     }
 
     /**

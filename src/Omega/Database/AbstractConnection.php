@@ -198,7 +198,7 @@ abstract class AbstractConnection implements ConnectionInterface
 
         $message = $e->getMessage();
 
-        return array_any($errors, fn($error) => false !== stripos($message, $error));
+        return array_any($errors, fn(string $error): bool => false !== stripos($message, $error));
     }
 
     /**

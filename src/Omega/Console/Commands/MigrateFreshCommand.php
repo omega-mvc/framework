@@ -6,6 +6,7 @@ namespace Omega\Console\Commands;
 
 use Omega\Collection\Collection;
 use Omega\Console\Attribute\AsCommand;
+use Omega\Database\Schema\Query;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -73,7 +74,7 @@ final class MigrateFreshCommand extends AbstractMigration
             $up     = new Collection($schema['up'] ?? []);
 
             if ($this->getOption('dry-run')) {
-                $up->each(function ($item) {
+                $up->each(function (Query $item): bool {
                     $this->io->writeln("<fg=gray>{$item->__toString()}</>");
                     $this->io->newLine();
                     return true;
@@ -89,7 +90,7 @@ final class MigrateFreshCommand extends AbstractMigration
             }
 
             try {
-                $success = $up->every(fn ($item) => $item->execute());
+                $success = $up->every(fn (Query $item): bool => $item->execute());
             } catch (Throwable $th) {
                 $this->io->newLine();
                 $this->io->error($th->getMessage());

@@ -85,7 +85,7 @@ class RedisConnector
      * @param \Redis      $redis
      * @param list<mixed> $parameters
      */
-    protected function establishConnection($redis, string $method, array $parameters, bool $persistent): void
+    protected function establishConnection(\Redis $redis, string $method, array $parameters, bool $persistent): void
     {
         $method = $persistent ? 'pconnect' : 'connect';
 

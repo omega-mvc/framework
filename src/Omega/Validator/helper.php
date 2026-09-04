@@ -30,7 +30,7 @@ if (!function_exists('validate')) {
      *
      * @param array<string, mixed> $field Field input
      */
-    function validate($field): Omega\Validator\Validator
+    function validate(array $field): Omega\Validator\Validator
     {
         return new Omega\Validator\Validator($field);
     }

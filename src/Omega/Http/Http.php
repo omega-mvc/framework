@@ -302,7 +302,7 @@ class Http
     {
         return array_reduce(
             array_reverse($middleware),
-            fn ($next, $middleware): Closure => fn (Request $request): Response => $this->executeMiddleware(
+            fn (Closure $next, mixed $middleware): Closure => fn (Request $request): Response => $this->executeMiddleware(
                 $middleware,
                 $request,
                 $next

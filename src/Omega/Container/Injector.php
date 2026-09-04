@@ -217,7 +217,7 @@ final class Injector
         mixed $injectConfig
     ): void {
         try {
-            $dependencies = array_map(fn($param) => $this->resolveParam($param, $injectConfig), $parameters);
+            $dependencies = array_map(fn(ReflectionParameter $param): mixed => $this->resolveParam($param, $injectConfig), $parameters);
             $method->invokeArgs($instance, $dependencies);
         } catch (BindingResolutionException) {
             // Fail silently if binding cannot be resolved

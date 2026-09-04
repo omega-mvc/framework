@@ -65,7 +65,7 @@ abstract class AbstractMakeCommand extends AbstractCommand
     protected function resolveVars(array $vars, string $name): array
     {
 
-        return array_map(function ($value) use ($name) {
+        return array_map(function (string $value) use ($name): string {
             return match ($value) {
                 'kebab' => Str::toKebabCase($name),
                 'snake' => Str::toSnakeCase($name),

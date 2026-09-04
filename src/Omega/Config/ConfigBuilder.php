@@ -85,7 +85,7 @@ class ConfigBuilder
 
         // Sort sources by priority (ascending order) so that a higher priority is
         // merged last and therefore wins on conflicting keys.
-        usort($this->sources, fn($a, $b) => $a[2] <=> $b[2]);
+        usort($this->sources, fn(array $a, array $b): int => $a[2] <=> $b[2]);
 
         // Reduce the sources into a single configuration object
         return array_reduce(

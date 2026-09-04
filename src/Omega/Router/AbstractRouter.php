@@ -218,7 +218,7 @@ abstract class AbstractRouter implements RouterInterface
      */
     public static function has(string $routeName): bool
     {
-        return array_any(self::$routes, fn($route) => $routeName === $route['name']);
+        return array_any(self::$routes, fn(Route $route): bool => $routeName === $route['name']);
     }
 
     /**

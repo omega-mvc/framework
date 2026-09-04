@@ -7,14 +7,14 @@ namespace Omega\Validator\Rule;
 final class ValidPool
 {
     /** @var array<int, array<string, string|Valid>> */
-    private $pool = [];
+    private array $pool = [];
 
     /**
      * Get entry valid rule.
      *
      * @return Valid[] Valid rule
      */
-    public function get_pool()
+    public function get_pool(): array
     {
         $rules = [];
         foreach ($this->pool as $ruler) {
@@ -38,11 +38,11 @@ final class ValidPool
      *
      * @return self
      */
-    public function only(array $fields)
+    public function only(array $fields): self
     {
         $this->pool = array_filter(
             $this->pool,
-            fn ($field) => in_array($field['field'], $fields)
+            fn (array $field): bool => in_array($field['field'], $fields)
         );
 
         return $this;
@@ -57,7 +57,7 @@ final class ValidPool
     {
         $this->pool = array_filter(
             $this->pool,
-            fn ($field) => !in_array($field['field'], $fields)
+            fn (array $field): bool => !in_array($field['field'], $fields)
         );
 
         return $this;
@@ -70,7 +70,7 @@ final class ValidPool
      *
      * @return self
      */
-    public function combine(ValidPool $validPool)
+    public function combine(ValidPool $validPool): self
     {
         foreach ($validPool->pool as $valid_rule) {
             $this->pool[] = $valid_rule;
@@ -86,7 +86,7 @@ final class ValidPool
      *
      * @return Valid New rule Validation
      */
-    public function rule(string ...$field)
+    public function rule(string ...$field): Valid
     {
         return $this->set_field_rule(new Valid(), $field);
     }
@@ -110,7 +110,7 @@ final class ValidPool
      *
      * @return Valid New rule Validation
      */
-    public function __get($name)
+    public function __get(string $name): Valid
     {
         return $this->rule($name);
     }
@@ -123,7 +123,7 @@ final class ValidPool
      *
      * @return void
      */
-    public function __set($name, $value)
+    public function __set(string $name, string $value): void
     {
         $this->rule($name)->raw($value);
     }

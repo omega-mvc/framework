@@ -16,14 +16,14 @@ use Omega\Validator\Rule as Rules;
 final class Valid
 {
     /** @var string[] */
-    private $validation_rule = [];
+    private array $validation_rule = [];
 
     /** @var string */
-    private $delimiter = '|';
+    private string $delimiter = '|';
     /** @var string */
-    private $parameters_delimiter = ',';
+    private string $parameters_delimiter = ',';
     /** @var string */
-    private $parameters_arrays_delimiter = ';';
+    private string $parameters_arrays_delimiter = ';';
 
     public function __construct()
     {
@@ -108,7 +108,7 @@ final class Valid
      *
      * @return self
      */
-    public function __get($name)
+    public function __get(string $name): self
     {
         if ($name === 'not') {
             return $this->not();
@@ -125,7 +125,7 @@ final class Valid
      *
      * @return self
      */
-    public function __call($name, $arguments)
+    public function __call(string $name, array $arguments): self
     {
         // backwards compatible until ver 1.x.x
         if ($name === 'equals_field') {
@@ -220,7 +220,7 @@ final class Valid
      *
      * @return self
      */
-    public function valid($custom_validation, string $message = 'Valid custom validation')
+    public function valid(callable $custom_validation, string $message = 'Valid custom validation'): self
     {
         if (is_callable($custom_validation)) {
             $byte           = random_bytes(3);
@@ -228,7 +228,7 @@ final class Valid
             $rule_name      = 'validate_' . $hex;
             $rule_invert    = 'invert_validate_' . $hex;
             $message_invert = 'Not, ' . $message;
-            $invert         = fn ($field, $input, $param, $value) => !call_user_func(
+            $invert         = fn (mixed $field, mixed $input, mixed $param, mixed $value): bool => !call_user_func(
                 $custom_validation,
                 $field,
                 $input,
@@ -252,7 +252,7 @@ final class Valid
      *
      * @return self
      */
-    public function raw($raw_rule)
+    public function raw(string $raw_rule): self
     {
         $this->validation_rule[] = $raw_rule;
 

@@ -33,7 +33,7 @@ final class MakeMigrationCommand extends AbstractMakeCommand
         if (!$name) {
             $question = new Question('Please fill the table name');
 
-            $question->setValidator(function ($answer) {
+            $question->setValidator(function (mixed $answer): mixed {
                 if (empty($answer) || trim($answer) === '') {
                     throw new \RuntimeException('The table name is required.');
                 }

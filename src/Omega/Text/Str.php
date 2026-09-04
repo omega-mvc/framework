@@ -491,7 +491,7 @@ final class Str
         $end = $start + $maskLength;
         $start--;
         $arrText = preg_split('//', $text, -1, PREG_SPLIT_NO_EMPTY);
-        $newText = array_map(function ($index, $string) use ($mask, $start, $end) {
+        $newText = array_map(function (int $index, string $string) use ($mask, $start, $end): string {
             if ($index > $start && $index < $end) {
                 return $mask;
             }
