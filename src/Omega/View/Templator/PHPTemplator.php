@@ -44,6 +44,6 @@ class PHPTemplator extends AbstractTemplatorParse
             '/{%\s*php\s*%}(.*?){%\s*endphp\s*%}/s',
             '<?php $1 ?>',
             $template
-        );
+        ) ?? '';
     }
 }

@@ -48,7 +48,8 @@ trait InteractWithCacheTrait
     private function getContents(string $fileName): string
     {
         if (false === array_key_exists($fileName, self::$cache)) {
-            self::$cache[$fileName] = file_get_contents($fileName);
+            $contents = file_get_contents($fileName);
+            self::$cache[$fileName] = $contents === false ? '' : $contents;
         }
 
         return self::$cache[$fileName];

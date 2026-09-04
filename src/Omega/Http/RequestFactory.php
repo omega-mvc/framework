@@ -118,8 +118,8 @@ class RequestFactory
             $_COOKIE,
             $_FILES,
             $this->getHeaders(),
-            $this->getMethod(),
-            $this->getClient(),
+            $this->getMethod() ?? 'GET',
+            $this->getClient() ?? '::1',
             $this->getRawBody()
         );
     }

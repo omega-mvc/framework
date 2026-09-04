@@ -61,7 +61,7 @@ class TemplatorFinder
     public function __construct(array $paths, ?array $extensions = null)
     {
         $this->setPaths(array_map(
-            fn($path) => slash(path:  $path),
+            fn (string $path) => slash(path:  $path),
             $paths
         ));
 
@@ -95,9 +95,9 @@ class TemplatorFinder
     protected function findInPath(string $viewName, array $paths): string
     {
         $found = array_filter(array_map(
-            fn($path) => array_filter(
+            fn (string $path) => array_filter(
                 array_map(
-                    fn($ext) => $path . slash(path: '/'  . $viewName) . $ext,
+                    fn (string $ext) => $path . slash(path: '/'  . $viewName) . $ext,
                     $this->extensions
                 ),
                 'file_exists'
@@ -160,7 +160,7 @@ class TemplatorFinder
     public function setPaths(array $paths): self
     {
         $this->paths = array_map(
-            fn ($path) => $this->resolvePath($path),
+            fn (string $path) => $this->resolvePath($path),
             $paths
         );
 

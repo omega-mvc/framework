@@ -234,6 +234,7 @@ final class ComponentTest extends TestCase
         $reflection = new ReflectionClass($this->templator);
         $property   = $reflection->getProperty('finder');
         $property->setAccessible(true);
+        /** @var TemplatorFinder $finder */
         $finder     = $property->getValue($this->templator);
 
         $componentTemplator = new ComponentTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
@@ -241,7 +242,9 @@ final class ComponentTest extends TestCase
         $method = new ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
         $method->setAccessible(true);
 
-        [$name, $params] = $method->invoke($componentTemplator, "'MyComp', 'simple'");
+        /** @var array{string, array<int, mixed>} $result */
+        $result = $method->invoke($componentTemplator, "'MyComp', 'simple'");
+        [$name, $params] = $result;
 
         $this->assertEquals('MyComp', $name);
         $this->assertEquals(['simple'], $params);

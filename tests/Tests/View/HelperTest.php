@@ -124,15 +124,24 @@ final class HelperTest extends TestCase
 
         $app->set(
             'view.response',
-            fn () => fn (string $viewPath, array $portal = []): Response => new Response(
-                $app->make(Templator::class)->render($viewPath, $portal)
-            )
+            fn () => function (string $viewPath, array $portal = []) use ($app): Response {
+                /** @var Templator $templator */
+                $templator = $app->make(Templator::class);
+
+                /** @var array<string, mixed> $portal */
+                return new Response($templator->render($viewPath, $portal));
+            }
         );
 
         $view = view('test', [], ['status' => 500]);
         $this->assertEquals(500, $view->getStatusCode());
+
+        $content = $view->getContent();
+        if (!is_string($content)) {
+            $this->fail('Expected string view content.');
+        }
         $this->assertTrue(
-            Str::contains($view->getContent(), 'omega')
+            Str::contains($content, 'omega')
         );
 
         $app->flush();

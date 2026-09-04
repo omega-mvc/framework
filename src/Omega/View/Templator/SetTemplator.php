@@ -45,6 +45,6 @@ class SetTemplator extends AbstractTemplatorParse
             '/{%\s*set\s+(\$\w+)\s*=\s*(.*?)\s*%}/',
             '<?php $1 = $2; ?>',
             $template
-        );
+        ) ?? '';
     }
 }

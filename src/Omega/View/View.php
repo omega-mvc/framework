@@ -44,8 +44,8 @@ class View
      * Extracts data from the provided portal array and makes it accessible inside the view.
      * Throws an exception if the view file cannot be found.
      *
-     * @param string               $viewPath Full path to the view template file.
-     * @param array<string, mixed> $portal   Associative array of data to inject into the view.
+     * @param string                          $viewPath Full path to the view template file.
+     * @param array<string, array<string, mixed>> $portal  Associative array of data to inject into the view.
      *                                      Common keys: 'auth', 'meta', 'contents'.
      * @return Response The Response object containing the rendered HTML content.
      * @throws ViewFileNotFoundException If the template cannot be found in any registered path.
@@ -69,7 +69,7 @@ class View
 
         // Return as HTTP response
         return new Response()
-            ->setContent($html)
+            ->setContent($html === false ? '' : $html)
             ->setResponseCode(Response::HTTP_OK)
             ->removeHeaders([
                 'Expires',

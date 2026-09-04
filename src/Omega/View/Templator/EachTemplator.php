@@ -45,18 +45,18 @@ class EachTemplator extends AbstractTemplatorParse
             '/{%\s*foreach\s*\(?\s*([^)\s]+)\s+as\s+([^)\s]+)\s*=>\s*([^)\s]+)\s*\)?\s*%}/s',
             '<?php foreach ($1 as $2 => $3): ?>',
             $template
-        );
+        ) ?? $template;
 
         $template = preg_replace(
             '/{%\s*foreach\s*\(?\s*([^)\s]+)\s+as\s+([^)\s]+)\s*\)?\s*%}/s',
             '<?php foreach ($1 as $2): ?>',
             $template
-        );
+        ) ?? $template;
 
         return preg_replace(
             '/{%\s*endforeach\s*%}/s',
             '<?php endforeach; ?>',
             $template
-        );
+        ) ?? '';
     }
 }

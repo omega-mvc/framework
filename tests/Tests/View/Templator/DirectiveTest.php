@@ -84,7 +84,7 @@ final class DirectiveTest extends TestCase
      */
     public function testItCanRenderEachBreak(): void
     {
-        DirectiveTemplator::register('sum', fn ($a, $b): int => $a + $b);
+        DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
         $out = $this->templator->templates('<html><head></head><body>{% sum(1, 2) %}</body></html>');
         $this->assertEquals(
             "<html><head></head><body>"
@@ -113,7 +113,7 @@ final class DirectiveTest extends TestCase
     public function testItCanNotRegisterDirective(): void
     {
         $this->expectException(DirectiveCanNotBeRegisterException::class);
-        DirectiveTemplator::register('include', fn ($file): string => $file);
+        DirectiveTemplator::register('include', fn (string $file): string => $file);
     }
 
     /**
@@ -123,7 +123,7 @@ final class DirectiveTest extends TestCase
      */
     public function testItCanRegisterAndCallDirective(): void
     {
-        DirectiveTemplator::register('sum', fn ($a, $b): int => $a + $b);
+        DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
         $this->assertEquals(2, DirectiveTemplator::call('sum', 1, 1));
     }
 

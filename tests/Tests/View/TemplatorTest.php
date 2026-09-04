@@ -71,6 +71,9 @@ final class TemplatorTest extends TestCase
     protected function tearDown(): void
     {
         $files = glob($this->setFixturePath('/fixtures/view/caches/*.php'));
+        if ($files === false) {
+            return;
+        }
         foreach ($files as $file) {
             if (is_file($file)) {
                 unlink($file);
@@ -563,6 +566,7 @@ final class TemplatorTest extends TestCase
 
         $template = new Templator($loader, $cache);
         $this->assertInstanceOf(Templator::class, $template);
+        /** @var TemplatorFinder $finder */
         $finder = (fn () => $this->{'finder'})->call($template);
         $this->assertEquals(['.template.php', '.php'], $finder->getExtensions());
         $this->assertEquals([$loader], $finder->getPaths());
@@ -586,6 +590,7 @@ final class TemplatorTest extends TestCase
 
         $templator->prependDependency($parent, [$child => 5]);
 
+        /** @var array<string, array<string, int>> $dependencies */
         $dependencies = (fn() => $this->{'dependency'})->call($templator);
         $this->assertEquals(5, $dependencies[$parent][$child]);
     }

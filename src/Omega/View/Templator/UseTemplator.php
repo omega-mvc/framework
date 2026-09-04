@@ -51,7 +51,7 @@ class UseTemplator extends AbstractTemplatorParse
 
         $result = preg_replace_callback(
             '/{%\s*use\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)\s*%}/',
-            function ($matches) {
+            function (array $matches) {
                 $this->uses[] = $matches[1];
 
                 return '';
@@ -63,7 +63,7 @@ class UseTemplator extends AbstractTemplatorParse
             return $template;
         }
 
-        $uses      = array_map(fn ($use) => "use {$use};", $this->uses);
+        $uses      = array_map(fn (string $use) => "use {$use};", $this->uses);
         $uses      = implode("\n", $uses);
         $header    = "<?php\n/* begain uses */\n{$uses}\n/* end uses */\n?>\n";
 

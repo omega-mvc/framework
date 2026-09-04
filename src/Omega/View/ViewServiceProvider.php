@@ -9,13 +9,18 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Response;
 use Omega\Container\AbstractServiceProvider;
-use Omega\View\Vite;
 use Omega\View\Templator\DirectiveTemplator;
+use Closure;
+use Omega\View\Vite;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
+use function array_filter;
 use function array_merge;
+use function array_values;
 use function file_exists;
+use function is_array;
+use function is_string;
 use function Omega\Application\get_path;
 
 class ViewServiceProvider extends AbstractServiceProvider
@@ -41,9 +46,12 @@ class ViewServiceProvider extends AbstractServiceProvider
      */
     protected function registerViteResolver(): void
     {
-        $this->app->set('vite.gets', fn (): Vite => new Vite(get_path('path.public'), '/build/'));
-        $this->app->set('vite.location', fn (): string => get_path('path.public') . '/build/manifest.json');
-        $this->app->set('vite.hasManifest', fn (): bool => file_exists($this->app->get('vite.location')));
+        $publicPath = get_path('path.public');
+        $publicPath = is_string($publicPath) ? $publicPath : '';
+
+        $this->app->set('vite.gets', fn (): Vite => new Vite($publicPath, '/build/'));
+        $this->app->set('vite.location', fn (): string => $publicPath . '/build/manifest.json');
+        $this->app->set('vite.hasManifest', fn (): bool => file_exists($publicPath . '/build/manifest.json'));
     }
 
     /**
@@ -53,9 +61,11 @@ class ViewServiceProvider extends AbstractServiceProvider
     protected function registerViteDirectives(): void
     {
         if ($this->app->has('vite.gets')) {
-            DirectiveTemplator::register('vite', function (array $attributes): string {
-                $vite = $this->app->get('vite.gets');
+            /** @var Vite $vite */
+            $vite = $this->app->get('vite.gets');
 
+            DirectiveTemplator::register('vite', function (array $attributes) use ($vite): string {
+                /** @var string[] $attributes */
                 return $vite(...$attributes);
             });
         }
@@ -71,26 +81,47 @@ class ViewServiceProvider extends AbstractServiceProvider
      */
     protected function registerViewResolver(): void
     {
+        /** @var Vite $vite */
+        $vite = $this->app->get('vite.gets');
+
+        /** @var array<string, mixed> $config */
+        $config = $this->app->get('config');
+
         $globalTemplateVar = [
             'vite_has_manifest' => $this->app->get('vite.hasManifest'),
-            'vite_hmr_script'   => $this->app->get('vite.gets')
-                ->isRunningHRM()
-                ? $this->app->get('vite.gets')->getHmrScript()
-                : '',
+            'vite_hmr_script'   => $vite->isRunningHRM() ? $vite->getHmrScript() : '',
         ];
 
-        $extensions = $this->app->get('config')['VIEW_EXTENSIONS'] ?? [];
+        $extensions  = $config['VIEW_EXTENSIONS'] ?? [];
+        $extensions  = is_array($extensions) ? array_values(array_filter($extensions, 'is_string')) : [];
+        $viewPaths   = get_path('paths.view');
+        $viewPaths   = is_array($viewPaths) ? array_values($viewPaths) : [];
+        $cachePath   = get_path('path.compiled_view_path');
+        $cachePath   = is_string($cachePath) ? $cachePath : '';
 
-        $this->app->set(TemplatorFinder::class, fn () => new TemplatorFinder(get_path('paths.view'), $extensions));
+        $this->app->set(TemplatorFinder::class, fn () => new TemplatorFinder($viewPaths, $extensions));
         $this->app->set(
             'view.instance',
-            fn () => new Templator($this->app->get(TemplatorFinder::class), get_path('path.compiled_view_path'))
+            function () use ($cachePath): Templator {
+                /** @var TemplatorFinder $finder */
+                $finder = $this->app->get(TemplatorFinder::class);
+
+                return new Templator($finder, $cachePath);
+            }
         );
         $this->app->set(
             'view.response',
-            fn () => fn (string $view, array $data = []): Response => new Response(
-                $this->app->get('view.instance')->render($view, array_merge($data, $globalTemplateVar))
-            )
+            function () use ($globalTemplateVar): Closure {
+                return function (string $view, array $data = []) use ($globalTemplateVar): Response {
+                    /** @var array<string, mixed> $data */
+                    /** @var Templator $instance */
+                    $instance = $this->app->get('view.instance');
+
+                    return new Response(
+                        $instance->render($view, array_merge($data, $globalTemplateVar))
+                    );
+                };
+            }
         );
     }
 }

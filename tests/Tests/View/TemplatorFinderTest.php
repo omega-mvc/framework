@@ -214,9 +214,11 @@ final class TemplatorFinderTest extends TestCase
         $view = new TemplatorFinder([$loader], ['.php']);
 
         $view->find('php');
+        /** @var array<string, string> $views */
         $views = (fn () => $this->{'views'})->call($view);
         $this->assertCount(1, $views);
         $view->flush();
+        /** @var array<string, string> $views */
         $views = (fn () => $this->{'views'})->call($view);
         $this->assertCount(0, $views);
     }

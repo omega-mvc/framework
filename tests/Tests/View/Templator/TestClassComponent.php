@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
+use Omega\View\Templator\ComponentInterface;
 use PHPUnit\Framework\Attributes\CoversNothing;
 
 /**
@@ -31,7 +32,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
  * @version    2.0.0
  */
 #[CoversNothing]
-final class TestClassComponent
+final class TestClassComponent implements ComponentInterface
 {
     /** @var string CSS class for background color. */
     private string $bg;

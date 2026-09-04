@@ -41,7 +41,7 @@ class JsonTemplator extends AbstractTemplatorParse
     {
         return preg_replace_callback(
             '/{%\s*json\(\s*(.+?)\s*(?:,\s*(\d+)\s*)?(?:,\s*(\d+)\s*)?\)\s*%}/',
-            static function ($matches): string {
+            static function (array $matches): string {
                 $data  = $matches[1];
                 $flags = $matches[2] ?? 0;
                 $depth = $matches[3] ?? 512;
@@ -55,6 +55,6 @@ class JsonTemplator extends AbstractTemplatorParse
                     . "); ?>";
             },
             $template
-        );
+        ) ?? '';
     }
 }

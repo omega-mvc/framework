@@ -134,6 +134,7 @@ final class IncludeTest extends TestCase
         $reflection = new ReflectionClass($this->templator);
         $property = $reflection->getProperty('finder');
         $property->setAccessible(true);
+        /** @var TemplatorFinder $finder */
         $finder = $property->getValue($this->templator);
 
         $includeTemplator = new IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));

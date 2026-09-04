@@ -39,15 +39,14 @@ class IfTemplator extends AbstractTemplatorParse
     {
         $pattern = '/{%\s*(?<type>if|else|endif)(?:\s+(?<condition>[^%]+))?\s*%}/';
 
-        return preg_replace_callback($pattern, function ($matches) {
+        return preg_replace_callback($pattern, function (array $matches) {
             $type = $matches['type'];
 
             return match ($type) {
-                'if'    => sprintf('<?php if (%s): ?>', trim($matches['condition'])),
+                'if'    => sprintf('<?php if (%s): ?>', trim($matches['condition'] ?? '')),
                 'else'  => '<?php else: ?>',
                 'endif' => '<?php endif; ?>',
-                default => $matches[0], // Fallback di sicurezza
             };
-        }, $template);
+        }, $template) ?? '';
     }
 }

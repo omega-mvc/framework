@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Omega\View;
 
 use Exception;
+use Closure;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
@@ -46,10 +47,10 @@ if (!function_exists('view')) {
     /**
      * Render with custom template engine, wrap in `Route\Controller`.
      *
-     * @param string $view_path Path to the template file to render.
-     * @param array<string, mixed> $data Associative array of data to pass to the template.
-     * @param array<string, mixed> $option Optional settings such as 'status' (HTTP status code) and 'header'
-     *           (HTTP headers).
+         * @param string $view_path Path to the template file to render.
+         * @param array<string, mixed> $data Associative array of data to pass to the template.
+         * @param array{status?: int, header?: array<string, string>} $option Optional settings such as 'status'
+         *           (HTTP status code) and 'header' (HTTP headers).
      * @return Response Returns a Response object containing the rendered template along with the specified
      *           status and headers.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
@@ -60,6 +61,7 @@ if (!function_exists('view')) {
      */
     function view(string $view_path, array $data = [], array $option = []): Response
     {
+        /** @var Closure(string, array<string, mixed>): Response $view */
         $view = app()->get('view.response');
         $status_code = $option['status'] ?? 200;
         $headers = $option['header'] ?? [];

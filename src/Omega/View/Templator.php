@@ -204,7 +204,7 @@ class Templator
         }
 
         $template = file_get_contents($templatePath);
-        $template = $this->templates($template, $templatePath);
+        $template = $this->templates($template === false ? '' : $template, $templatePath);
 
         file_put_contents($cachePath, $template);
 
@@ -226,7 +226,7 @@ class Templator
         $cachePath = $this->cacheDir . '/' . md5($templateName) . '.php';
 
         $template = file_get_contents($templateDir);
-        $template = $this->templates($template, $templateDir);
+        $template = $this->templates($template === false ? '' : $template, $templateDir);
 
         file_put_contents($cachePath, $template);
 
@@ -266,7 +266,7 @@ class Templator
         ob_start();
 
         try {
-            (static function ($__, $__file_name__) {
+            (static function (array $__, string $__file_name__) {
                 extract($__);
                 include $__file_name__;
             })($data, $templatePath);

@@ -43,6 +43,6 @@ final class BooleanTemplator extends AbstractTemplatorParse
             '/{%\s*bool\(\s*(.+?)\s*\)\s*%}/',
             static fn (array $matches): string => "<?= ($matches[1]) ? 'true' : 'false' ?>",
             $template
-        );
+        ) ?? '';
     }
 }

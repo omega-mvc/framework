@@ -23,8 +23,13 @@ use function array_key_exists;
 use function array_map;
 use function explode;
 use function implode;
+use function is_bool;
+use function is_float;
+use function is_int;
+use function is_string;
 use function ltrim;
 use function preg_replace_callback;
+use function sprintf;
 
 /**
  * Handles custom template directives.
@@ -121,7 +126,17 @@ class DirectiveTemplator extends AbstractTemplatorParse
 
         $callback = self::$directive[$name];
 
-        return (string) $callback(...$parameters);
+        $result = $callback(...$parameters);
+
+        if (is_string($result)) {
+            return $result;
+        }
+
+        if (is_int($result) || is_float($result) || is_bool($result) || $result instanceof \Stringable) {
+            return (string) $result;
+        }
+
+        throw new \RuntimeException(sprintf('Directive "%s" must return a string or scalar value.', $name));
     }
 
     /**
@@ -131,10 +146,10 @@ class DirectiveTemplator extends AbstractTemplatorParse
     {
         return preg_replace_callback(
             '/{%\s*(\w+)\((.*?)\)\s*%}/',
-            function ($matches) {
+            function (array $matches) {
                 $name   = $matches[1];
                 $params = explode(',', $matches[2]);
-                $params = array_map(fn ($param) => ltrim($param), $params);
+                $params = array_map(fn (string $param) => ltrim($param), $params);
 
                 return array_key_exists($name, self::$excludeList)
                     ? $matches[0]
@@ -143,6 +158,6 @@ class DirectiveTemplator extends AbstractTemplatorParse
                     . implode(', ', $params) . '); ?>';
             },
             $template
-        );
+        ) ?? '';
     }
 }

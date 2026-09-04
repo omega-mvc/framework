@@ -39,9 +39,9 @@ use Omega\Facade\AbstractFacade;
  * @method static \Omega\View\Vite   manifestName(string $manifestName)
  * @method static void                  flush()
  * @method static string                manifest()
- * @method static array                 loader()
- * @method static string                getManifest(string $resourceName)
- * @method static array                 getManifestImports(string[] $resources)
+ * @method static array<string, array<string, string|string[]>>      loader()
+ * @method static string                                            getManifest(string $resourceName)
+ * @method static array{imports: string[], css: string[]}           getManifestImports(string[] $resources)
  * @method static string                get(string $resourceName)
  * @method static array<string, string> gets(string[] $resourceNames)
  * @method static bool                  isRunningHRM()
@@ -51,7 +51,7 @@ use Omega\Facade\AbstractFacade;
  * @method static int                   manifestTime()
  * @method static string                getPreloadTags(string[] $entryPoints)
  * @method static string getTags(string[] $entryPoints, array<string|int, string|bool|int|null> $attributes = null)
- * @method static string getCustomTags(array $entryPoints,array<string|int, string|bool|int|null> $defaultAttributes=[])
+ * @method static string getCustomTags(array<string, array<string|int, string|bool|int|null>> $entryPoints, array<string|int, string|bool|int|null> $defaultAttributes=[])
  *
  * @see \Omega\View\Vite
  */

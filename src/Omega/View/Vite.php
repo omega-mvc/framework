@@ -75,7 +75,7 @@ class Vite
     /** @var int Timestamp of the cached manifest file. */
     private int $cacheTime = 0;
 
-    /** @var array<string, array<string, array<string, string>>> Cached manifest data. */
+    /** @var array<string, array<string, array<string, string|string[]>>> Cached manifest data. */
     public static array $cache = [];
 
     /** @var string|null HMR (Hot Module Replacement) URL if running HMR server. */
@@ -139,7 +139,7 @@ class Vite
         $tags = array_merge(
             [$this->getHmrScript()],
             array_map(
-                fn ($entry) => $this->createTag($hmrUrl . $entry, $entry),
+                fn (string $entry) => $this->createTag($hmrUrl . $entry, $entry),
                 $entryPoints
             )
         );
@@ -182,12 +182,12 @@ class Vite
     private function buildPreloadTags(array $imports): array
     {
         $importTags = array_map(
-            fn ($entry) => $this->createPreloadTag($this->getManifest($entry)),
+            fn (string $entry) => $this->createPreloadTag($this->getManifest($entry)),
             $imports['imports']
         );
 
         $cssTags = array_map(
-            fn ($entry) => $this->createStyleTag($this->buildPath . $entry),
+            fn (string $entry) => $this->createStyleTag($this->buildPath . $entry),
             $imports['css']
         );
 
@@ -210,14 +210,14 @@ class Vite
 
         $cssAssets = array_filter(
             $assets,
-            fn ($file) => $this->isCssFile($file)
+            fn (string $file) => $this->isCssFile($file)
         );
 
         $jsAssets = array_diff_key($assets, $cssAssets);
 
         return array_merge(
-            array_map(fn ($url) => $this->createStyleTag($url), $cssAssets),
-            array_map(fn ($url) => $this->createScriptTag($url), $jsAssets)
+            array_map(fn (string $url) => $this->createStyleTag($url), $cssAssets),
+            array_map(fn (string $url) => $this->createScriptTag($url), $jsAssets)
         );
     }
 
@@ -337,6 +337,7 @@ class Vite
      */
     private function parseManifestJson(string $content): array
     {
+        /** @var array<string, array<string, string|string[]>>|null $json */
         $json = json_decode($content, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
@@ -377,7 +378,13 @@ class Vite
             throw new Exception("Resource file not found {$resourceName}");
         }
 
-        return $this->buildPath . $asset[$resourceName]['file'];
+        $file = $asset[$resourceName]['file'] ?? '';
+
+        if (!is_string($file)) {
+            throw new Exception("Invalid manifest entry for resource file {$resourceName}");
+        }
+
+        return $this->buildPath . $file;
     }
 
     /**
@@ -427,7 +434,7 @@ class Vite
 
         $preload['imports'] = array_merge($preload['imports'], $imports);
 
-        array_walk($imports, function ($import) use ($assets, &$preload) {
+        array_walk($imports, function (string $import) use ($assets, &$preload) {
             if (isset($assets[$import])) {
                 $this->collectImports($assets, $assets[$import], $preload);
             }
@@ -466,18 +473,25 @@ class Vite
 
             return array_combine(
                 $resourceNames,
-                array_map(fn ($asset) => $hot . $asset, $resourceNames)
-            );
+                array_map(fn (string $asset) => $hot . $asset, $resourceNames)
+            ) ?: [];
         }
 
         $asset = $this->loader();
 
-        return array_reduce($resourceNames, function ($carry, $name) use ($asset) {
+        $result = [];
+
+        foreach ($resourceNames as $name) {
             if (isset($asset[$name])) {
-                $carry[$name] = $this->buildPath . $asset[$name]['file'];
+                $file = $asset[$name]['file'] ?? '';
+
+                if (is_string($file)) {
+                    $result[$name] = $this->buildPath . $file;
+                }
             }
-            return $carry;
-        }, []);
+        }
+
+        return $result;
     }
 
     /**
@@ -549,7 +563,13 @@ class Vite
      */
     public function manifestTime(): int
     {
-        return filemtime($this->manifest());
+        $time = filemtime($this->manifest());
+
+        if ($time === false) {
+            throw new Exception('Manifest file modification time cannot be read.');
+        }
+
+        return $time;
     }
 
     /**
@@ -568,12 +588,12 @@ class Vite
         $imports = $this->getManifestImports($entryPoints);
 
         $importTags = array_map(
-            fn($entry) => $this->createPreloadTag($this->getManifest($entry)),
+            fn(string $entry) => $this->createPreloadTag($this->getManifest($entry)),
             $imports['imports']
         );
 
         $cssTags = array_map(
-            fn($entry) => $this->createStyleTag($this->buildPath . $entry),
+            fn(string $entry) => $this->createStyleTag($this->buildPath . $entry),
             $imports['css']
         );
 
@@ -617,7 +637,7 @@ class Vite
         $assets    = $this->gets(array_keys($entryPoints));
         $cssAssets = array_filter(
             $assets,
-            fn ($file, $url) => $this->isCssFile($file),
+            fn (string $file, string $url) => $this->isCssFile($file),
             ARRAY_FILTER_USE_BOTH
         );
 
@@ -625,12 +645,12 @@ class Vite
         $tags = array_merge(
             $tags,
             array_map(
-                fn ($url, $file) => $this->createStyleTag($url, $entryPoints[$file] ?? $defaultAttributes),
+                fn (string $url, string $file) => $this->createStyleTag($url, $entryPoints[$file] ?? $defaultAttributes),
                 array_values($cssAssets),
                 array_keys($cssAssets)
             ),
             array_map(
-                fn ($url, $file) => $this->createScriptTag($url, $entryPoints[$file] ?? $defaultAttributes),
+                fn (string $url, string $file) => $this->createScriptTag($url, $entryPoints[$file] ?? $defaultAttributes),
                 array_values($jsAssets),
                 array_keys($jsAssets)
             )
@@ -751,7 +771,7 @@ class Vite
         }
 
         $parts = array_filter(array_map(
-            function ($key, $value) {
+            function (int|string $key, bool|int|string|null $value) {
                 if (is_int($key)) {
                     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
                 }

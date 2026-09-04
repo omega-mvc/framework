@@ -24,6 +24,7 @@ use Omega\View\InteractWithCacheTrait;
 use function array_key_exists;
 use function class_exists;
 use function explode;
+use function is_a;
 use function preg_replace_callback;
 use function str_contains;
 use function trim;
@@ -104,12 +105,15 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
     {
         return preg_replace_callback(
             '/{%\s*component\(\s*(.*?)\)\s*%}(.*?){%\s*endcomponent\s*%}/s',
-            function ($matches) use ($template) {
+            function (array $matches): string {
                 $rawParams                = trim($matches[1]);
                 [$componentName, $params] = $this->extractComponentAndParams($rawParams);
                 $innerContent             = $matches[2];
 
-                if (class_exists($class = $this->namespace . $componentName)) {
+                if (
+                    class_exists($class = $this->namespace . $componentName)
+                    && is_a($class, ComponentInterface::class, true)
+                ) {
                     $component = new $class(...$params);
 
                     return $component->render($innerContent);
@@ -123,7 +127,7 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
 
                 return preg_replace_callback(
                     "/{%\s*yield\(\'([^\']+)\'\)\s*%}/",
-                    function ($yieldMatches) use ($componentName, $innerContent, $params) {
+                    function (array $yieldMatches) use ($componentName, $innerContent, $params): string {
                         if ($componentName === $yieldMatches[1]) {
                             return $innerContent;
                         }
@@ -135,10 +139,10 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
                         throw new YeldSectionNotFoundException($yieldMatches[1]);
                     },
                     $content
-                );
+                ) ?? '';
             },
             $template
-        );
+        ) ?? '';
     }
 
     /**
@@ -148,7 +152,7 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
      * a component name and an associative array of parameters.
      *
      * @param string $rawParams Raw parameter string from the component directive.
-     * @return array{0: string, 1: array<string, string>} An array containing the component name
+     * @return array{0: string, 1: array<int|string, string>} An array containing the component name
      *         at index 0 and parameters array at index 1.
      */
     private function extractComponentAndParams(string $rawParams): array
@@ -159,19 +163,16 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
         $paramsString = $parts[1] ?? '';
         $paramsArray  = array_filter(array_map('trim', explode(',', $paramsString)));
 
-        $params = array_reduce(
-            $paramsArray,
-            function (array $carry, string $param) {
-                if (str_contains($param, ':')) {
-                    [$key, $value] = explode(':', $param, 2);
-                    $carry[$key] = trim($value, "'\" ");
-                } else {
-                    $carry[] = trim($param, "'\" ");
-                }
-                return $carry;
-            },
-            []
-        );
+        $params = [];
+
+        foreach ($paramsArray as $param) {
+            if (str_contains($param, ':')) {
+                [$key, $value] = explode(':', $param, 2);
+                $params[$key] = trim($value, "'\" ");
+            } else {
+                $params[] = trim($param, "'\" ");
+            }
+        }
 
         return [$componentName, $params];
     }

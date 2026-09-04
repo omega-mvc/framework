@@ -42,10 +42,10 @@ class NameTemplator extends AbstractTemplatorParse
     {
         $pattern = '/{%\s*raw\s*%}(.*?){%\s*endraw\s*%}|{!!\s*(.*?)\s*!!}|{{\s*(.*?)\s*}}/s';
 
-        return preg_replace_callback($pattern, function ($matches) {
+        return preg_replace_callback($pattern, function (array $matches) {
 
             // RAW
-            if (isset($matches[1]) && $matches[1] !== '') {
+            if ($matches[1] !== '') {
                 return $matches[1];
             }
 
@@ -59,6 +59,8 @@ class NameTemplator extends AbstractTemplatorParse
                 $content = trim($matches[3]);
                 return "<?php echo htmlspecialchars({$content}); ?>";
             }
-        }, $template);
+
+            return '';
+        }, $template) ?? '';
     }
 }

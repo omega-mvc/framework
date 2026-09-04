@@ -43,6 +43,6 @@ class ContinueTemplator extends AbstractTemplatorParse
             '/\{%\s*continue\s*(\d*)\s*%\}/',
             '<?php continue $1; ?>',
             $template
-        );
+        ) ?? '';
     }
 }

@@ -67,13 +67,13 @@ final class RenderViewTest extends TestCase
 
         $this->assertEquals(
             "<html><head></head><body></body></html>\n",
-            str_replace("\r\n", "\n", $renderHtml),
+            str_replace("\r\n", "\n", (string) $renderHtml),
             'it must same output with template html'
         );
 
         $this->assertEquals(
             "<html><head></head><body><h1>hay</h1></body></html>\n",
-            str_replace("\r\n", "\n", $renderPhp),
+            str_replace("\r\n", "\n", (string) $renderPhp),
             'it must same output with template html'
         );
     }

@@ -82,9 +82,9 @@ final class ViteTagTest extends TestCase
     public function testEscapeUrl(): void
     {
         $vite   = new Vite(__DIR__, '');
-        $escape = (fn ($url) => $this->{'escapeUrl'}($url))->call($vite, 'foo"bar');
+        $escape = (fn (string $url) => $this->{'escapeUrl'}($url))->call($vite, 'foo"bar');
         $this->assertEquals('foo&quot;bar', $escape, 'this must return escaped url for double quote');
-        $escape2 = (fn ($url) => $this->{'escapeUrl'}($url))->call($vite, 'https://example.com/path');
+        $escape2 = (fn (string $url) => $this->{'escapeUrl'}($url))->call($vite, 'https://example.com/path');
         $this->assertEquals('https://example.com/path', $escape2, 'this must return escaped url for normal url');
     }
 
@@ -96,11 +96,11 @@ final class ViteTagTest extends TestCase
     public function testIsCssFile(): void
     {
         $vite  = new Vite(__DIR__, '');
-        $isCss = (fn ($file) => $this->{'isCssFile'}($file))->call($vite, 'foo.css');
+        $isCss = (fn (string $file) => $this->{'isCssFile'}($file))->call($vite, 'foo.css');
         $this->assertTrue($isCss, 'should detect .css as css file');
-        $isCss2 = (fn ($file) => $this->{'isCssFile'}($file))->call($vite, 'bar.scss');
+        $isCss2 = (fn (string $file) => $this->{'isCssFile'}($file))->call($vite, 'bar.scss');
         $this->assertTrue($isCss2, 'should detect .scss as css file');
-        $isCss3 = (fn ($file) => $this->{'isCssFile'}($file))->call($vite, 'baz.js');
+        $isCss3 = (fn (string $file) => $this->{'isCssFile'}($file))->call($vite, 'baz.js');
         $this->assertFalse($isCss3, 'should not detect .js as css file');
     }
 
@@ -113,13 +113,13 @@ final class ViteTagTest extends TestCase
     {
         $vite   = new Vite(__DIR__, '');
 
-        $buildAttributeString    = (fn ($attributes) => $this->{'buildAttributeString'}($attributes))->call($vite, [
+        $buildAttributeString = (fn () => $this->{'buildAttributeString'}([
             'data-foo'                => 123,
             'async'                   => 'true',
             'defer'                   => true,
             'false-should-be-ignored' => false,
             'null-should-be-ignored'  => null,
-        ]);
+        ]))->call($vite);
         $this->assertEquals(
             'data-foo="123" async="true" defer',
             $buildAttributeString,
@@ -165,17 +165,15 @@ final class ViteTagTest extends TestCase
         $createTagWithAttributes = (
             fn (
                 string $url,
-                string $entrypoint,
-                array $attributes
-            ) => $this->{'createTag'}($url, $entrypoint, $attributes)
+                string $entrypoint
+            ) => $this->{'createTag'}($url, $entrypoint, [
+                'data-foo' => 'bar',
+                'async'    => 'true',
+            ])
         )->call(
             $vite,
             'foo.js',
             'resources/js/app.js',
-            [
-                'data-foo' => 'bar',
-                'async'    => 'true',
-            ],
         );
 
         $this->assertEquals(
@@ -448,7 +446,7 @@ final class ViteTagTest extends TestCase
      *
      * @param Vite $vite The instance of the Vite class on which to invoke the method.
      * @param string $url The URL of the JavaScript file to include in the script tag.
-     * @param array|null $attributes Optional associative array of HTML attributes to include
+     * @param array<int|string, bool|int|string|null>|null $attributes Optional associative array of HTML attributes to include
      *                              in the <script> tag. Boolean values are handled according
      *                              to HTML standards (true = present attribute, false/null = ignored).
      * @return string The resulting <script> HTML tag as a string.
@@ -459,6 +457,9 @@ final class ViteTagTest extends TestCase
         $method = new ReflectionMethod(Vite::class, 'createScriptTag');
         $method->setAccessible(true);
 
-        return $method->invoke($vite, $url, $attributes);
+        /** @var string $result */
+        $result = $method->invoke($vite, $url, $attributes);
+
+        return $result;
     }
 }

@@ -44,6 +44,6 @@ class BreakTemplator extends AbstractTemplatorParse
             '/\{%\s*break\s*(\d*)\s*%\}/',
             '<?php break $1; ?>',
             $template
-        );
+        ) ?? '';
     }
 }

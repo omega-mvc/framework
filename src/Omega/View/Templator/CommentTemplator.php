@@ -44,6 +44,6 @@ class CommentTemplator extends AbstractTemplatorParse
             '/{#\s*(.*?)\s*#}/',
             '<?php /* $1 */ ?>',
             $template
-        );
+        ) ?? '';
     }
 }

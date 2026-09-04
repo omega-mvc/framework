@@ -23,6 +23,7 @@ use Omega\View\InteractWithCacheTrait;
 use function array_key_exists;
 use function explode;
 use function htmlspecialchars;
+use function is_string;
 use function preg_match;
 use function preg_replace_callback;
 use function sprintf;
@@ -93,20 +94,20 @@ class SectionTemplator extends AbstractTemplatorParse implements DependencyTempl
         // Process all sections first
         $template = preg_replace_callback(
             '/{%\s*section\s*\(\s*[\'"]([^\'"]+)[\'"]\s*,\s*[\'"]([^\'"]+)[\'"]\s*\)\s*%}/s',
-            fn ($matches) => $this->section[$matches[1]] = htmlspecialchars(trim($matches[2])),
+            fn (array $matches) => $this->section[$matches[1]] = htmlspecialchars(trim($matches[2])),
             $template
-        );
+        ) ?? $template;
 
         $template = preg_replace_callback(
             '/{%\s*section\s*\(\s*[\'"]([^\'"]+)[\'"]\s*\)\s*%}(.*?){%\s*endsection\s*%}/s',
-            fn ($matches) => $this->section[$matches[1]] = trim($matches[2]),
+            fn (array $matches) => $this->section[$matches[1]] = trim($matches[2]),
             $template
-        );
+        ) ?? $template;
 
         /** @noinspection PhpUnusedLocalVariableInspection */
         $template = preg_replace_callback(
             '/{%\s*sections\s*\\s*%}(.*?){%\s*endsections\s*%}/s',
-            function ($matches) {
+            function (array $matches) {
                 $lines = explode(PHP_EOL, str_replace(["\r\n", "\r", "\n"], PHP_EOL, $matches[1]));
                 foreach ($lines as $line) {
                     if (Str::contains($line, ':')) {
@@ -118,14 +119,14 @@ class SectionTemplator extends AbstractTemplatorParse implements DependencyTempl
                 return '';
             },
             $template
-        );
+        ) ?? $template;
 
         // yield section
         return preg_replace_callback(
             /* phpcs:disable Generic.Files.LineLength.TooLong */
             '/{%\s*yield(?:\s*\(\s*[\'"](\w+)[\'"](?:\s*,\s*([\'\"].*?[\'\"]|null))?\s*\))?\s*%}(?:(.*?){%\s*endyield\s*%})?/s',
             /**
-             * @param string[] $matches
+             * @param array<int|string, string> $matches
              * @throws Exception
              */
             function (array $matches) use ($matchesLayout): string {
@@ -135,7 +136,7 @@ class SectionTemplator extends AbstractTemplatorParse implements DependencyTempl
 
                 // yield with given section
                 if (isset($matches[1]) && array_key_exists($matches[1], $this->section)) {
-                    return $this->section[$matches[1]];
+                    return is_string($this->section[$matches[1]]) ? $this->section[$matches[1]] : '';
                 }
 
                 // yield with default value
@@ -161,6 +162,6 @@ class SectionTemplator extends AbstractTemplatorParse implements DependencyTempl
                 return '';
             },
             $layout
-        );
+        ) ?? '';
     }
 }
