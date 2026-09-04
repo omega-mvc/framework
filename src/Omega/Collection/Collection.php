@@ -843,7 +843,8 @@ class Collection extends AbstractCollectionImmutable
     public function whereIn(int|string $key, array $range): self
     {
         return $this->filter(
-            fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue) && in_array($TValue[$key], $range)
+            fn (mixed $TValue) => is_array($TValue) && array_key_exists($key, $TValue)
+                && in_array($TValue[$key], $range)
         );
     }
 

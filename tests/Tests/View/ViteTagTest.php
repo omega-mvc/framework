@@ -446,7 +446,8 @@ final class ViteTagTest extends TestCase
      *
      * @param Vite $vite The instance of the Vite class on which to invoke the method.
      * @param string $url The URL of the JavaScript file to include in the script tag.
-     * @param array<int|string, bool|int|string|null>|null $attributes Optional associative array of HTML attributes to include
+     * @param array<int|string, bool|int|string|null>|null $attributes Optional associative
+     *                              array of HTML attributes to include
      *                              in the <script> tag. Boolean values are handled according
      *                              to HTML standards (true = present attribute, false/null = ignored).
      * @return string The resulting <script> HTML tag as a string.

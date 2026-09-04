@@ -645,12 +645,18 @@ class Vite
         $tags = array_merge(
             $tags,
             array_map(
-                fn (string $url, string $file) => $this->createStyleTag($url, $entryPoints[$file] ?? $defaultAttributes),
+                fn (string $url, string $file): string => $this->createStyleTag(
+                    $url,
+                    $entryPoints[$file] ?? $defaultAttributes
+                ),
                 array_values($cssAssets),
                 array_keys($cssAssets)
             ),
             array_map(
-                fn (string $url, string $file) => $this->createScriptTag($url, $entryPoints[$file] ?? $defaultAttributes),
+                fn (string $url, string $file): string => $this->createScriptTag(
+                    $url,
+                    $entryPoints[$file] ?? $defaultAttributes
+                ),
                 array_values($jsAssets),
                 array_keys($jsAssets)
             )

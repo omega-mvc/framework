@@ -16,6 +16,7 @@ namespace Omega\View\Facades;
 
 use Omega\Facade\AbstractFacade;
 
+/* phpcs:disable Generic.Files.LineLength.TooLong */
 /**
  * Facade for the Vite service.
  *
@@ -55,6 +56,7 @@ use Omega\Facade\AbstractFacade;
  *
  * @see \Omega\View\Vite
  */
+/* phpcs:enable Generic.Files.LineLength.TooLong */
 final class Vite extends AbstractFacade
 {
     /**
