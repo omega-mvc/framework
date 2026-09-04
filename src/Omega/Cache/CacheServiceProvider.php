@@ -102,7 +102,10 @@ class CacheServiceProvider extends AbstractServiceProvider
 
             foreach (array_keys($adapters) as $driver) {
                 if ($driver !== $default) {
-                    $manager->setDriver($driver, fn (): CacheInterface => $this->createAdapter($driver, $adapters[$driver]));
+                    $manager->setDriver(
+                        $driver,
+                        fn (): CacheInterface => $this->createAdapter($driver, $adapters[$driver])
+                    );
                 }
             }
 
