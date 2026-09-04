@@ -38,6 +38,15 @@ Run `lint` before `test`. Fix lint errors with `composer run fix` first.
 - Test env: `APP_ENV=testing`, `OMEGA_TEST_MODE=light`
 - Coverage reports: `cache/coverage-report/`
 - No external services required for unit tests
+- Archive `PharAdapter` real-write tests would skip when `phar.readonly=1` (the default, PHP_INI_SYSTEM so it
+  cannot be overridden at runtime), so write paths were refactored: `PharAdapter` now depends on an injectable
+  `PharEngineInterface` (default `NativePharEngine`). Write/delete/rename success+failure paths are tested against
+  in-memory fakes (`FakePharEngine`, `FailingPharEngine`, `UnreadablePharEngine`) with no skip, giving
+  `PharAdapter` 100% lines/branches/paths in `cache/coverage-report/Archive/`.
+- `NativePharEngine` takes `Phar|PharData`: its write/delete paths are covered at 100% by testing against
+  `PharData`, which is writable even with `phar.readonly=1`; the fakes cover every branch of `PharAdapter`.
+- `Bz2Adapter::rename()` avoids a compound `||` guard so its paths are fully exercised by the test suite
+  (100% lines/branches/paths).
 - Fixture dirs: `tests/Tests/fixtures/`, `tests/Tests/Support/fixtures/`
 
 ## Conventions

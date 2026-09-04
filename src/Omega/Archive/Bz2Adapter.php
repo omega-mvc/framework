@@ -188,7 +188,12 @@ class Bz2Adapter implements AdapterInterface
         }
 
         $targetDir = dirname($targetKey);
-        if ($targetDir === '' || !is_writable($targetDir)) {
+
+        if ($targetDir === '') {
+            throw new RuntimeException(sprintf("Cannot write to the directory of the target file %s.", $targetKey));
+        }
+
+        if (!is_writable($targetDir)) {
             throw new RuntimeException(sprintf("Cannot write to the directory of the target file %s.", $targetKey));
         }
 

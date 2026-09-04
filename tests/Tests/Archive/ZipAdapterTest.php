@@ -19,6 +19,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\FixturesPathTrait;
+use ZipArchive;
 
 use function copy;
 use function file_put_contents;
@@ -214,6 +215,24 @@ final class ZipAdapterTest extends TestCase
         $adapter = new ZipAdapter($this->samplePath());
 
         $this->assertSame(['hello.txt'], $adapter->keys());
+    }
+
+    /**
+     * Tests that keys returns an empty array for an empty archive.
+     *
+     * @return void
+     */
+    public function testKeysReturnsEmptyForEmptyArchive(): void
+    {
+        $file = $this->tempDir . '/empty.zip';
+
+        $zip = new ZipArchive();
+        $zip->open($file, ZipArchive::CREATE);
+        $zip->close();
+
+        $adapter = new ZipAdapter($file);
+
+        $this->assertSame([], $adapter->keys());
     }
 
     /**

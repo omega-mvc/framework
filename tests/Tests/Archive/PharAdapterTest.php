@@ -14,13 +14,15 @@ declare(strict_types=1);
 
 namespace Tests\Archive;
 
+use Omega\Archive\NativePharEngine;
 use Omega\Archive\PharAdapter;
-use Phar;
+use Omega\Archive\PharEngineInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\FixturesPathTrait;
 
+use function array_keys;
 use function copy;
 use function is_dir;
 use function mkdir;
@@ -28,6 +30,7 @@ use function Omega\Application\slash;
 use function rmdir;
 use function scandir;
 use function str_contains;
+use function str_ends_with;
 use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
@@ -36,8 +39,9 @@ use function unlink;
  * Class PharAdapterTest
  *
  * This test suite verifies the behavior of the {@see PharAdapter} PHAR adapter:
- * construct, open, read, exists, keys, isDirectory, mtime, and — when the
- * environment allows writing PHAR archives — write, delete and rename.
+ * construct, open, read, exists, keys, isDirectory, mtime, write, delete and rename.
+ * Write-capable operations are exercised against an in-memory {@see PharEngineInterface}
+ * fake so that they remain covered even when the environment has `phar.readonly=1`.
  *
  * @category   Tests
  * @package    Archive
@@ -48,6 +52,7 @@ use function unlink;
  * @version    2.0.0
  */
 #[CoversClass(PharAdapter::class)]
+#[CoversClass(NativePharEngine::class)]
 final class PharAdapterTest extends TestCase
 {
     use FixturesPathTrait;
@@ -122,21 +127,14 @@ final class PharAdapterTest extends TestCase
     }
 
     /**
-     * Creates a temporary writable PHAR archive containing a single member.
+     * Creates an in-memory {@see PharEngineInterface} fake seeded with the given members.
      *
-     * @return string The path to the created archive.
+     * @param array<string,string> $members Holds the initial members keyed by name.
+     * @return FakePharEngine The configured fake engine.
      */
-    private function makeWritablePhar(): string
+    private function makeEngine(array $members = []): FakePharEngine
     {
-        $file = $this->tempDir . '/writable.phar';
-        $phar = new Phar($file);
-        $phar->startBuffering();
-        $phar->addFromString('hello.txt', 'hello phar payload');
-        $phar->stopBuffering();
-        $phar->setSignatureAlgorithm(Phar::SHA256);
-        unset($phar);
-
-        return $file;
+        return new FakePharEngine($members);
     }
 
     /**
@@ -342,17 +340,14 @@ final class PharAdapterTest extends TestCase
      */
     public function testWriteAddsMember(): void
     {
-        if (!Phar::canWrite()) {
-            $this->markTestSkipped('PHAR write operations require phar.readonly = 0.');
-        }
-
-        $file = $this->makeWritablePhar();
-        $adapter = new PharAdapter($file);
+        $fake = $this->makeEngine();
+        $adapter = new PharAdapter($this->tempDir . '/fake.phar', $fake);
 
         $length = $adapter->write('new.txt', 'abcde');
 
         $this->assertSame(5, $length);
         $this->assertSame('abcde', $adapter->read('new.txt'));
+        $this->assertSame(['new.txt' => 'abcde'], $fake->state());
     }
 
     /**
@@ -362,12 +357,8 @@ final class PharAdapterTest extends TestCase
      */
     public function testDeleteRemovesMember(): void
     {
-        if (!Phar::canWrite()) {
-            $this->markTestSkipped('PHAR write operations require phar.readonly = 0.');
-        }
-
-        $file = $this->makeWritablePhar();
-        $adapter = new PharAdapter($file);
+        $fake = $this->makeEngine(['hello.txt' => 'hello phar payload']);
+        $adapter = new PharAdapter($this->tempDir . '/fake.phar', $fake);
 
         $this->assertTrue($adapter->delete('hello.txt'));
         $this->assertFalse($adapter->exists('hello.txt'));
@@ -395,17 +386,14 @@ final class PharAdapterTest extends TestCase
      */
     public function testRenameMovesMemberAndRemovesSource(): void
     {
-        if (!Phar::canWrite()) {
-            $this->markTestSkipped('PHAR write operations require phar.readonly = 0.');
-        }
-
-        $file = $this->makeWritablePhar();
-        $adapter = new PharAdapter($file);
+        $fake = $this->makeEngine(['hello.txt' => 'hello phar payload']);
+        $adapter = new PharAdapter($this->tempDir . '/fake.phar', $fake);
 
         $this->assertTrue($adapter->rename('hello.txt', 'renamed.txt'));
         $this->assertFalse($adapter->exists('hello.txt'));
         $this->assertTrue($adapter->exists('renamed.txt'));
         $this->assertSame('hello phar payload', $adapter->read('renamed.txt'));
+        $this->assertSame(['renamed.txt' => 'hello phar payload'], $fake->state());
     }
 
     /**
@@ -439,38 +427,34 @@ final class PharAdapterTest extends TestCase
     }
 
     /**
-     * Tests that rename throws when the source is a directory member.
+     * Tests that rename wraps failures from the underlying engine.
      *
      * @return void
      */
     public function testRenameThrowsWhenSourceIsDirectoryMember(): void
     {
-        if (!Phar::canWrite()) {
-            $this->markTestSkipped('PHAR write operations require phar.readonly = 0.');
-        }
+        $fake = new FailingPharEngine(['mydir' => '']);
+        $adapter = new PharAdapter($this->tempDir . '/fake.phar', $fake);
 
-        $file = $this->tempDir . '/writable.phar';
-        $phar = new Phar($file);
-        $phar->startBuffering();
-        $phar->addFromString('hello.txt', 'hello phar payload');
-        $phar->addEmptyDir('mydir');
-        $phar->stopBuffering();
-        $phar->setSignatureAlgorithm(Phar::SHA256);
-        unset($phar);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to rename');
 
-        $adapter = new PharAdapter($file);
+        $adapter->rename('mydir', 'renamed');
+    }
 
-        set_error_handler(static function (): bool {
-            return true;
-        });
+    /**
+     * Tests that rename wraps a read failure for the source member.
+     *
+     * @return void
+     */
+    public function testRenameThrowsWhenContentUnreadable(): void
+    {
+        $fake = new UnreadablePharEngine(['hello.txt' => 'hello phar payload']);
+        $adapter = new PharAdapter($this->tempDir . '/fake.phar', $fake);
 
-        try {
-            $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessage('Failed to rename');
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to rename');
 
-            $adapter->rename('mydir', 'renamed');
-        } finally {
-            restore_error_handler();
-        }
+        $adapter->rename('hello.txt', 'renamed.txt');
     }
 }

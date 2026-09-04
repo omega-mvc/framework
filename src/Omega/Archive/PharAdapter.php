@@ -18,10 +18,7 @@ namespace Omega\Archive;
 use Phar;
 use RuntimeException;
 
-use function array_keys;
 use function file_exists;
-use function file_get_contents;
-use function iterator_to_array;
 use function strlen;
 
 /**
@@ -32,6 +29,10 @@ use function strlen;
  * The class utilizes the Phar extension to manipulate the contents of Phar archives.
  * Some methods such as deleting files and renaming rely on the Phar extension's capabilities.
  * It does not require manual closing, as the Phar class manages it automatically.
+ *
+ * All access to the underlying archive is delegated to a {@see PharEngineInterface}, which
+ * is injectable so that the write, delete, and rename paths remain testable even
+ * when the environment disables PHAR writes via `phar.readonly=1`.
  *
  * @category    Omega
  * @package     Archive
@@ -44,30 +45,37 @@ use function strlen;
 class PharAdapter implements AdapterInterface
 {
     /**
-     * Phar instance.
+     * PharEngineInterface instance.
      *
-     * @var Phar Holds an instance of Phar class.
+     * @var PharEngineInterface Holds an instance of PharEngineInterface.
      */
-    protected Phar $phar;
+    protected PharEngineInterface $engine;
 
     /**
      * PharAdapter constructor.
      *
      * Initializes the PharAdapter with the given path to the Phar archive file.
-     * A Phar object is created and associated with the archive file for managing the contents.
+     * A PharEngineInterface (by default backed by a native Phar instance and associated with
+     * the archive file) is created for managing the contents.
      *
-     * @param string $pharFile The path to the Phar file to be used for the archive operations.
+     * @param string      $pharFile The path to the Phar file to be used for the archive operations.
+     * @param PharEngineInterface|null $engine  An optional PharEngineInterface to use instead of the native one.
      * @return void
      * @throws RuntimeException if the Phar file not exists.
      */
     public function __construct(
-        protected string $pharFile
+        protected string $pharFile,
+        ?PharEngineInterface $engine = null
     ) {
-        if (!file_exists($pharFile)) {
-            throw new RuntimeException("The Phar file '$pharFile' does not exist.");
-        }
+        if ($engine === null) {
+            if (!file_exists($pharFile)) {
+                throw new RuntimeException("The Phar file '$pharFile' does not exist.");
+            }
 
-        $this->phar = new Phar($pharFile);
+            $this->engine = new NativePharEngine(new Phar($pharFile));
+        } else {
+            $this->engine = $engine;
+        }
     }
 
     /**
@@ -81,7 +89,7 @@ class PharAdapter implements AdapterInterface
         }
 
         try {
-            $this->phar = new Phar($file);
+            $this->engine = new NativePharEngine(new Phar($file));
         } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to open Phar archive '$file'. " . $e->getMessage(), 0, $e);
         }
@@ -100,11 +108,11 @@ class PharAdapter implements AdapterInterface
      */
     public function read(string $key): string|bool
     {
-        if (!$this->phar->offsetExists($key)) {
+        if (!$this->engine->contains($key)) {
             throw new RuntimeException("The key '$key' does not exist in the Phar archive.");
         }
 
-        return file_get_contents($this->phar[$key]->getPathname());
+        return $this->engine->read($key);
     }
 
     /**
@@ -112,7 +120,7 @@ class PharAdapter implements AdapterInterface
      */
     public function write(string $key, string $content): int|bool
     {
-        $this->phar[$key] = $content;
+        $this->engine->write($key, $content);
 
         return strlen($content);
     }
@@ -123,11 +131,11 @@ class PharAdapter implements AdapterInterface
      */
     public function delete(string $key): bool
     {
-        if (!$this->phar->offsetExists($key)) {
+        if (!$this->engine->contains($key)) {
             throw new RuntimeException("The key '$key' does not exist and cannot be deleted.");
         }
 
-        unset($this->phar[$key]);
+        $this->engine->delete($key);
 
         return true;
     }
@@ -137,7 +145,7 @@ class PharAdapter implements AdapterInterface
      */
     public function exists(string $key): bool
     {
-        return isset($this->phar[$key]);
+        return $this->engine->contains($key);
     }
 
     /**
@@ -145,7 +153,7 @@ class PharAdapter implements AdapterInterface
      */
     public function keys(): array
     {
-        return array_keys(iterator_to_array($this->phar));
+        return $this->engine->keys();
     }
 
     /**
@@ -154,11 +162,11 @@ class PharAdapter implements AdapterInterface
      */
     public function isDirectory(string $key): bool
     {
-        if (!$this->phar->offsetExists($key)) {
+        if (!$this->engine->contains($key)) {
             throw new RuntimeException("The key '$key' does not exist.");
         }
 
-        return $this->phar[$key]->isDir();
+        return $this->engine->isDirectory($key);
     }
 
     /**
@@ -167,11 +175,11 @@ class PharAdapter implements AdapterInterface
      */
     public function mtime(string $key): int|bool
     {
-        if (!$this->phar->offsetExists($key)) {
+        if (!$this->engine->contains($key)) {
             throw new RuntimeException("The key '$key' does not exist.");
         }
 
-        return $this->phar[$key]->getMTime();
+        return $this->engine->mtime($key);
     }
 
     /**
@@ -181,23 +189,23 @@ class PharAdapter implements AdapterInterface
      */
     public function rename(string $sourceKey, string $targetKey): bool
     {
-        if (!$this->phar->offsetExists($sourceKey)) {
+        if (!$this->engine->contains($sourceKey)) {
             throw new RuntimeException("Source file '$sourceKey' does not exist.");
         }
 
-        if ($this->phar->offsetExists($targetKey)) {
+        if ($this->engine->contains($targetKey)) {
             throw new RuntimeException("Target file '$targetKey' already exists.");
         }
 
         try {
-            $content = file_get_contents($this->phar[$sourceKey]->getPathname());
+            $content = $this->engine->read($sourceKey);
 
             if ($content === false) {
                 throw new RuntimeException("Failed to read content from '$sourceKey' before renaming.");
             }
 
-            $this->phar[$targetKey] = $content;
-            unset($this->phar[$sourceKey]);
+            $this->engine->write($targetKey, $content);
+            $this->engine->delete($sourceKey);
         } catch (RuntimeException $e) {
             throw new RuntimeException("Failed to rename '$sourceKey' to '$targetKey'. " . $e->getMessage(), 0, $e);
         }
