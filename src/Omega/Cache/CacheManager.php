@@ -18,8 +18,6 @@ use Closure;
 use DateInterval;
 use Omega\Cache\Exceptions\UnknownStorageException;
 
-use function is_callable;
-
 /**
  * Class CacheManager
  *
@@ -111,12 +109,8 @@ class CacheManager implements CacheInterface
     {
         $driver = $this->driver[$driverName];
 
-        if (is_callable($driver)) {
+        if ($driver instanceof Closure) {
             $driver = $driver();
-        }
-
-        if (null === $driver) {
-            throw new UnknownStorageException($driverName);
         }
 
         return $this->driver[$driverName] = $driver;
@@ -148,7 +142,7 @@ class CacheManager implements CacheInterface
      * without explicitly calling `driver()`.
      *
      * @param string $method The method name being called.
-     * @param array  $parameters The parameters passed to the method.
+     * @param array<mixed> $parameters The parameters passed to the method.
      * @return mixed The result returned by the underlying cache driver.
      * @throws UnknownStorageException if a requested cache storage driver is unknown, unregistered, or unsupported.
      */
@@ -209,6 +203,8 @@ class CacheManager implements CacheInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param iterable<string, mixed> $values The key-value pairs to store.
      *
      * @throws UnknownStorageException if a requested cache storage driver is unknown, unregistered, or unsupported.
      */

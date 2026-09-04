@@ -7,11 +7,19 @@ namespace Omega\Cache\Storage;
 use Omega\Cache\AbstractCache;
 use Omega\Redis\RedisInterface;
 
+use function is_string;
+
 class RedisStorage extends AbstractCache
 {
+    /**
+     * Redis constructor.
+     *
+     * @param array{ttl?: int|\DateInterval} $options Configuration options for the storage.
+     * @param RedisInterface $redis The Redis connection instance.
+     */
     public function __construct(array $options, private RedisInterface $redis)
     {
-        parent::__construct($options['ttl']);
+        parent::__construct($options['ttl'] ?? 3600);
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -22,7 +30,11 @@ class RedisStorage extends AbstractCache
             return $default;
         }
 
-        return unserialize((string) $value, ['allowed_classes' => false]);
+        if (false === is_string($value)) {
+            return $default;
+        }
+
+        return unserialize($value, ['allowed_classes' => false]);
     }
 
     public function set(string $key, mixed $value, int|\DateInterval|null $ttl = null): bool
@@ -54,6 +66,9 @@ class RedisStorage extends AbstractCache
         return $result;
     }
 
+    /**
+     * @param iterable<string, mixed> $values The set of key-value pairs to cache.
+     */
     public function setMultiple(iterable $values, int|\DateInterval|null $ttl = null): bool
     {
         $success = true;
@@ -142,7 +157,7 @@ class RedisStorage extends AbstractCache
     private function calculateTTLInSeconds(int|\DateInterval|null $ttl): int
     {
         if (null === $ttl) {
-            return $this->defaultTTL;
+            $ttl = $this->defaultTTL;
         }
 
         if ($ttl instanceof \DateInterval) {

@@ -22,6 +22,7 @@ use Omega\Cache\Traits\CacheTimeTrait;
 
 use function array_key_exists;
 use function count;
+use function is_int;
 use function time;
 
 /**
@@ -79,14 +80,14 @@ class MemoryStorage extends AbstractCache
      * Optional keys in $options:
      * - 'maxItems' : int  Upper bound on entries kept in memory (default 1024).
      *
-     * @param array<string, mixed> $options Configuration options for the storage.
+     * @param array{ttl?: int|DateInterval, maxItems?: int} $options Configuration options for the storage.
      * @return void
      */
     public function __construct(array $options)
     {
-        parent::__construct($options['ttl']);
+        parent::__construct($options['ttl'] ?? 3600);
 
-        $this->maxItems = isset($options['maxItems']) && is_int($options['maxItems']) && $options['maxItems'] > 0
+        $this->maxItems = isset($options['maxItems']) && $options['maxItems'] > 0
             ? $options['maxItems']
             : 1024;
     }
@@ -160,6 +161,11 @@ class MemoryStorage extends AbstractCache
     /**
      * {@inheritdoc}
      */
+    /**
+     * {@inheritdoc}
+     *
+     * @param iterable<string, mixed> $values The set of key-value pairs to cache.
+     */
     public function setMultiple(iterable $values, int|DateInterval|null $ttl = null): bool
     {
         foreach ($values as $key => $value) {
@@ -185,12 +191,20 @@ class MemoryStorage extends AbstractCache
         if (false === $this->has($key)) {
             $this->set($key, $value, 0);
 
-            return $this->storage[$key]['value'];
+            return $value;
         }
 
-        $this->storage[$key]['value'] = ((int) $this->storage[$key]['value']) + $value;
+        $currentValue = $this->storage[$key]['value'] ?? null;
 
-        return $this->storage[$key]['value'];
+        if (false === is_int($currentValue)) {
+            throw new \InvalidArgumentException('Value to increment must be an integer.');
+        }
+
+        $newValue = $currentValue + $value;
+
+        $this->storage[$key]['value'] = $newValue;
+
+        return $newValue;
     }
 
     /**
@@ -206,15 +220,15 @@ class MemoryStorage extends AbstractCache
      */
     public function calculateExpirationTimestamp(int|DateInterval|DateTimeInterface|null $ttl): int
     {
-        if ($ttl instanceof DateInterval) {
-            return new DateTimeImmutable()->add($ttl)->getTimestamp();
-        }
-
         if ($ttl instanceof DateTimeInterface) {
             return $ttl->getTimestamp();
         }
 
         $ttl ??= $this->defaultTTL;
+
+        if ($ttl instanceof DateInterval) {
+            return new DateTimeImmutable()->add($ttl)->getTimestamp();
+        }
 
         return new DateTimeImmutable()->add(new DateInterval("PT{$ttl}S"))->getTimestamp();
     }

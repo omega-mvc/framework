@@ -64,8 +64,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::calculateTTLInSeconds
      * @throws InvalidArgumentException
      */
-    public function testItCanSetAndGetCache()
+    public function testItCanSetAndGetCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->assertTrue($this->storage->set('key', 'value'));
         $this->assertEquals('value', $this->storage->get('key'));
     }
@@ -78,8 +82,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::get
      * @throws InvalidArgumentException
      */
-    public function testItCanGetDefaultIfKeyNotFound()
+    public function testItCanGetDefaultIfKeyNotFound(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->assertEquals('default', $this->storage->get('key', 'default'));
     }
 
@@ -91,8 +99,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::delete
      * @throws InvalidArgumentException
      */
-    public function testItCanDeleteCache()
+    public function testItCanDeleteCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key', 'value');
         $this->assertTrue($this->storage->delete('key'));
         $this->assertNull($this->storage->get('key'));
@@ -106,8 +118,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::clear
      * @throws InvalidArgumentException
      */
-    public function testItCanClearCache()
+    public function testItCanClearCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
         $this->assertTrue($this->storage->clear());
@@ -123,8 +139,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::has
      * @throws InvalidArgumentException
      */
-    public function testItCanCheckIfKeyExists()
+    public function testItCanCheckIfKeyExists(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key', 'value');
         $this->assertTrue($this->storage->has('key'));
         $this->assertFalse($this->storage->has('not_found'));
@@ -138,8 +158,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::increment
      * @throws InvalidArgumentException
      */
-    public function testItCanIncrementCache()
+    public function testItCanIncrementCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key', 10);
         $this->assertEquals(11, $this->storage->increment('key', 1));
         $this->assertEquals(11, $this->storage->get('key'));
@@ -153,8 +177,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::decrement
      * @throws InvalidArgumentException
      */
-    public function testItCanDecrementCache()
+    public function testItCanDecrementCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key', 10);
         $this->assertEquals(9, $this->storage->decrement('key', 1));
         $this->assertEquals(9, $this->storage->get('key'));
@@ -168,8 +196,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::remember
      * @throws InvalidArgumentException
      */
-    public function testItCanRememberCache()
+    public function testItCanRememberCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $result = $this->storage->remember('key', fn () => 'value', 3600);
         $this->assertEquals('value', $result);
         $this->assertEquals('value', $this->storage->get('key'));
@@ -183,8 +215,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::getMultiple
      * @throws InvalidArgumentException
      */
-    public function testItCanGetMultipleCache()
+    public function testItCanGetMultipleCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
 
@@ -200,8 +236,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::setMultiple
      * @throws InvalidArgumentException
      */
-    public function testItCanSetMultipleCache()
+    public function testItCanSetMultipleCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->assertTrue($this->storage->setMultiple(['key1' => 'value1', 'key2' => 'value2'], 3600));
         $this->assertEquals('value1', $this->storage->get('key1'));
         $this->assertEquals('value2', $this->storage->get('key2'));
@@ -215,8 +255,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::deleteMultiple
      * @throws InvalidArgumentException
      */
-    public function testItCanDeleteMultipleCache()
+    public function testItCanDeleteMultipleCache(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $this->storage->set('key1', 'value1');
         $this->storage->set('key2', 'value2');
 
@@ -233,8 +277,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::get
      * @throws InvalidArgumentException
      */
-    public function testItShouldNotUnserializeObjectsByDefaultForSecurity()
+    public function testItShouldNotUnserializeObjectsByDefaultForSecurity(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $obj      = new stdClass();
         $obj->foo = 'bar';
         $this->storage->set('key', $obj);
@@ -253,8 +301,12 @@ final class RedisStorageTest extends TestCase
      * @covers ::set
      * @throws InvalidArgumentException
      */
-    public function testItShouldHandleExpirationWithDateInterval()
+    public function testItShouldHandleExpirationWithDateInterval(): void
     {
+        if (null === $this->storage) {
+            $this->markTestSkipped('Redis extension is not loaded or enabled for CLI.');
+        }
+
         $interval = new DateInterval('PT1S');
         $this->assertTrue($this->storage->set('expire_key', 'value', $interval));
         $this->assertEquals('value', $this->storage->get('expire_key'));

@@ -23,20 +23,26 @@ use function apcu_key_info;
 use function apcu_store;
 use function array_key_exists;
 use function extension_loaded;
+use function is_array;
+use function is_float;
+use function is_int;
 
 class ApcuStorage extends AbstractCache
 {
     private string $prefix = '';
 
+    /**
+     * @param array{ttl?: int|DateInterval, prefix?: string} $options
+     */
     public function __construct(array $options)
     {
-        parent::__construct($options['ttl']);
+        parent::__construct($options['ttl'] ?? 3600);
 
         if (empty($options['prefix'])) {
             throw new CacheConfigurationException('The "prefix" option is required for Apcu.');
         }
 
-        $this->prefix = $options['prefix'];
+        $this->prefix = (string) $options['prefix'];
     }
 
     public static function isSupported(): bool
@@ -47,21 +53,28 @@ class ApcuStorage extends AbstractCache
     /**
      * Get info of storage.
      *
-     * @return array<string, array{value: mixed, timestamp?: int, mtime?: float}>
+     * @return array{value: mixed, timestamp?: int, mtime?: float}|array{}
      */
     public function getInfo(string $key): array
     {
-        /** @var array<string, mixed>|false $info */
         $info = apcu_key_info($this->prefix . $key);
 
-        if (false === $info) {
+        if (null === $info) {
+            return [];
+        }
+
+        $ttl          = $info['ttl'] ?? 0;
+        $creationTime = $info['creation_time'] ?? 0;
+        $mtime        = $info['mtime'] ?? 0;
+
+        if (!is_int($ttl) || !is_int($creationTime) || (!is_int($mtime) && !is_float($mtime))) {
             return [];
         }
 
         return [
             'value'     => $this->get($key),
-            'timestamp' => $info['ttl'] > 0 ? $info['creation_time'] + $info['ttl'] : 0,
-            'mtime'     => (float) $info['mtime'],
+            'timestamp' => $ttl > 0 ? $creationTime + $ttl : 0,
+            'mtime'     => (float) $mtime,
         ];
     }
 
@@ -96,6 +109,11 @@ class ApcuStorage extends AbstractCache
         }
 
         $values = apcu_fetch($prefixedKeys);
+
+        if (false === is_array($values)) {
+            $values = [];
+        }
+
         $result = [];
 
         foreach ($keys as $key) {
@@ -106,6 +124,9 @@ class ApcuStorage extends AbstractCache
         return $result;
     }
 
+    /**
+     * @param iterable<string, mixed> $values The set of key-value pairs to cache.
+     */
     public function setMultiple(iterable $values, int|DateInterval|null $ttl = null): bool
     {
         $prefixedValues = [];
@@ -143,7 +164,7 @@ class ApcuStorage extends AbstractCache
 
         $result = apcu_inc($this->prefix . $key, $value, $success);
 
-        if (false === $success) {
+        if (false === $result) {
             $this->set($key, $value, 0);
 
             return $value;
@@ -172,12 +193,16 @@ class ApcuStorage extends AbstractCache
 
     private function calculateTTL(int|DateInterval|null $ttl): int
     {
+        if (null === $ttl) {
+            $ttl = $this->defaultTTL;
+        }
+
         if ($ttl instanceof DateInterval) {
             $now = new DateTimeImmutable();
 
             return $now->add($ttl)->getTimestamp() - $now->getTimestamp();
         }
 
-        return $ttl ?? $this->defaultTTL;
+        return $ttl;
     }
 }

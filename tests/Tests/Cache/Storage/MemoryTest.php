@@ -215,7 +215,7 @@ final class MemoryTest extends TestCase
         $this->storage->set('key14', 'value14');
         $info = $this->storage->getInfo('key14');
         $this->assertArrayHasKey('value', $info);
-        $this->assertEquals('value14', $info['value']);
+        $this->assertEquals('value14', $info['value'] ?? null);
     }
 
     /**

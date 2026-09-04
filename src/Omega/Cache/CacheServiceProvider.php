@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Cache;
 
+use DateInterval;
 use Omega\Cache\Storage\ApcuStorage;
 use Omega\Cache\Storage\FileStorage;
 use Omega\Cache\Storage\MemcachedStorage;
@@ -27,6 +28,8 @@ use Omega\Redis\RedisManager;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use RuntimeException;
+
+use function array_keys;
 
 /**
  * Bootstraps the cache system and registers available cache drivers.
@@ -68,30 +71,38 @@ class CacheServiceProvider extends AbstractServiceProvider
      */
     public function boot(): void
     {
-        $config   = $this->app->get('config')['cache'];
-        $default  = $config['default'];
-        $adapters = $config['storage'];
+        /** @var array{
+         *     cache: array{default: string, storage: array<string, array{
+         *         ttl?: int|DateInterval,
+         *         path?: string,
+         *         prefix?: string,
+         *         host?: string,
+         *         port?: int,
+         *         connection?: string,
+         *         maxItems?: int,
+         *         servers?: list<array{host: string, port: int}>,
+         *         username?: string,
+         *         password?: string,
+         *         timeout?: int,
+         *     }>},
+         *     redis: array{default: string, connections: array<string, array<string, mixed>>},
+         * } $config
+         */
+        $config   = $this->app->get('config');
+        $default  = $config['cache']['default'];
+        $adapters = $config['cache']['storage'];
 
         // Registrazione di tutti i driver
         foreach ($adapters as $name => $options) {
-            $this->app->set("cache.$name", function () use ($name, $options) {
-                return match ($name) {
-                    'apcu'      => new ApcuStorage($options),
-                    'file'      => new FileStorage($options),
-                    'memory'    => new MemoryStorage($options),
-                    'memcached' => new MemcachedStorage($options),
-                    'redis'     => $this->createRedis($options),
-                    default     => throw new RuntimeException("Unknown cache adapter: $name"),
-                };
-            });
+            $this->app->set("cache.$name", fn (): CacheInterface => $this->createAdapter($name, $options));
         }
 
-        $this->app->set('cache', function () use ($default, $adapters) {
-            $manager = new CacheManager($default, $this->app["cache.$default"]);
+        $this->app->set('cache', function () use ($default, $adapters): CacheManager {
+            $manager = new CacheManager($default, $this->createAdapter($default, $adapters[$default]));
 
             foreach (array_keys($adapters) as $driver) {
                 if ($driver !== $default) {
-                    $manager->setDriver($driver, fn () => $this->app["cache.$driver"]);
+                    $manager->setDriver($driver, fn (): CacheInterface => $this->createAdapter($driver, $adapters[$driver]));
                 }
             }
 
@@ -99,19 +110,67 @@ class CacheServiceProvider extends AbstractServiceProvider
         });
     }
 
+    /**
+     * Create a cache storage adapter from the given driver name and options.
+     *
+     * @param string $name    The cache driver name.
+     * @param array{
+     *     ttl?: int|DateInterval,
+     *     path?: string,
+     *     prefix?: string,
+     *     host?: string,
+     *     port?: int,
+     *     connection?: string,
+     *     maxItems?: int,
+     *     servers?: list<array{host: string, port: int}>,
+     *     username?: string,
+     *     password?: string,
+     *     timeout?: int,
+     * } $options The driver-specific configuration options.
+     * @return CacheInterface The instantiated cache storage adapter.
+     */
+    private function createAdapter(string $name, array $options): CacheInterface
+    {
+        return match ($name) {
+            'apcu'      => new ApcuStorage($options),
+            'file'      => new FileStorage($options),
+            'memory'    => new MemoryStorage($options),
+            'memcached' => new MemcachedStorage($options),
+            'redis'     => $this->createRedis($options),
+            default     => throw new RuntimeException("Unknown cache adapter: $name"),
+        };
+    }
+
+    /**
+     * Create a Redis-backed cache storage instance.
+     *
+     * @param array{
+     *     ttl?: int|DateInterval,
+     *     connection?: string,
+     *     path?: string,
+     *     prefix?: string,
+     *     host?: string,
+     *     port?: int,
+     *     maxItems?: int,
+     *     servers?: list<array{host: string, port: int}>,
+     *     username?: string,
+     *     password?: string,
+     *     timeout?: int,
+     * } $options The Redis driver configuration options.
+     * @return RedisStorage The resolved Redis cache storage adapter.
+     */
     private function createRedis(array $options): RedisStorage
     {
-        $config = $this->app->get('config')['redis'];
+        /** @var array{redis: array{default: string, connections: array<string, array<string, mixed>>}} $config */
+        $config = $this->app->get('config');
 
-        $connectionName = $options['connection'] ?? $config['default'];
+        $connectionName = $options['connection'] ?? $config['redis']['default'];
 
-        $connection = $this->app
-            ->get(RedisManager::class)
-            ->connection($connectionName);
+        /** @var RedisManager $redisManager */
+        $redisManager = $this->app->get(RedisManager::class);
 
-        return new RedisStorage(
-            $options,
-            $connection
-        );
+        $connection = $redisManager->connection($connectionName);
+
+        return new RedisStorage($options, $connection);
     }
 }

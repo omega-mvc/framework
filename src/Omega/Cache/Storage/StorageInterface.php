@@ -49,17 +49,16 @@ interface StorageInterface
      * Example:
      * ```php
      * [
-     *   'key_name' => [
-     *       'value'     => 'cached_value',
-     *       'timestamp' => 1697123456,
-     *       'mtime'     => 1697123456.123
-     *   ]
+     *   'value'     => 'cached_value',
+     *   'timestamp' => 1697123456,
+     *   'mtime'     => 1697123456.123
      * ]
      * ```
      *
      * @param string $key The cache item key to retrieve information for.
-     * @return array<string, array{value: mixed, timestamp?: int, mtime?: float}>
-     *                Returns an array containing metadata for the given key.
+     * @return array{value: mixed, timestamp?: int, mtime?: float}|array{}
+     *                Returns an array containing metadata for the given key,
+     *                or an empty array if the key does not exist.
      */
     public function getInfo(string $key): array;
 

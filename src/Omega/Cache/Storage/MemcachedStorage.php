@@ -12,6 +12,7 @@ use Omega\Cache\AbstractCache;
 
 use function extension_loaded;
 use function is_int;
+use function is_string;
 use function serialize;
 use function unserialize;
 
@@ -69,9 +70,9 @@ class MemcachedStorage extends AbstractCache
             $memcached = new PhpMemcached();
             $memcached->addServer('127.0.0.1', 11211);
 
-            $version = $memcached->getVersion();
+            $memcached->getVersion();
 
-            return $version !== false && $memcached->getResultCode() === PhpMemcached::RES_SUCCESS;
+            return $memcached->getResultCode() === PhpMemcached::RES_SUCCESS;
         } catch (\MemcachedException) {
             return false;
         }
@@ -85,7 +86,11 @@ class MemcachedStorage extends AbstractCache
             return $default;
         }
 
-        return unserialize((string) $value, ['allowed_classes' => false]);
+        if (false === is_string($value)) {
+            return $default;
+        }
+
+        return unserialize($value, ['allowed_classes' => false]);
     }
 
     public function set(string $key, mixed $value, int|DateInterval|null $ttl = null): bool
@@ -117,6 +122,9 @@ class MemcachedStorage extends AbstractCache
         return $result;
     }
 
+    /**
+     * @param iterable<string, mixed> $values The set of key-value pairs to cache.
+     */
     public function setMultiple(iterable $values, int|DateInterval|null $ttl = null): bool
     {
         $success = true;

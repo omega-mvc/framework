@@ -82,20 +82,22 @@ class FileStorage extends AbstractCache
      * - 'ttl'  : int|DateInterval  The default time-to-live for cache items.
      * - 'path' : string            The directory path where cache files are stored.
      *
-     * @param array<string, mixed> $options Configuration options for the storage.
+     * @param array{ttl?: int|DateInterval, path?: string} $options Configuration options for the storage.
      * @return void
      * @throws CacheConfigurationException If the 'path' option is missing.
      * @throws CachePathException if the cache directory cannot be created or is not writable.
      */
     public function __construct(array $options)
     {
-        parent::__construct($options['ttl']);
+        parent::__construct($options['ttl'] ?? 3600);
 
-        if (empty($options['path'])) {
+        $path = $options['path'] ?? null;
+
+        if (null === $path || '' === $path) {
             throw new CacheConfigurationException('The "path" option is required for File.');
         }
 
-        $this->path = slash($options['path']);
+        $this->path = slash($path);
 
         if (!is_dir($this->path) && !mkdir($this->path, 0777, true)) {
             throw new CachePathException($this->path);
@@ -121,7 +123,17 @@ class FileStorage extends AbstractCache
 
         $cacheData = unserialize($data, ['allowed_classes' => false]);
 
-        if (time() >= $cacheData['timestamp']) {
+        if (false === is_array($cacheData)) {
+            return $default;
+        }
+
+        $expiresAt = $cacheData['timestamp'] ?? 0;
+
+        if (false === is_int($expiresAt)) {
+            return $default;
+        }
+
+        if (time() >= $expiresAt) {
             $this->delete($key);
 
             return $default;
@@ -178,9 +190,13 @@ class FileStorage extends AbstractCache
         );
 
         foreach ($files as $fileInfo) {
+            if (false === ($fileInfo instanceof \SplFileInfo)) {
+                continue;
+            }
+
             $filePath = $fileInfo->getRealPath();
 
-            if (basename($filePath) === '.gitignore') {
+            if (false === $filePath || basename($filePath) === '.gitignore') {
                 continue;
             }
 
@@ -193,6 +209,11 @@ class FileStorage extends AbstractCache
 
     /**
      * {@inheritdoc}
+     */
+    /**
+     * {@inheritdoc}
+     *
+     * @param iterable<string, mixed> $values The set of key-value pairs to cache.
      */
     public function setMultiple(iterable $values, int|DateInterval|null $ttl = null): bool
     {
@@ -244,7 +265,9 @@ class FileStorage extends AbstractCache
     }
 
     /**
-     * {@inheritdoc}
+     * Get info of storage.
+     *
+     * @return array{value: mixed, timestamp?: int, mtime?: float}|array{}
      */
     public function getInfo(string $key): array
     {
@@ -260,7 +283,17 @@ class FileStorage extends AbstractCache
             return [];
         }
 
-        return unserialize($data, ['allowed_classes' => false]);
+        $info = unserialize($data, ['allowed_classes' => false]);
+
+        if (false === is_array($info)) {
+            return [];
+        }
+
+        return [
+            'value'     => $info['value'] ?? null,
+            'timestamp' => is_int($info['timestamp'] ?? null) ? $info['timestamp'] : 0,
+            'mtime'     => is_float($info['mtime'] ?? null) ? $info['mtime'] : 0.0,
+        ];
     }
 
     /**
@@ -268,15 +301,15 @@ class FileStorage extends AbstractCache
      */
     public function calculateExpirationTimestamp(int|DateInterval|DateTimeInterface|null $ttl): int
     {
-        if ($ttl instanceof DateInterval) {
-            return new DateTimeImmutable()->add($ttl)->getTimestamp();
-        }
-
         if ($ttl instanceof DateTimeInterface) {
             return $ttl->getTimestamp();
         }
 
         $ttl ??= $this->defaultTTL;
+
+        if ($ttl instanceof DateInterval) {
+            return new DateTimeImmutable()->add($ttl)->getTimestamp();
+        }
 
         return time() + $ttl;
     }
