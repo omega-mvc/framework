@@ -71,9 +71,7 @@ abstract class AbstractCache implements CacheInterface, StorageInterface
     public function __construct(int|DateInterval $defaultTTL)
     {
         if (is_int($defaultTTL) && $defaultTTL < 0) {
-            throw new CacheConfigurationException(
-                'Invalid TTL: value must be greater than or equal to 0 seconds.'
-            );
+            throw new CacheConfigurationException();
         }
 
         $this->defaultTTL = $defaultTTL;

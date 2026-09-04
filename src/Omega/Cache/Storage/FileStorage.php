@@ -94,7 +94,7 @@ class FileStorage extends AbstractCache
         $path = $options['path'] ?? null;
 
         if (null === $path || '' === $path) {
-            throw new CacheConfigurationException('The "path" option is required for File.');
+            throw new CacheConfigurationException();
         }
 
         $this->path = slash($path);
@@ -254,7 +254,7 @@ class FileStorage extends AbstractCache
         $ttl = $info['timestamp'] ?? 0;
 
         if (false === is_int($ori)) {
-            throw new InvalidValueIncrementException('Value increment must be an integer.');
+            throw new InvalidValueIncrementException($key);
         }
 
         $result = (int) ($ori + $value);

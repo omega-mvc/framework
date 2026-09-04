@@ -17,6 +17,8 @@ namespace Omega\Cache\Exceptions;
 use InvalidArgumentException;
 use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInterface;
 
+use function sprintf;
+
 /**
  * Exception thrown when attempting to increment or modify a cache value
  * that is not of the expected integer type.
@@ -32,4 +34,18 @@ use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInter
  */
 class InvalidValueIncrementException extends InvalidArgumentException implements PsrInvalidArgumentExceptionInterface
 {
+    /**
+     * Create a new InvalidValueIncrementException instance.
+     *
+     * @param string $key The cache key whose value is not an integer.
+     */
+    public function __construct(string $key)
+    {
+        parent::__construct(
+            sprintf(
+                'The value for the cache key "%s" must be an integer to be incremented.',
+                $key
+            )
+        );
+    }
 }

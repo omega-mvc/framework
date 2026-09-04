@@ -39,7 +39,7 @@ class ApcuStorage extends AbstractCache
         parent::__construct($options['ttl'] ?? 3600);
 
         if (empty($options['prefix'])) {
-            throw new CacheConfigurationException('The "prefix" option is required for Apcu.');
+            throw new CacheConfigurationException();
         }
 
         $this->prefix = (string) $options['prefix'];

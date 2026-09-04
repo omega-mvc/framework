@@ -17,6 +17,8 @@ namespace Omega\Cache\Exceptions;
 use InvalidArgumentException;
 use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInterface;
 
+use function sprintf;
+
 /**
  * Class CacheConfigurationException
  *
@@ -35,4 +37,17 @@ use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInter
  */
 class CacheConfigurationException extends InvalidArgumentException implements PsrInvalidArgumentExceptionInterface
 {
+    /**
+     * Create a new CacheConfigurationException instance.
+     *
+     * @param string $message An optional reason why the cache configuration is invalid.
+     */
+    public function __construct(string $message = '')
+    {
+        parent::__construct(
+            '' === $message
+                ? 'Invalid cache configuration: a required option is missing or has an invalid value.'
+                : sprintf('Invalid cache configuration: %s', $message)
+        );
+    }
 }
