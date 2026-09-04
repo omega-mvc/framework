@@ -24,8 +24,10 @@ use ReflectionProperty;
 use Tests\FixturesPathTrait;
 
 use function chmod;
+use function dirname;
 use function file_exists;
 use function file_put_contents;
+use function glob;
 use function is_dir;
 use function json_encode;
 use function mkdir;
@@ -539,5 +541,259 @@ class ApplicationManifestTest extends TestCase
         $manifest = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);
 
         $this->assertEquals(['test' => 'data'], $manifest);
+    }
+
+    /**
+     * Test findExternalProvider collects only valid external packages.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderCollectsValidPackages(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-valid/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-valid-cache/');
+
+        $this->writeExternalComposer(
+            'ext/valid',
+            ['omega-mvc' => ['providers' => ['External::class']]],
+            $tempBase,
+            $tempCachePath
+        );
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame(
+            ['ext/valid' => ['providers' => ['External::class']]],
+            $manifest
+        );
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider continues past invalid packages and collects valid ones.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderContinuesPastInvalidPackages(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-mixed/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-mixed-cache/');
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+
+        $invalid = $tempBase . '/vendor/omega-mvc/invalid/composer.json';
+        mkdir(dirname($invalid), 0777, true);
+        file_put_contents($invalid, 'not-valid-json');
+
+        $this->writeExternalComposer(
+            'ext/mixed',
+            ['omega-mvc' => ['providers' => ['Mixed::class']]],
+            $tempBase,
+            $tempCachePath
+        );
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame(
+            ['ext/mixed' => ['providers' => ['Mixed::class']]],
+            $manifest
+        );
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider ignores a composer.json that cannot be read.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderIgnoresUnreadableComposer(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-unreadable/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-unreadable-cache/');
+
+        $file = $tempBase . '/vendor/omega-mvc/unreadable/composer.json';
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        mkdir(dirname($file), 0777, true);
+        file_put_contents($file, '{"name":"ext/unreadable","extra":{"omega-mvc":{"providers":["X"]}}}');
+        chmod($file, 0000);
+
+        set_error_handler(static function (int $severity, string $message): bool {
+            return str_contains($message, 'file_get_contents');
+        });
+
+        try {
+            $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+            $manifest            = $applicationManifest->build();
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertSame([], $manifest);
+
+        @chmod($file, 0644);
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider ignores invalid JSON composer files.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderIgnoresInvalidJson(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-invalid-json/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-invalid-json-cache/');
+
+        $file = $tempBase . '/vendor/omega-mvc/invalid/composer.json';
+
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+        mkdir(dirname($file), 0777, true);
+        file_put_contents($file, 'not-valid-json');
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame([], $manifest);
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider ignores packages without a string name.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderIgnoresMissingName(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-name/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-name-cache/');
+
+        $this->writeExternalComposer(
+            null,
+            ['omega-mvc' => ['providers' => ['X']]],
+            $tempBase,
+            $tempCachePath,
+            'noname'
+        );
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame([], $manifest);
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider ignores packages without an extra array.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderIgnoresMissingExtra(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-extra/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-extra-cache/');
+
+        $this->writeExternalComposer('ext/noextra', null, $tempBase, $tempCachePath);
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame([], $manifest);
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Test findExternalProvider ignores packages lacking the omega-mvc extra key.
+     *
+     * @return void
+     */
+    public function testFindExternalProviderIgnoresMissingOmegaMvcKey(): void
+    {
+        $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-omega/');
+        $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-omega-cache/');
+
+        $this->writeExternalComposer('ext/noomega', ['other' => 1], $tempBase, $tempCachePath);
+
+        $applicationManifest = new ApplicationManifest($tempBase, $tempCachePath, '/package/composer/');
+        $manifest            = $applicationManifest->build();
+
+        $this->assertSame([], $manifest);
+
+        $this->cleanExternalTree($tempBase, $tempCachePath);
+    }
+
+    /**
+     * Write a composer.json fixture under the vendor/omega-mvc directory.
+     *
+     * @param string|null $name          The package name, or null to omit the name key.
+     * @param mixed       $extra         The extra data, or null to omit the extra key.
+     * @param string      $tempBase      The temporary base path.
+     * @param string      $tempCachePath The temporary cache path.
+     * @param string      $dir            The subdirectory under vendor/omega-mvc.
+     * @return void
+     */
+    private function writeExternalComposer(
+        ?string $name,
+        mixed $extra,
+        string $tempBase,
+        string $tempCachePath,
+        string $dir = 'pkg'
+    ): void {
+        if (!is_dir($tempCachePath)) {
+            mkdir($tempCachePath, 0777, true);
+        }
+
+        $file = $tempBase . '/vendor/omega-mvc/' . $dir . '/composer.json';
+        mkdir(dirname($file), 0777, true);
+
+        $composer = [];
+        if ($name !== null) {
+            $composer['name'] = $name;
+        }
+        if ($extra !== null) {
+            $composer['extra'] = $extra;
+        }
+
+        file_put_contents($file, json_encode($composer));
+    }
+
+    /**
+     * Remove a temporary external-provider fixture tree.
+     *
+     * @param string $tempBase      The temporary base path.
+     * @param string $tempCachePath The temporary cache path.
+     * @return void
+     */
+    private function cleanExternalTree(string $tempBase, string $tempCachePath): void
+    {
+        $vendor = $tempBase . '/vendor';
+
+        if (is_dir($vendor)) {
+            foreach (glob($vendor . '/omega-mvc/*') ?: [] as $pkg) {
+                foreach (glob($pkg . '/*') ?: [] as $f) {
+                    @unlink($f);
+                }
+                @rmdir($pkg);
+            }
+            @rmdir($vendor . '/omega-mvc');
+            @rmdir($vendor);
+        }
+
+        @rmdir($tempBase);
+        @unlink($tempCachePath . 'packages.php');
+        @rmdir($tempCachePath);
     }
 }

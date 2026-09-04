@@ -166,7 +166,7 @@ final class ApplicationManifest
      */
     public function build(): array
     {
-        $provider = $this->scanOmegaMvcPackages();
+        $provider = $this->findExternalProvider();
 
         $file     = $this->basePath . $this->vendorPath . 'installed.json';
         $packages = $this->readPackages($file);
@@ -210,47 +210,63 @@ final class ApplicationManifest
     }
 
     /**
-     * Scan the omega-mvc vendor directory for packages exposing 'omega-mvc' extra data.
+     * Scan the vendor directory for external providers exposing 'omega-mvc' extra data.
      *
      * Looks for a composer.json file in every subdirectory of the
      * vendor/omega-mvc directory and collects the 'omega-mvc' extra data
-     * defined by each package.
+     * defined by each external package.
      *
      * @return array<mixed> The collected package manifest entries.
      */
-    private function scanOmegaMvcPackages(): array
+    private function findExternalProvider(): array
     {
-        $provider = [];
+        $provider = array_filter(
+            array_map(
+                fn (string $file): ?array => $this->resolveExternalPackage($file),
+                glob($this->basePath . '/vendor/omega-mvc/*/composer.json') ?: []
+            )
+        );
 
-        foreach (glob($this->basePath . '/vendor/omega-mvc/*/composer.json') ?: [] as $file) {
-            $contents = file_get_contents($file);
+        return $provider === [] ? [] : array_merge(...$provider);
+    }
 
-            if (false === $contents) {
-                continue;
-            }
+    /**
+     * Resolve a single external package composer.json file.
+     *
+     * Returns the 'omega-mvc' extra data keyed by its package name, or null
+     * when the file is unreadable, contains invalid JSON, or does not
+     * declare a name, an extra array, or an 'omega-mvc' key.
+     *
+     * @param string $file The path to the composer.json file.
+     * @return array<string, mixed>|null The resolved package entry, or null.
+     */
+    private function resolveExternalPackage(string $file): ?array
+    {
+        $contents = file_get_contents($file);
 
-            $composer = json_decode($contents, true);
-
-            if (!is_array($composer)) {
-                continue;
-            }
-
-            if (!is_string($composer['name'] ?? null)) {
-                continue;
-            }
-
-            if (!is_array($composer['extra'] ?? null)) {
-                continue;
-            }
-
-            if (!isset($composer['extra']['omega-mvc'])) {
-                continue;
-            }
-
-            $provider[$composer['name']] = $composer['extra']['omega-mvc'];
+        if (false === $contents) {
+            return null;
         }
 
-        return $provider;
+        $composer = json_decode($contents, true);
+
+        if (!is_array($composer)) {
+            return null;
+        }
+
+        if (!is_string($composer['name'] ?? null)) {
+            return null;
+        }
+
+        if (!is_array($composer['extra'] ?? null)) {
+            return null;
+        }
+
+        if (!isset($composer['extra']['omega-mvc'])) {
+            return null;
+        }
+
+        return [$composer['name'] => $composer['extra']['omega-mvc']];
     }
 
     /**
