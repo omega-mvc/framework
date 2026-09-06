@@ -56,15 +56,15 @@ interface ConnectionInterface extends LoggerInterface, TransactionInterface
      * The parameter may be a named or positional placeholder. The value is
      * safely bound to prevent SQL injection.
      *
-     * @param string|int|bool|null $param The parameter identifier or placeholder.
-     * @param mixed               $value The value to bind to the parameter.
-     * @param string|int|bool|null $type  Optional parameter type or driver hint.
+     * @param string|int $param The parameter identifier or placeholder.
+     * @param mixed      $value The value to bind to the parameter.
+     * @param int|null   $type  Optional PDO parameter type.
      * @return self Returns the current connection instance for method chaining.
      */
     public function bind(
-        string|int|bool|null $param,
+        string|int $param,
         mixed $value,
-        string|int|bool|null $type = null
+        int|null $type = null
     ): self;
 
     /**
@@ -78,16 +78,16 @@ interface ConnectionInterface extends LoggerInterface, TransactionInterface
     /**
      * Fetch all rows from the executed statement.
      *
-     * @return array|false An array of result rows, or false if no results are available.
+     * @return array<int, array<string, mixed>>|false An array of result rows, or false if no results are available.
      */
     public function resultset(): array|false;
 
     /**
      * Fetch a single row from the executed statement.
      *
-     * @return mixed The fetched row, or null if no result is available.
+     * @return array<string, mixed>|false The fetched row, or false if no result is available.
      */
-    public function single(): mixed;
+    public function single(): array|false;
 
     /**
      * Get the number of affected rows from the last executed statement.

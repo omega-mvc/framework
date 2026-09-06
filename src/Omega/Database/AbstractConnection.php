@@ -9,6 +9,10 @@ use PDOException;
 use PDOStatement;
 use Throwable;
 
+use function is_array;
+use function is_int;
+use function is_string;
+
 abstract class AbstractConnection implements ConnectionInterface
 {
     /** @var PDO Active PDO instance */
@@ -19,7 +23,7 @@ abstract class AbstractConnection implements ConnectionInterface
 
     /** @var array<int, string|int|bool> Default PDO options. */
     protected array $defaultOptions = [
-        PDO::ATTR_PERSISTENT => true,
+        PDO::ATTR_PERSISTENT => false,
         PDO::ATTR_ERRMODE    => PDO::ERRMODE_EXCEPTION,
     ];
 
@@ -28,12 +32,13 @@ abstract class AbstractConnection implements ConnectionInterface
      *
      * @var array{
      *     driver: string,
-     *     host: ?string,
-     *     database: ?string,
-     *     port: ?int,
-     *     charset: ?string,
-     *     username: ?string,
-     *     password: ?string,
+     *     host: string|null,
+     *     database: string|null,
+     *     port: int|null,
+     *     charset: string|null,
+     *     username: string|null,
+     *     password: string|null,
+     *     path: string|null,
      *     options: array<int, string|int|bool>
      * }
      */
@@ -42,9 +47,12 @@ abstract class AbstractConnection implements ConnectionInterface
     /** @var string Currently prepared SQL query. */
     protected string $query;
 
-    /** @var array<int, array<string, mixed>> Logs of executed queries with query, start, end, and duration. */
+    /** @var array<int, array{query: string, started: float, ended: float, duration: float|null}> Logs of executed queries with query, start, end, and duration. */
     protected array $logs = [];
 
+    /**
+     * @param array<string, mixed> $configs
+     */
     public function __construct(array $configs)
     {
         $this->configs = $this->normalizeConfigs($configs);
@@ -55,7 +63,7 @@ abstract class AbstractConnection implements ConnectionInterface
             $dsn,
             $this->configs['username'],
             $this->configs['password'],
-            $this->mergeOptions($this->configs['options'] ?? [])
+            $this->mergeOptions($this->configs['options'])
         );
     }
 
@@ -66,24 +74,55 @@ abstract class AbstractConnection implements ConnectionInterface
 
     /**
      * Normalize configuration once for all drivers.
+     *
+     * @param array<string, mixed> $configs
+     * @return array{
+     *     driver: string,
+     *     host: string|null,
+     *     database: string|null,
+     *     port: int|null,
+     *     charset: string|null,
+     *     username: string|null,
+     *     password: string|null,
+     *     path: string|null,
+     *     options: array<int, string|int|bool>
+     * }
      */
     protected function normalizeConfigs(array $configs): array
     {
+        $driver = $configs['driver'] ?? null;
+        $databaseDefaults = $configs['database_name'] ?? $configs['database'] ?? null;
+        $userDefault = $configs['user'] ?? $configs['username'] ?? null;
+
+        $options           = [];
+        $configuredOptions = $configs['options'] ?? [];
+
+        if (is_array($configuredOptions)) {
+            foreach ($configuredOptions as $key => $value) {
+                if (is_int($key) && (is_int($value) || is_bool($value) || is_string($value))) {
+                    $options[$key] = $value;
+                }
+            }
+        }
+
         return [
-            'driver' => $configs['driver'] ?? null,
-            'host' => $configs['host'] ?? null,
-            'database' => $configs['database_name'] ?? $configs['database'] ?? null,
-            'port' => $configs['port'] ?? null,
-            'charset' => $configs['charset'] ?? null,
-            'username' => $configs['user'] ?? $configs['username'] ?? null,
-            'password' => $configs['password'] ?? null,
-            'path' => $configs['path'] ?? null,
-            'options' => $configs['options'] ?? [],
+            'driver'   => is_string($driver) ? $driver : 'mysql',
+            'host'     => is_string($configs['host'] ?? null) ? $configs['host'] : null,
+            'database' => is_string($databaseDefaults) ? $databaseDefaults : null,
+            'port'     => is_int($configs['port'] ?? null) ? $configs['port'] : null,
+            'charset'  => is_string($configs['charset'] ?? null) ? $configs['charset'] : null,
+            'username' => is_string($userDefault) ? $userDefault : null,
+            'password' => is_string($configs['password'] ?? null) ? $configs['password'] : null,
+            'path'     => is_string($configs['path'] ?? null) ? $configs['path'] : null,
+            'options'  => $options,
         ];
     }
 
     /**
      * Merge driver options with defaults.
+     *
+     * @param array<int, string|int|bool> $options
+     * @return array<int, string|int|bool>
      */
     protected function mergeOptions(array $options): array
     {
@@ -92,6 +131,8 @@ abstract class AbstractConnection implements ConnectionInterface
 
     /**
      * Create PDO with retry on lost connection.
+     *
+     * @param array<int, string|int|bool> $options
      */
     protected function createPdo(
         string $dsn,
@@ -121,10 +162,6 @@ abstract class AbstractConnection implements ConnectionInterface
      */
     protected function reconnectIfLost(): void
     {
-        if (null === $this->pdo) {
-            return;
-        }
-
         try {
             $result = $this->pdo->query('SELECT 1');
             if ($result instanceof PDOStatement) {
@@ -137,9 +174,9 @@ abstract class AbstractConnection implements ConnectionInterface
 
             $this->pdo = $this->createPdo(
                 $this->buildDsn(),
-                $this->configs['username'] ?? null,
-                $this->configs['password'] ?? null,
-                $this->mergeOptions($this->configs['options'] ?? [])
+                $this->configs['username'],
+                $this->configs['password'],
+                $this->mergeOptions($this->configs['options'])
             );
         }
     }
@@ -250,7 +287,7 @@ abstract class AbstractConnection implements ConnectionInterface
     /**
      * {@inheritdoc}
      */
-    public function bind(string|int|bool|null $param, mixed $value, string|int|bool|null $type = null): self
+    public function bind(string|int $param, mixed $value, int|null $type = null): self
     {
         if (is_null($type)) {
             $type = match (true) {
@@ -285,17 +322,48 @@ abstract class AbstractConnection implements ConnectionInterface
     {
         $this->execute();
 
-        return $this->statement->fetchAll(PDO::FETCH_ASSOC);
+        $rows   = $this->statement->fetchAll(PDO::FETCH_ASSOC);
+        $result = [];
+
+        foreach ($rows as $row) {
+            $normalized = [];
+
+            if (is_array($row)) {
+                foreach ($row as $key => $value) {
+                    if (is_string($key)) {
+                        $normalized[$key] = $value;
+                    }
+                }
+            }
+
+            $result[] = $normalized;
+        }
+
+        return $result;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function single(): mixed
+    public function single(): array|false
     {
         $this->execute();
 
-        return $this->statement->fetch(PDO::FETCH_ASSOC);
+        $row = $this->statement->fetch(PDO::FETCH_ASSOC);
+
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $normalized = [];
+
+        foreach ($row as $key => $value) {
+            if (is_string($key)) {
+                $normalized[$key] = $value;
+            }
+        }
+
+        return $normalized;
     }
 
     /**
@@ -316,6 +384,8 @@ abstract class AbstractConnection implements ConnectionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param callable(ConnectionInterface $connection): bool $callable
      */
     public function transaction(callable $callable): bool
     {
@@ -388,6 +458,8 @@ abstract class AbstractConnection implements ConnectionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return array<int, array{query: string, started: float, ended: float, duration: float|null}>
      */
     public function getLogs(): array
     {

@@ -45,7 +45,7 @@ abstract class AbstractJoin
     /** @var string Column name used for comparison (optional) */
     protected string $columnName = '';
 
-    /** @var string[] List of column pairs used for comparison in the JOIN */
+    /** @var array<int, array{0: string, 1: string}> List of column pairs used for comparison in the JOIN */
     protected array $compareColumn = [];
 
     /** @var string Raw JOIN SQL string */

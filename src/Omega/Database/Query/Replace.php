@@ -19,6 +19,7 @@ namespace Omega\Database\Query;
 use function array_chunk;
 use function count;
 use function implode;
+use function max;
 
 /**
  * Builds and executes a REPLACE SQL query.
@@ -57,7 +58,7 @@ class Replace extends Insert
 
         $stringsBinds = [];
         /** @var array<int, array<int, string>> $chunk */
-        $chunk = array_chunk($binds, count($columns), true);
+        $chunk = array_chunk($binds, max(1, count($columns)), true);
         foreach ($chunk as $group) {
             $stringsBinds[] = '(' . implode(', ', $group) . ')';
         }

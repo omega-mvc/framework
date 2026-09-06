@@ -17,13 +17,14 @@ declare(strict_types=1);
 
 namespace Omega\Database\Query;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
+use InvalidArgumentException;
 
-use function array_filter;
-use function array_map;
 use function implode;
 use function in_array;
 use function is_bool;
+use function is_float;
+use function is_int;
 use function is_string;
 use function str_contains;
 use function str_replace;
@@ -43,6 +44,9 @@ use function str_replace;
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
+ * @phpstan-type Filter array{value: bool|int|string|null, comparison: string, bind: string, 0: bool}
+ * @phpstan-type Filters array<string, Filter>
+ * @phpstan-type FilterGroup array{filters: Filters, strict: bool}
  */
 abstract class AbstractQuery
 {
@@ -88,10 +92,14 @@ abstract class AbstractQuery
     /** @var string[] GROUP BY columns */
     protected array $groupBy = [];
 
-    /** @var array<int, array<string, array<string, array<string, string>>>> Multi-filter groups with strict mode. */
+    /** @var array<int, FilterGroup> Multi-filter groups with strict mode. */
     protected array $groupFilters = [];
 
-    /** Single filters with key => value pairs */
+    /**
+     * Single filters with key => filter condition pairs.
+     *
+     * @var Filters
+     */
     protected array $filters = [];
 
     /** @var bool Whether filters are combined with AND (true) or OR (false) */
@@ -121,7 +129,6 @@ abstract class AbstractQuery
         return $this;
     }
 
-    /**
     /**
      * Build WHERE clause based on current filters and bindings.
      *
@@ -153,7 +160,7 @@ abstract class AbstractQuery
     /**
      * Merge main filters and group filters into a single array.
      *
-     * @return array<int, array<string, array<string, array<string, string>>>> Returns merged filters.
+     * @return array<int, FilterGroup> Returns merged filters.
      */
     protected function mergeFilters(): array
     {
@@ -172,7 +179,7 @@ abstract class AbstractQuery
     /**
      * Split group filters into a SQL string.
      *
-     * @param array<int, array<string, array<string, array<string, string>>>> $groupFilters Filter groups.
+     * @param array<int, FilterGroup> $groupFilters Filter groups.
      * @return string Returns the SQL string for the groups.
      */
     protected function splitGroupsFilters(array $groupFilters): string
@@ -189,7 +196,7 @@ abstract class AbstractQuery
     /**
      * Split individual filters into SQL conditions.
      *
-     * @param array<string, array<string, array<string, string>>> $filters Single filter group.
+     * @param FilterGroup $filters Single filter group.
      * @return string Returns the SQL condition string.
      */
     protected function splitFilters(array $filters): string
@@ -207,11 +214,9 @@ abstract class AbstractQuery
             }
         }
 
-        $clearQuery = array_filter($query);
-
         return $filters['strict']
-            ? implode(' AND ', $clearQuery)
-            : implode(' OR ', $clearQuery);
+            ? implode(' AND ', $query)
+            : implode(' OR ', $query);
     }
 
     /**
@@ -221,26 +226,49 @@ abstract class AbstractQuery
      */
     public function queryBind(): string
     {
-        [$binds, $values] = $this->bindsDestructor();
+        $values = [];
 
-        $quoteValues = array_map(function (mixed $value) {
-            if (is_string($value)) {
-                return "'" . $value . "'";
+        foreach ($this->binds as $bind) {
+            if ($bind->hasBind()) {
+                continue;
             }
 
-            if (is_bool($value)) {
-                if ($value === true) {
-                    return 'true';
-                }
+            $values[$bind->getBind()] = $this->quoteBindValue($bind->getValue());
+        }
 
-                return 'false';
-            }
+        return strtr($this->builder(), $values);
+    }
 
-            /* @phpstan-ignore-next-line */
-            return $value;
-        }, $values);
+    /**
+     * Quote a single bind value for inline SQL interpolation.
+     *
+     * String values are quoted with single quotes and inner quotes are
+     * escaped by doubling. A strtr-based replacement matches the longest
+     * placeholder first, which avoids collisions between names such as
+     * `:bind_1` and `:bind_10`.
+     *
+     * @param mixed $value The bind value.
+     * @return string The SQL-safe literal.
+     */
+    private function quoteBindValue(mixed $value): string
+    {
+        if (is_string($value)) {
+            return "'" . str_replace("'", "''", $value) . "'";
+        }
 
-        return str_replace($binds, $quoteValues, $this->builder());
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (null === $value) {
+            return 'NULL';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        throw new InvalidArgumentException('Bind value must be a scalar or null.');
     }
 
     /**
@@ -294,7 +322,7 @@ abstract class AbstractQuery
      */
     public function whereRef(?Where $ref): static
     {
-        if ($ref->isEmpty()) {
+        if (null === $ref || $ref->isEmpty()) {
             return $this;
         }
         $condition = $ref->get();

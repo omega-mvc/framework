@@ -16,12 +16,13 @@ declare(strict_types=1);
 
 namespace Omega\Database\Query;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
 
 use function array_chunk;
 use function array_filter;
 use function count;
 use function implode;
+use function max;
 
 /**
  * Builds and executes an INSERT SQL query.
@@ -153,7 +154,7 @@ class Insert extends AbstractExecute
 
         $stringsBinds = [];
         /** @var array<int, array<int, string>> $chunk */
-        $chunk = array_chunk($binds, count($columns), true);
+        $chunk = array_chunk($binds, max(1, count($columns)), true);
 
         foreach ($chunk as $group) {
             $stringsBinds[] = '(' . implode(', ', $group) . ')';

@@ -16,10 +16,11 @@ declare(strict_types=1);
 
 namespace Omega\Database\Query;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Join\AbstractJoin;
 use Omega\Database\Query\Traits\ConditionTrait;
 use Omega\Database\Query\Traits\SubQueryTrait;
+use LogicException;
 
 use function array_filter;
 use function array_merge;
@@ -115,13 +116,17 @@ final class Select extends AbstractFetch
      */
     public function join(AbstractJoin $refTable): self
     {
+        if (null === $this->subQuery) {
+            throw new LogicException('Cannot join a select without a table reference.');
+        }
+
         // override master table
         $refTable->table($this->subQuery->getAlias());
 
         $this->join[] = $refTable->stringJoin();
         $binds        = (fn () => $this->{'subQuery'})->call($refTable);
 
-        if (null !== $binds) {
+        if ($binds instanceof InnerQuery) {
             $this->binds = array_merge($this->binds, $binds->getBind());
         }
 

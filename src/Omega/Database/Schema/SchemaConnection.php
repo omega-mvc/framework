@@ -18,6 +18,10 @@ use Omega\Database\AbstractConnection;
 use Omega\Database\Exceptions\InvalidConfigurationException;
 use PDOException;
 
+use function is_string;
+use function sprintf;
+use function str_contains;
+
 /**
  * Class SchemaConnection
  *
@@ -52,13 +56,13 @@ class SchemaConnection extends AbstractConnection implements SchemaConnectionInt
     public function __construct(array $configs)
     {
         $this->configs  = $this->normalizeConfigs($configs);
-        $this->database = $configs['database'] ?? $configs['database_name'];
+        $this->database = $this->configs['database'] ?? '';
         $dsn            = $this->buildDsn();
         $this->pdo      = $this->createPdo(
             $dsn,
             $this->configs['username'],
             $this->configs['password'],
-            $this->mergeOptions($this->configs['options'] ?? [])
+            $this->mergeOptions($this->configs['options'])
         );
     }
 
@@ -70,41 +74,85 @@ class SchemaConnection extends AbstractConnection implements SchemaConnectionInt
         return $this->database;
     }
 
-    /**
-     * Configure connection settings from input array.
-     *
-     * Normalizes configuration keys and fills in default values if missing.
-     *
-     * @param array<string, mixed> $configs Input configuration array
-     * @return array<string, mixed> Normalized configuration array ready for DSN
-     */
-    protected function normalizeConfigs(array $configs): array
-    {
-        return $this->configs = [
-            'driver'   => $configs['driver'] ?? 'mysql',
-            'host'     => $configs['host'] ?? null,
-            'database' => null,
-            'port'     => $configs['port'] ?? null,
-            'charset'  => $configs['charset'] ?? null,
-            'username' => $configs['user'] ?? $configs['username'] ?? null,
-            'password' => $configs['password'] ?? null,
-            'options'  => $configs['options'] ?? $this->defaultOptions,
-        ];
-    }
-
     protected function buildDsn(): string
     {
-        $driver = $this->configs['driver'];
+        $driver = (string) $this->configs['driver'];
         $host   = $this->configs['host'];
-        $port   = $this->configs['port'] ?? 3306;
-        $char   = $this->configs['charset'] ?? 'utf8mb4';
 
-        if (!$host) {
-            throw new InvalidConfigurationException(
-                "{$driver} requires host."
-            );
+        return match ($driver) {
+            'mysql', 'mariadb' => $this->buildMysqlDsn($host),
+            'pgsql'            => $this->buildPgsqlDsn($host),
+            'sqlite'           => $this->buildSqliteDsn(),
+            default            => throw new InvalidConfigurationException(
+                sprintf('Unsupported database driver [%s].', $driver)
+            ),
+        };
+    }
+
+    /**
+     * Build a MySQL/MariaDB DSN without a database name so that
+     * database-level operations (create/drop) can be performed.
+     *
+     * @param string|null $host Database host.
+     * @return string The MySQL DSN.
+     * @throws InvalidConfigurationException When the host is missing.
+     */
+    private function buildMysqlDsn(?string $host): string
+    {
+        if (!is_string($host) || '' === $host) {
+            throw new InvalidConfigurationException("{$this->configs['driver']} requires host.");
         }
 
+        $port = $this->configs['port'] ?? 3306;
+        $char = $this->configs['charset'] ?? 'utf8mb4';
+
         return "mysql:host={$host};port={$port};charset={$char}";
+    }
+
+    /**
+     * Build a PostgreSQL DSN without a database name so that
+     * database-level operations (create/drop) can be performed.
+     *
+     * @param string|null $host Database host.
+     * @return string The PostgreSQL DSN.
+     * @throws InvalidConfigurationException When the host is missing.
+     */
+    private function buildPgsqlDsn(?string $host): string
+    {
+        if (!is_string($host) || '' === $host) {
+            throw new InvalidConfigurationException("{$this->configs['driver']} requires host.");
+        }
+
+        $port = $this->configs['port'] ?? 5432;
+
+        return "pgsql:host={$host};port={$port}";
+    }
+
+    /**
+     * Build an SQLite DSN from the configured path or database.
+     *
+     * @return string The SQLite DSN.
+     * @throws InvalidConfigurationException When the path is missing or invalid.
+     */
+    private function buildSqliteDsn(): string
+    {
+        $path = $this->configs['path'] ?? null;
+        if (!is_string($path) || '' === $path) {
+            throw new InvalidConfigurationException('SQLite requires path.');
+        }
+
+        if (
+            ':memory:' === $path
+            || str_contains($path, '?mode=memory')
+            || str_contains($path, '&mode=memory')
+        ) {
+            return "sqlite:{$path}";
+        }
+
+        if (!is_string($path = realpath($path))) {
+            throw new InvalidConfigurationException('SQLite requires valid file path.');
+        }
+
+        return 'sqlite:' . $path;
     }
 }

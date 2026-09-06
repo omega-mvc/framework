@@ -50,7 +50,7 @@ abstract class AbstractTestDatabase extends TestCase
     /** @var array<string, string|int> Database connection environment variables */
     protected array $env;
 
-    /** @var Connectioninterface Main PDO connection instance for tests */
+    /** @var ConnectionInterface Main PDO connection instance for tests */
     protected ConnectionInterface $pdo;
 
     /** @var SchemaConnection Schema-level connection instance */

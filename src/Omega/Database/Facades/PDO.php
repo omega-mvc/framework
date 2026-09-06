@@ -30,7 +30,7 @@ use Omega\Facade\AbstractFacade;
  *
  * @category   Omega
  * @package    Database
- * @subpackges Facades
+ * @subpackage Facades
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -38,11 +38,11 @@ use Omega\Facade\AbstractFacade;
  * @version    2.0.0
  *
  * @method static ConnectionInterface   getInstance()
- * @method static array        configs()
+ * @method static array<string, mixed>   configs()
  * @method static ConnectionInterface   query(string $query)
- * @method static ConnectionInterface bind(string|int|bool|null $param, mixed $value, string|int|bool|null $type = null)
+ * @method static ConnectionInterface bind(string|int $param, mixed $value, int|null $type = null)
  * @method static bool         execute()
- * @method static array|false  resultset()
+ * @method static array<int, array<string, mixed>>|false resultset()
  * @method static mixed        single()
  * @method static int          rowCount()
  * @method static string|false lastInsertId()
@@ -51,7 +51,7 @@ use Omega\Facade\AbstractFacade;
  * @method static bool         endTransaction()
  * @method static bool         cancelTransaction()
  * @method static void         flushLogs()
- * @method static array        getLogs()
+ * @method static array<int, array<string, float|string|null>> getLogs()
  *
  * @see Connection
  */

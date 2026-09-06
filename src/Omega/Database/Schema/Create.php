@@ -32,12 +32,15 @@ readonly class Create
 {
     /**
      * @param SchemaConnectionInterface $pdo          Database connection
-     * @param string|null               $databaseName Optional database name
+     * @param string|null               $databaseName Optional database name; defaults to the connection's database
      */
+    private string $databaseName;
+
     public function __construct(
         private SchemaConnectionInterface $pdo,
-        private ?string $databaseName = null,
+        ?string $databaseName = null,
     ) {
+        $this->databaseName = $databaseName ?? $this->pdo->getDatabase();
     }
 
     /**

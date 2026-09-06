@@ -31,6 +31,7 @@ use Omega\Database\Query\Traits\SubQueryTrait;
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
+ * @phpstan-import-type Filters from AbstractQuery
  */
 class Where
 {
@@ -53,10 +54,14 @@ class Where
     /** @var Bind[] Collection of bind objects used for parameter binding. */
     private array $binds = [];
 
-    /** @var string[] Raw WHERE clause fragments. */
+    /** @var list<string> Raw WHERE clause fragments. */
     private array $where = [];
 
-    /** @var array<string, string> Single-level filters mapped by column name. */
+    /**
+     * Single-level filters mapped by column name.
+     *
+     * @var Filters
+     */
     private array $filters = [];
 
     /**
@@ -72,11 +77,13 @@ class Where
     /**
      * Create a new WHERE clause builder.
      *
-     * @param string $tableName The table name used to prefix column references.
+     * @param string            $tableName The table name used to prefix column references.
+     * @param InnerQuery|null   $subQuery  Optional subquery reference.
      */
-    public function __construct(string $tableName)
+    public function __construct(string $tableName, ?InnerQuery $subQuery = null)
     {
-        $this->table = $tableName;
+        $this->table    = $tableName;
+        $this->subQuery = $subQuery;
     }
 
     /**
@@ -85,11 +92,11 @@ class Where
      * Returns raw data used by the query builder, including
      * bindings, conditions, filters, and strict mode flag.
      *
-     * @return array<string, Bind[]|string[]|array<string, string>|bool> {
-     *     @type Bind[]               $binds    Bound parameters.
-     *     @type string[]             $where    Raw WHERE fragments.
-     *     @type array<string,string> $filters  Column filters.
-     *     @type bool                 $isStrict Logical strict mode flag.
+     * @return array{binds: Bind[], where: string[], filters: Filters, isStrict: bool} {
+     *     @type Bind[]   $binds    Bound parameters.
+     *     @type string[] $where    Raw WHERE fragments.
+     *     @type Filters  $filters  Column filters.
+     *     @type bool     $isStrict Logical strict mode flag.
      * }
      */
     public function get(): array

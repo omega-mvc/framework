@@ -71,8 +71,8 @@ trait ConditionTrait
     /**
      * Add a raw WHERE condition to the query.
      *
-     * @param string                 $whereCondition Raw WHERE condition (e.g., "column = :bind")
-     * @param array<int, array|Bind> $binder         List of binds or Bind objects
+     * @param string                                       $whereCondition Raw WHERE condition (e.g., "column = :bind")
+     * @param array<int, Bind|array{0: string, 1: bool|int|string|null}> $binder List of binds or Bind objects
      * @return self
      */
     public function where(string $whereCondition, array $binder = []): self

@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Database\Facades;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\DatabaseManager;
 use Omega\Database\Query\InnerQuery;
 use Omega\Database\Query\Table;
@@ -33,7 +33,7 @@ use Omega\Facade\AbstractFacade;
  *
  * @category   Omega
  * @package    Database
- * @subpackges Facades
+ * @subpackage Facades
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
@@ -44,7 +44,7 @@ use Omega\Facade\AbstractFacade;
  * @method static ConnectionInterface connection(string $name)
  * @method static DatabaseManager     setDefaultConnection(ConnectionInterface $connection)
  * @method static DatabaseManager     query(string $query)
- * @method static DatabaseManager     bind(string|int|bool|null $param, mixed $value, string|int|bool|null $type = null)
+ * @method static DatabaseManager     bind(string|int $param, mixed $value, int|null $type = null)
  * @method static bool                execute()
  * @method static mixed[]|false       resultset()
  * @method static mixed               single()
@@ -55,7 +55,7 @@ use Omega\Facade\AbstractFacade;
  * @method static bool                cancelTransaction()
  * @method static string|false        lastInsertId()
  * @method static void                flushLogs()
- * @method static array               getLogs()
+ * @method static array<int, array<string, float|string|null>> getLogs()
  *
  * @see DatabaseManager
  */

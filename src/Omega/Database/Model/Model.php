@@ -16,9 +16,11 @@ namespace Omega\Database\Model;
 
 use ArrayAccess;
 use ArrayIterator;
+use Closure;
 use Exception;
 use IteratorAggregate;
-use Omega\Database\Connectioninterface;
+use LogicException;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\AbstractQuery;
 use Omega\Database\Query\Bind;
 use Omega\Database\Query\Join\InnerJoin;
@@ -26,6 +28,7 @@ use Omega\Database\Query\Query;
 use Omega\Database\Query\Select;
 use Omega\Database\Query\Where;
 use Omega\Event\Dispatcher\DispatcherInterface;
+use Omega\Event\EventInterface;
 use Omega\Event\Events\ModelEvent;
 use ReturnTypeWillChange;
 use Traversable;
@@ -36,7 +39,9 @@ use function array_key_first;
 use function array_keys;
 use function class_exists;
 use function in_array;
-use function is_a;
+use function is_bool;
+use function is_int;
+use function is_string;
 use function key_exists;
 use function max;
 use function method_exists;
@@ -62,6 +67,7 @@ use const ARRAY_FILTER_USE_KEY;
  *
  * @implements ArrayAccess<array-key, mixed>
  * @implements IteratorAggregate<array-key, mixed>
+ * @phpstan-consistent-constructor
  */
 class Model implements ArrayAccess, IteratorAggregate
 {
@@ -86,8 +92,8 @@ class Model implements ArrayAccess, IteratorAggregate
     /** @var array<array<array-key, mixed>> Original data fetched from database */
     protected array $fresh;
 
-    /** @var Where|null Custom where condition instance */
-    protected ?Where $where = null;
+    /** @var Where Custom where condition instance */
+    protected Where $where;
 
     /** @var Bind[] Array of binders for prepared statements */
     protected array $binds = [];
@@ -114,15 +120,19 @@ class Model implements ArrayAccess, IteratorAggregate
      * Sets the table name automatically to the lowercase class name if not already defined.
      * Also initializes the `Where` instance for query conditions.
      *
-     * @param ConnectionInterface          $pdo    PDO connection interface for database operations.
-     * @param array<array-key, mixed>      $column Initial column data for the model.
+     * @param ConnectionInterface              $pdo    PDO connection interface for database operations.
+     * @param array<array<array-key, mixed>>   $column Initial column data for the model.
      * @return void
      */
     public function __construct(ConnectionInterface $pdo, array $column)
     {
         $this->pdo        = $pdo;
         $this->columns    = $this->fresh = $column;
-        $this->tableName ??= strtolower(__CLASS__);
+        $shortName = static::class;
+        if (false !== ($pos = strrpos($shortName, '\\'))) {
+            $shortName = substr($shortName, $pos + 1);
+        }
+        $this->tableName ??= strtolower($shortName);
         $this->where = new Where($this->tableName);
     }
 
@@ -188,11 +198,11 @@ class Model implements ArrayAccess, IteratorAggregate
     {
         if (method_exists($this, $name)) {
             $highOrder = $this->{$name}();
-            if (is_a($highOrder, Model::class)) {
+            if ($highOrder instanceof Model) {
                 return $highOrder->first();
             }
 
-            if (is_a($highOrder, ModelCollection::class)) {
+            if ($highOrder instanceof ModelCollection) {
                 return $highOrder->toArrayArray();
             }
         }
@@ -275,7 +285,7 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public function getter(string $key, mixed $default = null): mixed
     {
-        if (array_key_exists($key, $this->stash)) {
+        if (in_array($key, $this->stash, true)) {
             throw new Exception("Can't read this column `$key`.");
         }
 
@@ -298,6 +308,36 @@ class Model implements ArrayAccess, IteratorAggregate
         }
 
         return $first[$this->primaryKey];
+    }
+
+    /**
+     * Get the table name of the model.
+     *
+     * @return string Table name.
+     */
+    public function getTableName(): string
+    {
+        return $this->tableName;
+    }
+
+    /**
+     * Get the primary key column name.
+     *
+     * @return string Primary key column name.
+     */
+    public function getPrimaryKeyName(): string
+    {
+        return $this->primaryKey;
+    }
+
+    /**
+     * Get the PDO connection instance.
+     *
+     * @return ConnectionInterface Connection instance.
+     */
+    public function getConnection(): ConnectionInterface
+    {
+        return $this->pdo;
     }
 
     /**
@@ -344,7 +384,10 @@ class Model implements ArrayAccess, IteratorAggregate
         foreach ($this->columns as $column) {
             $where = new Where($this->tableName);
             if (array_key_exists($this->primaryKey, $column)) {
-                $where->equal($this->primaryKey, $column[$this->primaryKey]);
+                $value = $column[$this->primaryKey];
+                if (is_bool($value) || is_int($value) || is_string($value) || null === $value) {
+                    $where->equal($this->primaryKey, $value);
+                }
             }
 
             $collection->push(new static($this->pdo, [])->setUp(
@@ -370,8 +413,18 @@ class Model implements ArrayAccess, IteratorAggregate
     {
         $insert = Query::from($this->tableName, $this->pdo);
         foreach ($this->columns as $column) {
+            $values = [];
+            foreach ($column as $key => $value) {
+                if (
+                    is_string($key)
+                    && (is_bool($value) || is_int($value) || is_string($value) || null === $value)
+                ) {
+                    $values[$key] = $value;
+                }
+            }
+
             $success = $insert->insert()
-                ->values($column)
+                ->values($values)
                 ->execute();
 
             if (!$success) {
@@ -397,7 +450,7 @@ class Model implements ArrayAccess, IteratorAggregate
         $query->sortOrderRef($this->limitStart, $this->limitEnd, $this->offset, $this->sortOrder);
         $all = $this->fetch($query);
 
-        if ([] === $all) {
+        if (false === $all || [] === $all) {
             return false;
         }
 
@@ -420,6 +473,12 @@ class Model implements ArrayAccess, IteratorAggregate
             return false;
         }
 
+        if ($this->where->isEmpty()) {
+            throw new Exception(
+                sprintf('Cannot update table `%s` without a WHERE condition.', $this->tableName)
+            );
+        }
+
         $update = Query::from($this->tableName, $this->pdo)
             ->update()
             ->values($this->changes());
@@ -440,6 +499,12 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public function delete(): bool
     {
+        if ($this->where->isEmpty()) {
+            throw new Exception(
+                sprintf('Cannot delete from table `%s` without a WHERE condition.', $this->tableName)
+            );
+        }
+
         $delete = Query::from($this->tableName, $this->pdo)->delete();
 
         $result = $this->changing($this->execute($delete));
@@ -475,13 +540,19 @@ class Model implements ArrayAccess, IteratorAggregate
     protected function buildRelation(string $model, ?string $ref, bool $multiple): Model|ModelCollection
     {
         if (class_exists($model)) {
-            $model     = new $model($this->pdo, []);
-            $tableName = $model->tableName;
-            $joinRef   = $ref ?? $model->primaryKey;
+            $related = new $model($this->pdo, []);
+            if (!$related instanceof Model) {
+                throw new Exception(
+                    sprintf('The related model `%s` must extend %s.', $model, Model::class)
+                );
+            }
+
+            $tableName = $related->tableName;
+            $joinRef   = $ref ?? $related->primaryKey;
         } else {
             $tableName = $model;
             $joinRef   = $ref ?? $this->primaryKey;
-            $model     = new static($this->pdo, []);
+            $related   = new static($this->pdo, []);
         }
 
         $query = Query::from($this->tableName, $this->pdo)
@@ -490,16 +561,16 @@ class Model implements ArrayAccess, IteratorAggregate
             ->whereRef($this->where);
 
         if ($multiple) {
-            $result = $query->get();
-            $model->columns = $model->fresh = $result->toArray();
+            $result            = $query->get();
+            $related->columns  = $related->fresh = $result->toArray();
 
-            return $model->get();
+            return $related->get();
         }
 
-        $result = $query->single();
-        $model->columns = $model->fresh = [$result];
+        $result           = $query->single();
+        $related->columns = $related->fresh = [$result];
 
-        return $model;
+        return $related;
     }
 
     /**
@@ -511,7 +582,14 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public function hasOne(string $model, ?string $ref = null): Model
     {
-        return $this->buildRelation($model, $ref, false);
+        $relation = $this->buildRelation($model, $ref, false);
+        if (!$relation instanceof Model) {
+            throw new Exception(
+                sprintf('The relation `%s` must resolve to a %s instance.', $model, Model::class)
+            );
+        }
+
+        return $relation;
     }
 
     /**
@@ -523,7 +601,14 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public function hasMany(string $model, ?string $ref = null): ModelCollection
     {
-        return $this->buildRelation($model, $ref, true);
+        $relation = $this->buildRelation($model, $ref, true);
+        if (!$relation instanceof ModelCollection) {
+            throw new Exception(
+                sprintf('The relation `%s` must resolve to a %s instance.', $model, ModelCollection::class)
+            );
+        }
+
+        return $relation;
     }
 
     /**
@@ -580,7 +665,7 @@ class Model implements ArrayAccess, IteratorAggregate
     /**
      * Get the differences between current column values and the original fresh values.
      *
-     * @return array<array-key, mixed> Key-value pairs of modified columns.
+     * @return array<string, bool|int|string|null> Key-value pairs of modified columns.
      * @throws Exception If there is an issue accessing the first column.
      */
     public function changes(): array
@@ -588,13 +673,24 @@ class Model implements ArrayAccess, IteratorAggregate
         $change = [];
         $column = $this->firstColumn($current);
 
-        if (false === array_key_exists($current, $this->fresh)) {
-            return $column;
+        if (null === $current || false === array_key_exists($current, $this->fresh)) {
+            foreach ($column as $key => $value) {
+                if (
+                    is_string($key)
+                    && (is_bool($value) || is_int($value) || is_string($value) || null === $value)
+                ) {
+                    $change[$key] = $value;
+                }
+            }
+
+            return $change;
         }
 
         foreach ($column as $key => $value) {
             if (
-                array_key_exists($key, $this->fresh[$current])
+                is_string($key)
+                && (is_bool($value) || is_int($value) || is_string($value) || null === $value)
+                && array_key_exists($key, $this->fresh[$current])
                 && $this->fresh[$current][$key] !== $value
             ) {
                 $change[$key] = $value;
@@ -741,7 +837,9 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->setter($offset, $value);
+        if (is_string($offset)) {
+            $this->setter($offset, $value);
+        }
     }
 
     /**
@@ -771,7 +869,7 @@ class Model implements ArrayAccess, IteratorAggregate
      *
      * @param int|string          $id  Primary key value.
      * @param ConnectionInterface $pdo PDO connection instance.
-     * @return Model The found model instance.
+     * @return static The found model instance.
      */
     public static function find(int|string $id, ConnectionInterface $pdo): static
     {
@@ -795,9 +893,11 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public static function findOrCreate(mixed $id, array $column, ConnectionInterface $pdo): static
     {
-        $model          = new static($pdo, [$column]);
-        $model->where   = new Where($model->tableName)
-            ->equal($model->primaryKey, $id);
+        $model         = new static($pdo, [$column]);
+        $model->where  = new Where($model->tableName);
+        if (is_bool($id) || is_int($id) || is_string($id) || null === $id) {
+            $model->where->equal($model->primaryKey, $id);
+        }
 
         if ($model->isExist()) {
             $model->read();
@@ -845,8 +945,11 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     public static function equal(int|string $columnName, mixed $value, ConnectionInterface $pdo): static
     {
-        $model = new static($pdo, []);
-        $model->identifier()->equal($columnName, $value);
+        $model  = new static($pdo, []);
+        $where  = $model->identifier();
+        if (is_bool($value) || is_int($value) || is_string($value) || null === $value) {
+            $where->equal($columnName, $value);
+        }
         $model->read();
 
         return $model;
@@ -917,11 +1020,11 @@ class Model implements ArrayAccess, IteratorAggregate
     /**
      * Dispatch an event if the event dispatcher is available.
      *
-     * @param string $eventName The event name.
-     * @param mixed  $event     The event instance.
+     * @param string         $eventName The event name.
+     * @param EventInterface $event     The event instance.
      * @return void
      */
-    private function dispatchEvent(string $eventName, mixed $event): void
+    private function dispatchEvent(string $eventName, EventInterface $event): void
     {
         if (static::$dispatcher !== null) {
             static::$dispatcher->dispatch($event);
@@ -957,17 +1060,26 @@ class Model implements ArrayAccess, IteratorAggregate
      */
     private function builder(AbstractQuery $query): array
     {
-        return [
-            (fn () => $this->{'builder'}())->call($query),
-            (fn () => $this->{'binds'})->call($query),
-        ];
+        $sql = Closure::bind(
+            function (): string {
+                return $this->builder();
+            },
+            $query,
+            AbstractQuery::class
+        );
+
+        if (null === $sql) {
+            throw new LogicException('Unable to bind the query compiler closure.');
+        }
+
+        return [$sql(), $query->getBinds()];
     }
 
     /**
      * Fetch the result set from a query.
      *
      * @param AbstractQuery $baseQuery Query object to execute.
-     * @return array|false Array of results, or false if no results found.
+     * @return array<int, array<string, mixed>>|false Array of results, or false if no results found.
      */
     private function fetch(AbstractQuery $baseQuery): array|false
     {

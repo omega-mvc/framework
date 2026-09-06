@@ -14,7 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Database\Schema;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
 
 /**
  * Interface SchemaConnectionInterface

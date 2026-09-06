@@ -66,13 +66,13 @@ final class ConfigsTest extends TestCase
             'host'          => 'localhost',
             'database_name' => 'db_from_name',
             'user'          => 'legacy_user',
-            'options'       => ['foo' => 1],
+            'options'       => [\PDO::ATTR_PERSISTENT => false],
         ]);
 
         $this->assertSame('mysql', $configs['driver']);
         $this->assertSame('db_from_name', $configs['database']);
         $this->assertSame('legacy_user', $configs['username']);
-        $this->assertSame(['foo' => 1], $configs['options']);
+        $this->assertSame([\PDO::ATTR_PERSISTENT => false], $configs['options']);
     }
 
     /**
@@ -491,8 +491,8 @@ final class ConfigsTest extends TestCase
             'host'   => 'oracle.server.com',
         ];
 
-        $this->expectException(\Error::class);
-        $this->expectExceptionMessageIsOrContains('OracleConnection');
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageIsOrContains('Unsupported database driver [oracle].');
         ConnectionFactory::make($config);
     }
 }

@@ -22,12 +22,12 @@ Run `lint` before `test`. Fix lint errors with `composer run fix` first.
 - **PSR-12** with 120-char line limit (comments included, no hard absolute limit)
 - camelCase method names (PSR-1 method rule excluded in phpcs.xml.dist)
 - 4-space indent, UTF-8, LF line endings
-- Fixtures directories excluded from linting: `tests/Tests/Support/fixtures`, `tests/Tests/fixtures`
+- Fixtures directory excluded from linting: `tests/Unit/fixtures`
 
 ## Structure
 
 - `src/Omega/` — 28 subpackages (Application, Cache, Collection, Container, Database, Http, Router, View, etc.)
-- `tests/Tests/` — mirrors src structure, 342 test files
+- `tests/Unit/` — mirrors src structure; test files are PHPUnit-style Pest classes. `tests/Unit/fixtures/` holds shared fixtures. Fixture conversion/conventions for Archive subpackage live under `tests/Unit/Archive/`
 - Global helper files autoloaded via Composer `files`: `Application/helper.php`, `Collection/helper.php`, `Environment/helper.php`, `Http/helper.php`, `Text/helper.php`, `Time/helper.php`, `Validator/helper.php`, `View/helper.php`
 - `cache/` — runtime cache (phpcs, phpstan, phpunit, coverage); gitignored
 
@@ -47,7 +47,7 @@ Run `lint` before `test`. Fix lint errors with `composer run fix` first.
   `PharData`, which is writable even with `phar.readonly=1`; the fakes cover every branch of `PharAdapter`.
 - `Bz2Adapter::rename()` avoids a compound `||` guard so its paths are fully exercised by the test suite
   (100% lines/branches/paths).
-- Fixture dirs: `tests/Tests/fixtures/`, `tests/Tests/Support/fixtures/`
+- Fixture dirs: `tests/Unit/fixtures/`; `FixturesPathTrait` in `tests/Unit/FixturesPathTrait.php`
 
 ## Conventions
 
@@ -61,5 +61,5 @@ Run `lint` before `test`. Fix lint errors with `composer run fix` first.
 
 - No CI pipelines configured (no `.github/workflows/` or equivalent)
 - `composer.lock` is gitignored but currently tracked — edit `composer.json` dependencies directly
-- `phpstan.neon.dist` exists (level 10) but is NOT part of the workflow — do not run it
+- `phpstan.neon.dist` exists (level 10, `tests/Unit/fixtures` excluded) but is NOT part of the workflow — do not run it
 - Available tools on dev machine: `rg`, `tig`, `phpdbg`, `python3`

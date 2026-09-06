@@ -18,8 +18,13 @@ use Exception;
 use Omega\Collection\Collection;
 use Omega\Database\Query\Delete;
 use Omega\Database\Query\Update;
+use Traversable;
 
 use function array_merge;
+use function array_values;
+use function is_int;
+use function is_string;
+use function iterator_to_array;
 
 /**
  * ModelCollection class.
@@ -51,7 +56,7 @@ class ModelCollection extends Collection
      */
     public function __construct(iterable $models, Model $of)
     {
-        parent::__construct($models);
+        parent::__construct(array_values($models instanceof Traversable ? iterator_to_array($models) : $models));
         $this->model = $of;
     }
 
@@ -65,7 +70,10 @@ class ModelCollection extends Collection
     {
         $primaryKeys = [];
         foreach ($this->collection as $model) {
-            $primaryKeys[] = $model->getPrimaryKey();
+            $value = $model->getPrimaryKey();
+            if (is_int($value) || is_string($value)) {
+                $primaryKeys[] = $value;
+            }
         }
 
         return $primaryKeys;
@@ -96,15 +104,15 @@ class ModelCollection extends Collection
     /**
      * Update all models in the collection with the given values using their primary keys.
      *
-     * @param array<array-key, mixed> $values Column values to update.
+     * @param array<string, bool|int|string|null> $values Column values to update.
      * @return bool True if the update succeeded.
      * @throws Exception On execution failure.
      */
     public function update(array $values): bool
     {
-        $tableName  = (fn () => $this->{'tableName'})->call($this->model);
-        $pdo        = (fn () => $this->{'pdo'})->call($this->model);
-        $primaryKey = (fn () => $this->{'primaryKey'})->call($this->model);
+        $tableName  = $this->model->getTableName();
+        $pdo        = $this->model->getConnection();
+        $primaryKey = $this->model->getPrimaryKeyName();
         $update     = new Update($tableName, $pdo);
 
         $update->values($values)->in($primaryKey, $this->getPrimaryKey());
@@ -120,9 +128,9 @@ class ModelCollection extends Collection
      */
     public function delete(): bool
     {
-        $tableName  = (fn () => $this->{'tableName'})->call($this->model);
-        $pdo        = (fn () => $this->{'pdo'})->call($this->model);
-        $primaryKey = (fn () => $this->{'primaryKey'})->call($this->model);
+        $tableName  = $this->model->getTableName();
+        $pdo        = $this->model->getConnection();
+        $primaryKey = $this->model->getPrimaryKeyName();
         $delete     = new Delete($tableName, $pdo);
 
         $delete->in($primaryKey, $this->getPrimaryKey());

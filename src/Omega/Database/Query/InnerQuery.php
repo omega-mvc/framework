@@ -78,6 +78,10 @@ final readonly class InnerQuery implements \Stringable
      */
     public function getBind(): array
     {
+        if (null === $this->select) {
+            return [];
+        }
+
         return $this->select->getBinds();
     }
 

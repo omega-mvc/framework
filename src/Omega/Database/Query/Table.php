@@ -14,7 +14,8 @@ declare(strict_types=1);
 
 namespace Omega\Database\Query;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
+use LogicException;
 
 /**
  * Represents a database table and provides a fluent interface
@@ -56,7 +57,7 @@ class Table
      */
     public function insert(): Insert
     {
-        return new Insert($this->tableName, $this->pdo);
+        return new Insert($this->dmlTableName(), $this->pdo);
     }
 
     /**
@@ -66,7 +67,7 @@ class Table
      */
     public function replace(): Replace
     {
-        return new Replace($this->tableName, $this->pdo);
+        return new Replace($this->dmlTableName(), $this->pdo);
     }
 
     /**
@@ -87,7 +88,7 @@ class Table
      */
     public function update(): Update
     {
-        return new Update($this->tableName, $this->pdo);
+        return new Update($this->dmlTableName(), $this->pdo);
     }
 
     /**
@@ -97,7 +98,25 @@ class Table
      */
     public function delete(): Delete
     {
-        return new Delete($this->tableName, $this->pdo);
+        return new Delete($this->dmlTableName(), $this->pdo);
+    }
+
+    /**
+     * Resolve the plain table name required by DML query builders.
+     *
+     * DML statements (INSERT, REPLACE, UPDATE, DELETE) can only target
+     * a concrete table, never a subquery reference.
+     *
+     * @return string The table name.
+     * @throws LogicException When the table reference is a subquery.
+     */
+    private function dmlTableName(): string
+    {
+        if ($this->tableName instanceof InnerQuery) {
+            throw new LogicException('DML operations require a plain table name, not a subquery.');
+        }
+
+        return $this->tableName;
     }
 
     /**
@@ -106,7 +125,7 @@ class Table
      * Queries INFORMATION_SCHEMA to return column details such as name,
      * type, charset, collation, nullability, ordinal position, and key type.
      *
-     * @return array<string, mixed>
+     * @return array<int, array<string, mixed>>
      *         Returns an array of column metadata. Returns an empty array if the table has no columns.
      */
     public function info(): array

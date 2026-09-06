@@ -37,10 +37,9 @@ abstract class AbstractFetch extends AbstractQuery
     /**
      * Get query results as a Collection object.
      *
-     * @return Collection<string|int, mixed>|null Returns a Collection containing all results,
-     *                                           or null if no results are found.
+     * @return Collection<int, array<string, mixed>> Returns a Collection containing all results.
      */
-    public function get(): ?Collection
+    public function get(): Collection
     {
         if (false === ($items = $this->all())) {
             $items = [];
@@ -69,7 +68,7 @@ abstract class AbstractFetch extends AbstractQuery
         }
         $result = $this->pdo->single();
 
-        return $result === false ? [] : $this->pdo->single();
+        return $result === false ? [] : $result;
     }
 
     /**
@@ -77,7 +76,7 @@ abstract class AbstractFetch extends AbstractQuery
      *
      * Executes the query with bound parameters and returns the full result set.
      *
-     * @return array<string|int, mixed>|false Returns an array of rows, or false on failure.
+     * @return array<int, array<string, mixed>>|false Returns an array of rows, or false on failure.
      */
     public function all(): array|false
     {

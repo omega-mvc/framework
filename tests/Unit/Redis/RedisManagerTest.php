@@ -9,6 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Omega\Redis\Redis;
 use Omega\Redis\RedisInterface;
 use Omega\Redis\RedisManager;
+use RedisException;
 
 #[CoversClass(Redis::class)]
 #[CoversClass(RedisManager::class)]
@@ -118,11 +119,18 @@ class RedisManagerTest extends TestCase
             );
         }
 
+        try {
+            $driver = new Redis([
+                'unix_socket' => $socket_path,
+                'database'    => 1,
+            ]);
+        } catch (RedisException $e) {
+            $this->markTestSkipped(
+                "Redis socket unreachable at {$socket_path}: {$e->getMessage()}"
+            );
+        }
+
         $manager = new RedisManager();
-        $driver  = new Redis([
-            'unix_socket' => $socket_path,
-            'database'    => 1,
-        ]);
         $manager->setDefaultDriver($driver);
 
         $this->assertTrue($manager->set('socket-key', 'socket-value'));

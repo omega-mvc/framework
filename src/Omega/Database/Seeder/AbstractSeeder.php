@@ -14,8 +14,11 @@ declare(strict_types=1);
 
 namespace Omega\Database\Seeder;
 
-use Omega\Database\Connectioninterface;
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Insert;
+use LogicException;
+
+use function sprintf;
 
 /**
  * AbstractSeeder
@@ -67,6 +70,10 @@ abstract class AbstractSeeder implements SeederInterface
     public function call(string $className): void
     {
         $class = new $className($this->pdo);
+        if (!$class instanceof SeederInterface) {
+            throw new LogicException(sprintf('Seeder [%s] must implement SeederInterface.', $className));
+        }
+
         $class->run();
     }
 

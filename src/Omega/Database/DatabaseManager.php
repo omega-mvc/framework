@@ -53,7 +53,7 @@ class DatabaseManager implements ConnectionInterface
      * The configuration array contains named connection definitions that
      * will be used to lazily instantiate Connection instances on demand.
      *
-     * @param array<string, array<string, string|int|array<int, string|int|bool>|null>> $configs
+     * @param array<string, array<string, mixed>> $configs
      *        Database connection configurations indexed by connection name.
      */
     public function __construct(private readonly array $configs)
@@ -95,11 +95,9 @@ class DatabaseManager implements ConnectionInterface
     public function resetConnectionsForRequest(): void
     {
         foreach ($this->connections as $connection) {
-            if (method_exists($connection, 'flushLogs')) {
-                $connection->flushLogs();
-            }
+            $connection->flushLogs();
 
-            if (method_exists($connection, 'inTransaction') && $connection->inTransaction()) {
+            if ($connection->inTransaction()) {
                 $connection->cancelTransaction();
             }
         }
@@ -125,7 +123,6 @@ class DatabaseManager implements ConnectionInterface
             }
 
             $config = $this->configs[$name];
-            $driver = ucfirst($config['driver']);
 
             $this->connections[$name] = ConnectionFactory::make($config);
         }
@@ -170,7 +167,7 @@ class DatabaseManager implements ConnectionInterface
     /**
      * {@inheritdoc}
      */
-    public function bind(int|string|bool|null $param, mixed $value, int|string|bool|null $type = null): self
+    public function bind(string|int $param, mixed $value, int|null $type = null): self
     {
         $this->connection->bind($param, $value, $type);
 
@@ -196,7 +193,7 @@ class DatabaseManager implements ConnectionInterface
     /**
      * {@inheritdoc}
      */
-    public function single(): mixed
+    public function single(): array|false
     {
         return $this->connection->single();
     }
@@ -239,6 +236,14 @@ class DatabaseManager implements ConnectionInterface
     public function cancelTransaction(): bool
     {
         return $this->connection->cancelTransaction();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function inTransaction(): bool
+    {
+        return $this->connection->inTransaction();
     }
 
     /**

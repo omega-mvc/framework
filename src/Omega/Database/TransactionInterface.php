@@ -36,7 +36,7 @@ interface TransactionInterface
      * The transaction is committed if the callable returns true,
      * otherwise it is rolled back.
      *
-     * @param callable(): bool $callable The transactional operation to execute.
+     * @param callable(ConnectionInterface $connection): bool $callable The transactional operation to execute.
      * @return bool True if the transaction was committed, false if rolled back.
      */
     public function transaction(callable $callable): bool;
@@ -64,4 +64,11 @@ interface TransactionInterface
      * @throws PDOException If the rollback operation fails.
      */
     public function cancelTransaction(): bool;
+
+    /**
+     * Determine whether a transaction is currently active on the connection.
+     *
+     * @return bool True if a transaction is currently in progress.
+     */
+    public function inTransaction(): bool;
 }

@@ -41,11 +41,13 @@ class Schema
      * @param SchemaConnectionInterface $pdo          The database connection instance
      * @param string|null               $databaseName Optional database name; defaults to the connection's database
      */
+    private readonly string $databaseName;
+
     public function __construct(
         private readonly SchemaConnectionInterface $pdo,
-        private ?string $databaseName = null,
+        ?string $databaseName = null,
     ) {
-        $this->databaseName ??= $this->pdo->getDatabase();
+        $this->databaseName = $databaseName ?? $this->pdo->getDatabase();
     }
 
     /**
