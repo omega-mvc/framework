@@ -25,6 +25,7 @@ use RuntimeException;
 use Tests\FixturesPathTrait;
 use Throwable;
 
+use function chmod;
 use function glob;
 use function is_file;
 use function md5;
@@ -653,5 +654,82 @@ final class TemplatorTest extends TestCase
         // Colpisce il ramo $cache == false
         $out = $view->render($template, [], false);
         $this->assertSee($out, 'taylor');
+    }
+
+    /**
+     * Test it can clear dependencies.
+     *
+     * @return void
+     */
+    public function testItCanClearDependencies(): void
+    {
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+        $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+        $templator->addDependency('parent.php', 'child.php', 1);
+        $this->assertSame(['child.php' => 1], $templator->getDependency('parent.php'));
+
+        $result = $templator->clearDependencies();
+
+        $this->assertSame([], $templator->getDependency('parent.php'));
+        $this->assertSame($templator, $result);
+    }
+
+    /**
+     * Test render returns an empty string when the template file cannot be read.
+     *
+     * @return void
+     */
+    public function testRenderReturnsEmptyStringWhenTemplateUnreadable(): void
+    {
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+        $badTemplate = $loader . '/unreadable.php';
+        file_put_contents($badTemplate, 'anything');
+        chmod($badTemplate, 0000);
+
+        set_error_handler(static fn (): bool => true);
+        try {
+            $out = $view->render('unreadable.php', []);
+        } finally {
+            restore_error_handler();
+            chmod($badTemplate, 0644);
+            unlink($badTemplate);
+        }
+
+        $this->assertSame('', $out);
+    }
+
+    /**
+     * Test compile returns an empty string when the template file cannot be read.
+     *
+     * @return void
+     */
+    public function testCompileReturnsEmptyStringWhenTemplateUnreadable(): void
+    {
+        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+        $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+        $badTemplate = $loader . '/unreadable_compile.php';
+        file_put_contents($badTemplate, 'anything');
+        chmod($badTemplate, 0000);
+
+        set_error_handler(static fn (): bool => true);
+        try {
+            $out = $view->compile('unreadable_compile.php');
+        } finally {
+            restore_error_handler();
+            chmod($badTemplate, 0644);
+            unlink($badTemplate);
+        }
+
+        $this->assertSame('', $out);
     }
 }
