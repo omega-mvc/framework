@@ -673,7 +673,7 @@ it('can convert to immutable', function (): void {
     $coll      = new Collection(['a' => 1, 'b' => 2]);
     $immutable = $coll->immutable();
 
-    expect($immutable)->toBeInstanceOf(CollectionImmutable::class);
+    $this->assertInstanceOf(CollectionImmutable::class, $immutable);
     expect($immutable->all())->toEqual(['a' => 1, 'b' => 2]);
 });
 
