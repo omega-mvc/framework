@@ -1,116 +1,50 @@
 <?php
 
-/**
- * Part of Omega - Tests\Application Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
-/** @noinspection PhpPossiblePolymorphicInvocationInspection */
-
 declare(strict_types=1);
 
 namespace Tests\Application\Bootstrapper;
 
-use Exception;
 use Omega\Application\Application;
+use Omega\Application\Bootstrapper\BootProviders;
+use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Application\Bootstrapper\BootProviders;
-use Omega\Config\Bootstrapper\ConfigBootstrapper;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use Tests\Application\Bootstrapper\Fixtures\BootCalledServiceProvider;
 use Tests\FixturesPathTrait;
 
-/**
- * Class BootProvidersTest
- *
- * This test ensures that the application can successfully bootstrap its
- * service providers using the BootProviders bootstrapper. The test confirms
- * that before the bootstrap process the application is not yet initialized,
- * and that after invoking `bootstrapWith()` the application transitions to
- * a booted state.
- *
- * This verifies the correct integration between the application's service
- * provider registration system and the bootstrap loading mechanism.
- *
- * @category   Tests
- * @package    Application
- * @subpackage Bootstrap
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(Application::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(BootProviders::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(EntryNotFoundException::class)]
-class BootProvidersTest extends TestCase
-{
-    use FixturesPathTrait;
+covers(Application::class);
+covers(BindingResolutionException::class);
+covers(BootProviders::class);
+covers(CircularAliasException::class);
+covers(EntryNotFoundException::class);
 
-    /**
-     * Test bootstrap
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBootstrap(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+uses(FixturesPathTrait::class);
 
-        $this->assertFalse($app->isBooted);
-        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
-        $this->assertTrue($app->isBooted);
-    }
+it('boots the application via BootProviders', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-    /**
-     * Test register boot provider when application already booted.
-     *
-     * @return void
-     * @throws Exception Throw when a generic error occurred.
-     */
-    public function testRegisterBootsProviderWhenApplicationAlreadyBooted(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    expect($app->isBooted)->toBeFalse();
+    $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
+    expect($app->isBooted)->toBeTrue();
+});
 
-        $app->isBooted = true;
+it('boots a registered provider immediately when the application is already booted', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-        $registered = $app->register(BootCalledServiceProvider::class);
+    $app->isBooted = true;
 
-        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
-        $this->assertTrue($registered->bootCalled);
-    }
+    $registered = $app->register(BootCalledServiceProvider::class);
 
-    /**
-     * Test register does not boot provider when application not booted.
-     *
-     * @return void
-     * @throws Exception Throw when a generic error occurred.
-     */
-    public function testRegisterDoesNotBootProviderWhenApplicationNotBooted(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    expect($registered)->toBeInstanceOf(BootCalledServiceProvider::class);
+    expect($registered->bootCalled)->toBeTrue();
+});
 
-        $registered = $app->register(BootCalledServiceProvider::class);
+it('does not boot a registered provider when the application is not booted', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
-        $this->assertFalse($registered->bootCalled);
-    }
-}
+    $registered = $app->register(BootCalledServiceProvider::class);
+
+    expect($registered)->toBeInstanceOf(BootCalledServiceProvider::class);
+    expect($registered->bootCalled)->toBeFalse();
+});

@@ -1,156 +1,79 @@
 <?php
 
-/**
- * Part of Omega - Tests\Environment Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
-/** @noinspection PhpExpressionResultUnusedInspection */
-
 declare(strict_types=1);
 
 namespace Tests\Environment;
 
 use Omega\Environment\Env;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Tests\FixturesPathTrait;
 
-/**
- * Tests the Env class behavior.
- *
- * Ensures correct retrieval of environment variables from loaded
- * values or system fallback, proper default handling, and accurate
- * type casting of string representations.
- *
- * @category  Tests
- * @package   Environment
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Env::class)]
-final class EnvTest extends TestCase
-{
-    use FixturesPathTrait;
+use function putenv;
 
-    private string $fixturePath;
+covers(Env::class);
 
-    protected function setUp(): void
-    {
-        $this->fixturePath = $this->setFixturePath('/fixtures/support/');
-    }
+uses(FixturesPathTrait::class);
 
-    protected function tearDown(): void
-    {
-        $reflection = new ReflectionClass(Env::class);
-        $valuesProp = $reflection->getProperty('values');
-        /** @noinspection PhpExpressionResultUnusedInspection */
-        $valuesProp->setAccessible(true);
-        $valuesProp->setValue(null, []);
-    }
+beforeEach(function (): void {
+    $this->fixturePath = $this->setFixturePath('/fixtures/support/');
+});
 
-    /**
-     * Test it can create immutable Dotenv instance and load values.
-     *
-     * @return void
-     */
-    public function testItCanCreateImmutable(): void
-    {
-        Env::load($this->fixturePath, '.env.test');
+afterEach(function (): void {
+    $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
+    $valuesProp->setAccessible(true);
+    $valuesProp->setValue(null, []);
+});
 
-        $this->assertSame('Omega', Env::get('APP_NAME'));
-    }
+it('can create immutable dotenv instance and load values', function (): void {
+    Env::load($this->fixturePath, '.env.test');
 
-    /**
-     * Test it returns default value when key not found.
-     *
-     * @return void
-     */
-    public function testItReturnsDefaultValue(): void
-    {
-        $default = 'default_value';
-        $this->assertSame($default, Env::get('NON_EXISTING_KEY', $default));
-    }
+    expect(Env::get('APP_NAME'))->toBe('Omega');
+});
 
-    /**
-     * Test string conversion rules for boolean, null, empty, numeric values.
-     *
-     * @param string $key
-     * @param mixed $rawValue
-     * @param mixed $expected
-     * @return void
-     */
-    #[DataProvider('stringConversionProvider')]
-    public function testStringConversions(string $key, mixed $rawValue, mixed $expected): void
-    {
-        $reflection = new ReflectionClass(Env::class);
-        $valuesProp = $reflection->getProperty('values');
-        /** @noinspection PhpExpressionResultUnusedInspection */
-        $valuesProp->setAccessible(true);
-        $valuesProp->setValue(null, [$key => $rawValue]);
+it('returns default value when key not found', function (): void {
+    $default = 'default_value';
 
-        $this->assertSame($expected, Env::get($key));
-    }
+    expect(Env::get('NON_EXISTING_KEY', $default))->toBe($default);
+});
 
-    public static function stringConversionProvider(): array
-    {
-        return [
-            ['BOOL_TRUE', 'true', true],
-            ['BOOL_FALSE', 'false', false],
-            ['NULL_VAL', 'null', null],
-            ['EMPTY_VAL', 'empty', ''],
-            ['NUMERIC_INT', '42', 42],
-            ['NUMERIC_FLOAT', '3.14', 3.14],
-            ['NORMAL_STRING', 'Omega', 'Omega'],
-            ['STRING_ALPHA', 'alpha', 'alpha'],
-            ['STRING_ZERO', '0', 0],
-            ['STRING_FLOAT_STRANGE', '10.50', 10.5],
-            ['STRING_EMPTY_SPACE', ' ', ' '],
-        ];
-    }
+it('converts string representations to native types', function (string $key, mixed $rawValue, mixed $expected): void {
+    $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
+    $valuesProp->setAccessible(true);
+    $valuesProp->setValue(null, [$key => $rawValue]);
 
-    /**
-     * Test that values not string are returned as is.
-     *
-     * @return void
-     */
-    public function testNonStringValues(): void
-    {
-        $reflection = new ReflectionClass(Env::class);
-        $valuesProp = $reflection->getProperty('values');
-        $valuesProp->setAccessible(true);
-        $valuesProp->setValue(null, [
-            'ARRAY_VAL'  => [1, 2, 3],
-            'INT_VAL'    => 100,
-            'BOOL_VAL'   => false,
-            'NULL_VAL'   => null,
-        ]);
+    expect(Env::get($key))->toBe($expected);
+})->with([
+    ['BOOL_TRUE', 'true', true],
+    ['BOOL_FALSE', 'false', false],
+    ['NULL_VAL', 'null', null],
+    ['EMPTY_VAL', 'empty', ''],
+    ['NUMERIC_INT', '42', 42],
+    ['NUMERIC_FLOAT', '3.14', 3.14],
+    ['NORMAL_STRING', 'Omega', 'Omega'],
+    ['STRING_ALPHA', 'alpha', 'alpha'],
+    ['STRING_ZERO', '0', 0],
+    ['STRING_FLOAT_STRANGE', '10.50', 10.5],
+    ['STRING_EMPTY_SPACE', ' ', ' '],
+]);
 
-        $this->assertSame([1, 2, 3], Env::get('ARRAY_VAL'));
-        $this->assertSame(100, Env::get('INT_VAL'));
-        $this->assertFalse(Env::get('BOOL_VAL'));
-        $this->assertNull(Env::get('NULL_VAL'));
-    }
+it('returns non-string values as is', function (): void {
+    $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
+    $valuesProp->setAccessible(true);
+    $valuesProp->setValue(null, [
+        'ARRAY_VAL' => [1, 2, 3],
+        'INT_VAL'   => 100,
+        'BOOL_VAL'  => false,
+        'NULL_VAL'  => null,
+    ]);
 
-    /**
-     * Test it fall back to get env.
-     *
-     * @return void
-     */
-    public function testItFallsBackToGetenv(): void
-    {
-        putenv('SYSTEM_VAR=hello');
-        $this->assertSame('hello', Env::get('SYSTEM_VAR'));
-        putenv('SYSTEM_VAR');
-    }
-}
+    expect(Env::get('ARRAY_VAL'))->toEqual([1, 2, 3]);
+    expect(Env::get('INT_VAL'))->toBe(100);
+    expect(Env::get('BOOL_VAL'))->toBeFalse();
+    expect(Env::get('NULL_VAL'))->toBeNull();
+});
+
+it('falls back to getenv', function (): void {
+    putenv('SYSTEM_VAR=hello');
+    expect(Env::get('SYSTEM_VAR'))->toBe('hello');
+    putenv('SYSTEM_VAR');
+});

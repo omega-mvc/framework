@@ -1,30 +1,15 @@
 <?php
 
-/**
- * Part of Omega - Tests\Config Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Config\Bootstrapper;
 
-use Exception;
 use Omega\Application\Application;
 use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use RuntimeException;
 use Tests\FixturesPathTrait;
 
@@ -35,225 +20,120 @@ use function mkdir;
 use function rmdir;
 use function unlink;
 
-/**
- * Class ConfigProvidersTest
- *
- * This test suite verifies that the ConfigProviders bootstrapper correctly loads
- * configuration values into the application container. It tests two scenarios:
- *
- * 1. Loading configuration directly from configuration files when no cache is present.
- * 2. Loading configuration from a pre-generated cache file when available.
- *
- * These tests ensure that the application's configuration system behaves consistently
- * and that configuration values are properly accessible through the container once
- * bootstrapped.
- *
- * @category   Tests
- * @package    Config
- * @subpackage Bootstrapper
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(Application::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(ConfigBootstrapper::class)]
-#[CoversClass(EntryNotFoundException::class)]
-class ConfigProvidersTest extends TestCase
-{
-    use FixturesPathTrait;
+covers(Application::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(ConfigBootstrapper::class);
+covers(EntryNotFoundException::class);
 
-    /**
-     * Test it can load config from file.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanLoadConfigFromFile(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
-        $app->set('path.config', $this->setFixturePath('/fixtures/application-read/config/'));
+uses(FixturesPathTrait::class);
 
-        new ConfigBootstrapper()->bootstrap($app);
-        $config = $app->get('config');
+it('can load config from file', function (): void {
+    $app = new Application($this->setFixtureBasePath());
+    $app->set('path.config', $this->setFixturePath('/fixtures/application-read/config/'));
 
-        $this->assertInstanceOf(ConfigRepository::class, $config);
-        $this->assertEquals('prod', $config->get('environment'));
+    new ConfigBootstrapper()->bootstrap($app);
+    $config = $app->get('config');
 
-        $app->flush();
+    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    expect($config->get('environment'))->toBe('prod');
+
+    $app->flush();
+});
+
+it('can load config from cache', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+
+    new ConfigBootstrapper()->bootstrap($app);
+    $config = $app->get('config');
+
+    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    expect($config->get('environment'))->toBe('prod');
+
+    $app->flush();
+});
+
+it('throws exception on invalid config file', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+
+    $tempConfigDir = $this->setFixturePath('/fixtures/application-write/config_test/');
+
+    if (!is_dir($tempConfigDir)) {
+        mkdir($tempConfigDir, 0777, true);
     }
 
-    /**
-     * Test it can load config from cache.
-     *
-     * Assume this test is boostrap application.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanLoadConfigFromCache(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $filePath = $tempConfigDir . '/corrupted_config.php';
+    file_put_contents($filePath, "<?php return 'Invalid content'; ");
+
+    $app->set('path.config', $tempConfigDir);
+
+    try {
         new ConfigBootstrapper()->bootstrap($app);
-        $config = $app->get('config');
-
-        $this->assertInstanceOf(ConfigRepository::class, $config);
-        $this->assertEquals('prod', $config->get('environment'));
-
-        $app->flush();
-    }
-
-    /**
-     * Test it throws exception on invalid config file.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItThrowsExceptionOnInvalidConfigFile(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
-
-        $tempConfigDir = $this->setFixturePath('/fixtures/application-write/config_test/');
-
-        if (!is_dir($tempConfigDir)) {
-            mkdir($tempConfigDir, 0777, true);
+    } finally {
+        if (file_exists($filePath)) {
+            unlink($filePath);
         }
-
-        $filePath = $tempConfigDir . '/corrupted_config.php';
-        file_put_contents($filePath, "<?php return 'Invalid content'; ");
-
-        $app->set('path.config', $tempConfigDir);
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageIsOrContains('Invalid config file');
-
-        try {
-            new ConfigBootstrapper()->bootstrap($app);
-        } finally {
-            if (file_exists($filePath)) {
-                unlink($filePath);
-            }
-            if (is_dir($tempConfigDir)) {
-                rmdir($tempConfigDir);
-            }
+        if (is_dir($tempConfigDir)) {
+            rmdir($tempConfigDir);
         }
     }
+})->throws(RuntimeException::class, 'Invalid config file');
 
-    /**
-     * Test throws if cacge is not array.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testThrowsIfCacheIsNotArray(): void
-    {
-        $basePath = $this->setFixturePath('/fixtures/');
+it('throws if cache is not array', function (): void {
+    $basePath = $this->setFixturePath('/fixtures/');
 
-        $app = new Application($basePath);
+    $app = new Application($basePath);
 
-        $cachePath = $app->getApplicationCachePath();
+    $cacheFile = $app->getApplicationCachePath() . 'config.php';
 
-        $cacheFile = $cachePath . 'config.php';
+    file_put_contents($cacheFile, "<?php return 'not-an-array';");
 
-        file_put_contents($cacheFile, "<?php return 'not-an-array';");
-
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageIsOrContains('Invalid config cache file');
-
+    try {
         new ConfigBootstrapper()->bootstrap($app);
-
+    } finally {
         unlink($cacheFile);
 
         $app->flush();
     }
+})->throws(RuntimeException::class, 'Invalid config cache file');
 
-    /**
-     * Test it loads valid cache.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItLoadsValidCache(): void
-    {
-        $basePath = $this->setFixturePath('/fixtures/bootstrap1/');
+it('loads valid cache', function (): void {
+    $basePath = $this->setFixturePath('/fixtures/bootstrap1/');
 
-        $app = new Application($basePath);
+    $app = new Application($basePath);
 
-        $cacheFile = $app->getApplicationCachePath() . 'config.php';
+    $cacheFile = $app->getApplicationCachePath() . 'config.php';
 
-        file_put_contents(
-            $cacheFile,
-            "<?php return ['environment' => 'cached'];"
-        );
+    file_put_contents($cacheFile, "<?php return ['environment' => 'cached'];");
 
-        new ConfigBootstrapper()->bootstrap($app);
+    new ConfigBootstrapper()->bootstrap($app);
 
-        $config = $app->get('config');
+    $config = $app->get('config');
 
-        $this->assertInstanceOf(ConfigRepository::class, $config);
-        $this->assertSame('cached', $config->get('environment'));
+    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    expect($config->get('environment'))->toBe('cached');
 
-        unlink($cacheFile);
+    unlink($cacheFile);
+});
+
+it('returns empty array when no config files found', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+
+    $emptyDir = $this->setFixturePath('/fixtures/application-write/empty_config_test/');
+
+    if (!is_dir($emptyDir)) {
+        mkdir($emptyDir, 0777, true);
     }
 
-    /**
-     * Test it returns empty array when no config files are found.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception if a generic error occurred
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItReturnsEmptyArrayWhenNoConfigFilesFound(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+    $app->set('path.config', $emptyDir);
 
-        $emptyDir = $this->setFixturePath('/fixtures/application-write/empty_config_test/');
+    new ConfigBootstrapper()->bootstrap($app);
 
-        if (!is_dir($emptyDir)) {
-            mkdir($emptyDir, 0777, true);
-        }
+    $config = $app->get('config');
 
-        $app->set('path.config', $emptyDir);
+    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    expect($config->getAll())->toBeEmpty();
 
-        new ConfigBootstrapper()->bootstrap($app);
-
-        $config = $app->get('config');
-        $this->assertInstanceOf(ConfigRepository::class, $config);
-        $this->assertEmpty($config->getAll());
-
-        rmdir($emptyDir);
-        $app->flush();
-    }
-}
+    rmdir($emptyDir);
+    $app->flush();
+});

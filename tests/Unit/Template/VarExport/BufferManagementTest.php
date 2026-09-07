@@ -4,43 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 
-/**
- * @testdox Skeleton Test for Buffer Management
- */
-#[CoversClass(VarExport::class)]
-class BufferManagementTest extends TestCase
-{
-    /**
-     * @test
-     *
-     * @testdox Ensures buffer starts empty
-     */
-    public function testItBufferStartsEmpty(): void
-    {
-        $varExport = new VarExport();
-        $result    = $varExport->export([]);
-        $this->assertEquals('[]', $result);
-    }
+covers(VarExport::class);
 
-    /**
-     * @test
-     *
-     * @testdox Ensures buffer resets after compile
-     */
-    public function testItBufferResetsAfterCompile(): void
-    {
-        $varExport = new VarExport();
+it('starts empty buffer', function (): void {
+    $varExport = new VarExport();
+    $result    = $varExport->export([]);
 
-        // First export operation
-        $varExport->export(['foo' => 'bar']);
+    expect($result)->toEqual('[]');
+});
 
-        // Second export operation, expecting buffer to be reset
-        $result = $varExport->export([]);
+it('resets buffer after compile', function (): void {
+    $varExport = new VarExport();
 
-        $this->assertEquals('[]', $result);
-    }
-}
+    $varExport->export(['foo' => 'bar']);
+
+    $result = $varExport->export([]);
+
+    expect($result)->toEqual('[]');
+});

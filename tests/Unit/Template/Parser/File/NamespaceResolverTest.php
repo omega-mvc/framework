@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Template\Parser\File;
 
-use PHPUnit\Framework\TestCase;
 use Omega\Template\Parser\File\NamespaceResolver;
 
-final class NamespaceResolverTest extends TestCase
-{
-    /**
-     * @test
-     */
-    public function testItCanParseUseStatements(): void
-    {
-        $sources = <<<'PHP'
+covers(NamespaceResolver::class);
+
+it('parses use statements', function (): void {
+    $sources = <<<'PHP'
     <?php
 
     declare(strict_types=1);
@@ -27,27 +22,23 @@ final class NamespaceResolverTest extends TestCase
     use Omega\Template\VarExport\Buffer;
     PHP;
 
-        $parser = new NamespaceResolver();
-        $uses   = $parser->resolve($sources);
+    $parser = new NamespaceResolver();
+    $uses   = $parser->resolve($sources);
 
-        $expected = [
-            'Omega\Http\Request',
-            'Omega\Http\Response',
-            'Omega\Router\Route',
-            'Omega\Router\Router',
-            'Omega\Template\VarExport',
-            'Omega\Template\VarExport\Buffer',
-        ];
+    $expected = [
+        'Omega\Http\Request',
+        'Omega\Http\Response',
+        'Omega\Router\Route',
+        'Omega\Router\Router',
+        'Omega\Template\VarExport',
+        'Omega\Template\VarExport\Buffer',
+    ];
 
-        $this->assertEquals($expected, $uses);
-    }
+    expect($uses)->toEqual($expected);
+});
 
-    /**
-     * @test
-     */
-    public function testItCanParseGroupUseStatements(): void
-    {
-        $sources = <<<'PHP'
+it('parses group use statements', function (): void {
+    $sources = <<<'PHP'
     <?php
 
     declare(strict_types=1);
@@ -58,30 +49,25 @@ final class NamespaceResolverTest extends TestCase
     use Omega\Template\VarExport\Buffer;
     PHP;
 
-        $parser = new NamespaceResolver();
-        $uses   = $parser->resolve($sources);
+    $parser = new NamespaceResolver();
+    $uses   = $parser->resolve($sources);
 
-        $expected = [
-            'Omega\Http\Request',
-            'Omega\Http\Response',
-            'Omega\Router\Route',
-            'Omega\Router\Router',
-            'Omega\Template\VarExport',
-            'Omega\Template\VarExport\Buffer',
-        ];
+    $expected = [
+        'Omega\Http\Request',
+        'Omega\Http\Response',
+        'Omega\Router\Route',
+        'Omega\Router\Router',
+        'Omega\Template\VarExport',
+        'Omega\Template\VarExport\Buffer',
+    ];
 
-        $this->assertEquals($expected, $uses);
-    }
+    expect($uses)->toEqual($expected);
+});
 
-    /**
-     * @test
-     */
-    public function testItHandlesFileWithNoUseStatements(): void
-    {
-        $sources = '<?php class MyClass {}';
-        $parser  = new NamespaceResolver();
-        $uses    = $parser->resolve($sources);
+it('handles a file with no use statements', function (): void {
+    $sources = '<?php class MyClass {}';
+    $parser  = new NamespaceResolver();
+    $uses    = $parser->resolve($sources);
 
-        $this->assertEmpty($uses);
-    }
-}
+    expect($uses)->toBeEmpty();
+});

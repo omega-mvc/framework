@@ -4,136 +4,111 @@ declare(strict_types=1);
 
 namespace Tests\Redis;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Redis\Redis;
 use Omega\Redis\RedisInterface;
 use Omega\Redis\RedisManager;
 use RedisException;
 
-#[CoversClass(Redis::class)]
-#[CoversClass(RedisManager::class)]
-class RedisManagerTest extends TestCase
+use function expect;
+use function extension_loaded;
+use function file_exists;
+
+covers(Redis::class);
+covers(RedisManager::class);
+
+beforeEach(function (): void {
+    if (!extension_loaded('redis')) {
+        $this->markTestSkipped('Redis extension not loaded.');
+    }
+});
+
+afterEach(function (): void {
+    if (extension_loaded('redis')) {
+        createRedisDriver()->flushDb();
+    }
+});
+
+it('can set and get default driver', function (): void {
+    $manager = new RedisManager();
+    $driver  = createRedisDriver();
+
+    $manager->setDefaultDriver($driver);
+
+    expect($manager->driver())->toBeInstanceOf(RedisInterface::class);
+    expect($manager->driver())->toBe($driver);
+
+    $manager->set('manager-key', 'manager-value');
+
+    expect($driver->get('manager-key'))->toBe('manager-value');
+    expect($manager->get('manager-key'))->toBe('manager-value');
+});
+
+it('can set and get named drivers', function (): void {
+    $manager = new RedisManager();
+
+    $defaultDriver = createRedisDriver();
+    $manager->setDefaultDriver($defaultDriver);
+    $manager->set('default-key', 'default-value');
+
+    $namedDriver = new Redis([
+        'host'     => '127.0.0.1',
+        'port'     => 6379,
+        'database' => 2,
+    ]);
+    $manager->setDriver('second', $namedDriver);
+
+    expect($manager->driver('second'))->toBeInstanceOf(RedisInterface::class);
+    expect($manager->driver('second'))->toBe($namedDriver);
+
+    $manager->driver('second')->set('named-key', 'named-value');
+
+    expect($manager->driver('second')->get('named-key'))->toBe('named-value');
+    expect($manager->get('default-key'))->toBe('default-value');
+    expect($manager->get('named-key'))->toBeFalse();
+    expect($manager->driver('second')->get('default-key'))->toBeFalse();
+});
+
+it('can use closure as driver', function (): void {
+    $manager = new RedisManager();
+    $manager->setDriver('lazy', function () {
+        return createRedisDriver();
+    });
+
+    expect($manager->driver('lazy'))->toBeInstanceOf(RedisInterface::class);
+
+    $manager->driver('lazy')->set('lazy-key', 'lazy-value');
+
+    expect($manager->driver('lazy')->get('lazy-key'))->toBe('lazy-value');
+});
+
+it('can connect via unix socket', function (): void {
+    $socketPath = '/var/run/redis/redis.sock';
+
+    if (false === file_exists($socketPath)) {
+        $this->markTestSkipped("Redis socket not found at {$socketPath}.");
+    }
+
+    try {
+        $driver = new Redis([
+            'unix_socket' => $socketPath,
+            'database'    => 1,
+        ]);
+    } catch (RedisException $e) {
+        $this->markTestSkipped("Redis socket unreachable at {$socketPath}: {$e->getMessage()}");
+    }
+
+    $manager = new RedisManager();
+    $manager->setDefaultDriver($driver);
+
+    expect($manager->set('socket-key', 'socket-value'))->toBeTrue();
+    expect($manager->get('socket-key'))->toBe('socket-value');
+});
+
+function createRedisDriver(): Redis
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        if (!extension_loaded('redis')) {
-            $this->markTestSkipped('Redis extension not loaded.');
-        }
-    }
-
-    private function createRedisDriver(): Redis
-    {
-        // Assumes redis is running on localhost:6379
-        // and using database 1 for testing
-        return new Redis([
-            'host'     => '127.0.0.1',
-            'port'     => 6379,
-            'database' => 1,
-        ]);
-    }
-
-    protected function tearDown(): void
-    {
-        if (extension_loaded('redis')) {
-            $redis = $this->createRedisDriver();
-            $redis->flushdb();
-        }
-        parent::tearDown();
-    }
-
-    /** @test */
-    public function testItCanSetAndGetDefaultDriver(): void
-    {
-        $manager = new RedisManager();
-        $driver  = $this->createRedisDriver();
-
-        $manager->setDefaultDriver($driver);
-
-        $this->assertInstanceOf(RedisInterface::class, $manager->driver());
-        $this->assertSame($driver, $manager->driver());
-
-        $manager->set('manager-key', 'manager-value');
-
-        $this->assertEquals('manager-value', $driver->get('manager-key'));
-        $this->assertEquals('manager-value', $manager->get('manager-key'));
-    }
-
-    /** @test */
-    public function testItCanSetAndGetNamedDrivers(): void
-    {
-        $manager = new RedisManager();
-
-        // setup default
-        $default_driver = $this->createRedisDriver();
-        $manager->setDefaultDriver($default_driver);
-        $manager->set('default-key', 'default-value');
-
-        // setup named driver
-        $named_driver = new Redis([
-            'host'     => '127.0.0.1',
-            'port'     => 6379,
-            'database' => 2, // use different database
-        ]);
-        $manager->setDriver('second', $named_driver);
-
-        $this->assertInstanceOf(RedisInterface::class, $manager->driver('second'));
-        $this->assertSame($named_driver, $manager->driver('second'));
-
-        // interact with named driver
-        $manager->driver('second')->set('named-key', 'named-value');
-        $this->assertEquals('named-value', $manager->driver('second')->get('named-key'));
-
-        // ensure default driver is not affected
-        $this->assertEquals('default-value', $manager->get('default-key'));
-        $this->assertFalse($manager->get('named-key')); // key should not exist in default driver
-
-        // ensure named driver is not affected by default
-        $this->assertFalse($manager->driver('second')->get('default-key')); // key should not exist in named driver
-    }
-
-    /** @test */
-    public function testItCanUseClosureAsDriver(): void
-    {
-        $manager = new RedisManager();
-        $manager->setDriver('lazy', function () {
-            return $this->createRedisDriver();
-        });
-
-        $this->assertInstanceOf(RedisInterface::class, $manager->driver('lazy'));
-
-        $manager->driver('lazy')->set('lazy-key', 'lazy-value');
-        $this->assertEquals('lazy-value', $manager->driver('lazy')->get('lazy-key'));
-    }
-
-    /** @test */
-    public function testItCanConnectViaUnixSocket(): void
-    {
-        $socket_path = '/var/run/redis/redis.sock';
-
-        if (false === file_exists($socket_path)) {
-            $this->markTestSkipped(
-                "Redis socket not found at {$socket_path}."
-            );
-        }
-
-        try {
-            $driver = new Redis([
-                'unix_socket' => $socket_path,
-                'database'    => 1,
-            ]);
-        } catch (RedisException $e) {
-            $this->markTestSkipped(
-                "Redis socket unreachable at {$socket_path}: {$e->getMessage()}"
-            );
-        }
-
-        $manager = new RedisManager();
-        $manager->setDefaultDriver($driver);
-
-        $this->assertTrue($manager->set('socket-key', 'socket-value'));
-        $this->assertEquals('socket-value', $manager->get('socket-key'));
-    }
+    return new Redis([
+        'host'     => '127.0.0.1',
+        'port'     => 6379,
+        'database' => 1,
+    ]);
 }

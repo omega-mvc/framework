@@ -4,40 +4,30 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 
-/**
- * @testdox Skeleton Test for Indentation
- */
-#[CoversClass(VarExport::class)]
-class IndentationTest extends TestCase
-{
-    /**
-     * @test
-     *
-     * @testdox Uses 2-space indentation consistently
-     */
-    public function testItUsesTwoSpaceIndentationConsistently(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation('  '); // Two spaces
+use function str_replace;
 
-        $array = [
-            'key1' => 'value1',
-            'key2' => [
-                'nested_key1' => 'nested_value1',
-                'nested_key2' => [
-                    'double_nested_key' => 'double_nested_value',
-                ],
+covers(VarExport::class);
+
+it('uses 2-space indentation consistently', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation('  ');
+
+    $array = [
+        'key1' => 'value1',
+        'key2' => [
+            'nested_key1' => 'nested_value1',
+            'nested_key2' => [
+                'double_nested_key' => 'double_nested_value',
             ],
-            'key3' => 'value3',
-        ];
+        ],
+        'key3' => 'value3',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
   'key1' => 'value1',
   'key2' => [
@@ -49,37 +39,28 @@ class IndentationTest extends TestCase
   'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Uses 4-space indentation consistently
-     */
-    public function testItUsesFourSpaceIndentationConsistently(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation('    '); // Four spaces
+it('uses 4-space indentation consistently', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation('    ');
 
-        $array = [
-            'key1' => 'value1',
-            'key2' => [
-                'nested_key1' => 'nested_value1',
-                'nested_key2' => [
-                    'double_nested_key' => 'double_nested_value',
-                ],
+    $array = [
+        'key1' => 'value1',
+        'key2' => [
+            'nested_key1' => 'nested_value1',
+            'nested_key2' => [
+                'double_nested_key' => 'double_nested_value',
             ],
-            'key3' => 'value3',
-        ];
+        ],
+        'key3' => 'value3',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'key1' => 'value1',
     'key2' => [
@@ -91,37 +72,28 @@ PHP;
     'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Uses 8-space indentation consistently
-     */
-    public function testItUsesEightSpaceIndentationConsistently(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation('        '); // Eight spaces
+it('uses 8-space indentation consistently', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation('        ');
 
-        $array = [
-            'key1' => 'value1',
-            'key2' => [
-                'nested_key1' => 'nested_value1',
-                'nested_key2' => [
-                    'double_nested_key' => 'double_nested_value',
-                ],
+    $array = [
+        'key1' => 'value1',
+        'key2' => [
+            'nested_key1' => 'nested_value1',
+            'nested_key2' => [
+                'double_nested_key' => 'double_nested_value',
             ],
-            'key3' => 'value3',
-        ];
+        ],
+        'key3' => 'value3',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
         'key1' => 'value1',
         'key2' => [
@@ -133,37 +105,28 @@ PHP;
         'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Uses 1-tab indentation consistently
-     */
-    public function testItUsesOneTabIndentationConsistently(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation("\t"); // One tab
+it('uses 1-tab indentation consistently', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation("\t");
 
-        $array = [
-            'key1' => 'value1',
-            'key2' => [
-                'nested_key1' => 'nested_value1',
-                'nested_key2' => [
-                    'double_nested_key' => 'double_nested_value',
-                ],
+    $array = [
+        'key1' => 'value1',
+        'key2' => [
+            'nested_key1' => 'nested_value1',
+            'nested_key2' => [
+                'double_nested_key' => 'double_nested_value',
             ],
-            'key3' => 'value3',
-        ];
+        ],
+        'key3' => 'value3',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
 	'key1' => 'value1',
 	'key2' => [
@@ -175,37 +138,28 @@ PHP;
 	'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Uses 2-tab indentation consistently
-     */
-    public function testItUsesTwoTabIndentationConsistently(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation("\t\t"); // Two tabs
+it('uses 2-tab indentation consistently', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation("\t\t");
 
-        $array = [
-            'key1' => 'value1',
-            'key2' => [
-                'nested_key1' => 'nested_value1',
-                'nested_key2' => [
-                    'double_nested_key' => 'double_nested_value',
-                ],
+    $array = [
+        'key1' => 'value1',
+        'key2' => [
+            'nested_key1' => 'nested_value1',
+            'nested_key2' => [
+                'double_nested_key' => 'double_nested_value',
             ],
-            'key3' => 'value3',
-        ];
+        ],
+        'key3' => 'value3',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
 		'key1' => 'value1',
 		'key2' => [
@@ -217,40 +171,30 @@ PHP;
 		'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Maintains nested array indentation levels
-     */
-    public function testIaintainsNestedArrayIndentationLevels(): void
-    {
-        $varExport = new VarExport();
-        // Default indentation is 4 spaces
+it('maintains nested array indentation levels', function (): void {
+    $varExport = new VarExport();
 
-        $array = [
-            'level1_key1' => 'value1',
-            'level1_key2' => [
-                'level2_key1' => 'value2',
-                'level2_key2' => [
-                    'level3_key1' => 'value3',
-                    'level3_key2' => [
-                        'level4_key1' => 'value4',
-                    ],
+    $array = [
+        'level1_key1' => 'value1',
+        'level1_key2' => [
+            'level2_key1' => 'value2',
+            'level2_key2' => [
+                'level3_key1' => 'value3',
+                'level3_key2' => [
+                    'level4_key1' => 'value4',
                 ],
             ],
-            'level1_key3' => 'value5',
-        ];
+        ],
+        'level1_key3' => 'value5',
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'level1_key1' => 'value1',
     'level1_key2' => [
@@ -265,34 +209,25 @@ PHP;
     'level1_key3' => 'value5',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Normalizes closure indentation
-     */
-    public function testNormalizesClosureIndentation(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation('    '); // 4 spaces
+it('normalizes closure indentation', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation('    ');
 
-        $array = [
-            'closure' => function () {
-                $a = 1;
+    $array = [
+        'closure' => function () {
+            $a = 1;
 
-                return $a;
-            },
-        ];
+            return $a;
+        },
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function () {
         $a = 1;
@@ -301,35 +236,26 @@ PHP;
     },
 ]
 PHP;
-        // Normalize line endings for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Handles mixed indentation in source
-     */
-    public function testHandlesMixedIndentationInSource(): void
-    {
-        $varExport = new VarExport();
-        $varExport->setIndentation('    '); // 4 spaces
+it('handles mixed indentation in source', function (): void {
+    $varExport = new VarExport();
+    $varExport->setIndentation('    ');
 
-        $array = [
-            'closure' => function () {
-                $a = 1;
-                $b = 2;
+    $array = [
+        'closure' => function () {
+            $a = 1;
+            $b = 2;
 
-                return $a + $b;
-            },
-        ];
+            return $a + $b;
+        },
+    ];
 
-        $output = $varExport->export($array);
+    $output = $varExport->export($array);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function () {
         $a = 1;
@@ -339,10 +265,6 @@ PHP;
     },
 ]
 PHP;
-        // Normalize line endings for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
-}
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});

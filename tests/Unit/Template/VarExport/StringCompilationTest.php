@@ -4,166 +4,100 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 
-#[CoversClass(VarExport::class)]
-final class StringCompilationTest extends TestCase
-{
-    /**
-     * @test
-     *
-     * @testdox Compiles string with unicode characters correctly
-     */
-    public function testItCompilesStringWithUnicodeCharacters(): void
-    {
-        $varExport = new VarExport();
-        $exported  = $varExport->export(['Hello, 世界']);
+use function str_replace;
 
-        $expected = <<<'PHP'
+covers(VarExport::class);
+
+it('compiles string with unicode characters correctly', function (): void {
+    $varExport = new VarExport();
+    $exported  = $varExport->export(['Hello, 世界']);
+
+    $expected = <<<'PHP'
 [
     0 => 'Hello, 世界',
 ]
 PHP;
 
-        $normalizedOutput   = str_replace("\r\n", "\n", $exported);
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $exported));
+});
 
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
+it('compiles an empty string correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(['']);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles an empty string correctly
-     */
-    public function testItCompilesEmptyString(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(['']);
-
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => '',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles string with single quotes correctly
-     */
-    public function testItCompilesStringWithSingleQuotes(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(["it's a string"]);
+it('compiles string with single quotes correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(["it's a string"]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'it\'s a string',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles string with double quotes correctly
-     */
-    public function testItCompilesStringWithDoubleQuotes(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(['This is a "quoted" string']);
+it('compiles string with double quotes correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(['This is a "quoted" string']);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'This is a "quoted" string',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles string with backslashes correctly
-     */
-    public function testItCompilesStringWithBackslashes(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(['a\\b']);
+it('compiles string with backslashes correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(['a\\b']);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'a\\b',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles string with special characters correctly
-     */
-    public function testItCompilesStringWithSpecialCharacters(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(['!@#$%^&*()-=_+[]{}|;:,.<>/?']);
+it('compiles string with special characters correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(['!@#$%^&*()-=_+[]{}|;:,.<>/?']);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => '!@#$%^&*()-=_+[]{}|;:,.<>/?',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles string with newlines correctly
-     */
-    public function testItCompilesStringWithNewlines(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(["First line\nSecond line"]);
+it('compiles string with newlines correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(["First line\nSecond line"]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'First line
 Second line',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $output);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
-}
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});

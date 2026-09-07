@@ -4,61 +4,57 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 
-/**
- * @testdox Skeleton Test for File Operations
- */
-#[CoversClass(VarExport::class)]
-class FileOperationsTest extends TestCase
+use function array_diff;
+use function escapeshellarg;
+use function exec;
+use function file_get_contents;
+use function implode;
+use function is_dir;
+use function mkdir;
+use function preg_replace;
+use function rmdir;
+use function scandir;
+use function str_replace;
+use function uniqid;
+use function unlink;
+
+use const DIRECTORY_SEPARATOR;
+
+covers(VarExport::class);
+
+function varexportDeleteDirectory(string $dir): void
 {
-    private string $tempDir;
-
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        $this->tempDir = __DIR__ . DIRECTORY_SEPARATOR . uniqid('varexport_test_');
-        if (false === is_dir($this->tempDir)) {
-            mkdir($this->tempDir, 0777, true);
-        }
+    if (false === is_dir($dir)) {
+        return;
     }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-
-        if (is_dir($this->tempDir)) {
-            $this->deleteDirectory($this->tempDir);
-        }
+    $files = array_diff(scandir($dir), ['.', '..']);
+    foreach ($files as $file) {
+        (is_dir("$dir/$file")) ? varexportDeleteDirectory("$dir/$file") : unlink("$dir/$file");
     }
+    rmdir($dir);
+}
 
-    private function deleteDirectory(string $dir): void
-    {
-        if (false === is_dir($dir)) {
-            return;
-        }
-        $files = array_diff(scandir($dir), ['.', '..']);
-        foreach ($files as $file) {
-            (is_dir("$dir/$file")) ? $this->deleteDirectory("$dir/$file") : unlink("$dir/$file");
-        }
-        rmdir($dir);
+beforeEach(function (): void {
+    $this->tempDir = __DIR__ . DIRECTORY_SEPARATOR . uniqid('varexport_test_');
+    if (false === is_dir($this->tempDir)) {
+        mkdir($this->tempDir, 0777, true);
     }
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles to file successfully
-     */
-    public function testItCompilesToFileSuccessfully(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['key' => 'value', 'number' => 123];
-        $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'test_output.php';
+afterEach(function (): void {
+    if (is_dir($this->tempDir)) {
+        varexportDeleteDirectory($this->tempDir);
+    }
+});
 
-        $expectedContent = <<<'PHP'
+it('compiles to file successfully', function (): void {
+    $varExport = new VarExport();
+    $data      = ['key' => 'value', 'number' => 123];
+    $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'test_output.php';
+
+    $expectedContent = <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -72,42 +68,32 @@ return [
 ];
 
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $expectedContent = str_replace(["\r\n", "\r"], "\n", $expectedContent);
+    $expectedContent = str_replace(["\r\n", "\r"], "\n", $expectedContent);
 
-        // Call the compile method
-        $result = $varExport->compile($data, $filePath);
+    $result = $varExport->compile($data, $filePath);
 
-        $this->assertTrue($result, 'compile method should return true on success');
-        $this->assertFileExists($filePath, 'Output file should exist');
+    expect($result)->toBeTrue();
+    expect(file_exists($filePath))->toBeTrue();
 
-        $fileContent = file_get_contents($filePath);
-        $this->assertIsString($fileContent, 'File content should be a string');
+    $fileContent = file_get_contents($filePath);
+    expect($fileContent)->toBeString();
 
-        // Replace the dynamic date in the expected content for comparison
-        $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
-        // Normalize file content line endings
-        $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
+    $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
+    $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
 
-        $this->assertEquals($expectedContent, $fileContent, 'File content should match expected output');
-    }
+    expect($expectedContent)->toEqual($fileContent);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles to file and creates directory if not exists
-     */
-    public function testItCompilesToFileCreatesDirectory(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['item1' => 'value1'];
+it('compiles to file and creates directory if not exists', function (): void {
+    $varExport = new VarExport();
+    $data      = ['item1' => 'value1'];
 
-        $newDirPath = $this->tempDir . DIRECTORY_SEPARATOR . 'new_dir';
-        $filePath   = $newDirPath . DIRECTORY_SEPARATOR . 'file_in_new_dir.php';
+    $newDirPath = $this->tempDir . DIRECTORY_SEPARATOR . 'new_dir';
+    $filePath   = $newDirPath . DIRECTORY_SEPARATOR . 'file_in_new_dir.php';
 
-        $this->assertDirectoryDoesNotExist($newDirPath, 'Directory should not exist before test');
+    expect(is_dir($newDirPath))->toBeFalse();
 
-        $expectedContent = <<<'PHP'
+    $expectedContent = <<<'PHP'
 <?php
 
 declare(strict_types=1);
@@ -120,126 +106,84 @@ return [
 ];
 
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $expectedContent = str_replace(["\r\n", "\r"], "\n", $expectedContent);
+    $expectedContent = str_replace(["\r\n", "\r"], "\n", $expectedContent);
 
-        $result = $varExport->compile($data, $filePath);
+    $result = $varExport->compile($data, $filePath);
 
-        $this->assertTrue($result, 'compile method should return true on success');
-        $this->assertDirectoryExists($newDirPath, 'New directory should be created');
-        $this->assertFileExists($filePath, 'Output file should exist in new directory');
+    expect($result)->toBeTrue();
+    expect(is_dir($newDirPath))->toBeTrue();
+    expect(file_exists($filePath))->toBeTrue();
 
-        $fileContent = file_get_contents($filePath);
-        $this->assertIsString($fileContent, 'File content should be a string');
+    $fileContent = file_get_contents($filePath);
+    expect($fileContent)->toBeString();
 
-        // Replace the dynamic date in the expected content for comparison
-        $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
-        // Normalize file content line endings
-        $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
+    $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
+    $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
 
-        $this->assertEquals($expectedContent, $fileContent, 'File content should match expected output');
-    }
+    expect($expectedContent)->toEqual($fileContent);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles to string without headers
-     */
-    public function testItCompilesToStringWithoutHeaders(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['test' => 'no headers'];
+it('compiles to string without headers', function (): void {
+    $varExport = new VarExport();
+    $data      = ['test' => 'no headers'];
 
-        $output = $varExport->export($data);
+    $output = $varExport->export($data);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'test' => 'no headers',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-        $this->assertStringNotContainsString('<?php', $output);
-        $this->assertStringNotContainsString('declare(strict_types=1);', $output);
-        $this->assertStringNotContainsString('// auto-generated file', $output);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+    expect($output)->not->toContain('<?php');
+    expect($output)->not->toContain('declare(strict_types=1);');
+    expect($output)->not->toContain('// auto-generated file');
+});
 
-    /**
-     * @test
-     *
-     * @testdox Ensures output file is valid PHP
-     */
-    public function testOutputFileIsValidPhp(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['valid' => true, 'nested' => ['foo' => 'bar']];
-        $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'valid_php_output.php';
+it('ensures output file is valid php', function (): void {
+    $varExport = new VarExport();
+    $data      = ['valid' => true, 'nested' => ['foo' => 'bar']];
+    $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'valid_php_output.php';
 
-        $result = $varExport->compile($data, $filePath);
-        $this->assertTrue($result, 'compile method should return true on success');
-        $this->assertFileExists($filePath, 'Output file should exist');
+    $result = $varExport->compile($data, $filePath);
 
-        // Use PHP's built-in linter to check for syntax errors
-        $command = 'php -l ' . escapeshellarg($filePath);
-        exec($command, $output, $returnCode);
+    expect($result)->toBeTrue();
+    expect(file_exists($filePath))->toBeTrue();
 
-        // PHP -l returns 0 for success, non-zero for errors.
-        // It outputs "No syntax errors detected" or similar on success to stderr (usually)
-        // or stdout depending on PHP version and configuration.
-        $this->assertEquals(0, $returnCode, 'Output file should be valid PHP syntax');
-        $this->assertStringContainsStringIgnoringCase(
-            'No syntax errors detected',
-            implode("\n", $output),
-            'PHP linter should report no syntax errors'
-        );
-    }
+    $command = 'php -l ' . escapeshellarg($filePath);
+    exec($command, $output, $returnCode);
 
-    /**
-     * @test
-     *
-     * @testdox Ensures output file can be required and executed
-     */
-    public function testOutputFileCanBeRequiredAndExecuted(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['foo' => 'bar', 'count' => 123, 'status' => true];
-        $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'executable_output.php';
+    expect($returnCode)->toEqual(0);
+    expect(implode("\n", $output))->toContain('No syntax errors detected');
+});
 
-        $result = $varExport->compile($data, $filePath);
-        $this->assertTrue($result, 'compile method should return true on success');
-        $this->assertFileExists($filePath, 'Output file should exist');
+it('ensures output file can be required and executed', function (): void {
+    $varExport = new VarExport();
+    $data      = ['foo' => 'bar', 'count' => 123, 'status' => true];
+    $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'executable_output.php';
 
-        // It's crucial that the compiled file returns the array.
-        // The compile method adds "return " before the compiled array, and a semicolon after.
-        $requiredValue = require $filePath;
+    $result = $varExport->compile($data, $filePath);
 
-        $this->assertEquals($data, $requiredValue, 'The required file should return the original array data');
-    }
+    expect($result)->toBeTrue();
+    expect(file_exists($filePath))->toBeTrue();
 
-    /**
-     * @test
-     *
-     * @testdox Ensures compiled array matches original array
-     */
-    public function testCompiledArrayMatchesOriginalArray(): void
-    {
-        $varExport = new VarExport();
-        $data      = ['foo' => 'baz', 'list' => [1, 2, 3]];
-        $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'matches_original_array.php';
+    $requiredValue = require $filePath;
 
-        $result = $varExport->compile($data, $filePath);
-        $this->assertTrue($result, 'compile method should return true on success');
-        $this->assertFileExists($filePath, 'Output file should exist');
+    expect($requiredValue)->toEqual($data);
+});
 
-        $requiredValue = require $filePath;
+it('ensures compiled array matches original array', function (): void {
+    $varExport = new VarExport();
+    $data      = ['foo' => 'baz', 'list' => [1, 2, 3]];
+    $filePath  = $this->tempDir . DIRECTORY_SEPARATOR . 'matches_original_array.php';
 
-        $this->assertEquals(
-            $data,
-            $requiredValue,
-            'The required file should return an array identical to the original data'
-        );
-    }
-}
+    $result = $varExport->compile($data, $filePath);
+
+    expect($result)->toBeTrue();
+    expect(file_exists($filePath))->toBeTrue();
+
+    $requiredValue = require $filePath;
+
+    expect($requiredValue)->toEqual($data);
+});

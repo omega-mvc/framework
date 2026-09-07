@@ -1,270 +1,139 @@
 <?php
 
-/**
- * Part of Omega - Tests\Facades Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
-/** @noinspection PhpConditionAlreadyCheckedInspection */
-/** @noinspection PhpUndefinedMethodInspection */
-/** @noinspection PhpRedundantOptionalArgumentInspection */
-
 declare(strict_types=1);
 
 namespace Tests\Facades;
 
-use Exception;
 use Omega\Application\Application;
+use Omega\Cache\Facade\Cache;
 use Omega\Collection\Collection;
 use Omega\Config\ConfigRepository;
+use Omega\Config\Facade\Config;
 use Omega\Container\Exceptions\CircularAliasException;
+use Omega\Cron\Facade\Schedule;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\DatabaseManager;
-use Omega\Database\Query\Table;
-use Omega\Security\Hashing\HashManager;
-use Omega\Facade\AbstractFacade;
-use Omega\Cache\Facade\Cache;
-use Omega\Config\Facade\Config;
 use Omega\Database\Facades\DB;
-use Omega\Facade\Exceptions\FacadeObjectNotSetException;
-use Omega\Facade\FacadeInterface;
-use Omega\Security\Facade\Hash;
 use Omega\Database\Facades\PDO;
-use Omega\Cron\Facade\Schedule;
 use Omega\Database\Facades\Schema;
+use Omega\Database\Query\Table;
+use Omega\Facade\AbstractFacade;
+use Omega\Facade\Exceptions\FacadeObjectNotSetException;
+use Omega\Security\Facade\Hash;
+use Omega\Security\Hashing\HashManager;
 use Omega\View\Facades\View;
 use Omega\View\Facades\Vite;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\CoversClassesThatImplementInterface;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\MockObject\Exception as PHPUnitException;
-use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
-use Tests\FixturesPathTrait;
 use Tests\Facades\Sample\FacadesTestClass;
 use Tests\Facades\Support\NullFacade;
 use Tests\Facades\Support\TestAbstractFacade;
+use Tests\FixturesPathTrait;
 
-/**
- * Tests the behavior of the facade system.
- *
- * This test suite verifies that:
- * - facades correctly resolve their underlying instances from the application container,
- * - static method calls are properly proxied to the resolved objects,
- * - cached instances are reused,
- * - each facade returns the correct accessor key,
- * - convenience methods like DB::table() and DB::from() return the correct query builder.
- *
- * It also ensures that appropriate errors are thrown when the facade base
- * application has not been initialized.
- *
- * @category  Tests
- * @package   Facades
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(AbstractFacade::class)]
-#[CoversClass(Application::class)]
-#[CoversClass(DB::class)]
-#[CoversClass(DatabaseManager::class)]
-#[CoversClass(Cache::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(Collection::class)]
-#[CoversClass(Config::class)]
-#[CoversClass(ConfigRepository::class)]
-#[CoversClassesThatImplementInterface(FacadeInterface::class)]
-#[CoversClass(FacadeObjectNotSetException::class)]
-#[CoversClass(Hash::class)]
-#[CoversClass(HashManager::class)]
-#[CoversClass(PDO::class)]
-#[CoversClass(Schedule::class)]
-#[CoversClass(Schema::class)]
-#[CoversClass(Table::class)]
-#[CoversClass(View::class)]
-#[CoversClass(Vite::class)]
-final class FacadeTest extends TestCase
-{
-    use FixturesPathTrait;
+use function expect;
 
-    protected function tearDown(): void
-    {
-        AbstractFacade::setFacadeBase(null);
-        AbstractFacade::flushInstance();
+covers(AbstractFacade::class);
+covers(Application::class);
+covers(DB::class);
+covers(DatabaseManager::class);
+covers(Cache::class);
+covers(CircularAliasException::class);
+covers(Collection::class);
+covers(Config::class);
+covers(ConfigRepository::class);
+covers(FacadeObjectNotSetException::class);
+covers(Hash::class);
+covers(HashManager::class);
+covers(PDO::class);
+covers(Schedule::class);
+covers(Schema::class);
+covers(Table::class);
+covers(View::class);
+covers(Vite::class);
 
-        parent::tearDown();
-    }
+uses(FixturesPathTrait::class);
 
-    /**
-     * Test it can call static.
-     *
-     * @return void
-     * @throws Exception Throw when a generic error occurred.
-     */
-    final public function testItCanCallStatic(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
-        $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
+afterEach(function (): void {
+    AbstractFacade::setFacadeBase(null);
+    AbstractFacade::flushInstance();
+});
 
-        AbstractFacade::setFacadeBase($app);
+it('can call static', function (): void {
+    $app = new Application($this->setFixtureBasePath());
+    $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
-        $this->assertTrue(FacadesTestClass::has('php'));
-        $app->flush();
-        AbstractFacade::flushInstance();
-    }
+    AbstractFacade::setFacadeBase($app);
 
-    /**
-     * Test it throw error when application is not set.
-     *
-     * @return void
-     */
-    public function testItThrowErrorWhenApplicationIsNotSet(): void
-    {
-        AbstractFacade::flushInstance();
-        AbstractFacade::setFacadeBase(null);
+    expect(FacadesTestClass::has('php'))->toBeTrue();
+    $app->flush();
+    AbstractFacade::flushInstance();
+});
 
-        $this->expectException(FacadeObjectNotSetException::class);
-        $this->expectExceptionMessageIsOrContains(
-            'The facade instance for Tests\Facades\Sample\FacadesTestClass has not been set.'
-        );
+it('throws when application is not set', function (): void {
+    AbstractFacade::flushInstance();
+    AbstractFacade::setFacadeBase(null);
 
-        FacadesTestClass::has('php');
-    }
+    FacadesTestClass::has('php');
+})->throws(FacadeObjectNotSetException::class, 'has not been set');
 
-    /**
-     * Test constructor sets application.
-     *
-     * @return void
-     * @throws Exception Throw when a generic error occurred.
-     */
-    public function testConstructorSetsApplication(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
+it('constructor sets application', function (): void {
+    $app = new Application($this->setFixtureBasePath());
 
-        new TestAbstractFacade($app);
+    new TestAbstractFacade($app);
 
-        $ref = new ReflectionProperty(AbstractFacade::class, 'app');
-        $ref->setAccessible(true);
+    $ref = new ReflectionProperty(AbstractFacade::class, 'app');
+    $ref->setAccessible(true);
 
-        $this->assertSame($app, $ref->getValue());
+    expect($ref->getValue())->toBe($app);
+});
 
-        AbstractFacade::setFacadeBase(null);
-    }
+it('throws when app is not set', function (): void {
+    NullFacade::has('php');
+})->throws(FacadeObjectNotSetException::class);
 
-    /**
-     * test it throws excetiion when app is not set.
-     *
-     * @return void
-     */
-    public function testItThrowsExceptionWhenAppIsNotSet(): void
-    {
-        $this->expectException(FacadeObjectNotSetException::class);
+it('uses cached instance', function (): void {
+    $app = new Application($this->setFixtureBasePath());
 
-        NullFacade::has('php');
-    }
+    $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
-    /**
-     * Test facade uses cached instance.
-     *
-     * @return void
-     * @throws Exception Throw when a generic error occurred.
-     */
-    public function testFacadeUsesCachedInstance(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
+    AbstractFacade::setFacadeBase($app);
 
-        $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
+    expect(FacadesTestClass::has('php'))->toBeTrue();
+    expect(FacadesTestClass::has('php'))->toBeTrue();
+});
 
-        AbstractFacade::setFacadeBase($app);
+it('returns the correct accessor', function (string $facade, string $accessor): void {
+    expect($facade::getFacadeAccessor())->toBe($accessor);
+})->with([
+    [DB::class, DatabaseManager::class],
+    [Config::class, ConfigRepository::class],
+    [Cache::class, 'cache'],
+    [Hash::class, HashManager::class],
+    [PDO::class, 'database'],
+    [Schedule::class, 'schedule'],
+    [Schema::class, 'Schema'],
+    [View::class, 'view.instance'],
+    [Vite::class, 'vite.gets'],
+]);
 
-        $this->assertTrue(FacadesTestClass::has('php'));
-        $this->assertTrue(FacadesTestClass::has('php'));
-    }
+it('table returns query builder', function (): void {
+    $app = new Application($this->setFixtureBasePath());
 
-    /**
-     * Test that a facade correctly returns its accessor.
-     *
-     * This ensures that each facade resolves the correct binding or class string
-     * used internally to fetch the underlying instance from the container.
-     *
-     * @param class-string $facade The fully qualified facade class to test.
-     * @param string $accessor The expected container binding key or class name.
-     * @return void
-     */
-    #[DataProvider('facadeAccessorProvider')]
-    public function testFacadeAccessor(string $facade, string $accessor): void
-    {
-        $this->assertSame($accessor, $facade::getFacadeAccessor());
-    }
+    $connection = $this->createStub(ConnectionInterface::class);
+    $connection->method('getInstance')->willReturn($connection);
 
-    /**
-     * Provides a list of facades and their expected accessors.
-     *
-     * Each item contains:
-     * - The facade class name to test.
-     * - The expected string or class that should be returned by getFacadeAccessor().
-     *
-     * This is used as a data provider for {@see testFacadeAccessor}.
-     *
-     * @return array<int, array{0: class-string, 1: string}>
-     */
-    public static function facadeAccessorProvider(): array
-    {
-        return [
-            [DB::class, DatabaseManager::class],
-            [Config::class, ConfigRepository::class],
-            [Cache::class, 'cache'],
-            [Hash::class, HashManager::class],
-            [PDO::class, 'database'],
-            [Schedule::class, 'schedule'],
-            [Schema::class, 'Schema'],
-            [View::class, 'view.instance'],
-            [Vite::class, 'vite.gets'],
-        ];
-    }
+    $app->set('database', fn () => $connection);
 
-    /**
-     * Test table returns query builder.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws Exception Throw whena generic error occurred.
-     */
-    public function testTableReturnsQueryBuilder(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
+    AbstractFacade::setFacadeBase($app);
 
-        $connection = $this->createStub(ConnectionInterface::class);
-        $connection->method('getInstance')->willReturn($connection);
+    $table = DB::table('users');
 
-        $app->set('database', fn () => $connection);
+    expect($table)->toBeInstanceOf(Table::class);
+});
 
-        AbstractFacade::setFacadeBase($app);
+it('from returns query builder', function (): void {
+    $connection = $this->createStub(ConnectionInterface::class);
 
-        $table = DB::table('users');
+    $table = DB::from('users', $connection);
 
-        $this->assertInstanceOf(Table::class, $table);
-    }
-
-    /**
-     * Test from returns query builder.
-     *
-     * @return void
-     * @throws PHPUnitException
-     */
-    public function testFromReturnsQueryBuilder(): void
-    {
-        $connection = $this->createStub(ConnectionInterface::class);
-
-        $table = DB::from('users', $connection);
-
-        $this->assertInstanceOf(Table::class, $table);
-    }
-}
+    expect($table)->toBeInstanceOf(Table::class);
+});

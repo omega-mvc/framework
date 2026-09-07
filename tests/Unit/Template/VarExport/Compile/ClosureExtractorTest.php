@@ -5,55 +5,229 @@ declare(strict_types=1);
 namespace Tests\Template\VarExport\Compile;
 
 use Omega\Template\VarExport\ClosureExtractor;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
-/**
- */
-#[CoversClass(ClosureExtractor::class)]
-final class ClosureExtractorTest extends TestCase
-{
-    private ClosureExtractor $extractor;
+covers(ClosureExtractor::class);
 
-    protected function setUp(): void
-    {
-        $this->extractor = new ClosureExtractor();
-    }
+it('extracts simple single-line closure without prefix', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 'test';
+    };
 
-    /**
-     * @test
-     *
-     * @testdox Extract simple single-line closure without prefix
-     * @throws \ReflectionException
-     */
-    public function testExtractSimpleSingleLineClosureWithoutPrefix(): void
-    {
-        $closure = function () {
-            return 'test';
-        };
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
 
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
+    expect($result['normalized'])->not->toContain("'closure'");
+    expect($result['normalized'])->not->toContain('=>');
+    expect($result['normalized'])->toContain('function');
+    expect($result['normalized'])->toContain("return 'test'");
+});
 
-        // Check normalized output doesn't include key/arrow
-        $this->assertStringNotContainsString("'closure'", $result['normalized']);
-        $this->assertStringNotContainsString('=>', $result['normalized']);
+it('extracts simple single-line closure from array context', function (): void {
+    $extractor = new ClosureExtractor();
 
-        // Check it contains function keyword and body
-        $this->assertStringContainsString('function', $result['normalized']);
-        $this->assertStringContainsString("return 'test'", $result['normalized']);
-    }
+    $arrayWithClosure = [
+        'closure' => function () {
+            $a             = 1 + 2;
+            $bolamasgakada = 1 + 2;
 
-    /**
-     * @test
-     *
-     * @testdox Extract simple single-line closure from array context
-     */
-    public function testExtractSimpleSingleLineClosureFromArrayContext(): void
-    {
-        // This simulates the problematic case from the issue
-        $arrayWithClosure = [
+            echo $a;
+
+            $b = 'text';
+
+            // comment
+            return 'Route::class';
+        },
+    ];
+
+    $closure    = $arrayWithClosure['closure'];
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    $normalized = $result['normalized'];
+    expect($normalized)->not->toContain("'closure'");
+    expect($normalized)->not->toContain('=>');
+    expect($normalized)->toContain('function');
+    expect($normalized)->toContain('= 1 + 2');
+    expect($normalized)->toContain('bolamasgakada');
+    expect($normalized)->toContain('echo $a');
+    expect($normalized)->toContain('$b = \'text\'');
+    expect($normalized)->toContain('return \'Route::class\'');
+});
+
+it('extracts arrow function without prefix', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = fn () => 'test';
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['normalized'])->not->toContain("'closure'");
+    expect($result['normalized'])->toContain('fn');
+    expect($result['normalized'])->toContain("'test'");
+});
+
+it('extracts multiline closure structure', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        $x = 10;
+
+        return $x * 2;
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    $normalized = $result['normalized'];
+    expect($normalized)->toContain('function');
+    expect($normalized)->toContain('$x = 10');
+    expect($normalized)->toContain('return $x * 2');
+    expect($result['lines'])->toBeArray();
+    expect($result['lines'])->not->toBeEmpty();
+});
+
+it('lines array does not contain duplicate closure key', function (): void {
+    $extractor = new ClosureExtractor();
+
+    $arrayWithClosure = [
+        'closure' => function () {
+            return 42;
+        },
+    ];
+
+    $closure    = $arrayWithClosure['closure'];
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    $linesString   = implode('', $result['lines']);
+    $closureKeyCount = substr_count($linesString, "'closure'");
+    expect($closureKeyCount)->toEqual(0);
+});
+
+it('extracts closure with parameters', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function ($a, $b) {
+        return $a + $b;
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['normalized'])->toContain('($a, $b)');
+    expect($result['normalized'])->toContain('return $a + $b');
+});
+
+it('extracts closure with return type', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function (): int {
+        return 5;
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['normalized'])->toContain(': int');
+    expect($result['normalized'])->toContain('return 5');
+});
+
+it('extracts closure with mixed content and comments', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        // This is a comment
+        $result = 10;
+
+        /* Block comment */
+        return $result;
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['normalized'])->toContain('// This is a comment');
+    expect($result['normalized'])->toContain('/* Block comment */');
+    expect($result['normalized'])->toContain('$result = 10');
+});
+
+it('metadata contains correct line information', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 'test';
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['metadata'])->toHaveKeys(['startLine', 'endLine', 'file', 'isSingleLine', 'isArrowFunction']);
+    expect($result['metadata']['startLine'])->toBeInt();
+    expect($result['metadata']['endLine'])->toBeInt();
+    expect($result['metadata']['file'])->toBeString();
+    expect($result['metadata']['isSingleLine'])->toBeBool();
+    expect($result['metadata']['isArrowFunction'])->toBeBool();
+});
+
+it('arrow function metadata correctly identified', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = fn () => 42;
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['metadata']['isArrowFunction'])->toBeTrue();
+});
+
+it('regular function metadata correctly identified', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 42;
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result['metadata']['isArrowFunction'])->toBeFalse();
+});
+
+it('normalized code has correct indentation removed', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 'test';
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    $firstLine = $result['lines'][0];
+    expect(strlen($firstLine) - strlen(ltrim($firstLine)))->toEqual(0);
+});
+
+it('validate single line rejects multiple closures', function (): void {
+    $extractor = new ClosureExtractor();
+
+    expect(fn () => $extractor->validateSingleLine('function() {}, function() {}', 42))
+        ->toThrow(\InvalidArgumentException::class, 'Multiple closures detected');
+});
+
+it('original code preserved in output', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 'test';
+    };
+
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
+
+    expect($result)->toHaveKey('original');
+    expect($result['original'])->toBeString();
+    expect($result['original'])->toContain('function');
+});
+
+it('extracts from complex array scenario', function (): void {
+    $extractor = new ClosureExtractor();
+
+    $config = [
+        'name'     => 'app',
+        'handlers' => [
             'closure' => function () {
                 $a             = 1 + 2;
                 $bolamasgakada = 1 + 2;
@@ -65,393 +239,63 @@ final class ClosureExtractorTest extends TestCase
                 // comment
                 return 'Route::class';
             },
-        ];
+            'other' => 'value',
+        ],
+    ];
 
-        // Get reflection of the closure
-        $closure    = $arrayWithClosure['closure'];
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
+    $closure    = $config['handlers']['closure'];
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
 
-        // Verify no array key remains
-        $normalized = $result['normalized'];
-        $this->assertStringNotContainsString("'closure'", $normalized);
-        $this->assertStringNotContainsString('=>', $normalized);
+    $normalized = $result['normalized'];
+    expect($normalized)->not->toContain("'closure'");
+    expect($normalized)->not->toContain('=>');
+    expect($normalized)->not->toContain("'other'");
+    expect($normalized)->toContain('function');
+    expect($normalized)->toContain('= 1 + 2');
+});
 
-        // Verify closure structure is preserved
-        $this->assertStringContainsString('function', $normalized);
-        $this->assertStringContainsString('= 1 + 2', $normalized);
-        $this->assertStringContainsString('bolamasgakada', $normalized);
-        $this->assertStringContainsString('echo $a', $normalized);
-        $this->assertStringContainsString('$b = \'text\'', $normalized);
-        $this->assertStringContainsString('return \'Route::class\'', $normalized);
-    }
+it('extracts closure with trailing comma in array', function (): void {
+    $extractor = new ClosureExtractor();
 
-    /**
-     * @test
-     *
-     * @testdox Extract arrow function without prefix
-     */
-    public function testExtractArrowFunctionWithoutPrefix(): void
-    {
-        $closure = fn () => 'test';
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        // Check normalized output doesn't include array key/arrow prefix
-        $this->assertStringNotContainsString("'closure'", $result['normalized']);
-
-        // Check it contains fn keyword and => (which is part of arrow function syntax)
-        $this->assertStringContainsString('fn', $result['normalized']);
-        $this->assertStringContainsString("'test'", $result['normalized']);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract multiline closure structure
-     */
-    public function testExtractMultilineClosureStructure(): void
-    {
-        $closure = function () {
-            $x = 10;
-
-            return $x * 2;
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        // Verify structure
-        $this->assertStringContainsString('function', $normalized);
-        $this->assertStringContainsString('$x = 10', $normalized);
-        $this->assertStringContainsString('return $x * 2', $normalized);
-
-        // Verify lines are array format
-        $this->assertIsArray($result['lines']);
-        $this->assertGreaterThan(0, count($result['lines']));
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Lines array doesn't contain duplicate closure key
-     */
-    public function testLinesArrayNoduplicateClosureKey(): void
-    {
-        $arrayWithClosure = [
-            'closure' => function () {
-                return 42;
-            },
-        ];
-
-        $closure    = $arrayWithClosure['closure'];
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $linesString = implode('', $result['lines']);
-
-        // Should not have 'closure' key appearing
-        // Count occurrences of 'closure' in the extracted code
-        $closureKeyCount = substr_count($linesString, "'closure'");
-        $this->assertEquals(0, $closureKeyCount, 'Closure key should not appear in extracted lines');
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract closure with parameters
-     */
-    public function testExtractClosureWithParameters(): void
-    {
-        $closure = function ($a, $b) {
-            return $a + $b;
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        $this->assertStringContainsString('($a, $b)', $normalized);
-        $this->assertStringContainsString('return $a + $b', $normalized);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract closure with return type
-     */
-    public function testExtractClosureWithReturnType(): void
-    {
-        $closure = function (): int {
-            return 5;
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        $this->assertStringContainsString(': int', $normalized);
-        $this->assertStringContainsString('return 5', $normalized);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract closure with mixed content and comments
-     */
-    public function testExtractClosureWithMixedContentAndComments(): void
-    {
-        $closure = function () {
-            // This is a comment
-            $result = 10;
-
-            /* Block comment */
-            return $result;
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        // Verify comments are preserved
-        $this->assertStringContainsString('// This is a comment', $normalized);
-        $this->assertStringContainsString('/* Block comment */', $normalized);
-        $this->assertStringContainsString('$result = 10', $normalized);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Metadata contains correct line information
-     */
-    public function testMetadataContainsCorrectLineInformation(): void
-    {
-        $closure = function () {
+    $arrayWithClosure = [
+        'closure' => function () {
             return 'test';
-        };
+        },
+    ];
 
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
+    $closure    = $arrayWithClosure['closure'];
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
 
-        $this->assertArrayHasKey('metadata', $result);
-        $this->assertArrayHasKey('startLine', $result['metadata']);
-        $this->assertArrayHasKey('endLine', $result['metadata']);
-        $this->assertArrayHasKey('file', $result['metadata']);
-        $this->assertArrayHasKey('isSingleLine', $result['metadata']);
-        $this->assertArrayHasKey('isArrowFunction', $result['metadata']);
+    $normalized = $result['normalized'];
+    expect($normalized)->not->toContain(',}');
+    expect(trim($normalized))->toEndWith('}');
+});
 
-        $this->assertIsInt($result['metadata']['startLine']);
-        $this->assertIsInt($result['metadata']['endLine']);
-        $this->assertIsString($result['metadata']['file']);
-        $this->assertIsBool($result['metadata']['isSingleLine']);
-        $this->assertIsBool($result['metadata']['isArrowFunction']);
-    }
+it('non-existent file throws exception', function (): void {
+    $extractor = new ClosureExtractor();
 
-    /**
-     * @test
-     *
-     * @testdox Arrow function metadata correctly identified
-     */
-    public function testArrowFunctionMetadataCorrectlyIdentified(): void
-    {
-        $closure = fn () => 42;
+    $reflection = $this->createMock(ReflectionFunction::class);
+    $reflection->method('getFileName')->willReturn('/non/existent/file.php');
+    $reflection->method('getStartLine')->willReturn(1);
+    $reflection->method('getEndLine')->willReturn(1);
 
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
+    expect(fn () => $extractor->extract($reflection))
+        ->toThrow(\InvalidArgumentException::class, 'Source file not found');
+});
 
-        $this->assertTrue($result['metadata']['isArrowFunction']);
-    }
+it('ast contains correct structure', function (): void {
+    $extractor = new ClosureExtractor();
+    $closure   = function () {
+        return 42;
+    };
 
-    /**
-     * @test
-     *
-     * @testdox Regular function metadata correctly identified
-     */
-    public function testRegularFunctionMetadataCorrectlyIdentified(): void
-    {
-        $closure = function () {
-            return 42;
-        };
+    $reflection = new ReflectionFunction($closure);
+    $result     = $extractor->extract($reflection);
 
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $this->assertFalse($result['metadata']['isArrowFunction']);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Normalized code has correct indentation removed
-     */
-    public function tetsNormalizedCodeHasCorrectIndentationRemoved(): void
-    {
-        // This closure is indented at runtime
-        $closure = function () {
-            return 'test';
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $lines = $result['lines'];
-
-        // First line should be the function() declaration without leading spaces
-        $firstLine = $lines[0];
-        $this->assertEquals(
-            0,
-            strlen($firstLine) - strlen(ltrim($firstLine)),
-            'First line should not have leading indentation'
-        );
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Validate single line rejects multiple closures
-     */
-    public function testValidateSingleLineRejectsMultipleClosures(): void
-    {
-        $line = 'function() {}, function() {}';
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessageIsOrContains('Multiple closures detected');
-
-        $this->extractor->validateSingleLine($line, 42);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Original code preserved in output
-     */
-    public function testOriginalCodePreservedInOutput(): void
-    {
-        $closure = function () {
-            return 'test';
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $this->assertArrayHasKey('original', $result);
-        $this->assertIsString($result['original']);
-        $this->assertStringContainsString('function', $result['original']);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract from complex array scenario
-     */
-    public function testExtractFromComplexArrayScenario(): void
-    {
-        $config = [
-            'name'     => 'app',
-            'handlers' => [
-                'closure' => function () {
-                    $a             = 1 + 2;
-                    $bolamasgakada = 1 + 2;
-
-                    echo $a;
-
-                    $b = 'text';
-
-                    // comment
-                    return 'Route::class';
-                },
-                'other' => 'value',
-            ],
-        ];
-
-        $closure    = $config['handlers']['closure'];
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        // Should not contain any array-related syntax
-        $this->assertStringNotContainsString("'closure'", $normalized);
-        $this->assertStringNotContainsString('=>', $normalized);
-        $this->assertStringNotContainsString("'other'", $normalized);
-
-        // Should contain closure content
-        $this->assertStringContainsString('function', $normalized);
-        $this->assertStringContainsString('= 1 + 2', $normalized);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Extract closure with trailing comma in array
-     */
-    public function testExtractClosureWithTrailingCommaInArray(): void
-    {
-        $arrayWithClosure = [
-            'closure' => function () {
-                return 'test';
-            },
-        ];
-
-        $closure    = $arrayWithClosure['closure'];
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $normalized = $result['normalized'];
-
-        // Should not have trailing comma (those belong to array context)
-        $this->assertStringNotContainsString(',}', $normalized);
-        // Should end with }
-        $this->assertStringEndsWith('}', trim($normalized));
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Non-existent file throws exception
-     */
-    public function testNonExistentFileThrowsException(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessageIsOrContains('Source file not found');
-
-        // Create a mock reflection with non-existent file
-        $reflection = $this->createMock(ReflectionFunction::class);
-        $reflection->method('getFileName')->willReturn('/non/existent/file.php');
-        $reflection->method('getStartLine')->willReturn(1);
-        $reflection->method('getEndLine')->willReturn(1);
-
-        $this->extractor->extract($reflection);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox AST contains correct structure
-     */
-    public function testAstContainsCorrectStructure(): void
-    {
-        $closure = function () {
-            return 42;
-        };
-
-        $reflection = new ReflectionFunction($closure);
-        $result     = $this->extractor->extract($reflection);
-
-        $this->assertArrayHasKey('ast', $result);
-        $this->assertArrayHasKey('type', $result['ast']);
-        $this->assertArrayHasKey('isArrowFunction', $result['ast']);
-        $this->assertArrayHasKey('parameters', $result['ast']);
-        $this->assertArrayHasKey('body', $result['ast']);
-
-        $this->assertEquals('closure', $result['ast']['type']);
-        $this->assertFalse($result['ast']['isArrowFunction']);
-        $this->assertIsArray($result['ast']['parameters']);
-    }
-}
+    expect($result['ast'])->toHaveKeys(['type', 'isArrowFunction', 'parameters', 'body']);
+    expect($result['ast']['type'])->toEqual('closure');
+    expect($result['ast']['isArrowFunction'])->toBeFalse();
+    expect($result['ast']['parameters'])->toBeArray();
+});

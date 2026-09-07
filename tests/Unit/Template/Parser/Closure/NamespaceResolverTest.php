@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace Tests\Template\Parser\Closure;
 
 use Closure;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\Parser\Closure\NamespaceResolver;
-use ReflectionException;
 use ReflectionFunction;
 use Tests\Template\Fixtures\DummyParamClass;
 use Tests\Template\Fixtures\DummyReturnClass;
@@ -26,83 +23,64 @@ use function unlink;
 
 use const PHP_VERSION_ID;
 
-#[CoversClass(NamespaceResolver::class)]
-final class NamespaceResolverTest extends TestCase
+covers(NamespaceResolver::class);
+
+function closureNamespaceResolverFixture(string $code, string $file): Closure
 {
-    /**
-     * Test it an resolve collects namespaces from parameters return and static variable.
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    public function testItCanResolveCollectsNamespacesFromParametersReturnAndStaticVariables(): void
-    {
-        $resolver = new NamespaceResolver();
+    file_put_contents($file, $code);
+    $fn = require $file;
 
-        $fn = static function (
-            DummyParamClass $param,
-            int $builtin,
-        ): DummyReturnClass {
-            static $staticObject;
+    /** @var Closure $fn */
+    return $fn;
+}
 
-            if (null === $staticObject) {
-                $staticObject = new DummyStaticClass();
-            }
+it('collects namespaces from parameters return and static variables', function (): void {
+    $resolver = new NamespaceResolver();
 
-            return new DummyReturnClass();
-        };
+    $fn = static function (
+        DummyParamClass $param,
+        int $builtin,
+    ): DummyReturnClass {
+        static $staticObject;
 
-        $reflection = new ReflectionFunction($fn);
-        $result     = $resolver->resolve($reflection);
-
-        self::assertContains(DummyParamClass::class, $result);
-        self::assertContains(DummyReturnClass::class, $result);
-        // self::assertContains(DummyStaticClass::class, $result);
-    }
-
-    /**
-     * Test it can resolve ignores builtin types.
-     * Builtin types (int, string, bool, etc.) should not appear in results.
-     * Since the closure uses only builtin types, no class imports are needed.
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    public function testItCanResolveIgnoresBuiltinTypes(): void
-    {
-        $resolver = new NamespaceResolver();
-
-        $fn = static function (int $a, string $b): bool {
-            return true;
-        };
-
-        $reflection = new ReflectionFunction($fn);
-        $result     = $resolver->resolve($reflection);
-
-        // Closure uses only builtin types - no class imports needed
-        self::assertEmpty($result);
-
-        // Should NOT contain builtin types
-        self::assertNotContains('int', $result);
-        self::assertNotContains('string', $result);
-        self::assertNotContains('bool', $result);
-    }
-
-    /**
-     * It can resolve collects union types.
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    public function testItCanResolveCollectsUnionTypes(): void
-    {
-        if (PHP_VERSION_ID < 80000) {
-            $this->markTestSkipped('Union types require PHP 8.0');
+        if (null === $staticObject) {
+            $staticObject = new DummyStaticClass();
         }
 
-        $resolver = new NamespaceResolver();
+        return new DummyReturnClass();
+    };
 
-        $code = <<<'PHP'
+    $reflection = new ReflectionFunction($fn);
+    $result     = $resolver->resolve($reflection);
+
+    expect($result)->toContain(DummyParamClass::class);
+    expect($result)->toContain(DummyReturnClass::class);
+});
+
+it('ignores builtin types', function (): void {
+    $resolver = new NamespaceResolver();
+
+    $fn = static function (int $a, string $b): bool {
+        return true;
+    };
+
+    $reflection = new ReflectionFunction($fn);
+    $result     = $resolver->resolve($reflection);
+
+    expect($result)->toBeEmpty();
+    expect($result)->not->toContain('int');
+    expect($result)->not->toContain('string');
+    expect($result)->not->toContain('bool');
+});
+
+it('collects union types', function (): void {
+    if (PHP_VERSION_ID < 80000) {
+        $this->markTestSkipped('Union types require PHP 8.0');
+    }
+
+    $resolver = new NamespaceResolver();
+
+    $code = <<<'PHP'
 <?php
 namespace Tests\Template\Parser\Closure;
 
@@ -115,36 +93,27 @@ return static function (UnionA|UnionB $param): UnionC|UnionD {
     return new UnionC();
 };
 PHP;
-        $file = __DIR__ . '/union_closure.php';
-        file_put_contents($file, $code);
-        $fn = require $file;
+    $file = __DIR__ . '/union_closure.php';
+    $fn   = closureNamespaceResolverFixture($code, $file);
 
-        /** @var Closure $fn */
-        $reflection = new ReflectionFunction($fn);
-        $result     = $resolver->resolve($reflection);
-        unlink($file);
+    $reflection = new ReflectionFunction($fn);
+    $result     = $resolver->resolve($reflection);
+    unlink($file);
 
-        self::assertContains(UnionA::class, $result);
-        self::assertContains(UnionB::class, $result);
-        self::assertContains(UnionC::class, $result);
-        self::assertContains(UnionD::class, $result);
+    expect($result)->toContain(UnionA::class);
+    expect($result)->toContain(UnionB::class);
+    expect($result)->toContain(UnionC::class);
+    expect($result)->toContain(UnionD::class);
+});
+
+it('collects intersection types', function (): void {
+    if (PHP_VERSION_ID < 80100) {
+        $this->markTestSkipped('Intersection types require PHP 8.1');
     }
 
-    /**
-     * Test it can resolve collects intersection types.
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    public function testItCanResolveCollectsIntersectionTypes(): void
-    {
-        if (PHP_VERSION_ID < 80100) {
-            $this->markTestSkipped('Intersection types require PHP 8.1');
-        }
+    $resolver = new NamespaceResolver();
 
-        $resolver = new NamespaceResolver();
-
-        $code = <<<'PHP'
+    $code = <<<'PHP'
 <?php
 namespace Tests\Template\Parser\Closure;
 
@@ -157,48 +126,34 @@ return static function (
     return new class implements IntersectionAInterface, IntersectionBInterface {};
 };
 PHP;
-        $file = __DIR__ . '/intersection_closure.php';
-        file_put_contents($file, $code);
-        $fn = require $file;
+    $file = __DIR__ . '/intersection_closure.php';
+    $fn   = closureNamespaceResolverFixture($code, $file);
 
-        /** @var Closure $fn */
-        $reflection = new ReflectionFunction($fn);
-        $result     = $resolver->resolve($reflection);
-        unlink($file);
+    $reflection = new ReflectionFunction($fn);
+    $result     = $resolver->resolve($reflection);
+    unlink($file);
 
-        self::assertContains(IntersectionAInterface::class, $result);
-        self::assertContains(IntersectionBInterface::class, $result);
-    }
+    expect($result)->toContain(IntersectionAInterface::class);
+    expect($result)->toContain(IntersectionBInterface::class);
+});
 
-    /**
-     * Test it can resolve remove duplicates and reindexes.
-     *
-     * @return void
-     * @throws ReflectionException
-     */
-    public function testItCanResolveRemovesDuplicatesAndReindexes(): void
-    {
-        $resolver = new NamespaceResolver();
+it('removes duplicates and reindexes', function (): void {
+    $resolver = new NamespaceResolver();
 
-        $fn = static function (DummyParamClass $a): DummyParamClass {
-            static $obj;
+    $fn = static function (DummyParamClass $a): DummyParamClass {
+        static $obj;
 
-            if (null === $obj) {
-                $obj = new DummyParamClass();
-            }
+        if (null === $obj) {
+            $obj = new DummyParamClass();
+        }
 
-            return $obj;
-        };
+        return $obj;
+    };
 
-        $reflection = new ReflectionFunction($fn);
-        $result     = $resolver->resolve($reflection);
+    $reflection = new ReflectionFunction($fn);
+    $result     = $resolver->resolve($reflection);
 
-        // Only DummyParamClass is used by the closure
-        self::assertSame(
-            [
-                DummyParamClass::class,
-            ],
-            array_values($result)
-        );
-    }
-}
+    expect(array_values($result))->toBe([
+        DummyParamClass::class,
+    ]);
+});

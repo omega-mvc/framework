@@ -1,23 +1,11 @@
 <?php
 
-/**
- * Part of Omega - Tests\Application Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Application;
 
-use Exception;
 use Omega\Application\AbstractApplication;
 use Omega\Application\Application;
-use Omega\Application\ApplicationInterface;
 use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Config\ConfigRepository;
 use Omega\Container\Exceptions\BindingResolutionException;
@@ -25,438 +13,208 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\CoversClassesThatImplementInterface;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use ReflectionException;
 use Tests\Application\Fixtures\TestBootstrapProvider;
 use Tests\Application\Fixtures\TestServiceProvider;
 use Tests\FixturesPathTrait;
 
-/**
- * Integration and behavioral test suite for the Application core.
- *
- * This test class verifies the full lifecycle of the Application instance,
- * including:
- *
- * - Container availability and flushing behavior
- * - Configuration loading (default and custom)
- * - Environment detection and debug mode handling
- * - Macro registration on the HTTP Request
- * - Version resolution
- * - Termination callbacks execution
- * - Abort handling via HTTP exceptions
- * - Bootstrapping and service provider lifecycle
- * - Booting and booted callbacks execution order
- * - Prevention of duplicate service provider registration
- * - Maintenance mode detection and down file handling
- *
- * The goal of this suite is to ensure that the Application behaves
- * correctly as a service container, bootstrapper, and runtime coordinator.
- *
- * @category  Tests
- * @package   Application
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Application::class)]
-#[CoversClass(AbstractApplication::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(EntryNotFoundException::class)]
-#[CoversClass(HttpException::class)]
-#[CoversClass(Request::class)]
-#[CoversClassesThatImplementInterface(ApplicationInterface::class)]
-class ApplicationTest extends TestCase
-{
-    use FixturesPathTrait;
+covers(Application::class);
+covers(AbstractApplication::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(EntryNotFoundException::class);
+covers(HttpException::class);
+covers(Request::class);
 
-    /**
-     * Test it can load config from default.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanLoadConfigFromDefault(): void
-    {
-        $app = new Application(__DIR__);
+uses(FixturesPathTrait::class);
 
-        $data = [
-            'BASEURL' => '/',
-            'APP_DEBUG' => true,
-            'CACHE_STORE' => 'file',
-        ];
+it('loads config from default', function (): void {
+    $app = new Application(__DIR__);
 
-        $app->loadConfig(new ConfigRepository($data));
-        $config = $app->get('config');
+    $data = [
+        'BASEURL'    => '/',
+        'APP_DEBUG'  => true,
+        'CACHE_STORE' => 'file',
+    ];
 
-        $this->assertInstanceOf(ConfigRepository::class, $config);
-        $this->assertEquals($data, $config->getAll());
+    $app->loadConfig(new ConfigRepository($data));
+    $config = $app->get('config');
 
-        $app->flush();
-    }
+    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    expect($config->getAll())->toBe($data);
 
-    /**
-     * Test it can load environment.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanLoadEnvironment(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
+    $app->flush();
+});
 
-        $app->set('environment', 'prod');
-        $this->assertFalse($app->isDev());
-        $this->assertTrue($app->isProduction());
+it('loads environment', function (): void {
+    $app = new Application($this->setFixtureBasePath());
 
-        $app->set('environment', 'test');
-        $this->assertEquals('test', $app->getenvironment());
+    $app->set('environment', 'prod');
+    expect($app->isDev())->toBeFalse();
+    expect($app->isProduction())->toBeTrue();
 
-        $app->set('app.debug', false);
-        $this->assertFalse($app->isDebugMode());
+    $app->set('environment', 'test');
+    expect($app->getenvironment())->toBe('test');
 
-        $app->flush();
-    }
+    $app->set('app.debug', false);
+    expect($app->isDebugMode())->toBeFalse();
 
-    /**
-     * Test it can call macro request upload.
-     *
-     * @return void
-     */
-    /**public function testItCanCallMacroRequestUploads(): void
-    {
-        new Application('/');
+    $app->flush();
+});
 
-        $this->assertTrue(Request::hasMacro('upload'));
-    }*/
+it('returns the version from configuration', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-    /**
-     * Test it can call macro request validate.
-     *
-     * @return void
-     */
-    /**public function testItCanCallMacroRequestValidate(): void
-    {
-        new Application('/');
+    new ConfigBootstrapper()->bootstrap($app);
 
-        $this->assertTrue(Request::hasMacro('validate'));
-    }*/
+    expect($app->getVersion())->toBe('2.0.0');
 
-    /**
-     * Test get version returns the version loaded from configuration.
-     *
-     * @return void
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws Exception
-     * @throws NotFoundExceptionInterface
-     * @throws ReflectionException
-     */
-    public function testGetVersionReturnsVersionFromConfig(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app->flush();
+});
 
-        new ConfigBootstrapper()->bootstrap($app);
+it('terminates after the application is done', function (): void {
+    $app = new Application('/');
+    $app->registerTerminate(static function (): void {
+        echo 'terminated.';
+    });
 
-        $this->assertSame('2.0.0', $app->getVersion());
+    ob_start();
+    echo 'application started.';
+    echo 'application ended.';
+    $app->terminate();
+    $out = ob_get_clean();
 
-        $app->flush();
-    }
+    expect($out)->toBe('application started.application ended.terminated.');
+});
 
-    /**
-     * Test it can terminate after application done.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanTerminateAfterApplicationDone(): void
-    {
-        $app = new Application('/');
-        $app->registerTerminate(static function () {
-            echo 'terminated.';
-        });
-        ob_start();
-        echo 'application started.';
-        echo 'application ended.';
-        $app->terminate();
-        $out = ob_get_clean();
+it('aborts the application with an HTTP exception', function (): void {
+    new Application(__DIR__)->abort(500);
+})->throws(HttpException::class);
 
-        $this->assertEquals('application started.application ended.terminated.', $out);
-    }
+it('bootstraps providers with bootstrapWith', function (): void {
+    $app = new Application(__DIR__);
 
-    /**
-     * Test it can abort application.
-     *
-     * @return void
-     */
-    public function testItCanAbortApplication(): void
-    {
-        $this->expectException(HttpException::class);
-        new Application(__DIR__)->abort(500);
-    }
+    ob_start();
+    $app->bootstrapWith([
+        TestBootstrapProvider::class,
+    ]);
+    $out = ob_get_clean();
 
-    /**
-     * Test it can bootstrap with.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanBootstrapWith(): void
-    {
-        $app = new Application(__DIR__);
+    expect($out)->toBe('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap');
+    expect($app->bootstrapped)->toBeTrue();
+});
 
-        ob_start();
-        $app->bootstrapWith([
-            TestBootstrapProvider::class,
-        ]);
-        $out = ob_get_clean();
+it('adds callbacks before and after boot', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-        $this->assertEquals('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap', $out);
-        $this->assertTrue($app->bootstrapped);
-    }
+    new ConfigBootstrapper()->bootstrap($app);
 
-    /**
-     * Test it can add callbacks before and after boot.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanAddCallBacksBeforeAndAfterBoot(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app->bootedCallback(static function (): void {
+        echo 'booted01';
+    });
+    $app->bootedCallback(static function (): void {
+        echo 'booted02';
+    });
+    $app->bootingCallback(static function (): void {
+        echo 'booting01';
+    });
+    $app->bootingCallback(static function (): void {
+        echo 'booting02';
+    });
 
-        new ConfigBootstrapper()->bootstrap($app);
+    ob_start();
+    $app->bootProvider();
+    $out = ob_get_clean();
 
-        $app->bootedCallback(static function () {
-            echo 'booted01';
-        });
-        $app->bootedCallback(static function () {
-            echo 'booted02';
-        });
-        $app->bootingCallback(static function () {
-            echo 'booting01';
-        });
-        $app->bootingCallback(static function () {
-            echo 'booting02';
-        });
+    expect($out)->toBe('booting01booting02booted01booted02');
+    expect($app->isBooted)->toBeTrue();
+});
 
-        ob_start();
-        $app->bootProvider();
-        $out = ob_get_clean();
+it('adds a callback immediately if the application is already booted', function (): void {
+    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-        $this->assertEquals('booting01booting02booted01booted02', $out);
-        $this->assertTrue($app->isBooted);
-    }
+    new ConfigBootstrapper()->bootstrap($app);
 
-    /**
-     * Test it can add call immediately if application already booted.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanAddCallImmediatelyIfApplicationAlreadyBooted(): void
-    {
-        $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app->bootProvider();
 
-        new ConfigBootstrapper()->bootstrap($app);
+    ob_start();
+    $app->bootedCallback(static function (): void {
+        echo 'immediately call';
+    });
+    $out = ob_get_clean();
 
-        $app->bootProvider();
+    expect($app->isBooted)->toBeTrue();
+    expect($out)->toBe('immediately call');
+});
 
-        ob_start();
-        $app->bootedCallback(static function () {
-            echo 'immediately call';
-        });
-        $out = ob_get_clean();
+it('does not register a provider twice', function (): void {
+    $app = new Application('/');
 
-        $this->assertTrue($app->isBooted);
-        $this->assertEquals('immediately call', $out);
-    }
+    $app->set('ping', 'pong');
 
-    /**
-     * Test it can not duplicate register.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanNotDuplicateRegister(): void
-    {
-        $app = new Application('/');
+    $app->register(TestServiceProvider::class);
+    $app->register(TestServiceProvider::class);
 
-        $app->set('ping', 'pong');
+    $test = $app->get('ping');
 
-        $app->register(TestServiceProvider::class);
-        $app->register(TestServiceProvider::class);
+    expect($test)->toBe('pong');
+});
 
-        $test = $app->get('ping');
+it('returns default down data', function (): void {
+    $app = new Application('/');
 
-        $this->assertEquals('pong', $test);
-    }
+    expect($app->getDownData())->toBe([
+        'redirect' => null,
+        'retry'    => null,
+        'status'   => 503,
+        'template' => null,
+    ]);
+});
 
-    /**
-     * Test it can get down default.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanGetDownDefault(): void
-    {
-        $app = new Application('/');
+it('returns down data from storage', function (): void {
+    $app = new Application($this->setFixtureBasePath());
+    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
 
-        $this->assertEquals([
-            'redirect' => null,
-            'retry'    => null,
-            'status'   => 503,
-            'template' => null,
-        ], $app->getDownData());
-    }
+    expect($app->getDownData())->toBe([
+        'redirect' => null,
+        'retry'    => 15,
+        'status'   => 503,
+        'template' => null,
+    ]);
+});
 
-    /**
-     * Test it can get down.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanGetDown(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
-        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
+it('detects maintenance mode', function (): void {
+    $app = new Application($this->setFixtureBasePath());
 
-        $this->assertEquals([
-            'redirect' => null,
-            'retry'    => 15,
-            'status'   => 503,
-            'template' => null,
-        ], $app->getDownData());
-    }
+    expect($app->isDownMaintenanceMode())->toBeFalse();
 
-    /**
-     * Test it can detect maintenance mode.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanDetectMaintenenceMode(): void
-    {
-        $app = new Application($this->setFixtureBasePath());
+    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
 
-        $this->assertFalse($app->isDownMaintenanceMode());
+    expect($app->isDownMaintenanceMode())->toBeTrue();
+});
 
-        $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
+it('returns false when the storage path is not a string', function (): void {
+    $app = new Application('/');
+    $app->set('path.storage', ['array', 'storage']);
 
-        $this->assertTrue($app->isDownMaintenanceMode());
-    }
+    expect($app->isDownMaintenanceMode())->toBeFalse();
+});
 
-    /**
-     * Test it returns false when the storage path is not a string.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItReturnsFalseWhenStoragePathIsNotAString(): void
-    {
-        $app = new Application('/');
-        $app->set('path.storage', ['array', 'storage']);
+it('returns the default down data when the storage path is not a string', function (): void {
+    $app = new Application('/');
+    $app->set('path.storage', ['array', 'storage']);
 
-        $this->assertFalse($app->isDownMaintenanceMode());
-    }
+    expect($app->getDownData())->toBe([
+        'redirect' => null,
+        'retry'    => null,
+        'status'   => 503,
+        'template' => null,
+    ]);
+});
 
-    /**
-     * Test it returns the default down data when the storage path is not a string.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItReturnsDefaultDownDataWhenStoragePathIsNotAString(): void
-    {
-        $app = new Application('/');
-        $app->set('path.storage', ['array', 'storage']);
+it('terminates with no callbacks', function (): void {
+    $this->expectNotToPerformAssertions();
 
-        $this->assertEquals([
-            'redirect' => null,
-            'retry'    => null,
-            'status'   => 503,
-            'template' => null,
-        ], $app->getDownData());
-    }
+    $app = new Application('/');
 
-    /**
-     * Test terminate with no callbacks.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws Exception Throw when a generic error occured.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testTerminateWithNoCallbacks(): void
-    {
-        $app = new Application('/');
-
-        $app->terminate();
-
-        $this->expectNotToPerformAssertions();
-    }
-}
+    $app->terminate();
+});

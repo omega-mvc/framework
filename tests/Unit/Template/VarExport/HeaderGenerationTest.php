@@ -4,30 +4,20 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 use ReflectionClass;
-use ReflectionException;
 
-#[CoversClass(VarExport::class)]
-class HeaderGenerationTest extends TestCase
-{
-    /**
-     * @test
-     * @throws ReflectionException
-     */
-    public function testItGeneratesHeader()
-    {
-        $exporter   = new VarExport();
-        $reflection = new ReflectionClass($exporter);
-        $method     = $reflection->getMethod('compileToString');
-        $method->setAccessible(true);
-        $output = $method->invoke($exporter, []);
+covers(VarExport::class);
 
-        $this->assertStringStartsWith('<?php', $output);
-        $this->assertStringContainsString('declare(strict_types=1);', $output);
-        $this->assertStringContainsString('// auto-generated file, do not edit!', $output);
-        $this->assertStringContainsString('return ', $output);
-    }
-}
+it('generates header', function (): void {
+    $exporter   = new VarExport();
+    $reflection = new ReflectionClass($exporter);
+    $method     = $reflection->getMethod('compileToString');
+    $method->setAccessible(true);
+    $output = $method->invoke($exporter, []);
+
+    expect($output)->toStartWith('<?php');
+    expect($output)->toContain('declare(strict_types=1);');
+    expect($output)->toContain('// auto-generated file, do not edit!');
+    expect($output)->toContain('return ');
+});

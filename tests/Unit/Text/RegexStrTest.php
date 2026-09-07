@@ -1,288 +1,169 @@
 <?php
 
-/**
- * Part of Omega - Tests\Text Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Text;
 
 use Omega\Text\Regex;
 use Omega\Text\Str;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-/**
- * Test suite for validating predefined regular expressions.
- *
- * This class verifies that all built-in Regex patterns correctly match
- * or reject common string formats such as emails, usernames, plain text,
- * slugs, HTML tags, inline JavaScript, passwords, dates, IP addresses,
- * and URLs. Each test ensures the `Str::isMatch()` method behaves as
- * expected for both valid and invalid inputs.
- *
- * @category  Tests
- * @package   Text
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Regex::class)]
-#[CoversClass(Str::class)]
-final class RegexStrTest extends TestCase
-{
-    /**
-     * Test regex email.
-     *
-     * @return void
-     */
-    public function testRegexEmail(): void
-    {
-        $res = Str::isMatch('agisoftt@mail.com', Regex::EMAIL);
-        $this->assertTrue($res);
+use function expect;
 
-        $res = Str::isMatch('agisoftt.com', Regex::EMAIL);
-        $this->assertFalse($res);
-    }
+covers(Regex::class);
+covers(Str::class);
 
-    /**
-     * Text regex username.
-     *
-     * @return void
-     */
-    public function testRegexUsername(): void
-    {
-        $res = Str::isMatch('agisoftt', Regex::USER);
-        $this->assertTrue($res);
+it('regex email', function (): void {
+    $res = Str::isMatch('agisoftt@mail.com', Regex::EMAIL);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('1agisoftt', Regex::USER);
-        $this->assertFalse($res);
+    $res = Str::isMatch('agisoftt.com', Regex::EMAIL);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('agi', Regex::USER);
-        $this->assertFalse($res);
+it('regex username', function (): void {
+    $res = Str::isMatch('agisoftt', Regex::USER);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('test_regex_username', Regex::USER);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('1agisoftt', Regex::USER);
+    expect($res)->toBeFalse();
 
-    /**
-     * Test regex plain text.
-     *
-     * @return void
-     */
-    public function testRegexPlainText(): void
-    {
-        $res = Str::isMatch('php generators explained', Regex::PLAIN_TEXT);
-        $this->assertTrue($res);
+    $res = Str::isMatch('agi', Regex::USER);
+    expect($res)->toBeFalse();
 
-        $res = Str::isMatch('php generators explained!', Regex::PLAIN_TEXT);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('test_regex_username', Regex::USER);
+    expect($res)->toBeFalse();
+});
 
-    /**
-     * Test regex slug.
-     *
-     * @return void
-     */
-    public function testRegexSlug(): void
-    {
-        $res = Str::isMatch('php-generators-explained', Regex::SLUG);
-        $this->assertTrue($res);
+it('regex plain text', function (): void {
+    $res = Str::isMatch('php generators explained', Regex::PLAIN_TEXT);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('php generators explained', Regex::SLUG);
-        $this->assertFalse($res);
+    $res = Str::isMatch('php generators explained!', Regex::PLAIN_TEXT);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('php/generators/explained', Regex::SLUG);
-        $this->assertFalse($res);
-    }
+it('regex slug', function (): void {
+    $res = Str::isMatch('php-generators-explained', Regex::SLUG);
+    expect($res)->toBeTrue();
 
-    /**
-     * Test regex html tag.
-     *
-     * @return void
-     */
-    public function testRegexHtmlTag(): void
-    {
-        $res = Str::isMatch('<script>alert(1)</alert>', Regex::HTML_TAG);
-        $this->assertTrue($res);
+    $res = Str::isMatch('php generators explained', Regex::SLUG);
+    expect($res)->toBeFalse();
 
-        $res = Str::isMatch('&lt;script&gt;alert(1)&lt;/alert&gt;', Regex::HTML_TAG);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('php/generators/explained', Regex::SLUG);
+    expect($res)->toBeFalse();
+});
 
-    /**
-     * test regex js in line.
-     *
-     * @return void
-     */
-    public function testRegexJsInline(): void
-    {
-        $res = Str::isMatch('<img src="foo.jpg" onload=function_xyz />', Regex::JS_INLINE);
-        $this->assertTrue($res);
-    }
+it('regex html tag', function (): void {
+    $res = Str::isMatch('<script>alert(1)</alert>', Regex::HTML_TAG);
+    expect($res)->toBeTrue();
 
-    /**
-     * test regex password.
-     *
-     * @return void
-     */
-    public function testRegexPassword(): void
-    {
-        $res = Str::isMatch('Password123@', Regex::PASSWORD_COMPLEX);
-        $this->assertTrue($res);
+    $res = Str::isMatch('&lt;script&gt;alert(1)&lt;/alert&gt;', Regex::HTML_TAG);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('Password123', Regex::PASSWORD_COMPLEX);
-        $this->assertFalse($res);
-    }
+it('regex js in line', function (): void {
+    $res = Str::isMatch('<img src="foo.jpg" onload=function_xyz />', Regex::JS_INLINE);
+    expect($res)->toBeTrue();
+});
 
-    /**
-     * Test regex password moderate.
-     *
-     * @return void
-     */
-    public function testRegexPasswordModerate(): void
-    {
-        $res = Str::isMatch('Password123', Regex::PASSWORD_MODERATE);
-        $this->assertTrue($res);
+it('regex password', function (): void {
+    $res = Str::isMatch('Password123@', Regex::PASSWORD_COMPLEX);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('password123', Regex::PASSWORD_MODERATE);
-        $this->assertFalse($res);
+    $res = Str::isMatch('Password123', Regex::PASSWORD_COMPLEX);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('Passwordddd', Regex::PASSWORD_MODERATE);
-        $this->assertFalse($res);
+it('regex password moderate', function (): void {
+    $res = Str::isMatch('Password123', Regex::PASSWORD_MODERATE);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('Pwd123', Regex::PASSWORD_MODERATE);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('password123', Regex::PASSWORD_MODERATE);
+    expect($res)->toBeFalse();
 
-    /**
-     * Test regex date year month day.
-     *
-     * @return void
-     */
-    public function testRegexDateYearMonthDay(): void
-    {
-        $res = Str::isMatch('2022-12-31', Regex::DATE_YYYYMMDD);
-        $this->assertTrue($res);
+    $res = Str::isMatch('Passwordddd', Regex::PASSWORD_MODERATE);
+    expect($res)->toBeFalse();
 
-        $res = Str::isMatch('2022-31-12', Regex::DATE_YYYYMMDD);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('Pwd123', Regex::PASSWORD_MODERATE);
+    expect($res)->toBeFalse();
+});
 
-    /**
-     * Test regex date day month year.
-     *
-     * @return void
-     */
-    public function testRegexDateDayMonthYear(): void
-    {
-        $res = Str::isMatch('31-12-2022', Regex::DATE_DDMMYYYY);
-        $this->assertTrue($res);
+it('regex date year month day', function (): void {
+    $res = Str::isMatch('2022-12-31', Regex::DATE_YYYYMMDD);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('12-31-2022', Regex::DATE_DDMMYYYY);
-        $this->assertFalse($res);
+    $res = Str::isMatch('2022-31-12', Regex::DATE_YYYYMMDD);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('31.12.2022', Regex::DATE_DDMMYYYY);
-        $this->assertTrue($res);
+it('regex date day month year', function (): void {
+    $res = Str::isMatch('31-12-2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('12.31.2022', Regex::DATE_DDMMYYYY);
-        $this->assertFalse($res);
+    $res = Str::isMatch('12-31-2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeFalse();
 
-        $res = Str::isMatch('31/12/2022', Regex::DATE_DDMMYYYY);
-        $this->assertTrue($res);
+    $res = Str::isMatch('31.12.2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('12/31/2022', Regex::DATE_DDMMYYYY);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('12.31.2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeFalse();
 
-    /**
-     * Test regex date day month name year.
-     *
-     * @return void
-     */
-    public function testRegexDateDayMonthNameYear(): void
-    {
-        $res = Str::isMatch('01-Jun-2022', Regex::DATE_DDMMMYYYY);
-        $this->assertTrue($res);
+    $res = Str::isMatch('31/12/2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('Jun-01-2022', Regex::DATE_DDMMMYYYY);
-        $this->assertFalse($res);
+    $res = Str::isMatch('12/31/2022', Regex::DATE_DDMMYYYY);
+    expect($res)->toBeFalse();
+});
 
-        $res = Str::isMatch('01/Jun/2022', Regex::DATE_DDMMMYYYY);
-        $this->assertTrue($res);
+it('regex date day month name year', function (): void {
+    $res = Str::isMatch('01-Jun-2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('Jun/01/2022', Regex::DATE_DDMMMYYYY);
-        $this->assertFalse($res);
+    $res = Str::isMatch('Jun-01-2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeFalse();
 
-        $res = Str::isMatch('01.Jun.2022', Regex::DATE_DDMMMYYYY);
-        $this->assertTrue($res);
+    $res = Str::isMatch('01/Jun/2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeTrue();
 
-        $res = Str::isMatch('Jun.01.2022', Regex::DATE_DDMMMYYYY);
-        $this->assertFalse($res);
-    }
+    $res = Str::isMatch('Jun/01/2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeFalse();
 
-    /**
-     * Test regex ipv4.
-     *
-     * @return void
-     */
-    public function testRegexIpv4(): void
-    {
-        $test = '0.0.0.0';
-        $this->assertTrue(Str::isMatch($test, Regex::IPV4));
-    }
+    $res = Str::isMatch('01.Jun.2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeTrue();
 
-    /**
-     * Text regex ipv6.
-     *
-     * @return void
-     */
-    public function testRegexIpv6(): void
-    {
-        $test = '1200:0000:AB00:1234:0000:2552:7777:1313';
-        $this->assertTrue(Str::isMatch($test, Regex::IPV6));
+    $res = Str::isMatch('Jun.01.2022', Regex::DATE_DDMMMYYYY);
+    expect($res)->toBeFalse();
+});
 
-        $test = '1200:0000:AB00:1234:O000:2552:7777:1313';
-        $this->assertFalse(Str::isMatch($test, Regex::IPV6));
-    }
+it('regex ipv4', function (): void {
+    $test = '0.0.0.0';
+    expect(Str::isMatch($test, Regex::IPV4))->toBeTrue();
+});
 
-    /**
-     * Text regex ipv4 or ipv6.
-     *
-     * @return void
-     */
-    public function testRegexIpv4OrIpv6(): void
-    {
-        $test = '0.0.0.0';
-        $this->assertTrue(Str::isMatch($test, Regex::IPV4_6));
+it('regex ipv6', function (): void {
+    $test = '1200:0000:AB00:1234:0000:2552:7777:1313';
+    expect(Str::isMatch($test, Regex::IPV6))->toBeTrue();
 
-        $test = '1200:0000:AB00:1234:0000:2552:7777:1313';
-        $this->assertTrue(Str::isMatch($test, Regex::IPV4_6));
+    $test = '1200:0000:AB00:1234:O000:2552:7777:1313';
+    expect(Str::isMatch($test, Regex::IPV6))->toBeFalse();
+});
 
-        $test = '1200:0000:AB00:1234:O000:2552:7777:1313';
-        $this->assertFalse(Str::isMatch($test, Regex::IPV4_6));
-    }
+it('regex ipv4 or ipv6', function (): void {
+    $test = '0.0.0.0';
+    expect(Str::isMatch($test, Regex::IPV4_6))->toBeTrue();
 
-    /**
-     * Text regex url.
-     *
-     * @return void
-     */
-    public function testRegexUrl(): void
-    {
-        $test = 'https://stackoverflow.com/questions/206059/php-validation-regex-for-url';
-        $this->assertTrue(Str::isMatch($test, Regex::URL));
+    $test = '1200:0000:AB00:1234:0000:2552:7777:1313';
+    expect(Str::isMatch($test, Regex::IPV4_6))->toBeTrue();
 
-        $test = 'http://stackoverflow.com/questions/206059/php-validation-regex-for-url';
-        $this->assertTrue(Str::isMatch($test, Regex::URL));
-    }
-}
+    $test = '1200:0000:AB00:1234:O000:2552:7777:1313';
+    expect(Str::isMatch($test, Regex::IPV4_6))->toBeFalse();
+});
+
+it('regex url', function (): void {
+    $test = 'https://stackoverflow.com/questions/206059/php-validation-regex-for-url';
+    expect(Str::isMatch($test, Regex::URL))->toBeTrue();
+
+    $test = 'http://stackoverflow.com/questions/206059/php-validation-regex-for-url';
+    expect(Str::isMatch($test, Regex::URL))->toBeTrue();
+});

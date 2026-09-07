@@ -5,46 +5,27 @@ declare(strict_types=1);
 namespace Tests\Template\VarExport;
 
 use Closure;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 
-/**
- * @testdox Tests for Closure Compilation
- */
-#[CoversClass(VarExport::class)]
-final class ClosureCompilationTest extends TestCase
+use function str_replace;
+
+covers(VarExport::class);
+
+function assertCompiles(string $expected, mixed $value): void
 {
-    private VarExport $exporter;
+    $exporter   = new VarExport();
+    $exported   = $exporter->export($value);
+    $normalized = str_replace(["\r\n", "\r"], "\n", $exported);
 
-    protected function setUp(): void
-    {
-        $this->exporter = new VarExport();
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual($normalized);
+}
 
-    private function assertCompiles(string $expected, mixed $value): void
-    {
-        $exported = $this->exporter->export($value);
+it('compiles simple closure without parameters', function (): void {
+    $closure = function () {
+        return 'test';
+    };
 
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace("\r\n", "\n", $exported);
-        $normalizedExpected = str_replace("\r\n", "\n", $expected);
-
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles simple single-line closure without parameters
-     */
-    public function testCompilesSimpleClosureOneLine(): void
-    {
-        $closure = function () {
-            return 'test';
-        };
-
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function () {
         return 'test';
@@ -52,42 +33,30 @@ final class ClosureCompilationTest extends TestCase
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles PHP 7.4+ arrow function syntax (fn)
-     */
-    public function testCompilesArrowFunction(): void
-    {
-        $closure = fn () => 'test';
+it('compiles PHP 7.4+ arrow function syntax (fn)', function (): void {
+    $closure = fn () => 'test';
 
-        $expected = <<<PHP
+    $expected = <<<PHP
 [
     'closure' => fn () => 'test',
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles multi-line closure with variable assignments and return statement
-     */
-    public function testCompilesMultiLineClosure(): void
-    {
-        $closure = function () {
-            $a = 1;
-            $b = 2;
+it('compiles multi-line closure with variable assignments and return statement', function (): void {
+    $closure = function () {
+        $a = 1;
+        $b = 2;
 
-            return $a + $b;
-        };
+        return $a + $b;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function () {
         $a = 1;
@@ -98,21 +67,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with untyped parameters ($a, $b)
-     */
-    public function testCompilesClosureWithParameters(): void
-    {
-        $closure = function ($a, $b) {
-            return $a + $b;
-        };
+it('compiles closure with untyped parameters ($a, $b)', function (): void {
+    $closure = function ($a, $b) {
+        return $a + $b;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function ($a, $b) {
         return $a + $b;
@@ -120,21 +83,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with typed parameters (int $a, string $b)
-     */
-    public function testCompilesClosureWithTypedParameters(): void
-    {
-        $closure = function (int $a, string $b) {
-            return $a . $b;
-        };
+it('compiles closure with typed parameters (int $a, string $b)', function (): void {
+    $closure = function (int $a, string $b) {
+        return $a . $b;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (int $a, string $b) {
         return $a . $b;
@@ -142,21 +99,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with default parameter values (int $a, string $b = 'default')
-     */
-    public function testCompilesClosureWithDefaultParameters(): void
-    {
-        $closure = function (int $a, string $b = 'default') {
-            return $a . $b;
-        };
+it("compiles closure with default parameter values (int \$a, string \$b = 'default')", function (): void {
+    $closure = function (int $a, string $b = 'default') {
+        return $a . $b;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (int $a, string $b = 'default') {
         return $a . $b;
@@ -164,21 +115,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with variadic parameters (int ...$numbers)
-     */
-    public function testCompilesClosureWithVariadicParameters(): void
-    {
-        $closure = function (int ...$numbers) {
-            return array_sum($numbers);
-        };
+it('compiles closure with variadic parameters (int ...$numbers)', function (): void {
+    $closure = function (int ...$numbers) {
+        return array_sum($numbers);
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (int ...$numbers) {
         return array_sum($numbers);
@@ -186,21 +131,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with reference parameters (&$a)
-     */
-    public function testCompilesClosureWithReferenceParameters(): void
-    {
-        $closure = function (&$a) {
-            $a++;
-        };
+it('compiles closure with reference parameters (&$a)', function (): void {
+    $closure = function (&$a) {
+        $a++;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (&$a) {
         $a++;
@@ -208,21 +147,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with return type declaration (: int)
-     */
-    public function testCompilesClosureWithReturnType(): void
-    {
-        $closure = function (): int {
-            return 1;
-        };
+it('compiles closure with return type declaration (: int)', function (): void {
+    $closure = function (): int {
+        return 1;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (): int {
         return 1;
@@ -230,21 +163,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with nullable return type (: ?int)
-     */
-    public function testCompilesClosureWithNullableReturnType(): void
-    {
-        $closure = function (): ?int {
-            return null;
-        };
+it('compiles closure with nullable return type (: ?int)', function (): void {
+    $closure = function (): ?int {
+        return null;
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function (): ?int {
         return null;
@@ -252,21 +179,15 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with no captured variables
-     */
-    public function testCompilesClosureWithoutCapturedVariables(): void
-    {
-        $closure = function () {
-            return 'no captured vars';
-        };
+it('compiles closure with no captured variables', function (): void {
+    $closure = function () {
+        return 'no captured vars';
+    };
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'closure' => function () {
         return 'no captured vars';
@@ -274,418 +195,309 @@ PHP;
 ]
 PHP;
 
-        $this->assertCompiles($expected, ['closure' => $closure]);
-    }
+    assertCompiles($expected, ['closure' => $closure]);
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with single captured variable using IIFE wrapper
-     */
-    public function testCompilesClosureWithOneCapturedVariable(): void
-    {
-        $capturedVar = 'world';
+it('compiles closure with one captured variable using IIFE wrapper', function (): void {
+    $capturedVar = 'world';
 
-        $closure = function () use ($capturedVar) {
-            return 'hello ' . $capturedVar;
+    $closure = function () use ($capturedVar) {
+        return 'hello ' . $capturedVar;
+    };
+
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
+
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain('$capturedVar =');
+    expect($output)->toContain('return function () use ($capturedVar)');
+    expect($output)->toContain('})(),');
+});
+
+it('compiles closure with multiple captured variables using IIFE wrapper', function (): void {
+    $var1 = 'hello';
+    $var2 = 'world';
+
+    $closure = function () use ($var1, $var2) {
+        return $var1 . ' ' . $var2;
+    };
+
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
+
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain('$var1 =');
+    expect($output)->toContain('$var2 =');
+    expect($output)->toContain('return function () use ($var1, $var2)');
+    expect($output)->toContain('})(),');
+});
+
+it('compiles closure with captured variable by reference using IIFE wrapper', function (): void {
+    $var = 'value';
+
+    $closure = function () use (&$var) {
+        $var = 'new value';
+    };
+
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
+
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain('$var =');
+    expect($output)->toContain('return function () use (&$var)');
+    expect($output)->toContain('})(),');
+});
+
+it('compiles closure stored in variable with array context', function (): void {
+    $closure = function () {
+        return 42;
+    };
+
+    $config = ['handler' => $closure];
+
+    $exporter = new VarExport();
+    $output   = $exporter->export($config);
+
+    expect($output)->toContain("'handler' => function ()");
+    expect($output)->toContain('return 42');
+});
+
+it('compiles closure returned from function with proper extraction', function (): void {
+    $getHandler = function () {
+        return function ($value) {
+            return $value * 2;
         };
+    };
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = $getHandler();
 
-        // Should contain IIFE wrapper for captured var
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString('$capturedVar =', $output);
-        $this->assertStringContainsString('return function () use ($capturedVar)', $output);
-        $this->assertStringContainsString('})(),', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['handler' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with multiple captured variables using IIFE wrapper
-     */
-    public function testCompilesClosureWithMultipleCapturedVariables(): void
-    {
-        $var1 = 'hello';
-        $var2 = 'world';
+    expect($output)->toContain('function ($value)');
+    expect($output)->toContain('return $value * 2');
+});
 
-        $closure = function () use ($var1, $var2) {
-            return $var1 . ' ' . $var2;
-        };
-
-        $output = $this->exporter->export(['closure' => $closure]);
-
-        // Should contain IIFE wrapper with both variables
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString('$var1 =', $output);
-        $this->assertStringContainsString('$var2 =', $output);
-        $this->assertStringContainsString('return function () use ($var1, $var2)', $output);
-        $this->assertStringContainsString('})(),', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with captured variable by reference using IIFE wrapper
-     */
-    public function testCompilesClosureWithCapturedByReference(): void
-    {
-        $var = 'value';
-
-        $closure = function () use (&$var) {
-            $var = 'new value';
-        };
-
-        $output = $this->exporter->export(['closure' => $closure]);
-
-        // Should contain IIFE wrapper with reference var
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString('$var =', $output);
-        $this->assertStringContainsString('return function () use (&$var)', $output);
-        $this->assertStringContainsString('})(),', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles closure stored in variable with array context
-     */
-    public function compilesClosureStoredInVariable(): void
-    {
-        $closure = function () {
-            return 42;
-        };
-
-        $config = ['handler' => $closure];
-        $output = $this->exporter->export($config);
-
-        $this->assertStringContainsString("'handler' => function ()", $output);
-        $this->assertStringContainsString('return 42', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles closure returned from function with proper extraction
-     */
-    public function compilesClosureReturnedFromFunction(): void
-    {
-        $getHandler = function () {
-            return function ($value) {
-                return $value * 2;
+it('compiles closure extracted from class method properly', function (): void {
+    $handler = new class {
+        public function getClosure(): Closure
+        {
+            return function ($x) {
+                return $x + 1;
             };
-        };
+        }
+    };
 
-        $closure = $getHandler();
-        $output  = $this->exporter->export(['handler' => $closure]);
+    $closure = $handler->getClosure();
 
-        $this->assertStringContainsString('function ($value)', $output);
-        $this->assertStringContainsString('return $value * 2', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['method_closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure extracted from class method properly
-     */
-    public function compilesClosureFromClassMethod(): void
-    {
-        $handler = new class {
-            public function getClosure(): Closure
-            {
-                return function ($x) {
-                    return $x + 1;
-                };
-            }
-        };
+    expect($output)->toContain('function ($x)');
+    expect($output)->toContain('return $x + 1');
+});
 
-        $closure = $handler->getClosure();
-        $output  = $this->exporter->export(['method_closure' => $closure]);
-
-        $this->assertStringContainsString('function ($x)', $output);
-        $this->assertStringContainsString('return $x + 1', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Compiles static closure (closure without $this binding)
-     */
-    public function compilesStaticClosure(): void
-    {
-        $handler = new class {
-            public static function getStaticClosure(): Closure
-            {
-                return static function () {
-                    return 'static closure';
-                };
-            }
-        };
-
-        $closure = $handler::getStaticClosure();
-        $output  = $this->exporter->export(['static_closure' => $closure]);
-
-        $this->assertStringContainsString('function ()', $output);
-        $this->assertStringContainsString('static closure', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Closure from non-existent file throws exception
-     */
-    public function closureFromNonExistentFileThrowsException(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessageIsOrContains('Source file not found');
-
-        $reflection = $this->createMock(\ReflectionFunction::class);
-        $reflection->method('getFileName')->willReturn('/non/existent/file.php');
-        $reflection->method('getStartLine')->willReturn(1);
-        $reflection->method('getEndLine')->willReturn(1);
-
-        $extractor = new VarExport\ClosureExtractor();
-        $extractor->extract($reflection);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Closure from unreadable file throws exception
-     */
-    public function closureFromUnreadableFileThrowsException(): void
-    {
-        $this->expectException(\InvalidArgumentException::class);
-        // Mock reflection with non-existent file path
-        $this->expectExceptionMessageIsOrContains('Source file not found');
-
-        $reflection = $this->createMock(\ReflectionFunction::class);
-        // Use __FILE__ which exists but will be marked as unreadable in the mock
-        $reflection->method('getFileName')->willReturn('/root/restricted/file.php');
-        $reflection->method('getStartLine')->willReturn(1);
-        $reflection->method('getEndLine')->willReturn(1);
-
-        $extractor = new VarExport\ClosureExtractor();
-        $extractor->extract($reflection);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Multiple closures on same line validates properly
-     */
-    public function compilesClosureOnSameLineWithAnother(): void
-    {
-        $closure1 = function () {
-            return 'first';
-        };
-        $closure2 = function () {
-            return 'second';
-        };
-
-        $output = $this->exporter->export([
-            'first'  => $closure1,
-            'second' => $closure2,
-        ]);
-
-        $this->assertStringContainsString("'first' => function ()", $output);
-        $this->assertStringContainsString("'second' => function ()", $output);
-        $this->assertStringContainsString('first', $output);
-        $this->assertStringContainsString('second', $output);
-    }
-
-    /**
-     * @test
-     *
-     * @testdox Nested closures extract only outer closure correctly
-     */
-    public function compilesNestedClosuresOuterOnly(): void
-    {
-        $outer = function () {
-            $inner = function () {
-                return 'inner';
+it('compiles static closure', function (): void {
+    $handler = new class {
+        public static function getStaticClosure(): Closure
+        {
+            return static function () {
+                return 'static closure';
             };
+        }
+    };
 
-            return $inner();
+    $closure = $handler::getStaticClosure();
+
+    $exporter = new VarExport();
+    $output   = $exporter->export(['static_closure' => $closure]);
+
+    expect($output)->toContain('function ()');
+    expect($output)->toContain('static closure');
+});
+
+it('throws exception when closure comes from non-existent file', function (): void {
+    $reflection = $this->createMock(\ReflectionFunction::class);
+    $reflection->method('getFileName')->willReturn('/non/existent/file.php');
+    $reflection->method('getStartLine')->willReturn(1);
+    $reflection->method('getEndLine')->willReturn(1);
+
+    $extractor = new VarExport\ClosureExtractor();
+
+    expect(fn () => $extractor->extract($reflection))
+        ->toThrow(\InvalidArgumentException::class, 'Source file not found');
+});
+
+it('throws exception when closure comes from unreadable file', function (): void {
+    $reflection = $this->createMock(\ReflectionFunction::class);
+    $reflection->method('getFileName')->willReturn('/root/restricted/file.php');
+    $reflection->method('getStartLine')->willReturn(1);
+    $reflection->method('getEndLine')->willReturn(1);
+
+    $extractor = new VarExport\ClosureExtractor();
+
+    expect(fn () => $extractor->extract($reflection))
+        ->toThrow(\InvalidArgumentException::class, 'Source file not found');
+});
+
+it('compiles closure on same line with another', function (): void {
+    $closure1 = function () {
+        return 'first';
+    };
+    $closure2 = function () {
+        return 'second';
+    };
+
+    $exporter = new VarExport();
+    $output   = $exporter->export([
+        'first'  => $closure1,
+        'second' => $closure2,
+    ]);
+
+    expect($output)->toContain("'first' => function ()");
+    expect($output)->toContain("'second' => function ()");
+    expect($output)->toContain('first');
+    expect($output)->toContain('second');
+});
+
+it('compiles nested closures extracting only outer closure', function (): void {
+    $outer = function () {
+        $inner = function () {
+            return 'inner';
         };
 
-        $output = $this->exporter->export(['outer' => $outer]);
+        return $inner();
+    };
 
-        $this->assertStringContainsString('function ()', $output);
-        // Should have the outer structure
-        $this->assertStringContainsString('return', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['outer' => $outer]);
 
-    /**
-     * @test
-     *
-     * @testdox Closure with heredoc and nowdoc strings preserves content
-     */
-    public function compilesClosureWithHeredocNowdoc(): void
-    {
-        $closure = function () {
-            $heredoc = <<<EOD
-                This is a heredoc
-                with multiple lines
-                EOD;
+    expect($output)->toContain('function ()');
+    expect($output)->toContain('return');
+});
 
-            return $heredoc;
-        };
+it('compiles closure with heredoc and nowdoc strings preserving content', function (): void {
+    $closure = function () {
+        $heredoc = <<<EOD
+            This is a heredoc
+            with multiple lines
+            EOD;
 
-        $output = $this->exporter->export(['heredoc_closure' => $closure]);
+        return $heredoc;
+    };
 
-        $this->assertStringContainsString('function ()', $output);
-        $this->assertStringContainsString('heredoc', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['heredoc_closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure in array with trailing comma properly handles syntax
-     */
-    public function compilesClosureWithTrailingComma(): void
-    {
-        $closure = function () {
-            return 'test';
-        };
+    expect($output)->toContain('function ()');
+    expect($output)->toContain('heredoc');
+});
 
-        // Array with trailing comma - should compile without syntax errors
-        $output = $this->exporter->export([
-            'closure' => $closure,
-        ]);
+it('compiles closure in array with trailing comma properly handles syntax', function (): void {
+    $closure = function () {
+        return 'test';
+    };
 
-        $this->assertStringContainsString("'closure' => function ()", $output);
-        $this->assertStringContainsString('return \'test\'', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export([
+        'closure' => $closure,
+    ]);
 
-    /**
-     * @test
-     *
-     * @testdox Compiles closure with PHP 8 attributes preserves function definition
-     */
-    public function compilesClosureWithAttributes(): void
-    {
-        // Attributes on closures are not supported in PHP, so we test the closure itself
-        $closure = function () {
-            // This simulates a closure that would have attributes
-            return 'closure with pseudo-attributes';
-        };
+    expect($output)->toContain("'closure' => function ()");
+    expect($output)->toContain('return \'test\'');
+});
 
-        $output = $this->exporter->export(['closure' => $closure]);
+it('compiles closure with PHP 8 attributes preserving function definition', function (): void {
+    $closure = function () {
+        // This simulates a closure that would have attributes
+        return 'closure with pseudo-attributes';
+    };
 
-        $this->assertStringContainsString('function ()', $output);
-        $this->assertStringContainsString('return', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Closure with captured variables generates IIFE wrapper
-     */
-    public function warnsForCapturedVariables(): void
-    {
-        $capturedVar = 'test_value';
+    expect($output)->toContain('function ()');
+    expect($output)->toContain('return');
+});
 
-        $closure = function () use ($capturedVar) {
-            return $capturedVar;
-        };
+it('warns for captured variables', function (): void {
+    $capturedVar = 'test_value';
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = function () use ($capturedVar) {
+        return $capturedVar;
+    };
 
-        // IIFE wrapper should be present for captured variables
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString('})(),', $output);
-        $this->assertStringContainsString('use ($capturedVar)', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox IIFE wrapper includes variable names when capturing
-     */
-    public function warningIncludesVariableNames(): void
-    {
-        $varOne   = 'first';
-        $varTwo   = 'second';
-        $varThree = 'third';
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain('})(),');
+    expect($output)->toContain('use ($capturedVar)');
+});
 
-        $closure = function () use ($varOne, $varTwo, $varThree) {
-            return $varOne . $varTwo . $varThree;
-        };
+it('warning includes variable names', function (): void {
+    $varOne   = 'first';
+    $varTwo   = 'second';
+    $varThree = 'third';
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = function () use ($varOne, $varTwo, $varThree) {
+        return $varOne . $varTwo . $varThree;
+    };
 
-        // All captured variable names should appear
-        $this->assertStringContainsString('$varOne =', $output);
-        $this->assertStringContainsString('$varTwo =', $output);
-        $this->assertStringContainsString('$varThree =', $output);
-        $this->assertStringContainsString('use ($varOne, $varTwo, $varThree)', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox IIFE wrapper generated for captured variables contains proper structure
-     */
-    public function warningDisabledWhenWarnCapturedVarsIsFalse(): void
-    {
-        $capturedValue = 42;
+    expect($output)->toContain('$varOne =');
+    expect($output)->toContain('$varTwo =');
+    expect($output)->toContain('$varThree =');
+    expect($output)->toContain('use ($varOne, $varTwo, $varThree)');
+});
 
-        $closure = function () use ($capturedValue) {
-            return $capturedValue * 2;
-        };
+it('disables warning when warn captured vars is false', function (): void {
+    $capturedValue = 42;
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = function () use ($capturedValue) {
+        return $capturedValue * 2;
+    };
 
-        // Even without warning flag, IIFE wrapper should exist
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString('$capturedValue = 42', $output);
-        $this->assertStringContainsString('return function () use ($capturedValue)', $output);
-        $this->assertStringContainsString('})(),', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Uses IIFE wrapping with captured variables to preserve state
-     */
-    public function usesIIFEWrappingForCapturedVariables(): void
-    {
-        $state = 'preserved';
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain('$capturedValue = 42');
+    expect($output)->toContain('return function () use ($capturedValue)');
+    expect($output)->toContain('})(),');
+});
 
-        $closure = function () use ($state) {
-            return "State is: {$state}";
-        };
+it('uses IIFE wrapping with captured variables to preserve state', function (): void {
+    $state = 'preserved';
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = function () use ($state) {
+        return "State is: {$state}";
+    };
 
-        // IIFE structure with variable initialization
-        $this->assertStringContainsString('(function() {', $output);
-        $this->assertStringContainsString("'preserved'", $output);
-        $this->assertStringContainsString('return function', $output);
-        $this->assertStringContainsString('})(),', $output);
-    }
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
 
-    /**
-     * @test
-     *
-     * @testdox Captured variable values are inlined in IIFE wrapper
-     */
-    public function inlinesCapturedVariableValues(): void
-    {
-        $num  = 123;
-        $text = 'hello';
-        $flag = true;
+    expect($output)->toContain('(function() {');
+    expect($output)->toContain("'preserved'");
+    expect($output)->toContain('return function');
+    expect($output)->toContain('})(),');
+});
 
-        $closure = function () use ($num, $text, $flag) {
-            return compact('num', 'text', 'flag');
-        };
+it('inlines captured variable values in IIFE wrapper', function (): void {
+    $num  = 123;
+    $text = 'hello';
+    $flag = true;
 
-        $output = $this->exporter->export(['closure' => $closure]);
+    $closure = function () use ($num, $text, $flag) {
+        return compact('num', 'text', 'flag');
+    };
 
-        // Values should be inlined in the IIFE wrapper
-        $this->assertStringContainsString('123', $output);
-        $this->assertStringContainsString("'hello'", $output);
-        $this->assertStringContainsString('true', $output);
-    }
-}
+    $exporter = new VarExport();
+    $output   = $exporter->export(['closure' => $closure]);
+
+    expect($output)->toContain('123');
+    expect($output)->toContain("'hello'");
+    expect($output)->toContain('true');
+});

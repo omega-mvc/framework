@@ -4,56 +4,52 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 use stdClass;
 use Tests\Template\Fixtures\ObjectWithoutSetState;
 use Tests\Template\Fixtures\ObjectWithSetState;
 use Tests\Template\Fixtures\ObjectWithVisibility;
 
-#[CoversClass(VarExport::class)]
-class ObjectTest extends TestCase
-{
-    /**
-     * @test
-     */
-    public function testItCanCompileObjectWithSetState()
-    {
-        $obj      = new ObjectWithSetState();
-        $exporter = new VarExport();
-        $exported = $exporter->export([$obj]);
+use function file_put_contents;
+use function str_replace;
+use function sys_get_temp_dir;
+use function tempnam;
+use function trim;
+use function unlink;
 
-        $this->assertStringContainsString('__set_state', $exported);
+covers(VarExport::class);
 
-        $file         = tempnam(sys_get_temp_dir(), 'test');
-        $file_content = <<<PHP
+it('compiles object with set state', function (): void {
+    $obj      = new ObjectWithSetState();
+    $exporter = new VarExport();
+    $exported = $exporter->export([$obj]);
+
+    expect($exported)->toContain('__set_state');
+
+    $file         = tempnam(sys_get_temp_dir(), 'test');
+    $file_content = <<<PHP
 <?php
 
 use System\Test\Template\VarExport\ObjectWithSetState;
 
 return {$exported};
 PHP;
-        file_put_contents($file, $file_content);
-        $imported = require $file;
-        unlink($file);
+    file_put_contents($file, $file_content);
+    $imported = require $file;
+    unlink($file);
 
-        $this->assertEquals([$obj], $imported);
-    }
+    expect($imported)->toEqual([$obj]);
+});
 
-    /**
-     * @test
-     */
-    public function testItCanCompileStdClassObjectByDefault()
-    {
-        $obj       = new stdClass();
-        $obj->name = 'test';
-        $obj->age  = 99;
+it('compiles stdClass object by default', function (): void {
+    $obj       = new stdClass();
+    $obj->name = 'test';
+    $obj->age  = 99;
 
-        $exporter = new VarExport();
-        $exported = $exporter->export(['obj' => $obj]);
+    $exporter = new VarExport();
+    $exported = $exporter->export(['obj' => $obj]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'obj' => (object) [
         'name' => 'test',
@@ -61,62 +57,52 @@ PHP;
     ],
 ]
 PHP;
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", trim($exported));
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", trim($expected));
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
+    expect(str_replace(["\r\n", "\r"], "\n", trim($expected)))
+        ->toEqual(str_replace(["\r\n", "\r"], "\n", trim($exported)));
 
-        $file = tempnam(sys_get_temp_dir(), 'test');
-        file_put_contents($file, "<?php return {$exported};");
-        $imported = require $file;
-        unlink($file);
+    $file = tempnam(sys_get_temp_dir(), 'test');
+    file_put_contents($file, "<?php return {$exported};");
+    $imported = require $file;
+    unlink($file);
 
-        $this->assertEquals(['obj' => $obj], $imported);
-    }
+    expect($imported)->toEqual(['obj' => $obj]);
+});
 
-    /**
-     * @test
-     */
-    public function testItCanCompileObjectWithoutSetState()
-    {
-        $obj    = new ObjectWithoutSetState();
-        $obj->a = 10;
+it('compiles object without set state', function (): void {
+    $obj    = new ObjectWithoutSetState();
+    $obj->a = 10;
 
-        $exporter = new VarExport();
-        $exported = $exporter->export([$obj]);
+    $exporter = new VarExport();
+    $exported = $exporter->export([$obj]);
 
-        $this->assertStringContainsString('ObjectWithoutSetState::__set_state', $exported);
-        $this->assertStringContainsString('ObjectWithoutSetState', $exported);
-    }
+    expect($exported)->toContain('ObjectWithoutSetState::__set_state');
+    expect($exported)->toContain('ObjectWithoutSetState');
+});
 
-    /**
-     * @test
-     */
-    public function testItCanCompileObjectWithPrivateAndProtectedProperties()
-    {
-        $obj = new ObjectWithVisibility();
+it('compiles object with private and protected properties', function (): void {
+    $obj = new ObjectWithVisibility();
 
-        $exporter = new VarExport();
-        $exported = $exporter->export([$obj]);
+    $exporter = new VarExport();
+    $exported = $exporter->export([$obj]);
 
-        $this->assertStringContainsString("'public' => 1", $exported);
-        $this->assertStringContainsString("'protected' => 2", $exported);
-        $this->assertStringContainsString("'private' => 3", $exported);
+    expect($exported)->toContain("'public' => 1");
+    expect($exported)->toContain("'protected' => 2");
+    expect($exported)->toContain("'private' => 3");
 
-        $file         = tempnam(sys_get_temp_dir(), 'test');
-        $file_content = <<<PHP
+    $file         = tempnam(sys_get_temp_dir(), 'test');
+    $file_content = <<<PHP
 <?php
 
 use System\Test\Template\VarExport\ObjectWithVisibility;
 
 return {$exported};
 PHP;
-        file_put_contents($file, $file_content);
-        $imported = require $file;
-        unlink($file);
+    file_put_contents($file, $file_content);
+    $imported = require $file;
+    unlink($file);
 
-        $this->assertEquals(1, $imported[0]->getPublic());
-        $this->assertEquals(2, $imported[0]->getProtected());
-        $this->assertEquals(3, $imported[0]->getPrivate());
-    }
-}
+    expect($imported[0]->getPublic())->toEqual(1);
+    expect($imported[0]->getProtected())->toEqual(2);
+    expect($imported[0]->getPrivate())->toEqual(3);
+});

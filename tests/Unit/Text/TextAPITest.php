@@ -1,343 +1,132 @@
 <?php
 
-/**
- * Part of Omega - Tests\Text Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Text;
 
 use Omega\Text\Regex;
 use Omega\Text\Text;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 
-/**
- * Test suite for validating the Text API behavior.
- *
- * This class ensures that the `Text` value object and its associated
- * transformation helpers behave consistently across all supported
- * string-manipulation features. It covers operations such as slicing,
- * casing, slug generation, pattern validation, prefix/suffix detection,
- * padding, masking, limiting, and substring lookup.
- *
- * Each test verifies correctness, immutability expectations, and
- * integration with the `Regex` helper where pattern-based checks
- * are required. The suite guarantees that the `Text` API provides
- * a reliable and predictable interface for high-level string handling.
- *
- * @category  Tests
- * @package   Text
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Regex::class)]
-#[CoversClass(Text::class)]
-final class TextAPITest extends TestCase
-{
-    /**
-     * Holds the Text instance under test.
-     *
-     * This value object represents the current string being processed,
-     * and each test method operates on it to validate the behavior of the
-     * `Text` API across various string transformations and queries.
-     *
-     * @var Text
-     */
-    private Text $text;
+use function expect;
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->text = new Text('i love symfony');
-    }
+covers(Regex::class);
+covers(Text::class);
 
-    /**
-     * Tears down the environment after each test method.
-     *
-     * This method is called automatically by PHPUnit after each test runs.
-     * It is responsible for cleaning up resources, flushing the application
-     * state, unsetting properties, and resetting any static or global state
-     * to avoid side effects between tests.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $this->text->reset();
-    }
+beforeEach(function (): void {
+    $this->text = new Text('i love symfony');
+});
 
-    /**
-     * Test it can return chart at.
-     *
-     * @return void
-     */
-    public function testItCanReturnChartAt(): void
-    {
-        $this->assertEquals('o', $this->text->charAt(3));
-    }
+afterEach(function (): void {
+    $this->text->reset();
+});
 
-    /**
-     * Test it can return slice.
-     *
-     * @return void
-     */
-    public function testItCanReturnSlice(): void
-    {
-        $this->assertEquals('symfony', $this->text->slice(7));
-    }
+it('can return chart at', function (): void {
+    expect((string) $this->text->charAt(3))->toBe('o');
+});
 
-    /**
-     * Test it can return lower.
-     *
-     * @return void
-     */
-    public function testItCanReturnLower(): void
-    {
-        $this->assertEquals('i love symfony', $this->text->lower());
-    }
+it('can return slice', function (): void {
+    expect((string) $this->text->slice(7))->toBe('symfony');
+});
 
-    /**
-     * Test it can return upper.
-     *
-     * @return void
-     */
-    public function testItCanReturnUpper(): void
-    {
-        $this->assertEquals('I LOVE SYMFONY', $this->text->upper());
-    }
+it('can return lower', function (): void {
+    expect((string) $this->text->lower())->toBe('i love symfony');
+});
 
-    /**
-     * Test it can return first upper.
-     *
-     * @return void
-     */
-    public function testItCanReturnFirstUpper(): void
-    {
-        $this->assertEquals('I love symfony', $this->text->firstUpper());
-    }
+it('can return upper', function (): void {
+    expect((string) $this->text->upper())->toBe('I LOVE SYMFONY');
+});
 
-    /**
-     * Test it can return first upper all.
-     *
-     * @return void
-     */
-    public function testItCanReturnFirstUpperAll(): void
-    {
-        $this->assertEquals('I Love Symfony', $this->text->firstUpperAll());
-    }
+it('can return first upper', function (): void {
+    expect((string) $this->text->firstUpper())->toBe('I love symfony');
+});
 
-    /**
-     * Test it can return snake.
-     *
-     * @return void
-     */
-    public function testItCanReturnSnake(): void
-    {
-        $this->assertEquals('i_love_symfony', $this->text->snake());
-    }
+it('can return first upper all', function (): void {
+    expect((string) $this->text->firstUpperAll())->toBe('I Love Symfony');
+});
 
-    /**
-     * Test it can return kebab.
-     *
-     * @return void
-     */
-    public function testItCanReturnKebab(): void
-    {
-        $this->assertEquals('i-love-symfony', $this->text->kebab());
-    }
+it('can return snake', function (): void {
+    expect((string) $this->text->snake())->toBe('i_love_symfony');
+});
 
-    /**
-     * Test it can return pascal.
-     *
-     * @return void
-     */
-    public function testItCanReturnPascal(): void
-    {
-        $this->assertEquals('ILoveSymfony', $this->text->pascal());
-    }
+it('can return kebab', function (): void {
+    expect((string) $this->text->kebab())->toBe('i-love-symfony');
+});
 
-    /**
-     * Test it can return camel.
-     *
-     * @return void
-     */
-    public function testItCanReturnCamel(): void
-    {
-        $this->assertEquals('iLoveSymfony', $this->text->camel());
-    }
+it('can return pascal', function (): void {
+    expect((string) $this->text->pascal())->toBe('ILoveSymfony');
+});
 
-    /**
-     * Test it can return slug.
-     *
-     * @return void
-     */
-    public function testItCanReturnSlug(): void
-    {
-        $this->assertEquals('i-love-symfony', $this->text->slug());
-    }
+it('can return camel', function (): void {
+    expect((string) $this->text->camel())->toBe('iLoveSymfony');
+});
 
-    /**
-     * Test it can return is empty.
-     *
-     * @return void
-     */
-    public function testItCanReturnIsEmpty(): void
-    {
-        $this->assertFalse($this->text->isEmpty());
-    }
+it('can return slug', function (): void {
+    expect((string) $this->text->slug())->toBe('i-love-symfony');
+});
 
-    /**
-     * Test it can return is.
-     *
-     * @return void
-     */
-    public function testItCanReturnIs(): void
-    {
-        $this->assertFalse($this->text->is(Regex::USER));
-    }
+it('can return is empty', function (): void {
+    expect($this->text->isEmpty())->toBeFalse();
+});
 
-    /**
-     * Test it can return contains.
-     *
-     * @return void
-     */
-    public function testItCanReturnContains(): void
-    {
-        $this->assertTrue($this->text->contains('love'));
-    }
+it('can return is', function (): void {
+    expect($this->text->is(Regex::USER))->toBeFalse();
+});
 
-    /**
-     * Test it can return stars with.
-     *
-     * @return void
-     */
-    public function testItCanReturnStartsWith(): void
-    {
-        $this->assertTrue($this->text->startsWith('i love'));
-    }
+it('can return contains', function (): void {
+    expect($this->text->contains('love'))->toBeTrue();
+});
 
-    /**
-     * Test it can return ends with.
-     *
-     * @return void
-     */
-    public function testItCanReturnEndsWith(): void
-    {
-        $this->assertTrue($this->text->endsWith('symfony'));
-    }
+it('can return starts with', function (): void {
+    expect($this->text->startsWith('i love'))->toBeTrue();
+});
 
-    /**
-     * test it can return length.
-     *
-     * @return void
-     */
-    public function testItCanReturnLength(): void
-    {
-        $this->assertIsInt($this->text->length());
-        $this->assertEquals(14, $this->text->length());
-    }
+it('can return ends with', function (): void {
+    expect($this->text->endsWith('symfony'))->toBeTrue();
+});
 
-    /**
-     * Test it can return index of.
-     *
-     * @return void
-     */
-    public function testItCanReturnIndexOf(): void
-    {
-        $this->assertIsInt($this->text->length());
-        $this->assertEquals(7, $this->text->indexOf('symfony'));
-    }
+it('can return length', function (): void {
+    expect($this->text->length())->toBeInt();
+    expect($this->text->length())->toBe(14);
+});
 
-    /**
-     * Test it can return index of.
-     *
-     * @return void
-     */
-    public function testItCanReturnLastIndexOf(): void
-    {
-        $this->assertIsInt($this->text->length());
-        $this->assertEquals(3, $this->text->indexOf('o'));
-    }
+it('can return index of', function (): void {
+    expect($this->text->length())->toBeInt();
+    expect($this->text->indexOf('symfony'))->toBe(7);
+});
 
-    /**
-     * Test it can return fill.
-     *
-     * @return void
-     */
-    public function testItCanReturnFill(): void
-    {
-        $this->text->text('1234');
-        $this->assertEquals('001234', $this->text->fill('0', 6));
-    }
+it('can return last index of', function (): void {
+    expect($this->text->length())->toBeInt();
+    expect($this->text->indexOf('o'))->toBe(3);
+});
 
-    /**
-     * Test it can return fill end.
-     *
-     * @return void
-     */
-    public function testItCanReturnFillEnd(): void
-    {
-        $this->text->text('1234');
-        $this->assertEquals('123400', $this->text->fillEnd('0', 6));
-    }
+it('can return fill', function (): void {
+    $this->text->text('1234');
+    expect((string) $this->text->fill('0', 6))->toBe('001234');
+});
 
-    /**
-     * Test it can return mask.
-     *
-     * @return void
-     */
-    public function testItCanReturnMask(): void
-    {
-        $this->text->text('laravel');
-        $this->assertEquals('l****el', $this->text->mask('*', 1, 4));
+it('can return fill end', function (): void {
+    $this->text->text('1234');
+    expect((string) $this->text->fillEnd('0', 6))->toBe('123400');
+});
 
-        $this->text->text('laravel');
-        $this->assertEquals('l******', $this->text->mask('*', 1));
+it('can return mask', function (): void {
+    $this->text->text('laravel');
+    expect((string) $this->text->mask('*', 1, 4))->toBe('l****el');
 
-        $this->text->text('laravel');
-        $this->assertEquals('lara*el', $this->text->mask('*', -3, 1));
+    $this->text->text('laravel');
+    expect((string) $this->text->mask('*', 1))->toBe('l******');
 
-        $this->text->text('laravel');
-        $this->assertEquals('lara***', $this->text->mask('*', -3));
-    }
+    $this->text->text('laravel');
+    expect((string) $this->text->mask('*', -3, 1))->toBe('lara*el');
 
-    /**
-     * Test it can return limit.
-     *
-     * @return void
-     */
-    public function testItCanReturnLimit(): void
-    {
-        //$this->assertEquals('laravel...', $this->text->limit(7));
-        $this->assertEquals('i love ...', (string) $this->text->limit(7));
-    }
+    $this->text->text('laravel');
+    expect((string) $this->text->mask('*', -3))->toBe('lara***');
+});
 
-    /**
-     * Test it can return after text.
-     *
-     * @return void
-     */
-    public function testItCanReturnAfetText(): void
-    {
-        $this->assertEquals('symfony', $this->text->after('love ')->__toString());
-    }
-}
+it('can return limit', function (): void {
+    expect((string) $this->text->limit(7))->toBe('i love ...');
+});
+
+it('can return after text', function (): void {
+    expect($this->text->after('love ')->__toString())->toBe('symfony');
+});

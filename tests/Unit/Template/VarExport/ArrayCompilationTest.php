@@ -4,104 +4,65 @@ declare(strict_types=1);
 
 namespace Tests\Template\VarExport;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\Template\VarExport;
 use Omega\Template\VarExport\Value\Constant;
 
-/**
- * @testdox Skeleton Test for Array Compilation
- */
-#[CoversClass(Constant::class)]
-#[CoversClass(VarExport::class)]
-class ArrayCompilationTest extends TestCase
-{
-    /**
-     * @test
-     *
-     * @testdox Compiles an empty array correctly
-     */
-    public function testItCompilesEmptyArray(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([]);
+covers(Constant::class);
+covers(VarExport::class);
 
-        $expected = <<<'PHP'
+it('compiles an empty array correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([]);
+
+    $expected = <<<'PHP'
 []
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles an indexed array correctly
-     */
-    public function testItCompilesIndexedArray(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([1, 2, 3]);
+it('compiles an indexed array correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([1, 2, 3]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 1,
     1 => 2,
     2 => 3,
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles an associative array correctly
-     */
-    public function testItCompilesAssociativeArray(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            'name'    => 'Savanna',
-            'version' => '1.0',
-        ]);
+it('compiles an associative array correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        'name'    => 'Savanna',
+        'version' => '1.0',
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'name' => 'Savanna',
     'version' => '1.0',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles a mixed array correctly
-     */
-    public function testItCompilesMixedArray(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            0         => 'first',
-            'name'    => 'Savanna',
-            1         => 'second',
-            'version' => '1.0',
-        ]);
+it('compiles a mixed array correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        0         => 'first',
+        'name'    => 'Savanna',
+        1         => 'second',
+        'version' => '1.0',
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'first',
     'name' => 'Savanna',
@@ -109,59 +70,41 @@ PHP;
     'version' => '1.0',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles array with non-sequential numeric keys
-     */
-    public function testItCompilesArrayWithNonSequentialKeys(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            0 => 'first',
-            2 => 'third',
-            1 => 'second',
-        ]);
+it('compiles array with non-sequential numeric keys', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        0 => 'first',
+        2 => 'third',
+        1 => 'second',
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     0 => 'first',
     2 => 'third',
     1 => 'second',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles nested arrays (depth 2) correctly
-     */
-    public function testItCompilesNestedArraysDepth2(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            'level1_key1' => 'value1',
-            'level1_key2' => [
-                'level2_key1' => 'value2',
-                'level2_key2' => 123,
-            ],
-            'level1_key3' => true,
-        ]);
+it('compiles nested arrays (depth 2) correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        'level1_key1' => 'value1',
+        'level1_key2' => [
+            'level2_key1' => 'value2',
+            'level2_key2' => 123,
+        ],
+        'level1_key3' => true,
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'level1_key1' => 'value1',
     'level1_key2' => [
@@ -171,35 +114,26 @@ PHP;
     'level1_key3' => true,
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles nested arrays (depth 5) correctly
-     */
-    public function testItCompilesNestedArraysDepth5(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            'l1k1' => [
-                'l2k1' => [
-                    'l3k1' => [
-                        'l4k1' => [
-                            'l5k1' => 'deep_value',
-                        ],
+it('compiles nested arrays (depth 5) correctly', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        'l1k1' => [
+            'l2k1' => [
+                'l3k1' => [
+                    'l4k1' => [
+                        'l5k1' => 'deep_value',
                     ],
                 ],
             ],
-            'l1k2' => 'value',
-        ]);
+        ],
+        'l1k2' => 'value',
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'l1k1' => [
         'l2k1' => [
@@ -213,33 +147,24 @@ PHP;
     'l1k2' => 'value',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles array with various value types mixed
-     */
-    public function testItCompilesArrayWithMixedValueTypes(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export([
-            'string'       => 'hello',
-            'integer'      => 123,
-            'float'        => 1.23,
-            'boolean'      => true,
-            'null'         => null,
-            'nested_array' => [
-                'key' => 'value',
-            ],
-        ]);
+it('compiles array with various value types mixed', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export([
+        'string'       => 'hello',
+        'integer'      => 123,
+        'float'        => 1.23,
+        'boolean'      => true,
+        'null'         => null,
+        'nested_array' => [
+            'key' => 'value',
+        ],
+    ]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'string' => 'hello',
     'integer' => 123,
@@ -251,94 +176,61 @@ PHP;
     ],
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
+
+it('compiles a large array correctly', function (): void {
+    $varExport = new VarExport();
+
+    $largeArray = [];
+    for ($i = 0; $i < 1000; $i++) {
+        $largeArray['key_' . $i] = 'value_' . $i;
     }
 
-    /**
-     * @test
-     *
-     * @testdox Compiles a large array correctly
-     */
-    public function testItCompilesLargeArray(): void
-    {
-        $varExport = new VarExport();
+    $output = $varExport->export($largeArray);
 
-        $largeArray = [];
-        for ($i = 0; $i < 1000; $i++) {
-            $largeArray['key_' . $i] = 'value_' . $i;
-        }
-
-        $output = $varExport->export($largeArray);
-
-        // Generate expected output in VarExport's format
-        $expectedParts = [];
-        foreach ($largeArray as $key => $value) {
-            $expectedParts[] = sprintf("    '%s' => '%s',", $key, $value);
-        }
-        $expected = "[\n" . implode("\n", $expectedParts) . "\n]";
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
-
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
+    $expectedParts = [];
+    foreach ($largeArray as $key => $value) {
+        $expectedParts[] = sprintf("    '%s' => '%s',", $key, $value);
     }
+    $expected = "[\n" . implode("\n", $expectedParts) . "\n]";
 
-    /**
-     * @test
-     *
-     * @testdox Compiles an array containing a reference
-     */
-    public function testItCompilesArrayWithReference(): void
-    {
-        $varExport = new VarExport();
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-        $refValue = 'original';
-        $array    = [
-            'key1' => 'value1',
-            'key2' => &$refValue,
-            'key3' => 'value3',
-        ];
+it('compiles an array containing a reference', function (): void {
+    $varExport = new VarExport();
 
-        $output = $varExport->export($array);
+    $refValue = 'original';
+    $array    = [
+        'key1' => 'value1',
+        'key2' => &$refValue,
+        'key3' => 'value3',
+    ];
 
-        // Note: var_export handles references by value, which is the desired behavior for VarExport
-        $expected = <<<'PHP'
+    $output = $varExport->export($array);
+
+    $expected = <<<'PHP'
 [
     'key1' => 'value1',
     'key2' => 'original',
     'key3' => 'value3',
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
 
-    /**
-     * @test
-     *
-     * @testdox Compiles an array containing a constant
-     */
-    public function testItCompilesArrayWithConstant(): void
-    {
-        $varExport = new VarExport();
-        $output    = $varExport->export(['my_constant' => new Constant('MY_TEST_CONSTANT')]);
+it('compiles an array containing a constant', function (): void {
+    $varExport = new VarExport();
+    $output    = $varExport->export(['my_constant' => new Constant('MY_TEST_CONSTANT')]);
 
-        $expected = <<<'PHP'
+    $expected = <<<'PHP'
 [
     'my_constant' => MY_TEST_CONSTANT,
 ]
 PHP;
-        // Normalize line endings to LF for consistent comparison
-        $normalizedOutput   = str_replace(["\r\n", "\r"], "\n", $output);
-        $normalizedExpected = str_replace(["\r\n", "\r"], "\n", $expected);
 
-        $this->assertEquals($normalizedExpected, $normalizedOutput);
-    }
-}
+    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
+});
