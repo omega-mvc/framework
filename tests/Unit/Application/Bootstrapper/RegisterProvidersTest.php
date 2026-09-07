@@ -81,7 +81,7 @@ it('resolves core providers when the config has no binding', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    expect($providers)->toBeArray();
+    $this->assertIsArray($providers);
     foreach ($app->getCoreProviders() as $core) {
         expect($providers)->toContain($core);
     }
@@ -95,7 +95,7 @@ it('ignores a config binding that is not a ConfigRepository', function (): void 
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    expect($providers)->toBeArray();
+    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 
@@ -108,7 +108,7 @@ it('ignores a providers config entry that is not an array', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    expect($providers)->toBeArray();
+    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 
@@ -124,7 +124,7 @@ it('ignores a package provider list that is not an array', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    expect($providers)->toBeArray();
+    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 

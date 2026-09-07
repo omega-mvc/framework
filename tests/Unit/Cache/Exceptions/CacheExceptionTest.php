@@ -19,108 +19,57 @@ use Omega\Cache\Exceptions\CacheConfigurationException;
 use Omega\Cache\Exceptions\CachePathException;
 use Omega\Cache\Exceptions\InvalidValueIncrementException;
 use Omega\Cache\Exceptions\UnknownStorageException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Psr\SimpleCache\CacheException as PsrCacheExceptionInterface;
 use Psr\SimpleCache\InvalidArgumentException as PsrInvalidArgumentExceptionInterface;
 
-/**
- * Class CacheExceptionTest
- *
- * This test suite verifies the behavior of the exception classes provided
- * by the Cache package.
- *
- * @category   Tests
- * @package    Cache
- * @subpackage Exceptions
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(CacheConfigurationException::class)]
-#[CoversClass(CachePathException::class)]
-#[CoversClass(InvalidValueIncrementException::class)]
-#[CoversClass(UnknownStorageException::class)]
-final class CacheExceptionTest extends TestCase
-{
-    /**
-     * Test CacheConfigurationException without a message.
-     *
-     * @return void
-     */
-    public function testCacheConfigurationExceptionWithoutMessage(): void
-    {
-        $exception = new CacheConfigurationException();
+covers(
+    CacheConfigurationException::class,
+    CachePathException::class,
+    InvalidValueIncrementException::class,
+    UnknownStorageException::class,
+);
 
-        $this->assertInstanceOf(InvalidArgumentException::class, $exception);
-        $this->assertInstanceOf(PsrInvalidArgumentExceptionInterface::class, $exception);
-        $this->assertSame(
-            'Invalid cache configuration: a required option is missing or has an invalid value.',
-            $exception->getMessage()
-        );
-    }
+it('reports the default message when no reason is given', function (): void {
+    $exception = new CacheConfigurationException();
 
-    /**
-     * Test CacheConfigurationException with a message.
-     *
-     * @return void
-     */
-    public function testCacheConfigurationExceptionWithMessage(): void
-    {
-        $exception = new CacheConfigurationException('custom reason');
+    $this->assertInstanceOf(InvalidArgumentException::class, $exception);
+    $this->assertInstanceOf(PsrInvalidArgumentExceptionInterface::class, $exception);
+    expect($exception->getMessage())->toBe(
+        'Invalid cache configuration: a required option is missing or has an invalid value.'
+    );
+});
 
-        $this->assertSame('Invalid cache configuration: custom reason', $exception->getMessage());
-    }
+it('prepends the reason to the configuration exception message', function (): void {
+    $exception = new CacheConfigurationException('custom reason');
 
-    /**
-     * Test InvalidValueIncrementException.
-     *
-     * @return void
-     */
-    public function testInvalidValueIncrementException(): void
-    {
-        $exception = new InvalidValueIncrementException('foo');
+    expect($exception->getMessage())->toBe('Invalid cache configuration: custom reason');
+});
 
-        $this->assertInstanceOf(InvalidArgumentException::class, $exception);
-        $this->assertInstanceOf(PsrInvalidArgumentExceptionInterface::class, $exception);
-        $this->assertSame(
-            'The value for the cache key "foo" must be an integer to be incremented.',
-            $exception->getMessage()
-        );
-    }
+it('reports the cache key in the invalid increment message', function (): void {
+    $exception = new InvalidValueIncrementException('foo');
 
-    /**
-     * Test CachePathException.
-     *
-     * @return void
-     */
-    public function testCachePathException(): void
-    {
-        $exception = new CachePathException('/tmp/cache');
+    $this->assertInstanceOf(InvalidArgumentException::class, $exception);
+    $this->assertInstanceOf(PsrInvalidArgumentExceptionInterface::class, $exception);
+    expect($exception->getMessage())->toBe(
+        'The value for the cache key "foo" must be an integer to be incremented.'
+    );
+});
 
-        $this->assertInstanceOf(PsrCacheExceptionInterface::class, $exception);
-        $this->assertSame(
-            'The cache directory "/tmp/cache" could not be created or is not writable. '
-            . 'Please ensure the path exists and has proper permissions.',
-            $exception->getMessage()
-        );
-    }
+it('reports the cache directory that could not be created', function (): void {
+    $exception = new CachePathException('/tmp/cache');
 
-    /**
-     * Test UnknownStorageException.
-     *
-     * @return void
-     */
-    public function testUnknownStorageException(): void
-    {
-        $exception = new UnknownStorageException('memcached');
+    $this->assertInstanceOf(PsrCacheExceptionInterface::class, $exception);
+    expect($exception->getMessage())->toBe(
+        'The cache directory "/tmp/cache" could not be created or is not writable. '
+        . 'Please ensure the path exists and has proper permissions.'
+    );
+});
 
-        $this->assertInstanceOf(PsrCacheExceptionInterface::class, $exception);
-        $this->assertSame(
-            'The cache storage driver "memcached" could not be resolved or is not registered.',
-            $exception->getMessage()
-        );
-    }
-}
+it('reports the storage driver that could not be resolved', function (): void {
+    $exception = new UnknownStorageException('memcached');
+
+    $this->assertInstanceOf(PsrCacheExceptionInterface::class, $exception);
+    expect($exception->getMessage())->toBe(
+        'The cache storage driver "memcached" could not be resolved or is not registered.'
+    );
+});

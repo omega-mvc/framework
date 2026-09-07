@@ -18,7 +18,17 @@ use function Omega\Application\path;
 use function Omega\Application\set_path;
 use function Omega\Application\slash;
 
-covers(Application::class);
+covers(
+    Application::class,
+    'Omega\Application\app',
+    'Omega\Application\get_path',
+    'Omega\Application\is_dev',
+    'Omega\Application\is_production',
+    'Omega\Application\os_detect',
+    'Omega\Application\path',
+    'Omega\Application\set_path',
+    'Omega\Application\slash'
+);
 
 uses(FixturesPathTrait::class);
 

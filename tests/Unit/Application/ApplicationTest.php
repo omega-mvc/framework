@@ -39,7 +39,7 @@ it('loads config from default', function (): void {
     $app->loadConfig(new ConfigRepository($data));
     $config = $app->get('config');
 
-    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    $this->assertInstanceOf(ConfigRepository::class, $config);
     expect($config->getAll())->toBe($data);
 
     $app->flush();

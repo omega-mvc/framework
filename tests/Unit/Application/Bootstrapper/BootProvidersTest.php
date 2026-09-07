@@ -36,7 +36,7 @@ it('boots a registered provider immediately when the application is already boot
 
     $registered = $app->register(BootCalledServiceProvider::class);
 
-    expect($registered)->toBeInstanceOf(BootCalledServiceProvider::class);
+    $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
     expect($registered->bootCalled)->toBeTrue();
 });
 
@@ -45,6 +45,6 @@ it('does not boot a registered provider when the application is not booted', fun
 
     $registered = $app->register(BootCalledServiceProvider::class);
 
-    expect($registered)->toBeInstanceOf(BootCalledServiceProvider::class);
+    $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
     expect($registered->bootCalled)->toBeFalse();
 });

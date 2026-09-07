@@ -53,6 +53,9 @@ it('can get application manifest', function (): void {
     $manifest1 = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);
     $manifest2 = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);
 
+    $this->assertIsArray($manifest1);
+    $this->assertIsArray($manifest2);
+
     $expected = [
         'packages/package1' => [
             'providers' => [
@@ -79,6 +82,8 @@ it('can get config', function (): void {
         slash(path: '/package/')
     );
     $config = (fn () => $this->{'config'}('providers'))->call($package_manifest);
+
+    $this->assertIsArray($config);
 
     expect($config)->toEqual([
         'Package//Package1//ServiceProvider::class',
@@ -330,7 +335,7 @@ it('gets an empty application manifest when the cache file is missing', function
 
     $manifest = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);
 
-    expect($manifest)->toBeArray();
+    $this->assertIsArray($manifest);
     expect(file_exists($tempCachePath . 'packages.php'))->toBeTrue();
 
     @unlink($tempCachePath . 'packages.php');
@@ -350,6 +355,7 @@ it('gets the application manifest when the cache file exists', function (): void
 
     $manifest = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);
 
+    $this->assertIsArray($manifest);
     expect($manifest)->toEqual(['test' => 'data']);
 });
 
