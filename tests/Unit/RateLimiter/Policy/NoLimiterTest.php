@@ -6,9 +6,9 @@ namespace Tests\RateLimiter\Policy;
 
 use Omega\RateLimiter\Policy\NoLimiter;
 
-use const PHP_INT_MAX;
-
 use function expect;
+
+use const PHP_INT_MAX;
 
 covers(NoLimiter::class);
 

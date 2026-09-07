@@ -35,7 +35,8 @@ it('bootstraps the application with default and runtime providers', function ():
     $app->register(TestRegisterServiceProvider::class);
     $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
 
-    expect((fn () => $this->{'isBooted'})->call($app))->toBeTrue('The application should be booted after BootProviders.');
+    expect((fn () => $this->{'isBooted'})->call($app))
+        ->toBeTrue('The application should be booted after BootProviders.');
     expect((fn () => $this->{'bootedProviders'})->call($app))->not->toBeEmpty();
 
     $loaded = (fn () => $this->{'loadedProviders'})->call($app);
@@ -70,7 +71,8 @@ it('registers providers from the config via bootstrap', function (): void {
     $bootstrapper = new RegisterProviders();
     $bootstrapper->bootstrap($app);
 
-    expect(isProviderLoaded($app, TestRegisterServiceProvider::class))->toBeTrue('The provider was not loaded correctly.');
+    expect(isProviderLoaded($app, TestRegisterServiceProvider::class))
+        ->toBeTrue('The provider was not loaded correctly.');
 });
 
 it('resolves core providers when the config has no binding', function (): void {

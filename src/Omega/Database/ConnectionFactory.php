@@ -18,7 +18,7 @@ final class ConnectionFactory
      *
      * @var array<string, class-string<ConnectionInterface>>
      */
-    private const DRIVERS = [
+    private const array DRIVERS = [
         'mysql'   => MysqlConnection::class,
         'mariadb' => MariadbConnection::class,
         'pgsql'   => PgsqlConnection::class,
