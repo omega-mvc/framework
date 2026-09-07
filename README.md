@@ -22,7 +22,7 @@
 - [Query;](#Built-in-Query-Builder) (database query builder)
 - [Collection](#Collection) (array collection)
 - [Console](#Console) (assembling beautiful console app)
-- Template (create class using class generator)
+- DocBlockGenerator (create class using class generator)
 - Cron
 - Now (time managing)
 - Http request and response

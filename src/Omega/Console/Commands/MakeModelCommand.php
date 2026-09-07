@@ -6,8 +6,8 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\Attribute\AsCommand;
 use Omega\Database\Facades\DB;
-use Omega\Template\Generate;
-use Omega\Template\Property;
+use Omega\DocBlockGenerator\Generate;
+use Omega\DocBlockGenerator\Property;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;

@@ -1,6 +1,6 @@
 <?php
 
-use Omega\Template\Generate;
+use Omega\DocBlockGenerator\Generate;
 
 class NewClass extends PHPUnit\Framework\TestCase implements testInterface
 {

@@ -1,0 +1,302 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Omega\DocBlockGenerator\Parser\File;
+
+use function array_unique;
+use function array_values;
+use function count;
+use function file_get_contents;
+use function is_array;
+use function is_file;
+use function token_get_all;
+
+use const T_AS;
+use const T_FUNCTION;
+use const T_CONST;
+use const T_NAME_QUALIFIED;
+use const T_NS_SEPARATOR;
+use const T_STRING;
+use const T_USE;
+
+final class NamespaceResolver
+{
+    /**
+     * @return string[]
+     */
+    public function resolveFile(string $file): array
+    {
+        if (false === is_file($file)) {
+            return [];
+        }
+
+        $sources = (string) file_get_contents($file);
+
+        return $this->resolve($sources);
+    }
+
+    /**
+     * @return string[]
+     */
+    public function resolve(string $sources): array
+    {
+        $tokens = token_get_all($sources);
+        $uses   = [];
+        $i      = 0;
+        $count  = count($tokens);
+
+        while ($i < $count) {
+            $token = $tokens[$i];
+
+            if (true === is_array($token) && T_USE === $token[0]) {
+                $i++;
+                $this->parseUseStatement($tokens, $i, $uses);
+            }
+
+            $i++;
+        }
+
+        return array_values(array_unique($uses));
+    }
+
+    /**
+     * Resolve only class imports (not functions or constants).
+     *
+     * @return string[]
+     */
+    public function resolveClasses(string $sources): array
+    {
+        $tokens = token_get_all($sources);
+        $uses   = [];
+        $i      = 0;
+        $count  = count($tokens);
+
+        while ($i < $count) {
+            $token = $tokens[$i];
+
+            if (true === is_array($token) && T_USE === $token[0]) {
+                $i++;
+                $this->parseClassUseStatement($tokens, $i, $uses);
+            }
+
+            $i++;
+        }
+
+        return array_values(array_unique($uses));
+    }
+
+    /**
+     * @param array<int, mixed> $tokens
+     * @param string[]          $uses
+     */
+    private function parseUseStatement(array $tokens, int &$i, array &$uses): void
+    {
+        $base = '';
+
+        while (isset($tokens[$i])) {
+            $token = $tokens[$i];
+
+            if (true === is_array($token)) {
+                if (T_STRING === $token[0] || T_NS_SEPARATOR === $token[0] || T_NAME_QUALIFIED === $token[0]) {
+                    $base .= $token[1];
+                }
+
+                if (T_AS === $token[0]) {
+                    // skip alias
+                    $i++;
+                    while (isset($tokens[$i]) && true === is_array($tokens[$i])) {
+                        if (T_STRING === $tokens[$i][0]) {
+                            break;
+                        }
+                        $i++;
+                    }
+                }
+            } else {
+                if ('{' === $token) {
+                    $this->parseGroupedUse($tokens, $i, $base, $uses);
+
+                    return;
+                }
+
+                if (',' === $token) {
+                    $uses[] = $base;
+                    $base   = '';
+                }
+
+                if (';' === $token) {
+                    $uses[] = $base;
+
+                    return;
+                }
+            }
+
+            $i++;
+        }
+    }
+
+    /**
+     * Parse use statement but only collect class imports (skip function/const).
+     *
+     * @param array<int, mixed> $tokens
+     * @param string[]          $uses
+     */
+    private function parseClassUseStatement(array $tokens, int &$i, array &$uses): void
+    {
+        $base      = '';
+        $isFunction = false;
+        $isConst    = false;
+
+        while (isset($tokens[$i])) {
+            $token = $tokens[$i];
+
+            if (true === is_array($token)) {
+                if (T_FUNCTION === $token[0]) {
+                    $isFunction = true;
+                } elseif (T_CONST === $token[0]) {
+                    $isConst = true;
+                } elseif (T_STRING === $token[0] || T_NS_SEPARATOR === $token[0] || T_NAME_QUALIFIED === $token[0]) {
+                    $base .= $token[1];
+                }
+
+                if (T_AS === $token[0]) {
+                    // skip alias
+                    $i++;
+                    while (isset($tokens[$i]) && true === is_array($tokens[$i])) {
+                        if (T_STRING === $tokens[$i][0]) {
+                            break;
+                        }
+                        $i++;
+                    }
+                }
+            } else {
+                if ('{' === $token) {
+                    $this->parseGroupedClassUse($tokens, $i, $base, $uses, $isFunction, $isConst);
+
+                    return;
+                }
+
+                if (',' === $token) {
+                    if (!$isFunction && !$isConst && '' !== $base) {
+                        $uses[] = $base;
+                    }
+                    $base        = '';
+                    $isFunction  = false;
+                    $isConst     = false;
+                }
+
+                if (';' === $token) {
+                    if (!$isFunction && !$isConst && '' !== $base) {
+                        $uses[] = $base;
+                    }
+
+                    return;
+                }
+            }
+
+            $i++;
+        }
+    }
+
+    /**
+     * @param array<int, mixed> $tokens
+     * @param string[]          $uses
+     */
+    private function parseGroupedUse(array $tokens, int &$i, string $base, array &$uses): void
+    {
+        $i++;
+
+        while (isset($tokens[$i])) {
+            $class = '';
+
+            while (isset($tokens[$i])) {
+                $token = $tokens[$i];
+
+                if (true === is_array($token)) {
+                    if (T_STRING === $token[0] || T_NS_SEPARATOR === $token[0] || T_NAME_QUALIFIED === $token[0]) {
+                        $class .= $token[1];
+                    }
+                } else {
+                    if (',' === $token || '}' === $token) {
+                        if ('' !== $class) {
+                            $uses[] = $base . $class;
+                        }
+                        break;
+                    }
+                }
+
+                $i++;
+            }
+
+            if (isset($token) && '}' === $token) {
+                while (isset($tokens[$i]) && ';' !== $tokens[$i]) {
+                    $i++;
+                }
+
+                return;
+            }
+
+            $i++;
+        }
+    }
+
+    /**
+     * Parse grouped use statement for class imports only.
+     *
+     * @param array<int, mixed> $tokens
+     * @param string[]          $uses
+     */
+    private function parseGroupedClassUse(
+        array $tokens,
+        int &$i,
+        string $base,
+        array &$uses,
+        bool $isFunction,
+        bool $isConst
+    ): void {
+        $i++;
+
+        while (isset($tokens[$i])) {
+            $class        = '';
+            $childIsFunc  = $isFunction;
+            $childIsConst = $isConst;
+
+            while (isset($tokens[$i])) {
+                $token = $tokens[$i];
+
+                if (true === is_array($token)) {
+                    if (T_FUNCTION === $token[0]) {
+                        $childIsFunc = true;
+                    } elseif (T_CONST === $token[0]) {
+                        $childIsConst = true;
+                    } elseif (
+                        T_STRING === $token[0]
+                        || T_NS_SEPARATOR === $token[0]
+                        || T_NAME_QUALIFIED === $token[0]
+                    ) {
+                        $class .= $token[1];
+                    }
+                } else {
+                    if (',' === $token || '}' === $token) {
+                        if ('' !== $class && !$childIsFunc && !$childIsConst) {
+                            $uses[] = $base . $class;
+                        }
+                        break;
+                    }
+                }
+
+                $i++;
+            }
+
+            if (isset($token) && '}' === $token) {
+                while (isset($tokens[$i]) && ';' !== $tokens[$i]) {
+                    $i++;
+                }
+
+                return;
+            }
+
+            $i++;
+        }
+    }
+}
