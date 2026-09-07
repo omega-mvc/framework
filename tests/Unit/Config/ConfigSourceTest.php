@@ -36,8 +36,10 @@ it('should build from an in-memory array source', function (): void {
 });
 
 it('should load a JSON file source', function (): void {
-    $file = writeTempFile(json_encode(['app' => ['name' => 'Omega']]));
+    $content = json_encode(['app' => ['name' => 'Omega']]);
+    $this->assertIsString($content);
 
+    $file   = writeTempFile($content);
     $config = $this->source->fromJson($file)->build();
 
     expect($config->get('app.name'))->toBe('Omega');
@@ -91,12 +93,17 @@ it('should give higher priority sources precedence', function (): void {
 });
 
 it('should execute a registered macro', function (): void {
-    ConfigSource::macro('fromYaml', function (array $content): ConfigSource {
-        return $this->fromArray($content);
-    });
-
     $source = new ConfigSource();
-    $config = $source->fromYaml(['app' => ['name' => 'Yaml']])->build();
+
+    $fromYaml = function (array $content) use ($source): ConfigSource {
+        return $source->fromArray(stringKeyedContent($content));
+    };
+    ConfigSource::macro('fromYaml', $fromYaml);
+
+    $yaml = $source->__call('fromYaml', [['app' => ['name' => 'Yaml']]]);
+    $this->assertInstanceOf(ConfigSource::class, $yaml);
+
+    $config = $yaml->build();
 
     expect($config->get('app.name'))->toBe('Yaml');
 });
@@ -108,7 +115,7 @@ it('should report registered macros', function (): void {
 });
 
 it('should throw when an unknown macro is called', function (): void {
-    (new ConfigSource())->doesNotExist();
+    $this->source->__call('doesNotExist', []);
 })->throws(MacroNotFoundException::class);
 
 function writeTempFile(string $content): string
@@ -117,4 +124,23 @@ function writeTempFile(string $content): string
     file_put_contents($path, $content);
 
     return $path;
+}
+
+/**
+ * Keep only the string-keyed entries of the payload.
+ *
+ * @param array<mixed> $content The macro payload.
+ * @return array<string, mixed> The string-keyed subset of the payload.
+ */
+function stringKeyedContent(array $content): array
+{
+    $result = [];
+
+    foreach ($content as $key => $value) {
+        if (is_string($key)) {
+            $result[$key] = $value;
+        }
+    }
+
+    return $result;
 }

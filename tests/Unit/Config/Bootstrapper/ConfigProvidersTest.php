@@ -35,7 +35,7 @@ it('can load config from file', function (): void {
     new ConfigBootstrapper()->bootstrap($app);
     $config = $app->get('config');
 
-    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    $this->assertInstanceOf(ConfigRepository::class, $config);
     expect($config->get('environment'))->toBe('prod');
 
     $app->flush();
@@ -47,7 +47,7 @@ it('can load config from cache', function (): void {
     new ConfigBootstrapper()->bootstrap($app);
     $config = $app->get('config');
 
-    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    $this->assertInstanceOf(ConfigRepository::class, $config);
     expect($config->get('environment'))->toBe('prod');
 
     $app->flush();
@@ -110,7 +110,7 @@ it('loads valid cache', function (): void {
 
     $config = $app->get('config');
 
-    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    $this->assertInstanceOf(ConfigRepository::class, $config);
     expect($config->get('environment'))->toBe('cached');
 
     unlink($cacheFile);
@@ -131,7 +131,7 @@ it('returns empty array when no config files found', function (): void {
 
     $config = $app->get('config');
 
-    expect($config)->toBeInstanceOf(ConfigRepository::class);
+    $this->assertInstanceOf(ConfigRepository::class, $config);
     expect($config->getAll())->toBeEmpty();
 
     rmdir($emptyDir);

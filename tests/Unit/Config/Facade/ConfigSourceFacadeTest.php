@@ -43,11 +43,18 @@ it('forwards a static call to the config source service', function (): void {
 it('makes a statically registered macro callable via the facade', function (): void {
     AbstractFacade::setFacadeBase($this->app);
 
-    ConfigSource::macro('fromYaml', function (array $content): ConfigSourceService {
-        return $this->fromArray($content);
-    });
+    $service = new ConfigSourceService();
 
-    $config = ConfigSource::fromYaml(['service' => 'yaml'])->build();
+    $yamlCall = function (array $content) use ($service): ConfigSourceService {
+        return $service->fromArray(stringKeyedContent($content));
+    };
+
+    ConfigSource::__callStatic('macro', ['fromYaml', $yamlCall]);
+
+    $yaml = ConfigSource::__callStatic('fromYaml', [['service' => 'yaml']]);
+    $this->assertInstanceOf(ConfigSourceService::class, $yaml);
+
+    $config = $yaml->build();
 
     expect($config->get('service'))->toBe('yaml');
 });
@@ -55,3 +62,22 @@ it('makes a statically registered macro callable via the facade', function (): v
 it('throws when a static call is made without an application', function (): void {
     ConfigSource::fromArray(['key' => 'value']);
 })->throws(FacadeObjectNotSetException::class);
+
+/**
+ * Keep only the string-keyed entries of the payload.
+ *
+ * @param array<mixed> $content The macro payload.
+ * @return array<string, mixed> The string-keyed subset of the payload.
+ */
+function stringKeyedContent(array $content): array
+{
+    $result = [];
+
+    foreach ($content as $key => $value) {
+        if (is_string($key)) {
+            $result[$key] = $value;
+        }
+    }
+
+    return $result;
+}
