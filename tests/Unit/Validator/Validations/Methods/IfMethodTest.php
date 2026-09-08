@@ -8,7 +8,7 @@ it('can execute method using if (true)', function () {
     // output: required
     $val->field('test')->if(fn () => true)->required();
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can execute method using if (false)', function () {
@@ -17,7 +17,7 @@ it('can execute method using if (false)', function () {
     // output: required
     $val->field('test')->if(fn () => false)->required();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if (true, true)', function () {
@@ -26,7 +26,7 @@ it('can execute method using if (true, true)', function () {
     // output: numeric|min_len,2
     $val->field('test')->if(fn () => true)->numeric()->if(fn () => true)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if (true, false)', function () {
@@ -35,7 +35,7 @@ it('can execute method using if (true, false)', function () {
     // output: numeric
     $val->field('test')->if(fn () => true)->numeric()->if(fn () => false)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if (false, true)', function () {
@@ -44,7 +44,7 @@ it('can execute method using if (false, true)', function () {
     // output: min_len
     $val->field('test')->if(fn () => false)->numeric()->if(fn () => true)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if (false, false)', function () {
@@ -53,7 +53,7 @@ it('can execute method using if (false, false)', function () {
     // output: ''
     $val->field('test')->if(fn () => false)->numeric()->if(fn () => false)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if-contiune (true, true)', function () {
@@ -62,7 +62,7 @@ it('can execute method using if-contiune (true, true)', function () {
     // output: 'required'
     $val->field('test')->if(fn () => true)->if(fn () => true)->required();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if-contiune (true, false) x', function () {
@@ -71,7 +71,7 @@ it('can execute method using if-contiune (true, false) x', function () {
     // output: ''
     $val->field('test')->if(fn () => true)->if(fn () => false)->alpha();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if-contiune (false, false)', function () {
@@ -80,7 +80,7 @@ it('can execute method using if-contiune (false, false)', function () {
     // output: ''
     $val->field('test')->if(fn () => false)->if(fn () => false)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can execute method using if-contiune (false, true)', function () {
@@ -89,7 +89,7 @@ it('can execute method using if-contiune (false, true)', function () {
     // output: ''
     $val->field('test')->if(fn () => false)->if(fn () => true)->min_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate combine with submitted method', function () {
@@ -98,5 +98,5 @@ it('can validate combine with submitted method', function () {
     // output: required
     $val->field('test')->if(fn () => $val->submitted())->required();
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });

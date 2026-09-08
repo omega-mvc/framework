@@ -7,7 +7,7 @@ it('can rander boolean', function () {
 });
 
 it('can filter boolean', function () {
-    $fr = new Validator\Validator(
+    $fr = new Omega\Validator\Validator(
         [
             'field_1' => '1',
             'field_2' => 1,

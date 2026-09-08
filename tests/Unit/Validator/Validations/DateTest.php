@@ -22,39 +22,39 @@ $incorrect = [
 // validate with correct input field
 
 it('can validate date with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test1->date('Y/m/d');
     $val->test2->date('d-m-Y H:i');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate date (not) with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test1->not->date('Y/m/d');
     $val->test2->not->date('d-m-Y H:i');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 // validate with incorrect input field
 
 it('can validate date with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test1->date('Y/m/d');
     $val->test2->date('d-m-Y H:i');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can validate contains (not) with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test1->not->date('Y/m/d');
     $val->test2->not->date('d-m-Y H:i');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });

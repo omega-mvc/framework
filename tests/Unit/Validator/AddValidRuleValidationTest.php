@@ -9,7 +9,7 @@ it('can add validation using method field', function () {
 
     $valid->field('test')->required();
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add validation using __get', function () {
@@ -17,7 +17,7 @@ it('can add validation using __get', function () {
 
     $valid->test->required();
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add validation using __invoke', function () {
@@ -25,7 +25,7 @@ it('can add validation using __invoke', function () {
 
     $valid('test')->required();
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add validation using __set', function () {
@@ -33,7 +33,7 @@ it('can add validation using __set', function () {
 
     $valid->test = 'required';
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add validator rule using method validation (param)', function () {
@@ -43,7 +43,7 @@ it('can add validator rule using method validation (param)', function () {
             $v('test')->required();
 
             return $v;
-        })->is_valid();
+        })->isValid();
 
     expect($v)->toBeTrue();
 });
@@ -52,7 +52,7 @@ it('can add validator rule using method validation (return)', function () {
     $v = Validator::make(['test' => 'test'])
         ->validation(fn (ValidPool $v) => [
             $v('test')->required(),
-        ])->is_valid();
+        ])->isValid();
 
     expect($v)->toBeTrue();
 });
@@ -61,7 +61,7 @@ it('can add validator rule using pools callback from method make() (param)', fun
     $v = Validator::make(['test' => 123], fn (ValidPool $v) => [
         $v('test')->required(),
         $v('d')->alpha(),
-    ])->is_valid();
+    ])->isValid();
 
     expect($v)->toBeTrue();
 });
@@ -73,7 +73,7 @@ it('can add validator rule using pools callback from method make() (return)', fu
         $v('d')->alpha();
 
         return $v;
-    })->is_valid();
+    })->isValid();
 
     expect($v)->toBeTrue();
 });
@@ -84,7 +84,7 @@ it('can add new valid rule with exist field', function () {
     $validation->field('test')->max_len(4);
     $validation->field('test')->required();
 
-    expect($validation->is_valid())->toBeTrue();
+    expect($validation->isValid())->toBeTrue();
 });
 
 it('can add new valid rule with exist field using validpool', function () {
@@ -94,7 +94,7 @@ it('can add new valid rule with exist field using validpool', function () {
         $valid('test')->required(),
     ]);
 
-    expect($validation->is_valid())->toBeTrue();
+    expect($validation->isValid())->toBeTrue();
 });
 
 // Multy --------------------------------------------------
@@ -104,7 +104,7 @@ it('can add multy field using method field', function () {
 
     $valid->field('test', 'test2')->required();
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add multy field using method field with field exist', function () {
@@ -115,7 +115,7 @@ it('can add multy field using method field with field exist', function () {
     $valid->field('test2')->max_len(5);
     $valid->field('test', 'test2')->min_len(4);
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add multy field using method __invoke', function () {
@@ -123,7 +123,7 @@ it('can add multy field using method __invoke', function () {
 
     $valid('test', 'test2')->required();
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });
 
 it('can add multy field using method __invoke with field exist', function () {
@@ -134,5 +134,5 @@ it('can add multy field using method __invoke with field exist', function () {
     $valid->field('test2')->max_len(5);
     $valid('test', 'test2')->min_len(4);
 
-    expect($valid->is_valid())->toBeTrue();
+    expect($valid->isValid())->toBeTrue();
 });

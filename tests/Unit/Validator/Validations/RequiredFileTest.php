@@ -27,18 +27,18 @@ $incorrect = [
 
 function validTest(array $input, bool $use_not = false): bool
 {
-    $val = new Validator\Validator($input);
+    $val = new Omega\Validator\Validator($input);
 
     if ($use_not === false) {
         $val->field('files.test')->required_file();
 
-        return $val->is_valid();
+        return $val->isValid();
     }
 
     // use not
     $val->field('files.test')->not()->required();
 
-    return $val->is_valid();
+    return $val->isValid();
 }
 
 // validate with correct input field

@@ -36,35 +36,35 @@ $incorrect = [
 // validate with correct input field
 
 it('can validate extension with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->field('files.test')->extension('png');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate extension (not) with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->field('files.test')->not->extension('png');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 // validate with incorrect input field
 
 it('can validate extension with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->field('files.test')->extension('php');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can validate extension (not) with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->field('files.test')->not->extension('php');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });

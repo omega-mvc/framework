@@ -10,7 +10,7 @@ it('can add costume validation', function () {
         'This field is not odd number'
     );
 
-    expect($validation->is_valid())->toBeTrue();
+    expect($validation->isValid())->toBeTrue();
 });
 
 it('can add costume validation (not)', function () {
@@ -21,7 +21,7 @@ it('can add costume validation (not)', function () {
         'This field is not odd number'
     );
 
-    expect($validation->is_valid())->toBeFalse();
+    expect($validation->isValid())->toBeFalse();
 });
 
 it('can add costume validation combine with other', function () {
@@ -32,7 +32,7 @@ it('can add costume validation combine with other', function () {
         'This field is not odd number'
     )->min_len(2);
 
-    expect($validation->is_valid())->toBeTrue();
+    expect($validation->isValid())->toBeTrue();
 });
 
 it('can add costume validation (not) combine with other', function () {
@@ -43,7 +43,7 @@ it('can add costume validation (not) combine with other', function () {
         'This field is not odd number'
     )->min_len(2);
 
-    expect($validation->is_valid())->toBeFalse();
+    expect($validation->isValid())->toBeFalse();
 });
 
 it('can add costume message validation', function () {
@@ -67,7 +67,7 @@ it('can add costume message validation (not)', function () {
         'Costume error - {field}'
     );
 
-    expect($validation->is_valid())->toBeFalse();
+    expect($validation->isValid())->toBeFalse();
     expect($validation->errors->all())->toMatchArray([
         'test' => 'Not, Costume error - Test',
     ]);

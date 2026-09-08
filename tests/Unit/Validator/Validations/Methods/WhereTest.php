@@ -16,7 +16,7 @@ it('can reset validation rule using method where (true)', function () {
     // output: required
     $val->field('test')->required()->where(fn () => true);
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can reset validation rule using method where (false)', function () {
@@ -25,7 +25,7 @@ it('can reset validation rule using method where (false)', function () {
     // output: ''
     $val->test->required()->where(fn () => false);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can reset validation rule using method where (no return)', function () {
@@ -50,5 +50,5 @@ it('can validate combine with submitted method', function () {
     // output: required
     $val->field('test')->required()->where(fn () => $val->submitted());
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });

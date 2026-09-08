@@ -22,39 +22,39 @@ $incorrect = [
 // validate with correct input field
 
 it('can validate max_len with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test1->max_len(5);
     $val->test2->max_len(2);
     $val->test3->max_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate max_len (not) with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test1->not->max_len(5);
     $val->test2->not->max_len(2);
     $val->test3->not->max_len(2);
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 // validate with incorrect input field
 
 it('can validate max_len with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test->max_len(2);
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can validate max_len (not) with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test->not->max_len(2);
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });

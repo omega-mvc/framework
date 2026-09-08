@@ -27,39 +27,39 @@ $incorrect = [
 // validate with correct input field
 
 it('can validate float with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $field_name = array_keys($correct);
     $val->field(...$field_name)->float();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate float (not) with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $field_name = array_keys($correct);
     $val->field(...$field_name)->not->float();
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 // validate with incorrect input field
 
 it('can validate float with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $field_name = array_keys($incorrect);
     $val->field(...$field_name)->float();
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can validate iban (not) with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $field_name = array_keys($incorrect);
     $val->field(...$field_name)->not->float();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });

@@ -8,7 +8,7 @@ it('can get error message when valadation is fallen using method get_error', fun
 
     $valid->field('test')->min_len(5);
 
-    expect($valid->get_error())->toHaveCount(1);
+    expect($valid->getError())->toHaveCount(1);
 });
 
 it('can get error message when valadation is fallen using method if_valid', function () {

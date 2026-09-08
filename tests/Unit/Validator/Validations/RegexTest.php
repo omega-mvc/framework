@@ -15,35 +15,35 @@ $incorrect = ['test' => 'testing using pest'];
 // validate with correct input field
 
 it('can validate regex with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test->regex('/gump/i');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('can validate regex (not) with correct input', function () use ($correct) {
-    $val = new Validator\Validator($correct);
+    $val = new Omega\Validator\Validator($correct);
 
     $val->test->not->regex('/gump/i');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 // validate with incorrect input field
 
 it('can validate regex with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test->regex('/gump/i');
 
-    expect($val->is_valid())->toBeFalse();
+    expect($val->isValid())->toBeFalse();
 });
 
 it('can validate regex (not) with incorrect input', function () use ($incorrect) {
-    $val = new Validator\Validator($incorrect);
+    $val = new Omega\Validator\Validator($incorrect);
 
     $val->test->not()->regex('/gump/i');
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });

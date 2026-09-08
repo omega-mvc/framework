@@ -144,9 +144,9 @@ final class Validator
     /**
      * Set fields or input for validation.
      *
-     * @param array<string, mixed> $fields Field array to validate
+     * @param iterable<string, mixed> $fields Field array to validate
      */
-    public function fields(array $fields): self
+    public function fields(iterable $fields): self
     {
         foreach ($fields as $key => $field) {
             $this->fields[$key] = $field;

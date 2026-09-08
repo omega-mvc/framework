@@ -24,13 +24,17 @@ final class MessagePool
     /**
      * Field tobe set.
      *
-     * @param string $field   Field name
-     * @param Message $message Message for this field
+     * @param string                       $field   Field name
+     * @param Message|array<string, string> $message Message (or message map) for this field
      *
      * @return void
      */
-    public function __set(string $field, Message $message)
+    public function __set(string $field, Message|array $message)
     {
+        if (is_array($message)) {
+            $message = (new Message())->add($message);
+        }
+
         $this->messages[$field] = $message;
     }
 

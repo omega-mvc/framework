@@ -14,14 +14,14 @@ it('can change supported language', function () {
         ->field('test')->required()
     ;
 
-    expect($val->get_error())->toBe(['test' => 'Bagian Test harus diisi']);
+    expect($val->getError())->toBe(['test' => 'Bagian Test harus diisi']);
 });
 
 it('change supported language after run validator doesn\'t perform anything', function () {
     $val = new Validator(['test' => null]);
 
     $val->field('test')->required();
-    $err = $val->get_error();
+    $err = $val->getError();
     // change lang after run validation
     $val->lang('id');
 
@@ -34,7 +34,7 @@ it('can create costume error', function () {
     $val = new Validator(['tets' => null]);
     $val->test->required();
 
-    expect($val->get_error())->test->toEqual('Test can\'t be null');
+    expect($val->getError())->test->toEqual('Test can\'t be null');
 });
 
 it('can create costume error (containt \'not\' method)', function () {
@@ -43,7 +43,7 @@ it('can create costume error (containt \'not\' method)', function () {
     $val = new Validator(['test' => 'null']);
     $val->test->not()->required();
 
-    expect($val->get_error())->test->toEqual('Test can\'t be null');
+    expect($val->getError())->test->toEqual('Test can\'t be null');
 });
 
 it('can create costume error multy', function () {
@@ -58,7 +58,7 @@ it('can create costume error multy', function () {
     $val->test->required();
     $val->field('test2')->min_len(4);
 
-    expect($val->get_error())->toMatchArray([
+    expect($val->getError())->toMatchArray([
         'test'  => 'Test can\'t be null',
         'test2' => 'Test2 less that 2',
     ]);

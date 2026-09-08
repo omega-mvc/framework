@@ -16,7 +16,7 @@ it('validate using fields and validation', function () {
     $val->field('user')->required()->min_len(5);
     $val('name')->required()->valid_name();
 
-    expect($val->is_valid())->toBeTrue();
+    expect($val->isValid())->toBeTrue();
 });
 
 it('run validation condtion with valid condition', function () {
@@ -33,7 +33,7 @@ it('run validation condtion with valid condition', function () {
     $val('name')->required()->valid_name();
 
     $val->if_valid(function () use ($val) {
-        expect($val->is_valid())->toBeTrue();
+        expect($val->isValid())->toBeTrue();
     })->else(function ($err) {
         // its mean have no error
         expect($err)->toHaveCount(0);
@@ -57,7 +57,7 @@ it('run validation condtion with valid failed condition', function () {
         // skip, invalid validation
         expect(false)->toBeTrue();
     })->else(function ($err) use ($val) {
-        expect($val->is_valid())->toBeFalse();
+        expect($val->isValid())->toBeFalse();
     });
 });
 
@@ -74,7 +74,7 @@ it('can validate nesting array', function () {
         ],
     ]);
 
-    $valid = $test->is_valid(function (ValidPool $valid) {
+    $valid = $test->isValid(function (ValidPool $valid) {
         $valid('name')->required()->max_len(7);
         $valid('nest.number')->required();
         $valid('users.*.name')->required();
@@ -97,7 +97,7 @@ it('can validate invert nesting array', function () {
         ],
     ]);
 
-    $valid = $test->is_valid(function (ValidPool $valid) {
+    $valid = $test->isValid(function (ValidPool $valid) {
         $valid('name')->not()->required();
         $valid('hoby')->not()->contains();
         $valid('nest.number')->required();

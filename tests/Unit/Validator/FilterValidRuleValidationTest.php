@@ -17,7 +17,7 @@ it('can validate with normal behavior', function () {
         ]
     );
 
-    expect($v->is_valid())->toBeFalse();
+    expect($v->isValid())->toBeFalse();
 });
 
 it('can filter valid rule with allowed field', function () {
@@ -36,7 +36,7 @@ it('can filter valid rule with allowed field', function () {
 
     $v->only(['test1', 'test2']);
 
-    expect($v->is_valid())->toBeTrue();
+    expect($v->isValid())->toBeTrue();
 });
 
 it('can filter valid rule with allowed field (false)', function () {
@@ -54,7 +54,7 @@ it('can filter valid rule with allowed field (false)', function () {
     );
     $v->only(['test3']);
 
-    expect($v->is_valid())->toBeFalse();
+    expect($v->isValid())->toBeFalse();
 });
 
 it('can filter valid rule with allowed field (but not exis)', function () {
@@ -73,7 +73,7 @@ it('can filter valid rule with allowed field (but not exis)', function () {
 
     $v->only(['test4']);
 
-    expect($v->is_valid())->toBeTrue();
+    expect($v->isValid())->toBeTrue();
 });
 
 it('can filter valid rule with excepted field', function () {
@@ -92,7 +92,7 @@ it('can filter valid rule with excepted field', function () {
 
     $v->except(['test1', 'test2']);
 
-    expect($v->is_valid())->toBeFalse();
+    expect($v->isValid())->toBeFalse();
 });
 
 it('can filter valid rule with excepted field (but not exis)', function () {
@@ -110,5 +110,5 @@ it('can filter valid rule with excepted field (but not exis)', function () {
     );
     $v->except(['test4']);
 
-    expect($v->is_valid())->toBeFalse();
+    expect($v->isValid())->toBeFalse();
 });
