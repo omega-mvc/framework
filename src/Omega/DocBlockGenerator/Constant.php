@@ -60,8 +60,8 @@ class Constant
      */
     private int $visibility;
 
-    /** @var string|null The name of the constant being generated. */
-    private ?string $name;
+    /** @var string The name of the constant being generated. */
+    private string $name;
 
     /**
      * The value to assign to the constant.

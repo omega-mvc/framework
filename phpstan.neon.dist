@@ -10,3 +10,9 @@ parameters:
         - tests/Unit/fixtures
     bootstrapFiles:
         - vendor/autoload.php
+
+services:
+    -
+        class: Omega\PHPStan\Type\ReflectionFunctionAbstractReturnTypeExtension
+        tags:
+            - phpstan.broker.dynamicMethodReturnTypeExtension

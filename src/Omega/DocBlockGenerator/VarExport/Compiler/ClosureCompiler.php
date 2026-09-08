@@ -14,7 +14,7 @@ class ClosureCompiler extends AbstractCompiler
 {
     private ReflectionFunction $reflection;
 
-    private ?ClosureExtractor $extractor;
+    private ClosureExtractor $extractor;
 
     public function __construct()
     {
@@ -26,8 +26,20 @@ class ClosureCompiler extends AbstractCompiler
         return $this->reflection;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getCapturedVariables(): array
+    {
+        return $this->reflection->getStaticVariables();
+    }
+
     public function compile(mixed $data): array
     {
+        if (!$data instanceof Closure) {
+            throw new InvalidArgumentException('Expected a Closure instance.');
+        }
+
         $this->reflection = $this->reflectClosure($data);
 
         return $this

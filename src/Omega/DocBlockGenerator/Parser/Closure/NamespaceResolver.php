@@ -41,7 +41,8 @@ final class NamespaceResolver
 
         // Get all class imports from the file
         $classParse = new ParseNamespace();
-        $fileImports = $classParse->resolveClasses($reflection->getFileName());
+        $file = $reflection->getFileName();
+        $fileImports = false === $file ? [] : $classParse->resolveClasses($file);
 
         // Filter file imports to only those that match needed classes (case-insensitive)
         $neededLower = array_map('strtolower', $neededClasses);
@@ -71,7 +72,8 @@ final class NamespaceResolver
     }
 
     /**
-     * @param array<int, class-string> $classes
+     * @param array<int, string> $classes
+     * @param-out array<int, string> $classes
      */
     private function collectFromType(?ReflectionType $type, array &$classes): void
     {
@@ -80,7 +82,6 @@ final class NamespaceResolver
         }
 
         if ($type instanceof ReflectionNamedType && false === $type->isBuiltin()) {
-            /* @var class-string $classes */
             $classes[] = $type->getName();
 
             return;

@@ -67,7 +67,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": ["tests/Unit/", "tests/"]
+            "Tests\\": ["tests/Unit/", "tests/"],
+            "Omega\\PHPStan\\": "phpstan/"
         }
     },
     "extra": {

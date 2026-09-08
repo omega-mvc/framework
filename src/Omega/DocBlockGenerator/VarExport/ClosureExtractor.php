@@ -60,16 +60,20 @@ final class ClosureExtractor
      *     isSingleLine: bool,
      *     isArrowFunction: bool,
      *     minIndent: int
+     *   },
+     *   ast: array{
+     *     type: string,
+     *     isArrowFunction: bool,
+     *     parameters: string[],
+     *     body: string,
+     *     returnType: string|null
      *   }
      * }
      */
     public function extract(ReflectionFunction $reflection): array
     {
-        $this->validateReflection($reflection);
+        [$file, $startLine, $endLine] = $this->validateReflection($reflection);
 
-        $file         = $reflection->getFileName();
-        $startLine    = $reflection->getStartLine();
-        $endLine      = $reflection->getEndLine();
         $isSingleLine = $startLine === $endLine;
 
         $sourceLines  = $this->readSourceLines($file, $startLine, $endLine);
@@ -107,14 +111,24 @@ final class ClosureExtractor
 
     /**
      * Validate that reflection is compilable.
+     *
+     * @return array{0: string, 1: int, 2: int}
      */
-    private function validateReflection(ReflectionFunction $reflection): void
+    private function validateReflection(ReflectionFunction $reflection): array
     {
-        $file = $reflection->getFileName();
+        $file      = $reflection->getFileName();
+        $startLine = $reflection->getStartLine();
+        $endLine   = $reflection->getEndLine();
 
         if (false === $file) {
             throw new InvalidArgumentException(
                 'Cannot extract runtime-created closure. Closure must be defined in a source file.'
+            );
+        }
+
+        if (false === $startLine || false === $endLine) {
+            throw new InvalidArgumentException(
+                'Cannot extract closure with unknown start or end line.'
             );
         }
 
@@ -125,6 +139,8 @@ final class ClosureExtractor
         if (false === is_readable($file)) {
             throw new InvalidArgumentException("Source file not readable: {$file}");
         }
+
+        return [$file, $startLine, $endLine];
     }
 
     /**
@@ -241,7 +257,7 @@ final class ClosureExtractor
     /**
      * Build AST-like structure from tokens.
      *
-     * @param array<int, array<int, int|string>|string> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      *
      * @return array{
      *   type: string,
@@ -344,7 +360,7 @@ final class ClosureExtractor
     /**
      * Convert tokens back to string.
      *
-     * @param array<int, array<int, int|string>|string> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      */
     private function tokensToString(array $tokens): string
     {

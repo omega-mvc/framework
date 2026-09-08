@@ -53,7 +53,7 @@ final class VarExport
 
     private bool $alignArray = false;
 
-    private ?StringCompiler $stringCompiler;
+    private StringCompiler $stringCompiler;
 
     /** @var string[] */
     private array $namespaces = [];
@@ -191,9 +191,7 @@ final class VarExport
     {
         $closureCompiler = new ClosureCompiler();
         $compile         = $closureCompiler->compile($closure);
-        $capturedVars    = $closureCompiler
-            ->getReflection()
-            ->getStaticVariables();
+        $capturedVars    = $closureCompiler->getCapturedVariables();
 
         $namespaces       = new NamespaceResolver();
         $this->namespaces = $namespaces->resolve(

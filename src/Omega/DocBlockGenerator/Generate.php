@@ -75,10 +75,10 @@ class Generate
     /** @var bool Whether the generated file ends with a newline. */
     private bool $endWithNewline = false;
 
-    /** @var string|null Name of the class/trait being generated. */
-    private ?string $name;
+    /** @var string Name of the class/trait being generated. */
+    private string $name;
 
-    /** @var string[] PHP declare directives to add at the beginning of the file. */
+    /** @var array<string, string|int> PHP declare directives to add at the beginning of the file. */
     private array $declare = [];
 
     /** @var string|null Namespace for the generated class/trait. */
@@ -96,13 +96,13 @@ class Generate
     /** @var string[] List of traits used in the generated class. */
     private array $traits = [];
 
-    /** @var string[] List of constants added to the generated class. Can contain Constant objects or strings. */
+    /** @var array<Constant|string> List of constants added to the generated class. Can contain Constant objects or strings. */
     private array $constants = [];
 
-    /** @var string[] List of properties added to the generated class. Can contain Property objects or strings. */
+    /** @var array<Property|string> List of properties added to the generated class. Can contain Property objects or strings. */
     private array $properties = [];
 
-    /** @var string[] List of methods added to the generated class. Can contain Method objects or strings. */
+    /** @var array<Method|string> List of methods added to the generated class. Can contain Method objects or strings. */
     private array $methods = [];
 
     /** @var string[] Raw body lines added to the generated class. */
@@ -279,7 +279,6 @@ class Generate
         $constants = [];
         if (count($this->constants) > 0) {
             foreach ($this->constants as $const) {
-                /* @phpstan-ignore-next-line */
                 if ($const instanceof Constant) {
                     $const
                         ->tabSize($this->tabSize)
@@ -296,7 +295,6 @@ class Generate
         $properties = [];
         if (count($this->properties) > 0) {
             foreach ($this->properties as $property) {
-                /* @phpstan-ignore-next-line */
                 if ($property instanceof Property) {
                     $property
                         ->tabSize($this->tabSize)
@@ -313,7 +311,6 @@ class Generate
         $methods = [];
         if (count($this->methods) > 0) {
             foreach ($this->methods as $method) {
-                /* @phpstan-ignore-next-line */
                 if ($method instanceof Method) {
                     $method
                         ->tabSize($this->tabSize)
@@ -337,8 +334,8 @@ class Generate
         $end = $this->endWithNewline ? "\n" : '';
 
         // manual replace
-        $search  = $this->replace[0] ?? null;
-        $replace = $this->replace[1] ?? null;
+        $search  = $this->replace[0] ?? [];
+        $replace = $this->replace[1] ?? [];
 
         return str_replace(
             ['{{before}}', '{{comment}}', '{{rule}}', '{{head}}', '{{body}}', '{{end}}', ...$search],
@@ -607,17 +604,9 @@ class Generate
 
             call_user_func_array($newConst, [$const]);
 
-            foreach ($const->getPools() as $pool) {
-                if ($pool instanceof Constant) {
-                    $this->constants[] = $pool;
-                }
-            }
+            $this->constants = [...$this->constants, ...$const->getPools()];
         } elseif ($newConst instanceof ConstPool) { // detect parameter is instance constPool
-            foreach ($newConst->getPools() as $pool) {
-                if ($pool instanceof Constant) {
-                    $this->constants[] = $pool;
-                }
-            }
+            $this->constants = [...$this->constants, ...$newConst->getPools()];
         }
 
         return $this;
@@ -654,17 +643,9 @@ class Generate
 
             call_user_func_array($newProperty, [$property]);
 
-            foreach ($property->getPools() as $pool) {
-                if ($pool instanceof Property) {
-                    $this->properties[] = $pool;
-                }
-            }
+            $this->properties = [...$this->properties, ...$property->getPools()];
         } elseif ($newProperty instanceof PropertyPool) { // detect parameter is instance methodPool
-            foreach ($newProperty->getPools() as $pool) {
-                if ($pool instanceof Property) {
-                    $this->properties[] = $pool;
-                }
-            }
+            $this->properties = [...$this->properties, ...$newProperty->getPools()];
         }
 
         return $this;
@@ -700,17 +681,9 @@ class Generate
 
             call_user_func_array($newMethod, [$method]);
 
-            foreach ($method->getPools() as $pool) {
-                if ($pool instanceof Method) {
-                    $this->methods[] = $pool;
-                }
-            }
+            $this->methods = [...$this->methods, ...$method->getPools()];
         } elseif ($newMethod instanceof MethodPool) { // detect parameter is instance methodPool
-            foreach ($newMethod->getPools() as $pool) {
-                if ($pool instanceof Method) {
-                    $this->methods[] = $pool;
-                }
-            }
+            $this->methods = [...$this->methods, ...$newMethod->getPools()];
         }
 
         return $this;

@@ -87,7 +87,7 @@ final class NamespaceResolver
     }
 
     /**
-     * @param array<int, mixed> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      * @param string[]          $uses
      */
     private function parseUseStatement(array $tokens, int &$i, array &$uses): void
@@ -138,7 +138,7 @@ final class NamespaceResolver
     /**
      * Parse use statement but only collect class imports (skip function/const).
      *
-     * @param array<int, mixed> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      * @param string[]          $uses
      */
     private function parseClassUseStatement(array $tokens, int &$i, array &$uses): void
@@ -199,7 +199,7 @@ final class NamespaceResolver
     }
 
     /**
-     * @param array<int, mixed> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      * @param string[]          $uses
      */
     private function parseGroupedUse(array $tokens, int &$i, string $base, array &$uses): void
@@ -243,7 +243,7 @@ final class NamespaceResolver
     /**
      * Parse grouped use statement for class imports only.
      *
-     * @param array<int, mixed> $tokens
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
      * @param string[]          $uses
      */
     private function parseGroupedClassUse(
