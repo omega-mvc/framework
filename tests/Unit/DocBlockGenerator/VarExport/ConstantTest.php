@@ -35,6 +35,10 @@ it('can compile constant by name', function (): void {
     $imported = require $file;
     unlink($file);
 
+    if (!is_array($imported)) {
+        throw new \RuntimeException('Imported file must return an array.');
+    }
+
     expect($imported['php_version'])->toEqual(PHP_VERSION);
     expect($imported['ds'])->toEqual(DIRECTORY_SEPARATOR);
 });

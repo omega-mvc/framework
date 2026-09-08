@@ -30,7 +30,7 @@ it('compiles object with set state', function (): void {
     $file_content = <<<PHP
 <?php
 
-use System\Test\DocBlockGenerator\VarExport\ObjectWithSetState;
+use Tests\DocBlockGenerator\Fixtures\ObjectWithSetState;
 
 return {$exported};
 PHP;
@@ -94,13 +94,17 @@ it('compiles object with private and protected properties', function (): void {
     $file_content = <<<PHP
 <?php
 
-use System\Test\DocBlockGenerator\VarExport\ObjectWithVisibility;
+use Tests\DocBlockGenerator\Fixtures\ObjectWithVisibility;
 
 return {$exported};
 PHP;
     file_put_contents($file, $file_content);
     $imported = require $file;
     unlink($file);
+
+    if (!is_array($imported) || !isset($imported[0]) || !$imported[0] instanceof ObjectWithVisibility) {
+        throw new \RuntimeException('Imported file must contain an ObjectWithVisibility instance.');
+    }
 
     expect($imported[0]->getPublic())->toEqual(1);
     expect($imported[0]->getProtected())->toEqual(2);

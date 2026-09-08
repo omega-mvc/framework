@@ -78,7 +78,16 @@ PHP;
     $fileContent = file_get_contents($filePath);
     expect($fileContent)->toBeString();
 
+    if (!is_string($fileContent)) {
+        throw new \RuntimeException('Compiled file is not readable.');
+    }
+
     $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
+
+    if (!is_string($fileContent)) {
+        throw new \RuntimeException('Failed to normalize the compiled file.');
+    }
+
     $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
 
     expect($expectedContent)->toEqual($fileContent);
@@ -117,7 +126,16 @@ PHP;
     $fileContent = file_get_contents($filePath);
     expect($fileContent)->toBeString();
 
+    if (!is_string($fileContent)) {
+        throw new \RuntimeException('Compiled file is not readable.');
+    }
+
     $fileContent = preg_replace('/^(\/\/ generated on ).*$/m', '$1%date%', $fileContent);
+
+    if (!is_string($fileContent)) {
+        throw new \RuntimeException('Failed to normalize the compiled file.');
+    }
+
     $fileContent = str_replace(["\r\n", "\r"], "\n", $fileContent);
 
     expect($expectedContent)->toEqual($fileContent);

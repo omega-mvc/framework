@@ -35,8 +35,12 @@ covers(NewProperty::class);
 function basicTemplateGetExpected(string $expected): string
 {
     $fileName = __DIR__ . '/../fixtures/template/' . $expected;
+    $content  = file_get_contents($fileName);
+    if (false === $content) {
+        throw new \RuntimeException(sprintf('Fixture file "%s" is not readable.', $fileName));
+    }
 
-    return str_replace("\r\n", "\n", file_get_contents($fileName));
+    return str_replace("\r\n", "\n", $content);
 }
 
 it('generates a basic class', function (): void {

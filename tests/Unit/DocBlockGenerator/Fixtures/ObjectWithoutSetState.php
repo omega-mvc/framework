@@ -9,5 +9,5 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 #[CoversNothing]
 class ObjectWithoutSetState
 {
-    public $a;
+    public int $a = 1;
 }

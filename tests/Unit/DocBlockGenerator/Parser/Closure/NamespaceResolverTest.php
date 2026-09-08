@@ -74,10 +74,6 @@ it('ignores builtin types', function (): void {
 });
 
 it('collects union types', function (): void {
-    if (PHP_VERSION_ID < 80000) {
-        $this->markTestSkipped('Union types require PHP 8.0');
-    }
-
     $resolver = new NamespaceResolver();
 
     $code = <<<'PHP'
@@ -107,10 +103,6 @@ PHP;
 });
 
 it('collects intersection types', function (): void {
-    if (PHP_VERSION_ID < 80100) {
-        $this->markTestSkipped('Intersection types require PHP 8.1');
-    }
-
     $resolver = new NamespaceResolver();
 
     $code = <<<'PHP'
@@ -143,7 +135,7 @@ it('removes duplicates and reindexes', function (): void {
     $fn = static function (DummyParamClass $a): DummyParamClass {
         static $obj;
 
-        if (null === $obj) {
+        if (!$obj instanceof DummyParamClass) {
             $obj = new DummyParamClass();
         }
 

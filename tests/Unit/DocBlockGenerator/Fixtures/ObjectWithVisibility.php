@@ -9,11 +9,14 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 #[CoversNothing]
 class ObjectWithVisibility
 {
-    public $public       = 1;
-    protected $protected = 2;
-    private $private     = 3;
+    public int $public       = 1;
+    protected int $protected = 2;
+    private int $private     = 3;
 
-    public static function __set_state($array)
+    /**
+     * @param array{public: int, protected: int, private: int} $array
+     */
+    public static function __set_state(array $array): self
     {
         $obj            = new self();
         $obj->public    = $array['public'];

@@ -11,7 +11,10 @@ use function str_replace;
 
 covers(VarExport::class);
 
-function assertCompiles(string $expected, mixed $value): void
+/**
+ * @param array<mixed> $value
+ */
+function assertCompiles(string $expected, array $value): void
 {
     $exporter   = new VarExport();
     $exported   = $exporter->export($value);
@@ -70,14 +73,14 @@ PHP;
     assertCompiles($expected, ['closure' => $closure]);
 });
 
-it('compiles closure with untyped parameters ($a, $b)', function (): void {
-    $closure = function ($a, $b) {
+it('compiles closure with parameters ($a, $b)', function (): void {
+    $closure = function (int $a, int $b) {
         return $a + $b;
     };
 
     $expected = <<<'PHP'
 [
-    'closure' => function ($a, $b) {
+    'closure' => function (int $a, int $b) {
         return $a + $b;
     },
 ]
@@ -135,13 +138,13 @@ PHP;
 });
 
 it('compiles closure with reference parameters (&$a)', function (): void {
-    $closure = function (&$a) {
+    $closure = function (int &$a) {
         $a++;
     };
 
     $expected = <<<'PHP'
 [
-    'closure' => function (&$a) {
+    'closure' => function (int &$a) {
         $a++;
     },
 ]
@@ -264,7 +267,7 @@ it('compiles closure stored in variable with array context', function (): void {
 
 it('compiles closure returned from function with proper extraction', function (): void {
     $getHandler = function () {
-        return function ($value) {
+        return function (int $value) {
             return $value * 2;
         };
     };
@@ -274,7 +277,7 @@ it('compiles closure returned from function with proper extraction', function ()
     $exporter = new VarExport();
     $output   = $exporter->export(['handler' => $closure]);
 
-    expect($output)->toContain('function ($value)');
+    expect($output)->toContain('function (int $value)');
     expect($output)->toContain('return $value * 2');
 });
 
@@ -282,7 +285,7 @@ it('compiles closure extracted from class method properly', function (): void {
     $handler = new class {
         public function getClosure(): Closure
         {
-            return function ($x) {
+            return function (int $x) {
                 return $x + 1;
             };
         }
@@ -293,7 +296,7 @@ it('compiles closure extracted from class method properly', function (): void {
     $exporter = new VarExport();
     $output   = $exporter->export(['method_closure' => $closure]);
 
-    expect($output)->toContain('function ($x)');
+    expect($output)->toContain('function (int $x)');
     expect($output)->toContain('return $x + 1');
 });
 

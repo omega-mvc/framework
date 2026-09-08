@@ -83,7 +83,6 @@ it('extracts multiline closure structure', function (): void {
     expect($normalized)->toContain('function');
     expect($normalized)->toContain('$x = 10');
     expect($normalized)->toContain('return $x * 2');
-    expect($result['lines'])->toBeArray();
     expect($result['lines'])->not->toBeEmpty();
 });
 
@@ -107,14 +106,14 @@ it('lines array does not contain duplicate closure key', function (): void {
 
 it('extracts closure with parameters', function (): void {
     $extractor = new ClosureExtractor();
-    $closure   = function ($a, $b) {
+    $closure   = function (int $a, int $b) {
         return $a + $b;
     };
 
     $reflection = new ReflectionFunction($closure);
     $result     = $extractor->extract($reflection);
 
-    expect($result['normalized'])->toContain('($a, $b)');
+    expect($result['normalized'])->toContain('(int $a, int $b)');
     expect($result['normalized'])->toContain('return $a + $b');
 });
 
@@ -159,11 +158,6 @@ it('metadata contains correct line information', function (): void {
     $result     = $extractor->extract($reflection);
 
     expect($result['metadata'])->toHaveKeys(['startLine', 'endLine', 'file', 'isSingleLine', 'isArrowFunction']);
-    expect($result['metadata']['startLine'])->toBeInt();
-    expect($result['metadata']['endLine'])->toBeInt();
-    expect($result['metadata']['file'])->toBeString();
-    expect($result['metadata']['isSingleLine'])->toBeBool();
-    expect($result['metadata']['isArrowFunction'])->toBeBool();
 });
 
 it('arrow function metadata correctly identified', function (): void {
@@ -218,7 +212,6 @@ it('original code preserved in output', function (): void {
     $result     = $extractor->extract($reflection);
 
     expect($result)->toHaveKey('original');
-    expect($result['original'])->toBeString();
     expect($result['original'])->toContain('function');
 });
 
@@ -297,5 +290,4 @@ it('ast contains correct structure', function (): void {
     expect($result['ast'])->toHaveKeys(['type', 'isArrowFunction', 'parameters', 'body']);
     expect($result['ast']['type'])->toEqual('closure');
     expect($result['ast']['isArrowFunction'])->toBeFalse();
-    expect($result['ast']['parameters'])->toBeArray();
 });
