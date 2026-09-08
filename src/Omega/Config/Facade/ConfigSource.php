@@ -36,7 +36,7 @@ use Omega\Facade\AbstractFacade;
  * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
  *
- * @method static ConfigSourceService fromArray(array $content, ?string $section = null, int $priority = 0)
+ * @method static ConfigSourceService fromArray(array<string, mixed> $content, ?string $section = null, int $priority = 0)
  * @method static ConfigSourceService fromJson(string $file, ?string $section = null, int $priority = 0)
  * @method static ConfigSourceService fromXml(string $file, ?string $section = null, int $priority = 0)
  * @method static ConfigRepositoryInterface build(?MergeStrategy $strategy = null)

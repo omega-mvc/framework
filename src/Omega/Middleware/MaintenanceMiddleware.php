@@ -64,8 +64,8 @@ class MaintenanceMiddleware
      * - Returns a maintenance template with optional headers.
      * - Throws HttpException if no redirect or template is defined.
      *
-     * @param Request $request The incoming HTTP request.
-     * @param Closure $next The next middleware or request handler.
+     * @param Request                      $request The incoming HTTP request.
+     * @param Closure(Request): Response   $next    The next middleware or request handler.
      * @return Response The HTTP response for the request.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -79,17 +79,21 @@ class MaintenanceMiddleware
         if ($this->app->isDownMaintenanceMode()) {
             $data = $this->app->getDownData();
 
-            if (isset($data['redirect'])) {
+            if (is_string($data['redirect'] ?? null)) {
                 return redirect($data['redirect']);
             }
 
-            if (isset($data['template'])) {
-                $header = isset($data['retry']) ? ['Retry-After' => $data['retry']] : [];
+            if (is_string($data['template'] ?? null)) {
+                $response = new Response($data['template'], is_int($data['status'] ?? null) ? $data['status'] : 503);
 
-                return new Response($data['template'], $data['status'] ?? 503, $header);
+                if (isset($data['retry'])) {
+                    $response->headers->set('Retry-After', $data['retry']);
+                }
+
+                return $response;
             }
 
-            throw new HttpException($data['status'] ?? 503, 'Service Unavailable');
+            throw new HttpException(is_int($data['status'] ?? null) ? $data['status'] : 503, 'Service Unavailable');
         }
 
         return $next($request);
