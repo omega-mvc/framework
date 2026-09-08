@@ -38,10 +38,10 @@ class AsCommand
     /**
      * @param string $name Command name used to invoke it (e.g. 'app:user-clean')
      * @param string|null $description Short description shown in command list
-     * @param array $aliases Alternative names for the command
+     * @param array<int, string> $aliases Alternative names for the command
      * @param bool $hidden Whether the command should be hidden from the list
-     * @param array $arguments Argument definitions [name => [mode, description, default]]
-     * @param array $options Option definitions [name => [shortcut, mode, description, default]]
+     * @param array<string, array<int, mixed>> $arguments Argument definitions [name => [mode, description, default]]
+     * @param array<string, array<int, mixed>> $options Option definitions [name => [shortcut, mode, description, default]]
      */
     public function __construct(
         public string $name,

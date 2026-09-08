@@ -29,6 +29,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
 use ReflectionException;
 use Symfony\Component\Console\Application;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
@@ -97,8 +98,8 @@ class ConsoleApplication
      * prepares input and output instances, registers all configured commands,
      * and delegates execution to the Symfony Console application.
      *
-     * @param array<int, string>|InputInterface|null $input  Raw CLI arguments or a pre-built input instance.
-     * @param OutputInterface|null                   $output Output instance; defaults to ConsoleOutput if null.
+     * @param list<string>|InputInterface|null      $input  Raw CLI arguments or a pre-built input instance.
+     * @param OutputInterface|null                  $output Output instance; defaults to ConsoleOutput if null.
      * @return int Exit status code returned by the console application.
      * @throws BindingResolutionException If a container binding cannot be resolved.
      * @throws CircularAliasException If a circular alias is detected in the container.
@@ -173,10 +174,38 @@ class ConsoleApplication
         $cacheFile = $this->app->getApplicationCachePath() . 'commands.php';
 
         $merged = file_exists($cacheFile)
-            ? require $cacheFile
+            ? $this->loadCachedCommands($cacheFile)
             : $this->discoverCommands();
 
         $console->setCommandLoader(new CommandLoader($this->app, $merged));
+    }
+
+    /**
+     * Load the command map from a cached PHP file.
+     *
+     * The cache file must return an array mapping command names to
+     * command class names. Invalid entries are skipped.
+     *
+     * @param string $cacheFile Path to the cached command map.
+     * @return array<string, class-string<Command>> Validated command name to class map.
+     */
+    protected function loadCachedCommands(string $cacheFile): array
+    {
+        $cached = require $cacheFile;
+
+        if (!is_array($cached)) {
+            return [];
+        }
+
+        $commands = [];
+
+        foreach ($cached as $name => $class) {
+            if (is_string($name) && is_string($class) && is_a($class, Command::class, true)) {
+                $commands[$name] = $class;
+            }
+        }
+
+        return $commands;
     }
 
     /**
@@ -185,7 +214,7 @@ class ConsoleApplication
      * Iterates through predefined command paths, reflects each class, and extracts
      * metadata from the AsCommand attribute to build a command name to class map.
      *
-     * @return array<string, class-string> Discovered command name to class map
+     * @return array<string, class-string<Command>> Discovered command name to class map
      * @throws BindingResolutionException If a container binding cannot be resolved.
      * @throws CircularAliasException If a circular alias is detected.
      * @throws ContainerExceptionInterface For generic container errors.
@@ -197,8 +226,13 @@ class ConsoleApplication
     {
         $commandPaths = [
             'Omega\\Console\\Commands\\' => __DIR__ . slash('/Commands'),
-            'App\\Console\\Commands\\'   => $this->app->get('path.command'),
         ];
+
+        $appCommandPath = $this->app->get('path.command');
+
+        if (is_string($appCommandPath)) {
+            $commandPaths['App\\Console\\Commands\\'] = $appCommandPath;
+        }
 
         $commands = [];
 
@@ -212,7 +246,7 @@ class ConsoleApplication
 
             foreach ($finder as $file) {
                 $className = $namespace . $file->getBasename('.php');
-                if (!class_exists($className)) {
+                if (!class_exists($className) || !is_a($className, Command::class, true)) {
                     continue;
                 }
 

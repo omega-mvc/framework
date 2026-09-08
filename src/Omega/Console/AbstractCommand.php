@@ -18,7 +18,7 @@ use Closure;
 use Omega\Application\ApplicationInterface;
 use Omega\Cache\Exceptions\UnknownStorageException;
 use Omega\Console\Attribute\AsCommand;
-use Omega\Console\Exception\InvalidArgumentException;
+use Omega\Console\Exceptions\InvalidArgumentException;
 use Omega\Container\Exceptions\CircularAliasException;
 use ReflectionClass;
 use Symfony\Component\Console\Command\Command;
@@ -76,7 +76,7 @@ abstract class AbstractCommand extends Command
     /** @var string|null Short description displayed in the command list */
     protected ?string $description = null;
 
-    /** @var array Alternative names that can be used to execute the command */
+    /** @var array<int, string> Alternative names that can be used to execute the command */
     protected array $aliases = [];
 
     /** @var bool Whether the command should be hidden from the command list */
@@ -115,7 +115,13 @@ abstract class AbstractCommand extends Command
     protected function call(string $commandName, array $parameters = []): int
     {
         try {
-            $command = $this->getApplication()->find($commandName);
+            $application = $this->getApplication();
+
+            if ($application === null) {
+                throw new InvalidArgumentException('The application instance is not available.');
+            }
+
+            $command = $application->find($commandName);
             $parameters['command'] = $commandName;
             $input = new ArrayInput($parameters);
 
@@ -167,7 +173,7 @@ abstract class AbstractCommand extends Command
         $this->setHidden($settings->hidden);
 
         foreach ($settings->arguments as $name => $config) {
-            if (!is_array($config) || count($config) < 2 || count($config) > 3) {
+            if (count($config) < 2 || count($config) > 3) {
                 throw new InvalidArgumentException(
                     "Argument configuration for '$name' must be an array with 2 or 3 elements: "
                     . '[mode:int, description:string, default?]'
@@ -184,11 +190,11 @@ abstract class AbstractCommand extends Command
                 throw new InvalidArgumentException("Argument '$name': description must be a string.");
             }
 
-            $this->addArgument($name, $config[0], $config[1], $config[2] ?? null);
+            $this->addArgument($name, $mode, $description, $default);
         }
 
         foreach ($settings->options as $name => $config) {
-            if (!is_array($config) || count($config) < 3 || count($config) > 5) {
+            if (count($config) < 3 || count($config) > 5) {
                 throw new InvalidArgumentException(
                     "Option configuration for '$name' must be an array with 3-5 elements: "
                     . '[shortcut:string|array|null, mode:int, description:string, default?, suggestedValues?]'
@@ -213,7 +219,7 @@ abstract class AbstractCommand extends Command
             if (!is_array($suggestedValues) && !$suggestedValues instanceof Closure) {
                 throw new InvalidArgumentException("Option '$name': suggestedValues must be array or Closure.");
             }
-            $this->addOption($name, $config[0], $config[1], $config[2], $config[3] ?? null, $config[4] ?? []);
+            $this->addOption($name, $shortcut, $mode, $description, $default, $suggestedValues);
         }
     }
 

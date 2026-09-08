@@ -46,6 +46,15 @@ use Omega\Container\ContainerInterface;
 interface ApplicationInterface extends ContainerInterface
 {
     /**
+     * Indicates whether the application bootstrap process has completed.
+     *
+     * Read-only virtual property backed by the implementation.
+     */
+    public bool $bootstrapped { // phpcs:ignore
+        get; // phpcs:ignore
+    }
+
+    /**
      * Get instance Application container.
      *
      * @return Application|null Return instance Application container.
