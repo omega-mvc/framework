@@ -18,6 +18,8 @@ use Closure;
 use DateInterval;
 use Omega\Cache\Exceptions\UnknownStorageException;
 
+use function array_keys;
+
 /**
  * Class CacheManager
  *
@@ -49,6 +51,9 @@ class CacheManager implements CacheInterface
     /** @var CacheInterface The default cache driver used when no specific driver name is provided. */
     private CacheInterface $defaultDriver;
 
+    /** @var string The name of the default cache driver. */
+    private string $defaultDriverName;
+
     /**
      * Initializes a new CacheFactory instance with the specified default cache driver.
      *
@@ -61,8 +66,29 @@ class CacheManager implements CacheInterface
      */
     public function __construct(string $defaultDriverName, CacheInterface $defaultDriver)
     {
+        $this->defaultDriverName = $defaultDriverName;
         $this->driver[$defaultDriverName] = $defaultDriver;
         $this->defaultDriver = $defaultDriver;
+    }
+
+    /**
+     * Returns the name of the default cache driver.
+     *
+     * @return string The default cache driver name.
+     */
+    public function getDefaultDriverName(): string
+    {
+        return $this->defaultDriverName;
+    }
+
+    /**
+     * Returns the names of all registered cache drivers.
+     *
+     * @return list<string> The registered cache driver names.
+     */
+    public function getDriverNames(): array
+    {
+        return array_keys($this->driver);
     }
 
     /**

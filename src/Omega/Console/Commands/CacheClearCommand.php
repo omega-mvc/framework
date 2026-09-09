@@ -1,7 +1,5 @@
 <?php
 
-/** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
-
 declare(strict_types=1);
 
 namespace Omega\Console\Commands;
@@ -19,12 +17,15 @@ use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
-use function array_keys;
+use function array_filter;
+use function array_values;
+use function is_array;
+use function is_string;
 use function method_exists;
 
 #[AsCommand(
     name: 'cache:clear',
-    description: 'Clear the application cache (default or specific drivers)',
+    description: 'Clear the application cache. Without options, clears the default cache driver',
     options: [
         'all'     => ['a', InputOption::VALUE_NONE, 'Clear all registered cache drivers'],
         'drivers' => ['d', InputOption::VALUE_IS_ARRAY | InputOption::VALUE_OPTIONAL, 'Clear specific driver name(s)']
@@ -52,26 +53,72 @@ final class CacheClearCommand extends AbstractCommand
 
         /** @var CacheManager $cache */
         $cache = $this->app->get('cache');
-        $driversToClear = [];
-
-        $clearAll = $this->getOption('all');
+        $clearAll = (bool) $this->getOption('all');
         $specificDrivers = $this->getOption('drivers');
 
+        if ($clearAll && !empty($specificDrivers)) {
+            $this->io->warning("'--all' overrides '--drivers': clearing all registered drivers.");
+        }
+
+        $driversToClear = [];
+
         if ($clearAll) {
-            $driversToClear = array_keys(
-                (fn (): array => $this->{'driver'})->call($cache)
-            );
-        } elseif (!empty($specificDrivers)) {
-            $driversToClear = $specificDrivers;
+            $driversToClear = $cache->getDriverNames();
+        } elseif (is_array($specificDrivers)) {
+            $driversToClear = array_values(array_filter(
+                $specificDrivers,
+                static fn (mixed $driver): bool => is_string($driver) && '' !== $driver
+            ));
         }
 
-        if (empty($driversToClear)) {
-            $cache->getDriver()->clear();
-            $this->io->info('Application cache cleared successfully.');
-            return self::SUCCESS;
+        if ([] === $driversToClear) {
+            return $this->clearDefaultDriver($cache);
         }
 
-        foreach ($driversToClear as $driverName) {
+        return $this->clearDrivers($cache, $driversToClear);
+    }
+
+    /**
+     * Clears the default cache driver and reports which cache was emptied.
+     *
+     * @param CacheManager $cache The cache manager instance.
+     * @return int The command exit code.
+     */
+    private function clearDefaultDriver(CacheManager $cache): int
+    {
+        $driverName = $cache->getDefaultDriverName();
+
+        try {
+            $cleared = $cache->getDriver()->clear();
+        } catch (Exception $e) {
+            $this->io->error("Failed to clear '{$driverName}' driver: " . $e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        if (false === $cleared) {
+            $this->io->error("Failed to clear '{$driverName}' driver.");
+
+            return self::FAILURE;
+        }
+
+        $this->io->info("Cleared '{$driverName}' driver.");
+
+        return self::SUCCESS;
+    }
+
+    /**
+     * Clears the given cache drivers, reporting per-driver results.
+     *
+     * @param CacheManager $cache   The cache manager instance.
+     * @param list<string> $drivers The driver names to clear.
+     * @return int The command exit code.
+     */
+    private function clearDrivers(CacheManager $cache, array $drivers): int
+    {
+        $failed = false;
+
+        foreach ($drivers as $driverName) {
             try {
                 $driver = $cache->getDriver($driverName);
 
@@ -80,13 +127,21 @@ final class CacheClearCommand extends AbstractCommand
                     continue;
                 }
 
-                $driver->clear();
+                $cleared = $driver->clear();
+
+                if (false === $cleared) {
+                    $this->io->error("Failed to clear '{$driverName}' driver.");
+                    $failed = true;
+                    continue;
+                }
+
                 $this->io->info("Cleared '{$driverName}' driver.");
             } catch (Exception $e) {
                 $this->io->error("Failed to clear '{$driverName}': " . $e->getMessage());
+                $failed = true;
             }
         }
 
-        return self::SUCCESS;
+        return $failed ? self::FAILURE : self::SUCCESS;
     }
 }
