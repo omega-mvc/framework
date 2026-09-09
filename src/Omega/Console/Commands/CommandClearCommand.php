@@ -29,7 +29,7 @@ final class CommandClearCommand extends AbstractCommand
         }
 
         if (unlink($cachePath)) {
-            $this->io->info("Console command cache cleared successfully.");
+            $this->io->command("Console command cache cleared successfully.");
             $this->io->comment("The application will now use dynamic discovery.");
 
             return self::SUCCESS;

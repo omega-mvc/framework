@@ -19,7 +19,6 @@ use Symfony\Component\Console\Terminal;
 
 use function array_reduce;
 use function max;
-use function sprintf;
 use function str_repeat;
 
 /**
@@ -30,7 +29,7 @@ use function str_repeat;
  * regardless of ANSI decorations or terminal size.
  *
  * It is intended for console commands and output components that require
- * right-aligned messages, multi-column layouts, or width-aware formatting.
+ * right-aligned messages or width-aware formatting.
  *
  * @category   Omega
  * @package    Console
@@ -128,46 +127,5 @@ trait InteractsWithConsoleOutputTrait
         $this->output->writeln(
             str_repeat(' ', $spacesCount) . $message
         );
-    }
-
-    /**
-     * Writes two values on a single line separated by a dotted filler.
-     *
-     * The left value is rendered near the beginning of the line while the
-     * right value is aligned toward the end. The available space between
-     * them is filled with gray dots.
-     *
-     * @param string $left The left column content.
-     * @param string $right The right column content.
-     * @param int $leftMargin Number of leading spaces before the left column.
-     * @param int $rightMargin Number of trailing spaces after the right column.
-     * @return void
-     */
-    protected function componentsTwoColumns(
-        string $left,
-        string $right,
-        int $leftMargin = 2,
-        int $rightMargin = 2
-    ): void {
-        $width = $this->getTerminalWidth();
-
-        $leftVisible  = $this->getVisibleWidth($left);
-        $rightVisible = $this->getVisibleWidth($right);
-
-        $dotsCount = max(
-            2,
-            $width - $leftVisible - $rightVisible - $leftMargin - $rightMargin - 2
-        );
-
-        $dots = "<fg=gray>" . str_repeat('.', $dotsCount) . "</>";
-
-        $this->output->writeln(sprintf(
-            '%s%s %s %s%s',
-            str_repeat(' ', $leftMargin),
-            $left,
-            $dots,
-            $right,
-            str_repeat(' ', $rightMargin)
-        ));
     }
 }

@@ -53,7 +53,7 @@ final class MigrateRollbackCommand extends AbstractMigration
             $message = 'Rolling back migrations.';
         }
 
-        $this->io->info($message);
+        $this->io->migrate($message);
 
         return $this->rollbacks((int) $batch, $take);
     }

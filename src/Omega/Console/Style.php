@@ -15,10 +15,12 @@ declare(strict_types=1);
 namespace Omega\Console;
 
 use Override;
+use Symfony\Component\Console\Helper\Helper;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Console\Terminal;
 
 /**
  * Provides a customized console style for Omega commands.
@@ -329,6 +331,79 @@ class Style extends SymfonyStyle
     }
 
     /**
+     * Renders a colored badge label followed by a message.
+     *
+     * @param string $label The short uppercase label displayed inside the badge.
+     * @param string $style Symfony style tag attributes for the badge background and foreground.
+     * @param string|iterable<string> $message The message displayed next to the badge.
+     * @return void
+     */
+    public function badge(string $label, string $style, string|iterable $message): void
+    {
+        $message = $this->processMessage($message);
+
+        $this->ensureTopSpacing();
+
+        $this->writeln("<bg=$style> $label </>" . $this->separator . $message);
+
+        $this->newLine();
+    }
+
+    /** @param string|iterable<string> $message */
+    public function migrate(string|iterable $message): void
+    {
+        $this->badge('MIGRATE', 'blue;fg=white', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function db(string|iterable $message): void
+    {
+        $this->badge('DB', 'cyan;fg=black', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function cache(string|iterable $message): void
+    {
+        $this->badge('CACHE', 'magenta;fg=white', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function route(string|iterable $message): void
+    {
+        $this->badge('ROUTE', 'green;fg=white', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function make(string|iterable $message): void
+    {
+        $this->badge('MAKE', 'yellow;fg=black', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function cron(string|iterable $message): void
+    {
+        $this->badge('CRON', 'red;fg=white', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function serve(string|iterable $message): void
+    {
+        $this->badge('SERVE', 'white;fg=black', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function view(string|iterable $message): void
+    {
+        $this->badge('VIEW', 'magenta;fg=black', $message);
+    }
+
+    /** @param string|iterable<string> $message */
+    public function command(string|iterable $message): void
+    {
+        $this->badge('COMMAND', 'gray;fg=black', $message);
+    }
+
+    /**
      * Ensures that the next output block starts after a blank line.
      *
      * @return void
@@ -387,5 +462,32 @@ class Style extends SymfonyStyle
         $this->isLastLineEmpty = false;
 
         return $progressBar;
+    }
+
+    /**
+     * Writes two values on a single line separated by a dotted filler.
+     *
+     * The left value is rendered near the beginning of the line while the
+     * right value is aligned toward the end of the terminal.
+     *
+     * @param string $left The left column content.
+     * @param string $right The right column content.
+     * @param int $rightMargin Number of trailing spaces after the right column.
+     * @return void
+     */
+    public function spread(string $left, string $right, int $rightMargin = 2): void
+    {
+        $width = (new Terminal())->getWidth();
+
+        $formatter = $this->output->getFormatter();
+
+        $leftVisible  = Helper::width(Helper::removeDecoration($formatter, $left));
+        $rightVisible = Helper::width(Helper::removeDecoration($formatter, $right));
+
+        $dotsCount = max(2, $width - $leftVisible - $rightVisible - $rightMargin - 2);
+
+        $dots = '<fg=gray>' . str_repeat('.', $dotsCount) . '</>';
+
+        $this->writeln(sprintf('%s %s %s', $left, $dots, $right));
     }
 }

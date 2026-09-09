@@ -23,7 +23,7 @@ final class PackageDiscoverCommand extends AbstractCommand
      */
     public function __invoke(): int
     {
-        $this->io->info('Discovery packages in composer...');
+        $this->io->command('Discovery packages in composer...');
 
         /** @var ApplicationManifest $applicationManifest */
         $applicationManifest = $this->app[ApplicationManifest::class];
@@ -43,11 +43,11 @@ final class PackageDiscoverCommand extends AbstractCommand
                 $left  = '<fg=white>' . $name . '</>';
                 $right = '<fg=green>DONE</>';
 
-                $this->componentsTwoColumns($left, $right, 2, 50);
+                $this->io->spread($left, $right, 50);
             }
 
             $this->io->newLine();
-            $this->io->success('Package manifest generated successfully.');
+            $this->io->command('Package manifest generated successfully.');
         } catch (Throwable $th) {
             $this->io->error($th->getMessage());
             $this->io->error("Can't create package manifest cache file.");

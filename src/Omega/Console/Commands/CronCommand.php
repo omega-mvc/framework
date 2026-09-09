@@ -28,7 +28,7 @@ final class CronCommand extends AbstractCommand
         $this->getSchedule()->execute();
 
         $time = round((microtime(true) - $start) * 1000, 2);
-        $this->io->info("Cron jobs executed successfully in {$time}ms.");
+        $this->io->cron("Cron jobs executed successfully in {$time}ms.");
 
         return self::SUCCESS;
     }

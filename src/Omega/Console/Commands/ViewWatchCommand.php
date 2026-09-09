@@ -33,7 +33,7 @@ final class ViewWatchCommand extends AbstractCommand
      */
     public function __invoke(): int
     {
-        $this->io->info('Watching view files in ' . '<options=bold>' . $this->app->get('path.view') . '</>');
+        $this->io->view('Watching view files in ' . '<options=bold>' . $this->app->get('path.view') . '</>');
         $this->io->info('Press CTRL+C to stop watching.');
 
         if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {

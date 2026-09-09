@@ -60,7 +60,7 @@ final class DatabaseCreateCommand extends AbstractMigration
             }
         }
 
-        $this->io->writeln("<info>Creating database `{$dbName}`...</info>");
+        $this->io->db("Creating database `{$dbName}`...");
 
         try {
             $success = Schema::create()->database($dbName)->execute();
@@ -73,7 +73,7 @@ final class DatabaseCreateCommand extends AbstractMigration
         }
 
         if ($success) {
-            $this->io->info("Successfully created database `{$dbName}`");
+            $this->io->db("Successfully created database `{$dbName}`");
 
             return self::SUCCESS;
         }

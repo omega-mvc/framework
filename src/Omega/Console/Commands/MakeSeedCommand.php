@@ -51,7 +51,7 @@ final class MakeSeedCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $this->io->success("Seeder [{$name}] created successfully.");
+        $this->io->make("Seeder [{$name}] created successfully.");
         return self::SUCCESS;
     }
 }

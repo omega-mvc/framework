@@ -80,7 +80,7 @@ final class MigrateFreshCommand extends AbstractMigration
         $batch   = false;
         $migrate = $this->baseMigrate($batch)->sort();
 
-        $this->io->title('Running migration');
+        $this->io->migrate('Running migration');
 
         foreach ($migrate as $key => $val) {
             $schema = require $val['file_name'];
@@ -141,7 +141,7 @@ final class MigrateFreshCommand extends AbstractMigration
             }
         }
 
-        $this->io->title('Running migration');
+        $this->io->migrate('Running migration');
 
         foreach ($migrate->sort() as $key => $filePath) {
             $schema = require $filePath;

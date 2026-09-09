@@ -36,7 +36,7 @@ final class MigrateResetCommand extends AbstractMigration
             return self::INVALID;
         }
 
-        $this->io->info('Rolling back all migrations');
+        $this->io->migrate('Rolling back all migrations');
 
         return $this->rollbacks(false, 0);
     }

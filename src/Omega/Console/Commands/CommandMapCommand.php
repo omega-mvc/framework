@@ -77,7 +77,7 @@ class CommandMapCommand extends AbstractCommand
 
         try {
             file_put_contents($cachePath, $content);
-            $this->io->info("Command map successfully cached at: $cachePath");
+            $this->io->command("Command map successfully cached at: $cachePath");
             return self::SUCCESS;
         } catch (Throwable $e) {
             $this->io->error("Failed to write cache file: " . $e->getMessage());

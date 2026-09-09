@@ -61,12 +61,12 @@ final class DatabaseWipeCommand extends AbstractMigration
             return self::FAILURE;
         }
 
-        $this->io->writeln("<comment>Trying to drop database `{$dbName}`...</comment>");
+        $this->io->db("Trying to drop database `{$dbName}`...");
 
         $success = Schema::drop()->database($dbName)->ifExists()->execute();
 
         if ($success) {
-            $this->io->info("Successfully dropped database `{$dbName}`");
+            $this->io->db("Successfully dropped database `{$dbName}`");
             return self::SUCCESS;
         }
 

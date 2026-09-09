@@ -65,31 +65,3 @@ it('does not pad when the message is wider than the terminal', function (): void
 
     expect(rtrim($output->fetch(), PHP_EOL))->toBe($message);
 });
-
-it('writes two columns separated by dotted filler', function (): void {
-    $output = new BufferedOutput();
-    $styler = new OutputStyler($output);
-
-    $styler->printColumns('Config', 'Done');
-
-    $display = rtrim($output->fetch(), PHP_EOL);
-
-    expect($display)->toStartWith('  Config ')
-        ->and($display)->toEndWith(' Done  ')
-        ->and($display)->toContain(str_repeat('.', 10));
-});
-
-it('keeps at least two dots when the content fills the line', function (): void {
-    $output = new BufferedOutput();
-    $styler = new OutputStyler($output);
-    $left = str_repeat('l', 60);
-    $right = str_repeat('r', 60);
-
-    $styler->printColumns($left, $right);
-
-    $display = rtrim($output->fetch(), PHP_EOL);
-
-    expect($display)->toStartWith('  ' . $left)
-        ->and($display)->toEndWith($right . '  ')
-        ->and($display)->toMatch('/\s\.\.\s/');
-});

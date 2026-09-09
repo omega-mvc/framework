@@ -47,7 +47,7 @@ final class ViewCacheCommand extends AbstractCommand
 
         $progressBar->finish();
         $this->io->newLine(2);
-        $this->io->info("View cache built successfully.");
+        $this->io->view("View cache built successfully.");
 
         return self::SUCCESS;
     }

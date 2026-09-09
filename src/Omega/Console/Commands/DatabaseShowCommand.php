@@ -79,7 +79,7 @@ final class DatabaseShowCommand extends AbstractMigration
             $rightSide = "<fg=yellow>{$table['create_time']}</>";
 
             // Il trait si occupa di calcolare i puntini e allineare tutto
-            $this->componentsTwoColumns($leftSide, $rightSide);
+            $this->io->spread($leftSide, $rightSide);
         }
 
         $this->io->newLine();
@@ -137,7 +137,7 @@ final class DatabaseShowCommand extends AbstractMigration
             $rightSide = "<fg=magenta>{$column['COLUMN_TYPE']}</>";
 
             // Visualizzazione con puntini
-            $this->componentsTwoColumns($leftSide, $rightSide);
+            $this->io->spread($leftSide, $rightSide);
         }
 
         $this->io->newLine();

@@ -41,7 +41,7 @@ final class MigrateInitCommand extends AbstractMigration
         }
 
         if ($this->createMigrationTable()) {
-            $this->io->info('Successfully created migration table.');
+            $this->io->migrate('Successfully created migration table.');
             return self::SUCCESS;
         }
 

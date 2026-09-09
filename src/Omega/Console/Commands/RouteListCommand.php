@@ -47,7 +47,7 @@ final class RouteListCommand extends AbstractCommand
             $leftSide = "{$route['method']}{$padding}<fg=cyan>{$route['uri']}</>";
             $rightSide = $route['name'] ? "<comment>{$route['name']}</comment>" : "";
 
-            $this->componentsTwoColumns($leftSide, $rightSide);
+            $this->io->spread($leftSide, $rightSide);
         }
 
         // 3. Summary finale
