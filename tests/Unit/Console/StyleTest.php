@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace Tests\Console;
 
 use Omega\Console\Style;
-use Symfony\Component\Console\Helper\ProgressBar;
+use RuntimeException;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\BufferedOutput;
 
 covers(Style::class);
 
+/**
+ * @return resource
+ */
 function streamWith(string $content)
 {
     $stream = fopen('php://memory', 'r+');
+    if ($stream === false) {
+        throw new RuntimeException('Unable to open in-memory stream.');
+    }
     fwrite($stream, $content);
     rewind($stream);
 
@@ -149,8 +155,7 @@ it('creates a progress bar with a message', function (): void {
 
     $bar = $style->progressBar(10, 'Working');
 
-    expect($bar)->toBeInstanceOf(ProgressBar::class)
-        ->and($bar->getMaxSteps())->toBe(10)
+    expect($bar->getMaxSteps())->toBe(10)
         ->and($bar->getMessage())->toBe('Working');
 
     $output->fetch();
@@ -162,8 +167,7 @@ it('creates a progress bar without a message', function (): void {
 
     $bar = $style->progressBar(0);
 
-    expect($bar)->toBeInstanceOf(ProgressBar::class)
-        ->and($bar->getMaxSteps())->toBe(0)
+    expect($bar->getMaxSteps())->toBe(0)
         ->and($bar->getMessage())->toBeNull();
 
     $output->fetch();

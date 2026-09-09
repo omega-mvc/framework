@@ -7,7 +7,6 @@ namespace Tests\Console;
 use Omega\Application\Application;
 use Omega\Console\CommandLoader;
 use ReflectionProperty;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
 use Tests\Console\Fixtures\DemoCommand;
 use Tests\Console\Fixtures\PlainCommand;
@@ -37,8 +36,7 @@ it('returns a plain Symfony command without injecting the application', function
 
     $command = $loader->get('plain:run');
 
-    expect($command)->toBeInstanceOf(PlainCommand::class)
-        ->and($command)->toBeInstanceOf(Command::class);
+    expect($command)->toBeInstanceOf(PlainCommand::class);
 
     $app->flush();
 });

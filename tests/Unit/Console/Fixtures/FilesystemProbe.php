@@ -23,6 +23,11 @@ class FilesystemProbe
 {
     use InteractWithFilesystemTrait;
 
+    /**
+     * @param string|string[] $patterns
+     * @param string[]        $exclude
+     * @return array<int, string>
+     */
     public function find(string $directory, string|array $patterns = '*', array $exclude = []): array
     {
         return $this->findFiles($directory, $patterns, $exclude);

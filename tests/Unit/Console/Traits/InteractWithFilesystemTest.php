@@ -19,8 +19,7 @@ it('matches files by a single pattern', function (): void {
     $probe = new FilesystemProbe();
     $files = $probe->find(__DIR__ . '/../Fixtures/Files', '*.txt');
 
-    expect($files)->toBeArray()
-        ->and($files)->toHaveCount(1)
+    expect($files)->toHaveCount(1)
         ->and($files[0])->toEndWith('a.txt');
 });
 

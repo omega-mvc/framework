@@ -7,12 +7,14 @@ namespace Tests\Console\Exceptions;
 use LogicException;
 use Omega\Console\Exceptions\InvalidArgumentException;
 
+use function get_parent_class;
+
 covers(InvalidArgumentException::class);
 
 it('is a logic exception', function (): void {
     $exception = new InvalidArgumentException('Invalid configuration.');
 
-    expect($exception)->toBeInstanceOf(LogicException::class);
+    expect(get_parent_class($exception))->toBe(LogicException::class);
 });
 
 it('carries the configuration message', function (): void {

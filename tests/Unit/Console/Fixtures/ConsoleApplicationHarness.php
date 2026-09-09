@@ -16,6 +16,7 @@ namespace Tests\Console\Fixtures;
 
 use Omega\Console\ConsoleApplication;
 use Symfony\Component\Console\Application as SymfonyApplication;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * ConsoleApplication subclass that disables real bootstrappers and
@@ -30,6 +31,9 @@ class ConsoleApplicationHarness extends ConsoleApplication
         $this->bootstrap();
     }
 
+    /**
+     * @return array<string, class-string<Command>>
+     */
     public function exposeLoadCachedCommands(string $cacheFile): array
     {
         return $this->loadCachedCommands($cacheFile);

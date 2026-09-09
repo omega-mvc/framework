@@ -16,6 +16,9 @@ use Tests\Console\Fixtures\PlainCommand;
 
 covers(ConsoleApplication::class);
 
+/**
+ * @param array<int, string> $tokens
+ */
 function runHandleInSubprocess(string $autoload, string $base, array $tokens, mixed $input, string $outputCode, string $shell): int
 {
     $inputCode = match (true) {
@@ -142,8 +145,7 @@ it('discovers commands from the framework and application paths', function (): v
 
     $map = $console->discoverCommands();
 
-    expect($map)->toBeArray()
-        ->and($map['discover:one'])->toBe('App\Console\Commands\DiscoveryCommand')
+    expect($map['discover:one'])->toBe('App\Console\Commands\DiscoveryCommand')
         ->and($map['discover:two'])->toBe('App\Console\Commands\DiscoveryAliasedCommand')
         ->and($map['d2'])->toBe('App\Console\Commands\DiscoveryAliasedCommand')
         ->and($map['d3'])->toBe('App\Console\Commands\DiscoveryAliasedCommand')
@@ -161,8 +163,7 @@ it('ignores the application path when it is not a string', function (): void {
 
     $map = $console->discoverCommands();
 
-    expect($map)->toBeArray()
-        ->and($map)->not->toHaveKey('discover:one');
+    expect($map)->not->toHaveKey('discover:one');
 
     $app->flush();
     removeConsoleBase($base);
@@ -176,8 +177,7 @@ it('skips applications paths that do not exist', function (): void {
 
     $map = $console->discoverCommands();
 
-    expect($map)->toBeArray()
-        ->and($map)->not->toHaveKey('discover:one');
+    expect($map)->not->toHaveKey('discover:one');
 
     $app->flush();
     removeConsoleBase($base);

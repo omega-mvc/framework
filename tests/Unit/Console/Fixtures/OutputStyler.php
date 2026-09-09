@@ -41,6 +41,9 @@ class OutputStyler
         return $this->getVisibleWidth($string);
     }
 
+    /**
+     * @param array<int|string, string> $items
+     */
     public function visibleMaxWidth(array $items): int
     {
         return $this->getVisibleMaxWidth($items);

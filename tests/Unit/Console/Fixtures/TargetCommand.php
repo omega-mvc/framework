@@ -18,6 +18,8 @@ use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 
+use function is_string;
+
 /**
  * Target command invoked by CallerCommand.
  */
@@ -31,7 +33,9 @@ class TargetCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
-        $this->output->writeln('target-run:' . $this->getArgument('name'));
+        $name = $this->getArgument('name');
+
+        $this->output->writeln('target-run:' . (is_string($name) ? $name : ''));
 
         return self::SUCCESS;
     }

@@ -19,6 +19,8 @@ use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
+use function is_string;
+
 /**
  * Fully configured command exercising arguments and options.
  */
@@ -37,8 +39,10 @@ class DemoCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
+        $name = $this->getArgument('name');
+
         $this->output->writeln(
-            'hello=' . $this->getArgument('name') . '|' . var_export($this->getOption('greet'), true)
+            'hello=' . (is_string($name) ? $name : '') . '|' . var_export($this->getOption('greet'), true)
         );
 
         return self::SUCCESS;

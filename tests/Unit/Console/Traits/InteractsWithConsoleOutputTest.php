@@ -13,8 +13,7 @@ covers(InteractsWithConsoleOutputTrait::class);
 it('returns the terminal width', function (): void {
     $styler = new OutputStyler(new BufferedOutput());
 
-    expect($styler->terminalWidth())->toBeInt()
-        ->and($styler->terminalWidth())->toBeGreaterThan(0);
+    expect($styler->terminalWidth())->toBeGreaterThan(0);
 });
 
 it('calculates the visible width ignoring formatting tags', function (): void {
