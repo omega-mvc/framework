@@ -7,6 +7,8 @@ namespace Omega\Console\Commands;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 
+use function is_string;
+
 #[AsCommand(
     name: 'up',
     description: 'Bring the application out of maintenance mode'
@@ -20,7 +22,13 @@ final class MaintenanceUpCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $storagePath = $this->app->get('path.storage') . 'app/';
+        $storagePath = $this->app->get('path.storage');
+        if (!is_string($storagePath)) {
+            $this->io->error('The "path.storage" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
+
+        $storagePath .= 'app/';
 
         foreach (['maintenance.php', 'down'] as $file) {
             $path = $storagePath . $file;

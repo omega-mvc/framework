@@ -34,7 +34,9 @@ final class ConfigCacheCommand extends AbstractCommand
                 @unlink($cachePath);
             }
 
-            $config = $this->app->get(ConfigRepository::class)->getAll();
+            /** @var ConfigRepository $configRepo */
+            $configRepo = $this->app->get(ConfigRepository::class);
+            $config = $configRepo->getAll();
             $exported = '<?php return ' . var_export($config, true) . ';' . PHP_EOL;
 
             if (file_put_contents($cachePath, $exported) === false) {

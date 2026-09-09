@@ -28,10 +28,10 @@ final class PackageDiscoverCommand extends AbstractCommand
         $this->io->info('Discovery packages in composer...');
 
         /** @var ApplicationManifest $applicationManifest */
-        $applicationManifest = $this->app[ApplicationManifest::class];
+        $applicationManifest = $this->app->get(ApplicationManifest::class);
 
         try {
-            /** @var array $packages */
+            /** @var array<string, mixed> $packages */
             $packages = $applicationManifest->build();
 
             if (empty($packages)) {

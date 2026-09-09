@@ -11,6 +11,16 @@ use Symfony\Component\Console\Question\Question;
 
 use function Omega\Application\slash;
 use function Omega\Time\now;
+use function basename;
+use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function is_dir;
+use function is_string;
+use function mkdir;
+use function str_replace;
+use function strtolower;
+use function trim;
 
 #[AsCommand(
     name: 'make:migration',
@@ -30,11 +40,13 @@ final class MakeMigrationCommand extends AbstractMakeCommand
 
         $name = $this->getArgument('name');
 
-        if (!$name) {
+        $name = is_string($name) ? $name : '';
+
+        if (trim($name) === '') {
             $question = new Question('Please fill the table name');
 
             $question->setValidator(function (mixed $answer): mixed {
-                if (empty($answer) || trim($answer) === '') {
+                if (!is_string($answer) || trim($answer) === '') {
                     throw new \RuntimeException('The table name is required.');
                 }
                 return $answer;
@@ -42,13 +54,20 @@ final class MakeMigrationCommand extends AbstractMakeCommand
 
             $question->setMaxAttempts(3);
 
-            $name = $this->io->askQuestion($question);
+            $answer = $this->io->askQuestion($question);
+            $name = is_string($answer) ? $answer : '';
         }
 
-        $name = strtolower(trim((string)$name));
+        $name = strtolower(trim($name));
 
         // 2. Definizione percorsi e nomi file
         $pathToFile = $this->app->get('path.migrations');
+
+        if (!is_string($pathToFile)) {
+            $this->io->error("The \"path.migrations\" binding must resolve to a string path.");
+            return self::FAILURE;
+        }
+
         $timestamp  = now()->format('Y_m_d_His');
         $fileName   = "{$pathToFile}{$timestamp}_{$name}.php";
 
@@ -63,6 +82,12 @@ final class MakeMigrationCommand extends AbstractMakeCommand
 
         // 4. Lettura e rimpiazzo
         $template = file_get_contents($stubPath);
+
+        if ($template === false) {
+            $this->io->error("Unable to read stub at: {$stubPath}");
+            return self::FAILURE;
+        }
+
         $template = str_replace('__table__', $name, $template);
 
         // 5. Scrittura file

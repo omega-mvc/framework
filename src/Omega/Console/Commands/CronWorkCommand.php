@@ -10,7 +10,11 @@ use Omega\Cron\Schedule;
 use Omega\Cron\Facade\Schedule as Scheduler;
 use Omega\Time\Now;
 
+use function function_exists;
 use function microtime;
+use function Omega\Application\os_detect;
+use function pcntl_async_signals;
+use function pcntl_signal;
 use function round;
 use function sleep;
 use function sprintf;
@@ -21,6 +25,8 @@ use function sprintf;
 )]
 final class CronWorkCommand extends AbstractCommand
 {
+    private bool $shouldExit = false;
+
     /**
      * {@inheritdoc}
      */
@@ -32,7 +38,14 @@ final class CronWorkCommand extends AbstractCommand
 
         $schedule = Scheduler::add(new Schedule());
 
-        while (true) {
+        if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {
+            pcntl_async_signals(true);
+            pcntl_signal(SIGINT, function (): void {
+                $this->shouldExit = true;
+            });
+        }
+
+        while (!$this->shouldExit) {
             $now = new Now();
             $schedule->setTime($now->getTimestamp());
 
@@ -56,5 +69,7 @@ final class CronWorkCommand extends AbstractCommand
 
             sleep(60);
         }
+
+        return self::SUCCESS;
     }
 }

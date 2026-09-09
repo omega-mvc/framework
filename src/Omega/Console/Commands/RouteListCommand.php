@@ -39,7 +39,7 @@ final class RouteListCommand extends AbstractCommand
             $methods = is_array($route['method']) ? $route['method'] : [$route['method']];
             return [
                 'method' => $this->formatMethods($methods),
-                'uri'    => $route['uri'] ?? $route['expression'],
+                'uri'    => $route['uri'] ?? $route['expression'] ?? '',
                 'name'   => $route['name'] ?? ''
             ];
         }, $routes);
@@ -69,6 +69,12 @@ final class RouteListCommand extends AbstractCommand
         return self::SUCCESS;
     }
 
+    /**
+     * Format a list of HTTP methods into a colorized, pipe-separated string.
+     *
+     * @param array<int, string> $methods The HTTP methods to format.
+     * @return string The colorized methods string.
+     */
     private function formatMethods(array $methods): string
     {
         return implode('|', array_map(fn(string $m): string => $this->colorMethod($m), $methods));

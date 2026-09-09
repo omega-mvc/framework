@@ -32,7 +32,10 @@ use ReflectionException;
 use Symfony\Component\Console\Exception\ExceptionInterface;
 use Throwable;
 
+use function is_array;
 use function is_dir;
+use function is_numeric;
+use function is_string;
 use function max;
 use function min;
 use function pathinfo;
@@ -83,7 +86,14 @@ abstract class AbstractMigration extends AbstractCommand
     {
         $database = $this->getOption('database');
 
-        return $database ?? $this->app->get(SchemaConnection::class)->getDatabase();
+        if (is_string($database)) {
+            return $database;
+        }
+
+        /** @var SchemaConnection $connection */
+        $connection = $this->app->get(SchemaConnection::class);
+
+        return $connection->getDatabase();
     }
 
     /**
@@ -97,7 +107,8 @@ abstract class AbstractMigration extends AbstractCommand
      */
     protected function databaseExists(string $database): bool
     {
-        $driver = $this->app->get('dsn.sql')['driver'] ?? 'mysql';
+        $dsn = $this->app->get('dsn.sql');
+        $driver = is_array($dsn) && is_string($dsn['driver'] ?? null) ? $dsn['driver'] : 'mysql';
 
         $sql = match ($driver) {
             'pgsql'  => 'SELECT COUNT(*) AS total FROM pg_database WHERE datname = ?',
@@ -109,12 +120,21 @@ abstract class AbstractMigration extends AbstractCommand
             return true;
         }
 
-        $row = $this->app->get(SchemaConnection::class)
+        /** @var SchemaConnection $connection */
+        $connection = $this->app->get(SchemaConnection::class);
+
+        $row = $connection
             ->query($sql)
             ->bind(1, $database)
             ->single();
 
-        return is_array($row) && (int) $row['total'] > 0;
+        if (!is_array($row)) {
+            return false;
+        }
+
+        $total = $row['total'] ?? null;
+
+        return is_numeric($total) && (int) $total > 0;
     }
 
     /**
@@ -167,7 +187,14 @@ abstract class AbstractMigration extends AbstractCommand
 
         $batch = false === $batch ? $higher : $batch;
 
-        $paths   = [$this->app->get('path.migrations'), ...static::$vendorPaths];
+        $migrationsPath = $this->app->get('path.migrations');
+
+        if (!is_string($migrationsPath)) {
+            $this->io->error("The \"path.migrations\" binding must resolve to a string path.");
+            return new Collection([]);
+        }
+
+        $paths   = [$migrationsPath, ...static::$vendorPaths];
         $migrate = new Collection([]);
 
         foreach ($paths as $dir) {
@@ -251,7 +278,7 @@ abstract class AbstractMigration extends AbstractCommand
 
         foreach ($migrate as $key => $val) {
             $schema = require $val['file_name'];
-            $up = new Collection($schema['up'] ?? []);
+            $up = $this->schemaQueries($schema, 'up');
 
             if ($this->getOption('dry-run')) {
                 $up->each(function (Query $item): bool {
@@ -322,7 +349,14 @@ abstract class AbstractMigration extends AbstractCommand
         $pair = DB::table('migration')
             ->select()
             ->get()
-            ->assocBy(static fn (array $item): array => [$item['migration'] => (int) $item['batch']]);
+            ->assocBy(function (array $item): array {
+                $migration = $item['migration'] ?? null;
+                $batch = $item['batch'] ?? null;
+
+                return [
+                    is_string($migration) ? $migration : '' => is_numeric($batch) ? (int) $batch : 0,
+                ];
+            });
 
         return $pair;
     }
@@ -350,7 +384,7 @@ abstract class AbstractMigration extends AbstractCommand
 
         foreach ($migrate->sortDesc() as $key => $val) {
             $schema = require $val['file_name'];
-            $down = new Collection($schema['down'] ?? []);
+            $down = $this->schemaQueries($schema, 'down');
 
             if ($this->getOption('dry-run')) {
                 $down->each(function (Query $item): bool {
@@ -418,6 +452,33 @@ abstract class AbstractMigration extends AbstractCommand
         }
 
         $this->io->writeln($success ? ' <info>DONE</info>' : ' <error>FAIL</error>');
+    }
+
+    /**
+     * Extract the schema queries for the given migration key.
+     *
+     * The value returned by a migration file `require` is untyped, so this
+     * helper defensively filters only {@see Query} instances out of the
+     * requested section (e.g. 'up' or 'down').
+     *
+     * @param mixed $schema The value returned by the required migration file.
+     * @param string $key The schema section to extract ('up' or 'down').
+     * @return Collection<int, Query> The collection of schema queries.
+     */
+    protected function schemaQueries(mixed $schema, string $key): Collection
+    {
+        $queries = [];
+
+        /** @var list<mixed> $entries */
+        $entries = is_array($schema) ? ($schema[$key] ?? []) : [];
+
+        foreach ($entries as $entry) {
+            if ($entry instanceof Query) {
+                $queries[] = $entry;
+            }
+        }
+
+        return new Collection($queries);
     }
 
     /**

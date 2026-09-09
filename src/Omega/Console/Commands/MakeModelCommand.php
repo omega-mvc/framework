@@ -14,7 +14,9 @@ use Throwable;
 
 use function file_exists;
 use function file_put_contents;
+use function is_string;
 use function Omega\Application\path;
+use function strtolower;
 use function ucfirst;
 
 #[AsCommand(
@@ -34,8 +36,23 @@ final class MakeModelCommand extends AbstractMakeCommand
     {
         $this->io->info('Making model file...');
 
-        $name = ucfirst($this->getArgument('name'));
-        $modelLocation = $this->app->get('path.model') . $name . '.php';
+        $name = $this->getArgument('name');
+
+        if (!is_string($name) || trim($name) === '') {
+            $this->io->error('The "name" argument must be a non-empty string.');
+            return self::FAILURE;
+        }
+
+        $name = ucfirst($name);
+
+        $modelPath = $this->app->get('path.model');
+
+        if (!is_string($modelPath)) {
+            $this->io->error("The \"path.model\" binding must resolve to a string path.");
+            return self::FAILURE;
+        }
+
+        $modelLocation = $modelPath . $name . '.php';
 
         if (file_exists($modelLocation) && !$this->getOption('force')) {
             $this->io->warning('File already exists.');
@@ -57,20 +74,27 @@ final class MakeModelCommand extends AbstractMakeCommand
         $class->extend('Model');
 
         $primaryKey = 'id';
-        $tableName  = strtolower($this->getArgument('name')); // Default: nome modello minuscolo
+        $tableName  = strtolower($name);
 
         if ($this->getOption('table-name')) {
-            $tableName = $this->getOption('table-name');
+            $optionTableName = $this->getOption('table-name');
+            $tableName = is_string($optionTableName) ? $optionTableName : $tableName;
             $this->io->info("Getting information from table [{$tableName}]...");
 
             try {
                 $tableInfo = DB::table($tableName)->info();
 
                 foreach ($tableInfo as $column) {
-                    $class->addComment('@property mixed $' . $column['COLUMN_NAME']);
+                    $columnName = $column['COLUMN_NAME'] ?? null;
+
+                    if (!is_string($columnName)) {
+                        continue;
+                    }
+
+                    $class->addComment('@property mixed $' . $columnName);
 
                     if ('PRI' === ($column['COLUMN_KEY'] ?? '')) {
-                        $primaryKey = $column['COLUMN_NAME'];
+                        $primaryKey = $columnName;
                     }
                 }
             } catch (Throwable $th) {

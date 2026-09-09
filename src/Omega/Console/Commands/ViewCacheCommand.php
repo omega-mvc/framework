@@ -15,6 +15,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
 use function count;
+use function is_string;
 
 #[AsCommand(
     name: 'view:cache',
@@ -30,15 +31,25 @@ final class ViewCacheCommand extends AbstractCommand
     public function __invoke(): int
     {
         $viewPath = $this->app->get('path.view');
+        if (!is_string($viewPath)) {
+            $this->io->error('The "path.view" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
 
-        $files = $this->findFiles($viewPath, $this->getOption('prefix'));
+        $prefix = $this->getOption('prefix');
+        if (!is_string($prefix)) {
+            $prefix = '*.php';
+        }
+
+        $files = $this->findFiles($viewPath, $prefix);
 
         if (empty($files)) {
             $this->io->warning('No view files found.');
             return self::SUCCESS;
         }
 
-        $templator = $this->app[Templator::class];
+        /** @var Templator $templator */
+        $templator = $this->app->get(Templator::class);
         $progressBar = $this->io->progressBar(count($files), 'Compiling views...');
         $progressBar->start();
 

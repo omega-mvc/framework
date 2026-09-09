@@ -18,6 +18,7 @@ use function count;
 use function filemtime;
 use function function_exists;
 use function is_file;
+use function is_string;
 use function microtime;
 use function pcntl_async_signals;
 use function pcntl_signal;
@@ -28,6 +29,8 @@ use function str_repeat;
 use function str_replace;
 use function strlen;
 use function usleep;
+
+use const DIRECTORY_SEPARATOR;
 
 #[AsCommand(
     name: 'view:watch',
@@ -42,13 +45,22 @@ final class ViewWatchCommand extends AbstractCommand
 
     private bool $shouldExit = false;
     private int $width = 80;
+    private string $viewPath = '';
 
     /**
      * @return int
      */
     public function __invoke(): int
     {
-        $this->io->info('Watching view files in ' . '<options=bold>' . $this->app->get('path.view') . '</>');
+        $viewPath = $this->app->get('path.view');
+        if (!is_string($viewPath)) {
+            $this->io->error('The "path.view" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
+
+        $this->viewPath = $viewPath;
+
+        $this->io->info('Watching view files in ' . '<options=bold>' . $this->viewPath . '</>');
         $this->io->info('Press CTRL+C to stop watching.');
 
         if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {
@@ -59,8 +71,11 @@ final class ViewWatchCommand extends AbstractCommand
         }
 
         /** @var Templator $templator */
-        $templator = $this->app[Templator::class];
+        $templator = $this->app->get(Templator::class);
         $prefix = $this->getOption('prefix');
+        if (!is_string($prefix)) {
+            $prefix = '*.php';
+        }
 
         $getIndexes = $this->getIndexFiles($prefix);
         if (empty($getIndexes)) {
@@ -81,6 +96,10 @@ final class ViewWatchCommand extends AbstractCommand
                 }
 
                 $now = filemtime($file);
+
+                if (false === $now) {
+                    continue;
+                }
 
                 if ($now > $time) {
                     $dependency = $this->compileSingle($templator, $file);
@@ -121,15 +140,24 @@ final class ViewWatchCommand extends AbstractCommand
 
     /**
      * Builds the index of view files with their timestamps.
+     *
+     * @param string $prefix The file pattern to watch.
+     * @return array<string, int> Map of view file paths to their last modification timestamps.
      */
     private function getIndexFiles(string $prefix): array
     {
-        $files = $this->findFiles($this->app->get('path.view'), $prefix);
+        $files = $this->findFiles($this->viewPath, $prefix);
         $indexes = [];
 
         foreach ($files as $file) {
-            if (is_file($file)) {
-                $indexes[$file] = filemtime($file);
+            if (!is_file($file)) {
+                continue;
+            }
+
+            $time = filemtime($file);
+
+            if (false !== $time) {
+                $indexes[$file] = $time;
             }
         }
 
@@ -138,11 +166,17 @@ final class ViewWatchCommand extends AbstractCommand
         return $indexes;
     }
 
+    /**
+     * Compile a single view file and return its dependency map.
+     *
+     * @param Templator $templator The templator instance to compile with.
+     * @param string    $filePath  Absolute path of the view file.
+     * @return array<string, int> Map of dependent file paths to their timestamps.
+     */
     private function compileSingle(Templator $templator, string $filePath): array
     {
         $start = microtime(true);
-        $viewPath = $this->app->get('path.view');
-        $filename = Str::replace($filePath, $viewPath, '');
+        $filename = Str::replace($filePath, $this->viewPath, '');
 
         try {
             $templator->compile($filename);
@@ -165,6 +199,10 @@ final class ViewWatchCommand extends AbstractCommand
 
     /**
      * Pre-compiles all indexed views at startup.
+     *
+     * @param Templator         $templator The templator instance to compile with.
+     * @param array<string, int> $indexes   Map of view file paths to their timestamps.
+     * @return array<string, array<string, int>> Map of dependency paths to parent index mappings.
      */
     private function precompile(Templator $templator, array $indexes): array
     {
@@ -172,7 +210,7 @@ final class ViewWatchCommand extends AbstractCommand
         $start = microtime(true);
 
         foreach ($indexes as $file => $time) {
-            $filename = Str::replace($file, $this->app->get('path.view'), '');
+            $filename = Str::replace($file, $this->viewPath, '');
             $templator->compile($filename);
 
             foreach ($templator->getDependency($file) as $depPath => $depTime) {

@@ -6,9 +6,12 @@ namespace Omega\Console\Commands;
 
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Throwable;
+
+use function is_string;
 
 #[AsCommand(
     name: 'db:seed',
@@ -28,10 +31,9 @@ final class SeedCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $class = $this->getOption('class');
-        $namespace = $this->getOption('name-space');
+        $class = is_string($this->getOption('class')) ? $this->getOption('class') : null;
+        $namespace = is_string($this->getOption('name-space')) ? $this->getOption('name-space') : null;
 
-        // Controllo di mutua esclusività: non possiamo usarli entrambi
         if ($class && $namespace) {
             $this->io->warning('Use only one: --class or --name-space, be specific.');
             return self::FAILURE;
@@ -70,8 +72,13 @@ final class SeedCommand extends AbstractCommand
         }
 
         $helper = $this->getHelper('question');
+
+        if (!$helper instanceof QuestionHelper) {
+            return false;
+        }
+
         $question = new ConfirmationQuestion('Running seeder in production? (y/n) ', false);
 
-        return $helper->ask($this->input, $this->output, $question);
+        return (bool) $helper->ask($this->input, $this->output, $question);
     }
 }

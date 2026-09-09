@@ -16,6 +16,15 @@ use ReflectionClass;
 use ReflectionException;
 
 use function Omega\Application\path;
+use function array_map;
+use function file_get_contents;
+use function file_put_contents;
+use function is_dir;
+use function is_string;
+use function mkdir;
+use function preg_replace;
+use function rtrim;
+use function str_replace;
 
 abstract class AbstractMakeCommand extends AbstractCommand
 {
@@ -32,6 +41,11 @@ abstract class AbstractMakeCommand extends AbstractCommand
     {
         $name = $this->getArgument('name');
 
+        if (!is_string($name)) {
+            $this->io->error('The "name" argument must be a string.');
+            return self::FAILURE;
+        }
+
         $reflection = new ReflectionClass($this);
         $attribute = $reflection->getAttributes(Make::class)[0] ?? null;
 
@@ -43,6 +57,11 @@ abstract class AbstractMakeCommand extends AbstractCommand
         $config = $attribute->newInstance();
 
         $savePath = $this->app->get($config->path);
+
+        if (!is_string($savePath)) {
+            $this->io->error("The \"{$config->path}\" binding must resolve to a string path.");
+            return self::FAILURE;
+        }
 
         $success = $this->makeTemplate($name, [
             'template_location' => $config->template,
@@ -61,7 +80,13 @@ abstract class AbstractMakeCommand extends AbstractCommand
 
         return self::SUCCESS;
     }
-
+/**
+     * Resolve the template variables against the given name.
+     *
+     * @param array<string, string> $vars Template variables [placeholder => transformation].
+     * @param string $name The generated class/file name.
+     * @return array<string, string> The resolved variables keyed by placeholder.
+     */
     protected function resolveVars(array $vars, string $name): array
     {
         return array_map(function (string $value) use ($name): string {
@@ -73,6 +98,14 @@ abstract class AbstractMakeCommand extends AbstractCommand
         }, $vars);
     }
 
+    /**
+     * Generate a file from the configured stub template.
+     *
+     * @param string $argument The file base name without suffix.
+     * @param array{template_location: string, save_location: string, pattern: string, suffix: string, vars: array<string, string>} $makeOption Resolved Make attribute options.
+     * @param string $folder Optional sub-folder appended to the save path.
+     * @return bool True on success, false when the file exists or an error occurs.
+     */
     protected function makeTemplate(string $argument, array $makeOption, string $folder = ''): bool
     {
         $folder = $folder ? ucfirst($folder) . DIRECTORY_SEPARATOR : '';
@@ -120,7 +153,14 @@ abstract class AbstractMakeCommand extends AbstractCommand
         return true;
     }
 
-    protected function info(object $config, string $name): void
+    /**
+     * Print the success message configured in the Make attribute.
+     *
+     * @param Make $config The Make attribute instance.
+     * @param string $name The generated file base name.
+     * @return void
+     */
+    protected function info(Make $config, string $name): void
     {
         $location = path($config->target);
         $fileName = $name . $config->suffix;
@@ -135,7 +175,14 @@ abstract class AbstractMakeCommand extends AbstractCommand
         $this->io->info($message);
     }
 
-    protected function warning(object $config, string $name): void
+    /**
+     * Print the warning message configured in the Make attribute.
+     *
+     * @param Make $config The Make attribute instance.
+     * @param string $name The generated file base name.
+     * @return void
+     */
+    protected function warning(Make $config, string $name): void
     {
         $location = path($config->target);
         $fileName = $name . $config->suffix;

@@ -11,6 +11,7 @@ use Symfony\Component\Console\Input\InputOption;
 
 use function count;
 use function is_file;
+use function is_string;
 
 #[AsCommand(
     name: 'view:clear',
@@ -26,8 +27,17 @@ final class ViewClearCommand extends AbstractCommand
     public function __invoke(): int
     {
         $compiledPath = $this->app->get('path.compiled_view_path');
+        if (!is_string($compiledPath)) {
+            $this->io->error('The "path.compiled_view_path" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
 
-        $files = $this->findFiles($compiledPath, $this->getOption('prefix'));
+        $prefix = $this->getOption('prefix');
+        if (!is_string($prefix)) {
+            $prefix = '*.php';
+        }
+
+        $files = $this->findFiles($compiledPath, $prefix);
 
         $count = 0;
         foreach ($files as $file) {

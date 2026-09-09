@@ -8,6 +8,7 @@ use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
+use function is_string;
 use function Omega\Application\os_detect;
 use function shell_exec;
 
@@ -29,7 +30,7 @@ final class ServeCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
-        $host   = $this->getOption('host');
+        $host   = is_string($this->getOption('host')) ? $this->getOption('host') : '127.0.0.1';
         $port   = $this->getOption('port');
         $expose = (bool) $this->getOption('expose');
 
@@ -45,7 +46,7 @@ final class ServeCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $this->launchServer((string) $host, $port, $expose);
+        $this->launchServer($host, $port, $expose);
 
         return self::SUCCESS;
     }
@@ -67,7 +68,8 @@ final class ServeCommand extends AbstractCommand
         $this->io->writeln(sprintf('Local:   <info>http://%s:%d</info>', $expose ? '127.0.0.1' : $address, $port));
 
         if ($expose) {
-            $this->io->writeln(sprintf('Network: <info>http://%s:%d</info>', gethostbyname(gethostname()), $port));
+            $hostname = gethostname();
+            $this->io->writeln(sprintf('Network: <info>http://%s:%d</info>', $hostname !== false ? $hostname : '127.0.0.1', $port));
         }
 
         $this->io->newLine(2);
@@ -89,10 +91,14 @@ final class ServeCommand extends AbstractCommand
         }
 
         $publicPath = $this->app->get('path.public');
+        if (!is_string($publicPath)) {
+            $this->io->error('The "path.public" binding must resolve to a string path.');
+            return;
+        }
 
         shell_exec(
             'php -dxdebug.mode=off -S ' . $address . ':' . $port
-            . ' -t ' . escapeshellarg((string) $publicPath)
+            . ' -t ' . escapeshellarg($publicPath)
         );
     }
 }

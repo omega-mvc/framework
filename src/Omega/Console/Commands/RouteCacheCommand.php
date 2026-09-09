@@ -14,7 +14,9 @@ use Throwable;
 
 use function file_put_contents;
 use function in_array;
+use function is_array;
 use function is_file;
+use function is_string;
 use function serialize;
 use function var_export;
 
@@ -32,17 +34,32 @@ class RouteCacheCommand extends AbstractCommand
     public function __invoke(): int
     {
         $io = $this->io;
+        /** @var Router $router */
         $router = $this->app->make(Router::class);
 
         // Handle the --files option
         $files = $this->input->getOption('files');
+        if (!is_array($files)) {
+            $files = [];
+        }
+
         if (!empty($files)) {
             $router->reset();
+
+            $basePath = $this->app->get('path.base');
+            if (!is_string($basePath)) {
+                $io->error('The "path.base" binding must resolve to a string path.');
+                return self::FAILURE;
+            }
 
             $requiredFiles = [];
 
             foreach ($files as $file) {
-                $path = $this->app->get('path.base') . $file;
+                if (!is_string($file)) {
+                    continue;
+                }
+
+                $path = $basePath . $file;
 
                 if (!is_file($path)) {
                     $io->error("Route file can't be loaded: '$file'");
@@ -68,13 +85,13 @@ class RouteCacheCommand extends AbstractCommand
         foreach ($router->getRoutesRaw() as $route) {
             $routes[] = [
                 'method'     => $route['method'],
-                'uri'        => $route['uri'],
-                'expression' => $route['expression'],
+                'uri'        => $route['uri'] ?? null,
+                'expression' => $route['expression'] ?? null,
                 'function'   => $route['function'] instanceof Closure
                     ? serialize(new UnsignedSerializableClosure($route['function']))
                     : $route['function'],
-                'middleware' => $route['middleware'],
-                'name'       => $route['name'],
+                'middleware' => $route['middleware'] ?? null,
+                'name'       => $route['name'] ?? null,
                 'patterns'   => $route['patterns'] ?? [],
             ];
         }

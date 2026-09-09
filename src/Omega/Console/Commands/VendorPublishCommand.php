@@ -13,6 +13,7 @@ use Symfony\Component\Console\Input\InputOption;
 use function array_filter;
 use function count;
 use function is_dir;
+use function is_string;
 
 #[AsCommand(
     name: 'vendor:publish',
@@ -26,9 +27,10 @@ final class VendorPublishCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
-        $tag = $this->getOption('tag');
-        $force = $this->getOption('force');
+        $tag = is_string($this->getOption('tag')) ? $this->getOption('tag') : '*';
+        $force = (bool) $this->getOption('force');
 
+        /** @var array<string, array<string, string>> $modules */
         $modules = AbstractServiceProvider::getModules();
 
         if (empty($modules)) {
@@ -43,6 +45,8 @@ final class VendorPublishCommand extends AbstractCommand
 
     /**
      * Handles the publication of modules filtered by tag.
+     *
+     * @param array<string, array<string, string>> $modules
      */
     private function publishItems(array $modules, string $targetTag, bool $force): int
     {

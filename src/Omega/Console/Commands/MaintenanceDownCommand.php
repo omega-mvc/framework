@@ -9,6 +9,7 @@ use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputOption;
 
 use function Omega\Application\slash;
+use function is_string;
 
 #[AsCommand(
     name: 'down',
@@ -52,7 +53,13 @@ final class MaintenanceDownCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $storagePath = $this->app->get('path.storage') . 'app/';
+        $storagePath = $this->app->get('path.storage');
+        if (!is_string($storagePath)) {
+            $this->io->error('The "path.storage" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
+
+        $storagePath .= 'app/';
 
         if (false === file_put_contents($storagePath . 'down', $this->buildDown((string) $downStub, (int) $status))) {
             $this->io->error('Unable to write the maintenance mode configuration.');

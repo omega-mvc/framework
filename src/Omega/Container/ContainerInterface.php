@@ -194,15 +194,34 @@ interface ContainerInterface extends PSRContainerInterface
      * Unlike get(), this method always returns a new instance and bypasses
      * the shared instance cache.
      *
-     * @param string|class-string $name The entry identifier or class name.
+     * @template T
+     * @param class-string<T>|string $name The entry identifier or class name.
      * @param array<int|string, mixed> $parameters Parameters to override dependency resolution.
-     * @return mixed The newly resolved instance.
+     * @return ($name is class-string ? T : mixed) The newly resolved instance.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
     public function make(string $name, array $parameters = []): mixed;
+
+    /**
+     * Find an entry of the container by its identifier and return it.
+     *
+     * This redeclares PSR-11's {@see PSRContainerInterface::get()} to provide
+     * static type inference: resolving a class-string returns an instance of
+     * that class, while string identifiers (bindings, aliases, values) remain
+     * mixed.
+     *
+     * @template T
+     * @param class-string<T>|string $id The entry identifier or class name.
+     * @return ($id is class-string ? T : mixed) The resolved entry.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     */
+    public function get(string $id): mixed;
 
     /**
      * Inject dependencies into an existing object instance.

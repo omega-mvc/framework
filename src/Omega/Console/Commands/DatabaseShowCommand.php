@@ -16,6 +16,14 @@ use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
+use function array_change_key_case;
+use function array_map;
+use function array_values;
+use function implode;
+use function is_array;
+use function is_string;
+use function str_repeat;
+
 #[AsCommand(
     name: 'db:show',
     description: 'Show database tables and sizes',
@@ -43,8 +51,10 @@ final class DatabaseShowCommand extends AbstractMigration
      */
     public function __invoke(): int
     {
-        if ($this->getOption('table-name')) {
-            return $this->tableShow($this->getOption('table-name'));
+        $tableNameOption = $this->getOption('table-name');
+
+        if (is_string($tableNameOption)) {
+            return $this->tableShow($tableNameOption);
         }
 
         $dbName = $this->getDatabaseName();
@@ -70,13 +80,17 @@ final class DatabaseShowCommand extends AbstractMigration
         foreach ($tables as $table) {
             $table = array_change_key_case($table);
 
+            $tableName = is_string($table['table_name'] ?? null) ? $table['table_name'] : '';
+            $tableSize = is_string($table['size'] ?? null) ? $table['size'] : '';
+            $createTime = is_string($table['create_time'] ?? null) ? $table['create_time'] : '';
+
             // Colonna Sinistra: Nome Tabella + Dimensione
-            $name = "<fg=cyan;options=bold>{$table['table_name']}</>";
-            $size = "<fg=gray>{$table['size']} MB</>";
+            $name = "<fg=cyan;options=bold>{$tableName}</>";
+            $size = "<fg=gray>{$tableSize} MB</>";
             $leftSide = "{$name} {$size}";
 
             // Colonna Destra: Data di creazione
-            $rightSide = "<fg=yellow>{$table['create_time']}</>";
+            $rightSide = "<fg=yellow>{$createTime}</>";
 
             // Il trait si occupa di calcolare i puntini e allineare tutto
             $this->componentsTwoColumns($leftSide, $rightSide);
@@ -109,11 +123,17 @@ final class DatabaseShowCommand extends AbstractMigration
         $this->io->newLine();
 
         // 1. Calcoliamo la larghezza massima dei nomi delle colonne per l'allineamento
-        $columnNames = array_column($columns, 'COLUMN_NAME');
+        $columnNames = array_values(array_map(
+            static fn (mixed $column): string => is_string($column['COLUMN_NAME'] ?? null)
+                ? $column['COLUMN_NAME']
+                : '',
+            $columns
+        ));
         $maxColumnWidth = $this->getVisibleMaxWidth($columnNames);
 
         foreach ($columns as $column) {
-            $name = $column['COLUMN_NAME'];
+            $name = is_string($column['COLUMN_NAME'] ?? null) ? $column['COLUMN_NAME'] : '';
+            $columnType = is_string($column['COLUMN_TYPE'] ?? null) ? $column['COLUMN_TYPE'] : '';
 
             // 2. Prepariamo gli attributi (Primary, Nullable)
             $attributes = [];
@@ -134,7 +154,7 @@ final class DatabaseShowCommand extends AbstractMigration
             $leftSide = "<fg=cyan;options=bold>{$name}</>{$padding}{$attrString}";
 
             // Parte destra: il tipo di dato (es. varchar(255), int, timestamp)
-            $rightSide = "<fg=magenta>{$column['COLUMN_TYPE']}</>";
+            $rightSide = "<fg=magenta>{$columnType}</>";
 
             // Visualizzazione con puntini
             $this->componentsTwoColumns($leftSide, $rightSide);

@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
 use function is_dir;
+use function is_string;
 use function pathinfo;
 use function rtrim;
 
@@ -84,7 +85,7 @@ final class MigrateFreshCommand extends AbstractMigration
 
         foreach ($migrate as $key => $val) {
             $schema = require $val['file_name'];
-            $up     = new Collection($schema['up'] ?? []);
+            $up     = $this->schemaQueries($schema, 'up');
 
             if ($this->getOption('dry-run')) {
                 $up->each(function (Query $item): bool {
@@ -121,8 +122,15 @@ final class MigrateFreshCommand extends AbstractMigration
      */
     private function freshDryRun(): int
     {
+        $migrationsPath = $this->app->get('path.migrations');
+
+        if (!is_string($migrationsPath)) {
+            $this->io->error("The \"path.migrations\" binding must resolve to a string path.");
+            return self::FAILURE;
+        }
+
         $migrate = new Collection([]);
-        $paths   = [$this->app->get('path.migrations'), ...static::$vendorPaths];
+        $paths   = [$migrationsPath, ...static::$vendorPaths];
 
         foreach ($paths as $dir) {
             if (!is_dir($dir)) {
@@ -145,7 +153,7 @@ final class MigrateFreshCommand extends AbstractMigration
 
         foreach ($migrate->sort() as $key => $filePath) {
             $schema = require $filePath;
-            $up     = new Collection($schema['up'] ?? []);
+            $up     = $this->schemaQueries($schema, 'up');
 
             $up->each(function (Query $item): bool {
                 $this->io->writeln("<fg=gray>{$item->__toString()}</>");

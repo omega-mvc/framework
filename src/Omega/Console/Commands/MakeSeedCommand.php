@@ -11,6 +11,10 @@ use Omega\DocBlockGenerator\Method;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
+use function file_exists;
+use function file_put_contents;
+use function is_string;
+
 #[AsCommand(
     name: 'make:seeder',
     description: 'Create a new seeder class',
@@ -27,6 +31,16 @@ final class MakeSeedCommand extends AbstractCommand
     {
         $name = $this->getArgument('name');
         $filePath = $this->app->get('path.seeder');
+
+        if (!is_string($name)) {
+            $this->io->error('The "name" argument must be a string.');
+            return self::FAILURE;
+        }
+
+        if (!is_string($filePath)) {
+            $this->io->error("The \"path.seeder\" binding must resolve to a string path.");
+            return self::FAILURE;
+        }
 
         if (file_exists($filePath) && !$this->getOption('force')) {
             $this->io->error("Seeder [{$name}] already exists!");

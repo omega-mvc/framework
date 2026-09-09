@@ -12,6 +12,8 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 
+use function is_numeric;
+
 #[AsCommand(
     name: 'migrate:rollback',
     description: 'Rolling back last migrations (down)',
@@ -46,7 +48,8 @@ final class MigrateRollbackCommand extends AbstractMigration
             return self::FAILURE;
         }
 
-        $take = (int) $this->getOption('take');
+        $takeValue = $this->getOption('take');
+        $take = is_numeric($takeValue) ? (int) $takeValue : 0;
         $message = "Rolling {$take} back migrations.";
         if ($take < 0) {
             $take    = 0;
@@ -55,6 +58,6 @@ final class MigrateRollbackCommand extends AbstractMigration
 
         $this->io->info($message);
 
-        return $this->rollbacks((int) $batch, $take);
+        return $this->rollbacks(is_numeric($batch) ? (int) $batch : 0, $take);
     }
 }
