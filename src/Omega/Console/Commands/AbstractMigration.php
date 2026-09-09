@@ -1,5 +1,15 @@
 <?php
 
+/**
+ * Part of Omega - Console Package.
+ *
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
+ */
+
 /** @noinspection PhpUnnecessaryCurlyVarSyntaxInspection */
 
 declare(strict_types=1);
@@ -13,37 +23,61 @@ use Omega\Console\AbstractCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use Omega\Database\Schema\SchemaConnection;
-use Omega\Database\Schema\Query;
 use Omega\Database\Facades\DB;
+use Omega\Database\Schema\Query;
+use Omega\Database\Schema\SchemaConnection;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ReflectionException;
 use Symfony\Component\Console\Exception\ExceptionInterface;
 use Throwable;
 
+use function is_dir;
+use function max;
+use function min;
+use function pathinfo;
+use function rtrim;
+use function str_contains;
+use function str_repeat;
+use function strlen;
+
 /**
- * BaseMigrationCommand
- * Fornisce i mattoncini per costruire i comandi di database e migrazione.yes
+ * Base class for database and migration commands.
+ *
+ * Provides the shared building blocks for writing, rolling back, resetting,
+ * and inspecting database migrations, plus the SQL queries used to run them.
+ *
+ * @category  Omega
+ * @package   Console
+ * @subpackage Commands
+ * @link      https://omega-mvc.github.io
+ * @author    Adriano Giovannini <agisoftt@gmail.com>
+ * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
+ * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @version   2.0.0
  */
 abstract class AbstractMigration extends AbstractCommand
 {
+    /**
+     * Optional vendor migration paths registered by subclasses.
+     *
+     * @var array<int, string>
+     */
     protected static array $vendorPaths = [];
 
     /**
      * Retrieve the target database name for migration operations.
      *
-     * This method returns the database name specified via the command-line option
-     * `--database`. If no option is provided, it retrieves the default database
-     * name from the application's schema connection.
+     * Returns the database name specified via the `--database` option, or the
+     * default database name from the application's schema connection.
      *
      * @return string The name of the database to be used for migration commands.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws ContainerExceptionInterface Thrown on general container errors.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws NotFoundExceptionInterface Thrown if the requested schema connection service is not in the container.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws NotFoundExceptionInterface Thrown if the schema connection is not registered.
+     * @throws ReflectionException Thrown when a class or interface cannot be reflected.
      */
     protected function getDatabaseName(): string
     {
@@ -53,19 +87,49 @@ abstract class AbstractMigration extends AbstractCommand
     }
 
     /**
-     * Determine whether migration commands are running in a development environment.
+     * Determine whether the given database exists on the server.
      *
-     * This method checks if the application is in development mode (`app()->isDev()`)
-     * or if the `--force` option is provided. If not, it prompts the user to confirm
-     * running migrations in production.
+     * Supports MySQL, MariaDB, and PostgreSQL. SQLite databases are always
+     * considered present because the connection targets a file path.
      *
-     * @return bool Returns `true` if running in a development environment or if the user
-     *              confirms running in production; otherwise, `false`.
+     * @param string $database Database name.
+     * @return bool True if the database exists.
+     */
+    protected function databaseExists(string $database): bool
+    {
+        $driver = $this->app->get('dsn.sql')['driver'] ?? 'mysql';
+
+        $sql = match ($driver) {
+            'pgsql'  => 'SELECT COUNT(*) AS total FROM pg_database WHERE datname = ?',
+            'sqlite' => null,
+            default  => 'SELECT COUNT(*) AS total FROM information_schema.schemata WHERE schema_name = ?',
+        };
+
+        if ($sql === null) {
+            return true;
+        }
+
+        $row = $this->app->get(SchemaConnection::class)
+            ->query($sql)
+            ->bind(1, $database)
+            ->single();
+
+        return is_array($row) && (int) $row['total'] > 0;
+    }
+
+    /**
+     * Determine whether migration commands are allowed to run.
+     *
+     * The command may run when the application is in development mode, when
+     * the `--force` option is provided, or when the user confirms the run.
+     *
+     * @param string|null $message Optional confirmation message shown in production.
+     * @return bool True when running is allowed, false otherwise.
      * @throws Exception Thrown if reading input from STDIN fails during the prompt.
      */
     protected function runInDev(?string $message = null): bool
     {
-        if ($this->app->isDev()) {
+        if ($this->app->isDev() || $this->getOption('force')) {
             return true;
         }
 
@@ -79,19 +143,19 @@ abstract class AbstractMigration extends AbstractCommand
     /**
      * Retrieve the list of migrations to be executed.
      *
-     * This method collects migration files from the default migration path and any
-     * registered vendor paths, compares them with the migration table, and determines
-     * which migrations need to be run for the given batch.
+     * Collects migration files from the default migration path and any
+     * registered vendor paths, compares them with the migration table, and
+     * determines which migrations need to be run for the given batch.
      *
-     * @param false|int $batch Optional batch number to limit the migrations. If `false`,
-     *                         the next batch number will be used automatically.
-     * @return Collection<string, array<string, string>> Returns a collection mapping
-     *         migration names to arrays containing `file_name` and `batch`.
+     * @param false|int $batch Optional batch number to limit the migrations.
+     * @param bool $register Whether to insert new migrations into the migration table.
+     * @return Collection<string, array<string, string|int>> Migration names mapped
+     *         to arrays containing `file_name` and `batch`.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws ContainerExceptionInterface Thrown on general container errors.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     * @throws ReflectionException Thrown when a class or interface cannot be reflected.
      */
     protected function baseMigrate(false|int &$batch = false, bool $register = true): Collection
     {
@@ -107,6 +171,10 @@ abstract class AbstractMigration extends AbstractCommand
         $migrate = new Collection([]);
 
         foreach ($paths as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
             foreach (new DirectoryIterator($dir) as $file) {
                 if ($file->isDot() || $file->isDir()) {
                     continue;
@@ -117,7 +185,6 @@ abstract class AbstractMigration extends AbstractCommand
 
                 $filePath = rtrim($dir, '/') . '/' . $file->getFilename();
 
-                // Caso: migrate (up) → nuova migration
                 if (false === $hasMigration) {
                     $migrate->set($migrationName, [
                         'file_name' => $filePath,
@@ -134,7 +201,6 @@ abstract class AbstractMigration extends AbstractCommand
                     continue;
                 }
 
-                // Caso: rollback / refresh / status
                 if ($migrationBatch->get($migrationName) <= $batch) {
                     $migrate->set($migrationName, [
                         'file_name' => $filePath,
@@ -150,29 +216,24 @@ abstract class AbstractMigration extends AbstractCommand
     /**
      * Execute all pending migrations for the current batch.
      *
-     * This method retrieves migration files, compares them with the migration table,
-     * and runs their `up` scripts. If the `--dry-run` option is provided, the SQL
-     * queries will only be displayed without executing them. Execution can be
-     * suppressed using the `$silent` flag.
+     * Retrieves pending migration files and runs their `up` scripts. If the
+     * `--dry-run` option is passed, the SQL queries are only displayed. When
+     * `$silent` is true, the production confirmation prompt is skipped.
      *
-     * @param bool $silent If `true`, suppresses prompts and outputs; otherwise prompts may be shown.
-     * @return int Exit code indicating the result of running migrations:
-     *             0 on success, 2 if aborted due to environment or user confirmation failure,
-     *             1 on general failure.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws Exception Thrown if an unexpected error occurs during migration execution.
+     * @param bool $silent When true, skips the production confirmation prompt.
+     * @return int Exit code: 0 on success, 2 when aborted, 1 on failure.
+     * @throws ContainerExceptionInterface Thrown on general container errors.
+     * @throws Exception Thrown if reading input from STDIN fails during the prompt.
      * @throws ExceptionInterface
      */
-    protected function migration(): int
+    protected function migration(bool $silent = false): int
     {
-        // 1. Controllo Ambiente
-        if (!$this->runInDev('<fg=red;options=bold>Running migration/database in production?</> Continue?')) {
+        if (
+            false === $silent
+            && false === $this->runInDev('<fg=red;options=bold>Running migration/database in production?</> Continue?')
+        ) {
             return self::INVALID;
         }
-
-        // 2. Calcolo Larghezza Terminale (Standard Symfony 8)
-        // Se non riesce a rilevarla, il default è 80
-        $width = min($this->terminal->getWidth() - 20, 60);
 
         $batch = false;
         $migrate = $this->baseMigrate($batch);
@@ -189,7 +250,7 @@ abstract class AbstractMigration extends AbstractCommand
         $this->io->title('Running migrations');
 
         foreach ($migrate as $key => $val) {
-            $schema = require_once $val['file_name'];
+            $schema = require $val['file_name'];
             $up = new Collection($schema['up'] ?? []);
 
             if ($this->getOption('dry-run')) {
@@ -201,28 +262,15 @@ abstract class AbstractMigration extends AbstractCommand
                 continue;
             }
 
-            // 3. Output Allineato
-            // Usiamo write() per restare sulla stessa riga
-            $this->io->write("<fg=gray>" . $key . "</>");
-
-            $dotCount = max(0, $width - strlen($key));
-            if ($dotCount > 0) {
-                $this->io->write("<fg=gray>" . str_repeat('.', $dotCount) . "</>");
-            }
-
             try {
                 $success = $up->every(fn (Query $item): bool => $item->execute());
-
-                if ($success) {
-                    $this->io->writeln(' <info>DONE</info>');
-                } else {
-                    $this->io->writeln(' <error>FAIL</error>');
-                }
             } catch (Throwable $th) {
                 $this->io->newLine();
                 $this->io->error($th->getMessage());
                 return self::FAILURE;
             }
+
+            $this->migrationOutputLine($key, $success);
         }
 
         $this->io->newLine();
@@ -233,9 +281,8 @@ abstract class AbstractMigration extends AbstractCommand
     /**
      * Execute seeders after migrations based on the provided options.
      *
-     * @return int Exit code indicating the result:
-     *             0 if no seeding is performed or on success,
-     *             otherwise the exit code returned by the seeder command.
+     * @return int Exit code: 0 when no seeding is performed or on success,
+     *              otherwise the exit code returned by the seeder command.
      */
     protected function seed(): int
     {
@@ -243,8 +290,6 @@ abstract class AbstractMigration extends AbstractCommand
             return self::SUCCESS;
         }
 
-        // Recuperiamo il valore dell'opzione --seed
-        // In Symfony, se l'opzione è InputOption::VALUE_NONE, torna bool
         $shouldSeed = $this->getOption('seed');
 
         if (!$shouldSeed) {
@@ -253,24 +298,21 @@ abstract class AbstractMigration extends AbstractCommand
 
         $parameters = [];
 
-        // Gestione namespace se presente
         $namespace = $this->getOption('seed-namespace');
         if ($namespace) {
             $parameters['--name-space'] = $namespace;
         }
 
-        // Usiamo il metodo call() che abbiamo aggiunto alla base per invocare il seeder
-        // Assumendo che il comando si chiami 'seed' o 'db:seed'
         try {
-            return $this->call('seed', $parameters);
+            return $this->call('db:seed', $parameters);
         } catch (Throwable $e) {
-            $this->io->error("Seeding failed: " . $e->getMessage());
+            $this->io->error('Seeding failed: ' . $e->getMessage());
             return self::FAILURE;
         }
     }
 
     /**
-     * Retrieve the list of executed migrations and their batch numbers.
+     * Retrieve the list of executed migrations mapped to their batch numbers.
      *
      * @return Collection<string, int> A collection mapping migration names to their batch numbers.
      */
@@ -286,9 +328,102 @@ abstract class AbstractMigration extends AbstractCommand
     }
 
     /**
+     * Roll back executed migrations based on a batch number and a limit.
+     *
+     * @param false|int $batch The batch number to roll back, or false to determine it automatically.
+     * @param int $take The number of batches to roll back starting from the given batch.
+     * @return int Exit code: 0 on success, 1 when at least one migration fails.
+     * @throws BindingResolutionException Thrown when resolving a binding fails.
+     * @throws CircularAliasException Thrown when alias resolution loops recursively.
+     * @throws ContainerExceptionInterface Thrown on general container errors.
+     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
+     * @throws ReflectionException Thrown when a class or interface cannot be reflected.
+     */
+    protected function rollbacks(false|int $batch, int $take): int
+    {
+        $migrate = false === $batch
+            ? $this->baseMigrate($batch, false)
+            : $this->baseMigrate($batch, false)
+                ->filter(static fn (array $value): bool => $value['batch'] >= $batch - $take);
+
+        $failed = false;
+
+        foreach ($migrate->sortDesc() as $key => $val) {
+            $schema = require $val['file_name'];
+            $down = new Collection($schema['down'] ?? []);
+
+            if ($this->getOption('dry-run')) {
+                $down->each(function (Query $item): bool {
+                    $this->io->writeln("<fg=gray>{$item->__toString()}</>");
+                    $this->io->newLine(2);
+                    return true;
+                });
+                continue;
+            }
+
+            try {
+                $success = $down->every(fn (Query $item): bool => $item->execute());
+
+                if ($success) {
+                    $success = $this->deleteMigrationTable((int) $val['batch']);
+                }
+            } catch (Throwable $th) {
+                if (str_contains($th->getMessage(), 'Base table or view not found')) {
+                    $success = true;
+                } else {
+                    $success = false;
+                    $this->io->error($th->getMessage());
+                }
+            }
+
+            if (!$success) {
+                $failed = true;
+            }
+
+            $this->migrationOutputLine($key, $success);
+        }
+
+        $this->io->newLine();
+
+        return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    /**
+     * Determine the width available for migration progress output.
+     *
+     * @return int The usable width for aligned migration output.
+     */
+    protected function outputWidth(): int
+    {
+        return min($this->terminal->getWidth() - 20, 60);
+    }
+
+    /**
+     * Write an aligned migration progress line with a DONE or FAIL tag.
+     *
+     * The migration name is rendered at the start of the line, followed by
+     * gray dots up to the output width and a colored success or failure tag.
+     *
+     * @param string $key The migration name to display.
+     * @param bool $success Whether the migration executed successfully.
+     * @return void
+     */
+    protected function migrationOutputLine(string $key, bool $success): void
+    {
+        $this->io->write("<fg=gray>{$key}</>");
+
+        $dotCount = max(0, $this->outputWidth() - strlen($key));
+        if ($dotCount > 0) {
+            $this->io->write('<fg=gray>' . str_repeat('.', $dotCount) . '</>');
+        }
+
+        $this->io->writeln($success ? ' <info>DONE</info>' : ' <error>FAIL</error>');
+    }
+
+    /**
      * Insert a migration record into the migration table.
      *
-     * @param array<string, string|int> $migration The migration name and its associated batch number.
+     * @param array<string, string|int> $migration The migration name and its batch number.
      * @return bool Returns true on successful insertion, false otherwise.
      */
     private function insertMigrationTable(array $migration): bool
@@ -313,77 +448,5 @@ abstract class AbstractMigration extends AbstractCommand
             ->equal('batch', $batchNumber)
             ->execute()
             ;
-    }
-
-    /**
-     * Roll back executed migrations based on batch number and limit.
-     *
-     * @param false|int $batch The batch number to roll back, or `false` to determine it automatically.
-     * @param int $take The number of batches to roll back starting from the given batch.
-     * @return int Exit code indicating the result of the rollback process:
-     *             always returns 0 after processing the selected migrations.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    protected function rollbacks(false|int $batch, int $take): int
-    {
-        $width = min($this->terminal->getWidth() - 20, 60);
-
-        // ❗ IMPORTANTE: register = false
-        $migrate = false === $batch
-            ? $this->baseMigrate($batch, false)
-            : $this->baseMigrate($batch, false)
-                ->filter(static fn (array $value): bool => $value['batch'] >= $batch - $take);
-
-        foreach ($migrate->sortDesc() as $key => $val) {
-            $schema = require_once $val['file_name'];
-            $down   = new Collection($schema['down'] ?? []);
-
-            if ($this->getOption('dry-run')) {
-                $down->each(function (Query $item): bool {
-                    $this->io->writeln("<fg=gray>{$item->__toString()}</>");
-                    $this->io->newLine(2);
-                    return true;
-                });
-                continue;
-            }
-
-            $this->io->write("<fg=gray>{$key}</>");
-
-            $dotCount = max(0, $width - strlen($key));
-            if ($dotCount > 0) {
-                $this->io->write("<fg=gray>" . str_repeat('.', $dotCount) . "</>");
-            }
-
-            try {
-                $success = $down->every(fn (Query $item): bool => $item->execute());
-
-                if ($success) {
-                    $success = $this->deleteMigrationTable((int) $val['batch']);
-                }
-            } catch (Throwable $th) {
-                // 👉 qui puoi decidere se essere tollerante
-                if (str_contains($th->getMessage(), 'Base table or view not found')) {
-                    $success = true;
-                } else {
-                    $success = false;
-                    $this->io->error($th->getMessage());
-                }
-            }
-
-            if ($success) {
-                $this->io->writeln(' <info>DONE</info>');
-                continue;
-            }
-
-            $this->io->writeln(' <error>FAIL</error>');
-        }
-
-        $this->io->newLine();
-
-        return self::SUCCESS;
     }
 }

@@ -12,9 +12,14 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use DirectoryIterator;
 use ReflectionException;
 use Symfony\Component\Console\Input\InputOption;
 use Throwable;
+
+use function is_dir;
+use function pathinfo;
+use function rtrim;
 
 #[AsCommand(
     name: 'migrate:fresh',
@@ -23,6 +28,7 @@ use Throwable;
         'force'    => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
         'dry-run'  => [null, InputOption::VALUE_NONE, 'Dump the SQL queries without executing'],
         'seed'     => [null, InputOption::VALUE_NONE, 'Seed the database after migrating'],
+        'seed-namespace' => [null, InputOption::VALUE_OPTIONAL, 'The namespace of the seeder class'],
         'yes'      => ['y', InputOption::VALUE_NONE, 'Do not ask for confirmation (Assume "yes")'],
         'database' => ['d', InputOption::VALUE_OPTIONAL, 'The database connection to use']
     ]
@@ -54,6 +60,10 @@ final class MigrateFreshCommand extends AbstractMigration
             return self::INVALID;
         }
 
+        if ($this->getOption('dry-run')) {
+            return $this->freshDryRun();
+        }
+
         if (($drop = $this->call('db:wipe', ['--no-interact' => true])) > 0) {
             return $drop;
         }
@@ -62,15 +72,18 @@ final class MigrateFreshCommand extends AbstractMigration
             return $create;
         }
 
+        if (($init = $this->call('migrate:init')) > 0) {
+            return $init;
+        }
+
         // run migration
         $batch   = false;
         $migrate = $this->baseMigrate($batch)->sort();
-        $width = min($this->terminal->getWidth() - 20, 60); //
 
         $this->io->title('Running migration');
 
         foreach ($migrate as $key => $val) {
-            $schema = require_once $val['file_name'];
+            $schema = require $val['file_name'];
             $up     = new Collection($schema['up'] ?? []);
 
             if ($this->getOption('dry-run')) {
@@ -82,13 +95,6 @@ final class MigrateFreshCommand extends AbstractMigration
                 continue;
             }
 
-            // output allineato
-            $this->io->write("<fg=gray>{$key}</>");
-            $dotCount = max(0, $width - strlen($key));
-            if ($dotCount > 0) {
-                $this->io->write("<fg=gray>" . str_repeat('.', $dotCount) . "</>");
-            }
-
             try {
                 $success = $up->every(fn (Query $item): bool => $item->execute());
             } catch (Throwable $th) {
@@ -97,15 +103,57 @@ final class MigrateFreshCommand extends AbstractMigration
                 $success = false;
             }
 
-            if ($success) {
-                $this->io->writeln(' <info>DONE</info>');
-            } else {
-                $this->io->writeln(' <error>FAIL</error>');
-            }
+            $this->migrationOutputLine($key, $success);
         }
 
         $this->io->newLine();
 
         return $this->seed();
+    }
+
+    /**
+     * Preview the SQL of every migration without touching the database.
+     *
+     * A fresh run re-executes every migration from scratch, so the preview
+     * lists the `up` queries of all migration files currently on disk.
+     *
+     * @return int Always `0` on success.
+     */
+    private function freshDryRun(): int
+    {
+        $migrate = new Collection([]);
+        $paths   = [$this->app->get('path.migrations'), ...static::$vendorPaths];
+
+        foreach ($paths as $dir) {
+            if (!is_dir($dir)) {
+                continue;
+            }
+
+            foreach (new DirectoryIterator($dir) as $file) {
+                if ($file->isDot() || $file->isDir()) {
+                    continue;
+                }
+
+                $migrate->set(
+                    pathinfo($file->getBasename(), PATHINFO_FILENAME),
+                    rtrim($dir, '/') . '/' . $file->getFilename()
+                );
+            }
+        }
+
+        $this->io->title('Running migration');
+
+        foreach ($migrate->sort() as $key => $filePath) {
+            $schema = require $filePath;
+            $up     = new Collection($schema['up'] ?? []);
+
+            $up->each(function (Query $item): bool {
+                $this->io->writeln("<fg=gray>{$item->__toString()}</>");
+                $this->io->newLine();
+                return true;
+            });
+        }
+
+        return self::SUCCESS;
     }
 }

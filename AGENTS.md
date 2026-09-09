@@ -7,10 +7,9 @@ PHP 8.4+ MVC framework library (`Omega\` namespace). Not an application — this
 ```bash
 composer run lint          # phpcs (PSR-12 + 120-col limit, src/ + tests/)
 composer run fix           # phpcbf auto-fix
-composer run test:phpunit  # phpunit tests/ (no coverage)
-composer run test          # lint + phpunit
-composer run check         # alias for test
-composer run ci            # fix + test (what CI runs)
+composer run test          # pest (PHPUnit-style Pest classes)
+composer run check         # lint + test
+composer run ci            # fix + check (what CI runs)
 
 # Do NOT run PHPStan (phpstan.neon.dist exists, level 10, but is not part of the workflow)
 ```
@@ -34,7 +33,7 @@ Run `lint` before `test`. Fix lint errors with `composer run fix` first.
 ## Testing
 
 - **Pest 5** on top of PHPUnit. Tests are PHPUnit-style classes with `#[CoversClass]` attributes
-- Run tests via `composer run test:phpunit` — no coverage by default (80% minimum only if `--coverage` is passed)
+- Run tests via `composer run test` — no coverage by default (80% minimum only if `--coverage` is passed)
 - Test env: `APP_ENV=testing`, `OMEGA_TEST_MODE=light`
 - Coverage reports: `cache/coverage-report/`
 - No external services required for unit tests

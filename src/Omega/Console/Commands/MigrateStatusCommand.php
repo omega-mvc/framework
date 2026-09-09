@@ -22,7 +22,7 @@ final class MigrateStatusCommand extends AbstractMigration
     {
         $this->io->note('show migration status');
 
-        $width = min($this->terminal->getWidth() - 20, 60);
+        $width = $this->outputWidth();
 
         foreach ($this->getMigrationTable() as $migrationName => $batch) {
             $length = strlen($migrationName) + strlen((string) $batch);

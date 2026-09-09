@@ -34,8 +34,6 @@ final class MakeModelCommand extends AbstractMakeCommand
     {
         $this->io->info('Making model file...');
 
-        $this->isPath('path.model');
-
         $name = ucfirst($this->getArgument('name'));
         $modelLocation = $this->app->get('path.model') . $name . '.php';
 

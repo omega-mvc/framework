@@ -43,7 +43,7 @@ class Make
      * @param string $target Logical target path used for display or resolution
      * @param string $info Message shown when generation succeeds
      * @param string $warning Message shown when file already exists
-     * @param array<string, mixed> $vars Additional template variables [placeholder => transformation]
+     * @param array<string, string> $vars Additional template variables [placeholder => transformation]
      */
     public function __construct(
         public string $template,

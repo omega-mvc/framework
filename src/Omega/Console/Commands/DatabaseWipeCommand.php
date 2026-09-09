@@ -56,6 +56,11 @@ final class DatabaseWipeCommand extends AbstractMigration
             }
         }
 
+        if (!$this->databaseExists($dbName)) {
+            $this->io->error("Database `{$dbName}` does not exist, nothing to drop.");
+            return self::FAILURE;
+        }
+
         $this->io->writeln("<comment>Trying to drop database `{$dbName}`...</comment>");
 
         $success = Schema::drop()->database($dbName)->ifExists()->execute();

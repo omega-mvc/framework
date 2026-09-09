@@ -30,6 +30,11 @@ final class MigrateInitCommand extends AbstractMigration
     {
         $dbName = $this->getDatabaseName();
 
+        if (!$this->databaseExists($dbName)) {
+            $this->io->error("Database `{$dbName}` does not exist, run `db:create` first.");
+            return self::FAILURE;
+        }
+
         if ($this->hasMigrationTable()) {
             $this->io->writeln('<comment>Migration table already exists in your database.</comment>');
             return self::SUCCESS;

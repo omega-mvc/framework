@@ -19,6 +19,7 @@ use Symfony\Component\Console\Input\InputOption;
         'force'    => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
         'dry-run'  => [null, InputOption::VALUE_NONE, 'Dump the SQL queries without executing'],
         'seed'     => [null, InputOption::VALUE_NONE, 'Seed the database after migrating'],
+        'seed-namespace' => [null, InputOption::VALUE_OPTIONAL, 'The namespace of the seeder class'],
         'batch'    => [null, InputOption::VALUE_OPTIONAL, 'The batch number to rollback'],
         'take'     => [null, InputOption::VALUE_OPTIONAL, 'Limit the number of migrations to run']
     ]

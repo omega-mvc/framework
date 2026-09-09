@@ -14,7 +14,8 @@ use Symfony\Component\Console\Input\InputOption;
     description: 'Rolling back all migrations (down)',
     options: [
         'force'    => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
-        'dry-run'  => [null, InputOption::VALUE_NONE, 'Dump the SQL queries without executing']
+        'dry-run'  => [null, InputOption::VALUE_NONE, 'Dump the SQL queries without executing'],
+        'silent'   => [null, InputOption::VALUE_NONE, 'Skip the environment check and user prompts']
     ]
 )]
 final class MigrateResetCommand extends AbstractMigration
@@ -22,7 +23,6 @@ final class MigrateResetCommand extends AbstractMigration
     /**
      * Roll back all executed migrations.
      *
-     * @param bool $silent If `true`, suppresses environment checks and user prompts.
      * @return int Exit code indicating the result of the rollback operation:
      *             0 on success, 2 if aborted due to environment restrictions or confirmation failure.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.

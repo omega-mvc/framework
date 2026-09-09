@@ -16,7 +16,8 @@ use Symfony\Component\Console\Input\InputOption;
     options: [
         'force'    => ['f', InputOption::VALUE_NONE, 'Force the operation to run when in production'],
         'dry-run'  => [null, InputOption::VALUE_NONE, 'Dump the SQL queries without executing'],
-        'seed'     => [null, InputOption::VALUE_NONE, 'Seed the database after migrating']
+        'seed'     => [null, InputOption::VALUE_NONE, 'Seed the database after migrating'],
+        'seed-namespace' => [null, InputOption::VALUE_OPTIONAL, 'The namespace of the seeder class']
     ]
 )]
 final class MigrateRefreshCommand extends AbstractMigration
@@ -27,7 +28,6 @@ final class MigrateRefreshCommand extends AbstractMigration
      * @return int Exit code indicating the result of the refresh operation:
      *             0 on success, 2 if aborted due to environment restrictions,
      *             or a propagated non-zero code from reset or migration.
-     * @return int
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception|ExceptionInterface Thrown if reading input from STDIN fails during the prompt.
      */

@@ -31,7 +31,7 @@ use function str_contains;
 final class DatabaseCreateCommand extends AbstractMigration
 {
     /**
-     * Create the target database and initialize the migration table if needed.
+     * Create the target database.
      *
      * @return int Exit code indicating the result of the operation:
      *             0 on success, 1 on failure, 2 if aborted due to environment or user confirmation.
@@ -72,13 +72,8 @@ final class DatabaseCreateCommand extends AbstractMigration
             throw $e;
         }
 
-
-        $success = Schema::create()->database($dbName)->ifNotExists()->execute();
-
         if ($success) {
             $this->io->info("Successfully created database `{$dbName}`");
-
-            $this->call('migrate:init', ['--database' => $dbName]);
 
             return self::SUCCESS;
         }

@@ -64,7 +64,6 @@ abstract class AbstractMakeCommand extends AbstractCommand
 
     protected function resolveVars(array $vars, string $name): array
     {
-
         return array_map(function (string $value) use ($name): string {
             return match ($value) {
                 'kebab' => Str::toKebabCase($name),
@@ -101,7 +100,7 @@ abstract class AbstractMakeCommand extends AbstractCommand
 
         $template = str_replace(
             $makeOption['pattern'],
-            $makeOption['replace'] ?? $argument,
+            $argument,
             $template
         );
 
@@ -111,7 +110,7 @@ abstract class AbstractMakeCommand extends AbstractCommand
             }
         }
 
-        $template = preg_replace('/^.+\n/', '', $template);
+        $template = preg_replace('/^#!.*\n/', '', $template);
 
         if (file_put_contents($fileName, $template) === false) {
             $this->io->error("Failed to write file [$fileName]");
