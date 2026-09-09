@@ -77,6 +77,11 @@ class Schedule
     /**
      * Execute all tasks in the schedule pool.
      *
+     * Each task is evaluated against the schedule's base timestamp: when the
+     * timestamp is set, it is propagated to every task so that a persistent
+     * worker calling `execute()` repeatedly (with `setTime()` advancing the
+     * clock) keeps scheduling tasks against the current time.
+     *
      * Each task will be executed according to its timing, retry policy, and
      * logging configuration.
      *
@@ -86,6 +91,11 @@ class Schedule
     {
         foreach ($this->pools as $cron) {
             $cron->setLogger($this->logger);
+
+            if (null !== $this->time) {
+                $cron->setTime($this->time);
+            }
+
             do {
                 $cron->expect();
             } while ($cron->retryAttempts() > 0);

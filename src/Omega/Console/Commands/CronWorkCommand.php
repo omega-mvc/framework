@@ -34,6 +34,8 @@ final class CronWorkCommand extends AbstractCommand
 
         while (true) {
             $now = new Now();
+            $schedule->setTime($now->getTimestamp());
+
             $timestamp = sprintf(
                 '%s-%s-%s %02d:%02d:%02d',
                 $now->getYear(),

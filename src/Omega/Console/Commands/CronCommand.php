@@ -19,7 +19,7 @@ use function round;
 final class CronCommand extends AbstractCommand
 {
     /**
-     * {@iheritdoc}
+     * {@inheritdoc}
      */
     public function __invoke(): int
     {
@@ -36,35 +36,13 @@ final class CronCommand extends AbstractCommand
     /**
      * Returns the schedule instance with all registered jobs.
      *
+     * Jobs are registered by the application via `routes/schedule.php`, which is
+     * loaded into the `schedule` container binding by `RouteServiceProvider`.
+     *
      * @return Schedule The schedule containing registered cron jobs.
      */
     protected function getSchedule(): Schedule
     {
-        $schedule = Scheduler::add(new Schedule());
-        $this->scheduler($schedule);
-
-        return $schedule;
-    }
-
-    /**
-     * Registers cron jobs on the provided schedule.
-     *
-     * You can add multiple jobs and configure retry, just-in-time execution,
-     * anonymity, and event names.
-     *
-     * @param Schedule $schedule The schedule to register jobs on.
-     * @return void
-     */
-    public function scheduler(Schedule $schedule): void
-    {
-        $schedule->call(fn () => [
-            'code' => 200,
-        ])
-            ->retry(2)
-            ->justInTime()
-            ->anonymously()
-            ->eventName('cli-schedule');
-
-        // others schedule
+        return Scheduler::add(new Schedule());
     }
 }

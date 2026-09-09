@@ -279,6 +279,22 @@ class ScheduleTime
     }
 
     /**
+     * Update the base timestamp of this scheduled task.
+     *
+     * Re-evaluates due-ness against the new timestamp on the next execution,
+     * allowing a persistent worker to advance a fixed schedule over time.
+     *
+     * @param int $time New timestamp in seconds.
+     * @return $this Fluent interface.
+     */
+    public function setTime(int $time): self
+    {
+        $this->time = $time;
+
+        return $this;
+    }
+
+    /**
      * Check if the schedule is due to run at the current time.
      *
      * Compares the current timestamp against the defined time expectations.

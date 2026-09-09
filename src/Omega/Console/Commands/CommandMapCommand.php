@@ -7,13 +7,7 @@ namespace Omega\Console\Commands;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Console\ConsoleApplication;
-use Omega\Container\Exceptions\BindingResolutionException;
-use Omega\Container\Exceptions\CircularAliasException;
-use Omega\Container\Exceptions\EntryNotFoundException;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use ReflectionClass;
-use ReflectionException;
 use Throwable;
 
 use function array_unique;
@@ -31,22 +25,40 @@ class CommandMapCommand extends AbstractCommand
 {
     /**
      * {@inheritdoc}
-     *
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws NotFoundExceptionInterface
-     * @throws ReflectionException
      */
     public function __invoke(): int
     {
-        $consoleApp = new ConsoleApplication($this->app);
-        $commands = $consoleApp->discoverCommands();
+        try {
+            $consoleApp = new ConsoleApplication($this->app);
+            $commands = $consoleApp->discoverCommands();
+        } catch (Throwable $e) {
+            $this->io->error('Failed to discover console commands: ' . $e->getMessage());
+
+            return self::FAILURE;
+        }
 
         if (empty($commands)) {
             $this->io->warning('No commands discovered.');
             return self::FAILURE;
+        }
+
+        $classShortNames = [];
+        $shortNameClasses = [];
+
+        foreach ($commands as $className) {
+            $shortName = (new ReflectionClass($className))->getShortName();
+
+            if (isset($shortNameClasses[$shortName]) && $shortNameClasses[$shortName] !== $className) {
+                $this->io->error(
+                    "Command cache aborted: short-name collision on '{$shortName}'"
+                    . " between {$shortNameClasses[$shortName]} and {$className}."
+                );
+
+                return self::FAILURE;
+            }
+
+            $classShortNames[$className] = $shortName;
+            $shortNameClasses[$shortName] = $className;
         }
 
         $uniqueClasses = array_unique(array_values($commands));
@@ -65,10 +77,7 @@ class CommandMapCommand extends AbstractCommand
         $content .= PHP_EOL . "return [" . PHP_EOL;
 
         foreach ($commands as $name => $className) {
-            $reflection = new ReflectionClass($className);
-            $shortName = $reflection->getShortName();
-
-            $content .= "    '$name' => $shortName::class," . PHP_EOL;
+            $content .= "    '$name' => {$classShortNames[$className]}::class," . PHP_EOL;
         }
 
         $content .= "];" . PHP_EOL;
@@ -76,12 +85,21 @@ class CommandMapCommand extends AbstractCommand
         $cachePath = $this->app->getApplicationCachePath() . 'commands.php';
 
         try {
-            file_put_contents($cachePath, $content);
-            $this->io->info("Command map successfully cached at: $cachePath");
-            return self::SUCCESS;
+            $written = file_put_contents($cachePath, $content);
         } catch (Throwable $e) {
-            $this->io->error("Failed to write cache file: " . $e->getMessage());
+            $this->io->error('Failed to write cache file: ' . $e->getMessage());
+
             return self::FAILURE;
         }
+
+        if (false === $written) {
+            $this->io->error("Failed to write cache file at: {$cachePath}");
+
+            return self::FAILURE;
+        }
+
+        $this->io->info("Command map successfully cached at: $cachePath");
+
+        return self::SUCCESS;
     }
 }
