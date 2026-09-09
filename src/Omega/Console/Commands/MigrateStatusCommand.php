@@ -20,7 +20,7 @@ final class MigrateStatusCommand extends AbstractMigration
      */
     public function __invoke(): int
     {
-        $this->io->migrate('show migration status');
+        $this->io->note('show migration status');
 
         $width = $this->outputWidth();
 

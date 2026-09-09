@@ -50,4 +50,9 @@ class OutputStyler
     {
         $this->writeRight($message, $margin);
     }
+
+    public function printColumns(string $left, string $right, int $leftMargin = 2, int $rightMargin = 2): void
+    {
+        $this->componentsTwoColumns($left, $right, $leftMargin, $rightMargin);
+    }
 }

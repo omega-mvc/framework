@@ -49,13 +49,13 @@ final class SeedCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $this->io->db("Running seeder: {$targetClass}");
+        $this->io->info("Running seeder: {$targetClass}");
 
         try {
             $seeder = $this->app->make($targetClass);
             $this->app->call([$seeder, 'run']);
 
-            $this->io->db("Success run seeder: {$targetClass}");
+            $this->io->success("Success run seeder: {$targetClass}");
             return self::SUCCESS;
         } catch (Throwable $e) {
             $this->io->error("Seeding failed: " . $e->getMessage());

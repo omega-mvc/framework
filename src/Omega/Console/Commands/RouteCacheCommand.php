@@ -63,7 +63,7 @@ class RouteCacheCommand extends AbstractCommand
         $content = '<?php return ' . var_export($routes, true) . ';' . PHP_EOL;
 
         if (file_put_contents($cachePath, $content) !== false) {
-            $io->route('Route cache file has been successfully created.');
+            $io->info('Route cache file has been successfully created.');
             return 0;
         }
 

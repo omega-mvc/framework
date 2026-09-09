@@ -38,6 +38,8 @@ use function min;
 use function pathinfo;
 use function rtrim;
 use function str_contains;
+use function str_repeat;
+use function strlen;
 
 /**
  * Base class for database and migration commands.
@@ -241,11 +243,11 @@ abstract class AbstractMigration extends AbstractCommand
             ->sort();
 
         if ($migrate->isEmpty()) {
-            $this->io->migrate('Nothing to migrate.');
+            $this->io->info('Nothing to migrate.');
             return self::SUCCESS;
         }
 
-        $this->io->migrate('Running migrations');
+        $this->io->title('Running migrations');
 
         foreach ($migrate as $key => $val) {
             $schema = require $val['file_name'];
@@ -399,15 +401,23 @@ abstract class AbstractMigration extends AbstractCommand
     /**
      * Write an aligned migration progress line with a DONE or FAIL tag.
      *
+     * The migration name is rendered at the start of the line, followed by
+     * gray dots up to the output width and a colored success or failure tag.
+     *
      * @param string $key The migration name to display.
      * @param bool $success Whether the migration executed successfully.
      * @return void
      */
     protected function migrationOutputLine(string $key, bool $success): void
     {
-        $tag = $success ? '<info>DONE</info>' : '<error>FAIL</error>';
+        $this->io->write("<fg=gray>{$key}</>");
 
-        $this->io->spread("<fg=gray>{$key}</>", $tag);
+        $dotCount = max(0, $this->outputWidth() - strlen($key));
+        if ($dotCount > 0) {
+            $this->io->write('<fg=gray>' . str_repeat('.', $dotCount) . '</>');
+        }
+
+        $this->io->writeln($success ? ' <info>DONE</info>' : ' <error>FAIL</error>');
     }
 
     /**

@@ -27,7 +27,7 @@ final class CronWorkCommand extends AbstractCommand
     public function __invoke(): int
     {
         $this->io->title('Omega Cron Worker');
-        $this->io->cron('Watching and executing scheduled jobs every minute...');
+        $this->io->info('Watching and executing scheduled jobs every minute...');
         $this->io->note('Press CTRL+C to stop the worker.');
 
         $schedule = Scheduler::add(new Schedule());

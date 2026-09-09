@@ -32,7 +32,7 @@ final class MakeModelCommand extends AbstractMakeCommand
 {
     public function __invoke(): int
     {
-        $this->io->make('Making model file...');
+        $this->io->info('Making model file...');
 
         $name = ucfirst($this->getArgument('name'));
         $modelLocation = $this->app->get('path.model') . $name . '.php';
@@ -94,7 +94,7 @@ final class MakeModelCommand extends AbstractMakeCommand
         }
 
         $displayPath = path('app.Models') . $name;
-        $this->io->make("Model [{$displayPath}] created successfully.");
+        $this->io->success("Model [{$displayPath}] created successfully.");
 
         return self::SUCCESS;
     }

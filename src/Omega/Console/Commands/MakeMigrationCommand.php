@@ -26,7 +26,7 @@ final class MakeMigrationCommand extends AbstractMakeCommand
 {
     public function __invoke(): int
     {
-        $this->io->make('Making migration...');
+        $this->io->info('Making migration...');
 
         $name = $this->getArgument('name');
 
@@ -75,7 +75,7 @@ final class MakeMigrationCommand extends AbstractMakeCommand
             return self::FAILURE;
         }
 
-        $this->io->make("Success! Migration file created: " . basename($fileName));
+        $this->io->success("Success! Migration file created: " . basename($fileName));
 
         return self::SUCCESS;
     }

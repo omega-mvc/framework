@@ -33,7 +33,7 @@ final class ViewClearCommand extends AbstractCommand
             }
         }
 
-        $this->io->view("Cleared {$count} cached files.");
+        $this->io->info("Cleared {$count} cached files.");
         return self::SUCCESS;
     }
 }

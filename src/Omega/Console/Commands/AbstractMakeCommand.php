@@ -132,7 +132,7 @@ abstract class AbstractMakeCommand extends AbstractCommand
             $config->info
         );
 
-        $this->io->make($message);
+        $this->io->info($message);
     }
 
     protected function warning(object $config, string $name): void

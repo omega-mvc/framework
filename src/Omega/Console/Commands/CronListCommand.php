@@ -54,7 +54,7 @@ final class CronListCommand extends AbstractCommand
 
             $rightSide = $job['anonymous'];
 
-            $this->io->spread($leftSide, $rightSide);
+            $this->componentsTwoColumns($leftSide, $rightSide);
         }
 
         $count = count($pools);

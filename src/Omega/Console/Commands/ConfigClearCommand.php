@@ -28,7 +28,7 @@ final class ConfigClearCommand extends AbstractCommand
         }
 
         if (@unlink($cachePath)) {
-            $this->io->cache('Configuration cache cleared successfully.');
+            $this->io->info('Configuration cache cleared successfully.');
             return self::SUCCESS;
         }
 

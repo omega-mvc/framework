@@ -67,7 +67,7 @@ final class CacheClearCommand extends AbstractCommand
 
         if (empty($driversToClear)) {
             $cache->getDriver()->clear();
-            $this->io->cache('Application cache cleared successfully.');
+            $this->io->info('Application cache cleared successfully.');
             return self::SUCCESS;
         }
 
@@ -81,7 +81,7 @@ final class CacheClearCommand extends AbstractCommand
                 }
 
                 $driver->clear();
-                $this->io->cache("Cleared '{$driverName}' driver.");
+                $this->io->info("Cleared '{$driverName}' driver.");
             } catch (Exception $e) {
                 $this->io->error("Failed to clear '{$driverName}': " . $e->getMessage());
             }

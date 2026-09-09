@@ -22,7 +22,7 @@ class RouteClearCommand extends AbstractCommand
 
         if (file_exists($cachePath)) {
             if (@unlink($cachePath)) {
-                $this->io->route('Route cache cleared successfully.');
+                $this->io->info('Route cache cleared successfully.');
                 return self::SUCCESS;
             }
 
