@@ -20,12 +20,16 @@ final class MaintenanceUpCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $maintenanceFile = $this->app->get('path.storage') . 'app/maintenance.php';
+        $storagePath = $this->app->get('path.storage') . 'app/';
 
-        if (file_exists($maintenanceFile) && !@unlink($maintenanceFile)) {
-            $this->io->error('Failed to remove the maintenance file.');
-            $this->io->note("Please remove it manually at: $maintenanceFile");
-            return self::FAILURE;
+        foreach (['maintenance.php', 'down'] as $file) {
+            $path = $storagePath . $file;
+
+            if (file_exists($path) && !@unlink($path)) {
+                $this->io->error("Failed to remove the maintenance file '$path'.");
+                $this->io->note("Please remove it manually at: $path");
+                return self::FAILURE;
+            }
         }
 
         $this->io->info('Application is now live.');
