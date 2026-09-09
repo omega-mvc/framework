@@ -10,6 +10,14 @@ use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Omega\Router\Router;
 use Symfony\Component\Console\Helper\Helper;
 
+use function array_column;
+use function array_map;
+use function count;
+use function implode;
+use function is_array;
+use function str_repeat;
+use function strtoupper;
+
 #[AsCommand(
     name: 'route:list',
     description: 'List all registered application routes with HTTP methods, names, and URIs'
@@ -26,21 +34,21 @@ final class RouteListCommand extends AbstractCommand
             return self::SUCCESS;
         }
 
-        // 1. Prepariamo i dati formattati
+        // 1. Format the route data
         $formattedRoutes = array_map(function (array $route): array {
             $methods = is_array($route['method']) ? $route['method'] : [$route['method']];
             return [
                 'method' => $this->formatMethods($methods),
-                'uri'    => $route['expression'],
+                'uri'    => $route['uri'] ?? $route['expression'],
                 'name'   => $route['name'] ?? ''
             ];
         }, $routes);
 
-        // 2. Calcoliamo lo spazio per la colonna sinistra (Metodi)
+        // 2. Compute the width of the left-hand column (methods)
         $maxMethodWidth = $this->getVisibleMaxWidth(array_column($formattedRoutes, 'method'));
 
         foreach ($formattedRoutes as $route) {
-            // Calcoliamo il padding per allineare l'URI
+            // Pad the URI to align the method column
             $methodVisibleWidth = $this->getVisibleWidth($route['method']);
             $padding = str_repeat(' ', $maxMethodWidth - $methodVisibleWidth + 1);
 
@@ -50,11 +58,11 @@ final class RouteListCommand extends AbstractCommand
             $this->componentsTwoColumns($leftSide, $rightSide);
         }
 
-        // 3. Summary finale
+        // 3. Final summary
         $count = count($routes);
         $summary = "<fg=blue;options=bold>Showing [{$count}] routes.</>";
 
-        // Usiamo writeRight senza PHP_EOL dentro (meglio newLine prima)
+        // Use writeRight without PHP_EOL inside (use newLine first)
         $this->io->newLine();
         $this->writeRight($summary, 2);
 

@@ -10,6 +10,10 @@ use Omega\Container\AbstractServiceProvider;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputOption;
 
+use function array_filter;
+use function count;
+use function is_dir;
+
 #[AsCommand(
     name: 'vendor:publish',
     description: 'Publish any publishable assets from vendor packages',
@@ -32,29 +36,29 @@ final class VendorPublishCommand extends AbstractCommand
             return self::SUCCESS;
         }
 
-        $this->publishItems($modules, $tag, $force);
+        $published = $this->publishItems($modules, $tag, $force);
 
-        return self::SUCCESS;
+        return $published > 0 ? self::SUCCESS : self::FAILURE;
     }
 
     /**
      * Handles the publication of modules filtered by tag.
      */
-    private function publishItems(array $modules, string $targetTag, bool $force): void
+    private function publishItems(array $modules, string $targetTag, bool $force): int
     {
         $added = 0;
 
-        // Filtering modules by tag
+        // Filter modules by tag
         $filtered = ($targetTag === '*')
             ? $modules
             : array_filter($modules, fn(string $tag): bool => $tag === $targetTag, ARRAY_FILTER_USE_KEY);
 
         if (empty($filtered)) {
             $this->io->error("No publishable resources found for tag: {$targetTag}");
-            return;
+            return 0;
         }
 
-        $this->io->info("Publishing resources...");
+        $this->io->info('Publishing resources...');
 
         $progressBar = new ProgressBar($this->output, count($filtered));
         $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% -- %message%');
@@ -80,5 +84,7 @@ final class VendorPublishCommand extends AbstractCommand
         $this->io->newLine(2);
 
         $this->io->info("Done! <fg=yellow>{$added}</> resource(s) have been successfully published.");
+
+        return $added;
     }
 }

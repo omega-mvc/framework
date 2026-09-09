@@ -10,6 +10,8 @@ use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Omega\Application\ApplicationManifest;
 use Throwable;
 
+use function array_keys;
+
 #[AsCommand(
     name: 'package:discover',
     description: 'Discover and cache composer packages manifest'
@@ -29,10 +31,8 @@ final class PackageDiscoverCommand extends AbstractCommand
         $applicationManifest = $this->app[ApplicationManifest::class];
 
         try {
-            $applicationManifest->build();
-
             /** @var array $packages */
-            $packages = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest) ?? [];
+            $packages = $applicationManifest->build();
 
             if (empty($packages)) {
                 $this->io->warning('No discoverable packages found.');

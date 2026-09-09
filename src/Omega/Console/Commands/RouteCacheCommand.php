@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Omega\Console\Commands;
 
+use Closure;
 use Omega\Console\AbstractCommand;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Router\Router;
 use Omega\SerializableClosure\UnsignedSerializableClosure;
 use Symfony\Component\Console\Input\InputOption;
+use Throwable;
 
-use function file_exists;
 use function file_put_contents;
-use function is_callable;
+use function in_array;
+use function is_file;
 use function serialize;
 use function var_export;
+
+use const PHP_EOL;
 
 #[AsCommand(
     name: 'route:cache',
@@ -30,17 +34,33 @@ class RouteCacheCommand extends AbstractCommand
         $io = $this->io;
         $router = $this->app->make(Router::class);
 
-        // Gestione opzione --files
+        // Handle the --files option
         $files = $this->input->getOption('files');
         if (!empty($files)) {
             $router->reset();
+
+            $requiredFiles = [];
+
             foreach ($files as $file) {
                 $path = $this->app->get('path.base') . $file;
-                if (!file_exists($path)) {
+
+                if (!is_file($path)) {
                     $io->error("Route file can't be loaded: '$file'");
-                    return 1;
+                    return self::FAILURE;
                 }
-                require $path;
+
+                if (in_array($path, $requiredFiles, true)) {
+                    continue;
+                }
+
+                try {
+                    require $path;
+                } catch (Throwable $e) {
+                    $io->error('Failed to load route file: ' . $e->getMessage());
+                    return self::FAILURE;
+                }
+
+                $requiredFiles[] = $path;
             }
         }
 
@@ -50,7 +70,7 @@ class RouteCacheCommand extends AbstractCommand
                 'method'     => $route['method'],
                 'uri'        => $route['uri'],
                 'expression' => $route['expression'],
-                'function'   => is_callable($route['function'])
+                'function'   => $route['function'] instanceof Closure
                     ? serialize(new UnsignedSerializableClosure($route['function']))
                     : $route['function'],
                 'middleware' => $route['middleware'],
@@ -59,15 +79,20 @@ class RouteCacheCommand extends AbstractCommand
             ];
         }
 
+        if (empty($routes)) {
+            $io->warning('No routes to cache.');
+            return self::FAILURE;
+        }
+
         $cachePath = $this->app->getApplicationCachePath() . 'route.php';
         $content = '<?php return ' . var_export($routes, true) . ';' . PHP_EOL;
 
         if (file_put_contents($cachePath, $content) !== false) {
             $io->info('Route cache file has been successfully created.');
-            return 0;
+            return self::SUCCESS;
         }
 
         $io->error('Failed to build route cache.');
-        return 1;
+        return self::FAILURE;
     }
 }

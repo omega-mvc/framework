@@ -31,6 +31,6 @@ class RouteClearCommand extends AbstractCommand
         }
 
         $this->io->warning('No route cache file found.');
-        return self::INVALID;
+        return self::SUCCESS;
     }
 }

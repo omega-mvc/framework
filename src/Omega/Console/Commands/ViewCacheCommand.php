@@ -12,6 +12,9 @@ use Omega\Text\Str;
 use Omega\View\Templator;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputOption;
+use Throwable;
+
+use function count;
 
 #[AsCommand(
     name: 'view:cache',
@@ -41,8 +44,16 @@ final class ViewCacheCommand extends AbstractCommand
 
         foreach ($files as $file) {
             $relativeName = Str::replace($file, $viewPath, '');
-            $templator->compile($relativeName);
             $progressBar->advance();
+
+            try {
+                $templator->compile($relativeName);
+            } catch (Throwable $e) {
+                $progressBar->clear();
+                $this->io->error("Error compiling {$relativeName}: " . $e->getMessage());
+
+                return self::FAILURE;
+            }
         }
 
         $progressBar->finish();

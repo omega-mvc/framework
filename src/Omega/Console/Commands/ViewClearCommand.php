@@ -9,6 +9,9 @@ use Omega\Console\Attribute\AsCommand;
 use Omega\Console\Traits\InteractWithFilesystemTrait;
 use Symfony\Component\Console\Input\InputOption;
 
+use function count;
+use function is_file;
+
 #[AsCommand(
     name: 'view:clear',
     description: 'Clear all cached view files',

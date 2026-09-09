@@ -13,6 +13,21 @@ use Symfony\Component\Console\Input\InputOption;
 use Throwable;
 
 use function Omega\Application\os_detect;
+use function clearstatcache;
+use function count;
+use function filemtime;
+use function function_exists;
+use function is_file;
+use function microtime;
+use function pcntl_async_signals;
+use function pcntl_signal;
+use function pcntl_signal_dispatch;
+use function round;
+use function sprintf;
+use function str_repeat;
+use function str_replace;
+use function strlen;
+use function usleep;
 
 #[AsCommand(
     name: 'view:watch',
@@ -87,8 +102,10 @@ final class ViewWatchCommand extends AbstractCommand
                 }
             }
 
-            if ($reindex || count($getIndexes) !== count($newIndexes = $this->getIndexFiles($prefix))) {
-                $getIndexes = $newIndexes ?? $getIndexes;
+            $newIndexes = $this->getIndexFiles($prefix);
+
+            if ($reindex || count($getIndexes) !== count($newIndexes)) {
+                $getIndexes = $newIndexes;
                 $compiled = $this->precompile($templator, $getIndexes);
             }
 
@@ -96,14 +113,14 @@ final class ViewWatchCommand extends AbstractCommand
                 pcntl_signal_dispatch();
             }
 
-            usleep(10_000);
+            usleep(1_000_000);
         }
 
         return self::SUCCESS;
     }
 
     /**
-     * Crea l'indice dei file con timestamp.
+     * Builds the index of view files with their timestamps.
      */
     private function getIndexFiles(string $prefix): array
     {
@@ -147,7 +164,7 @@ final class ViewWatchCommand extends AbstractCommand
     }
 
     /**
-     * Fase iniziale di pre-compilazione.
+     * Pre-compiles all indexed views at startup.
      */
     private function precompile(Templator $templator, array $indexes): array
     {
