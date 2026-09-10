@@ -26,7 +26,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase(): void
     {
         // need clean up
         $this->tearDown();

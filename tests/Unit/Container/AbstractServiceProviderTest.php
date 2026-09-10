@@ -70,9 +70,9 @@ final class AbstractServiceProviderTest extends TestCase
      * initialized in `setUp()` before each test and used throughout the test
      * methods to reference source and target paths for import operations.
      *
-     * @var string|null
+     * @var string
      */
-    private ?string $basePath;
+    private string $basePath;
 
     /**
      * Sets up the environment before each test method.

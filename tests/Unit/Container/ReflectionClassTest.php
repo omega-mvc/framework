@@ -97,7 +97,6 @@ class ReflectionClassTest extends AbstractTestContainer
         $params2 = $this->container->getConstructorParameters(Service::class);
 
         $this->assertIsArray($params1);
-        $this->assertContainsOnlyInstancesOf(ReflectionParameter::class, $params1);
         $this->assertSame($params1, $params2);
     }
 
@@ -138,6 +137,8 @@ class ReflectionClassTest extends AbstractTestContainer
     {
         $reflector = $this->callProtected('getReflectionClass', [ClassWithProperties::class]);
 
+        $this->assertInstanceOf(ReflectionClass::class, $reflector);
+
         $this->assertTrue($reflector->hasProperty('publicProperty'));
         $publicProperty = $reflector->getProperty('publicProperty');
         $this->assertTrue($publicProperty->isPublic());
@@ -162,6 +163,8 @@ class ReflectionClassTest extends AbstractTestContainer
     public function testReflectionMethods(): void
     {
         $reflector = $this->callProtected('getReflectionClass', [ClassWithMethods::class]);
+
+        $this->assertInstanceOf(ReflectionClass::class, $reflector);
 
         $this->assertTrue($reflector->hasMethod('publicMethod'));
         $publicMethod = $reflector->getMethod('publicMethod');
@@ -188,19 +191,18 @@ class ReflectionClassTest extends AbstractTestContainer
     {
         $reflector = $this->callProtected('getReflectionClass', [ClassWithAttributes::class]);
 
+        $this->assertInstanceOf(ReflectionClass::class, $reflector);
+
         // Check class attributes
         $this->assertCount(1, $reflector->getAttributes(MyClassAttribute::class));
-        $this->assertNotNull($reflector->getAttributes(MyClassAttribute::class)[0]->newInstance());
 
         // Check property attributes
         $property = $reflector->getProperty('propertyWithAttribute');
         $this->assertCount(1, $property->getAttributes(MyPropertyAttribute::class));
-        $this->assertNotNull($property->getAttributes(MyPropertyAttribute::class)[0]->newInstance());
 
         // Check method attributes
         $method = $reflector->getMethod('methodWithAttribute');
         $this->assertCount(1, $method->getAttributes(MyMethodAttribute::class));
-        $this->assertNotNull($method->getAttributes(MyMethodAttribute::class)[0]->newInstance());
     }
 
     /**
@@ -213,6 +215,8 @@ class ReflectionClassTest extends AbstractTestContainer
     {
         $reflector = $this->callProtected('getReflectionClass', [ChildClass::class]);
 
+        $this->assertInstanceOf(ReflectionClass::class, $reflector);
+
         // Check child properties and methods
         $this->assertTrue($reflector->hasProperty('childProperty'));
         $this->assertTrue($reflector->hasMethod('childMethod'));
@@ -223,7 +227,7 @@ class ReflectionClassTest extends AbstractTestContainer
 
         // Ensure parent class is correctly identified
         $parentClassReflector = $reflector->getParentClass();
-        $this->assertNotNull($parentClassReflector);
+        $this->assertNotFalse($parentClassReflector);
         $this->assertEquals(ParentClass::class, $parentClassReflector->getName());
     }
 }

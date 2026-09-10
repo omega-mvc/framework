@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Database\Pdo;
 
+use Omega\Database\ConnectionInterface;
 use PDOException;
 use Tests\Database\AbstractTestDatabase;
 
@@ -25,7 +26,7 @@ final class TransactionTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanRollbackTransaction()
+    public function testItCanRollbackTransaction(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -41,6 +42,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(1, $user[0]['stat']);
     }
 
@@ -49,7 +51,7 @@ final class TransactionTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCommitTransaction()
+    public function testItCanCommitTransaction(): void
     {
         $this->pdo->query('INSERT INTO users (user, password, stat) VALUES (:user, :password, :stat)')
            ->bind(':user', 'test_user')
@@ -65,6 +67,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(0, $user[0]['stat']);
     }
 
@@ -95,6 +98,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(0, $user[0]['stat']);
         $this->assertTrue($transaction);
     }
@@ -112,7 +116,7 @@ final class TransactionTest extends AbstractTestDatabase
            ->bind(':stat', 1)
            ->execute();
 
-        $test = function ($pdo): bool {
+        $test = function (ConnectionInterface $pdo): bool {
             $pdo->query('UPDATE users SET stat = :stat WHERE user = :user')
                ->bind(':stat', 0)
                ->bind(':user', 'test_user')
@@ -126,6 +130,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(0, $user[0]['stat']);
         $this->assertTrue($transaction);
     }
@@ -161,6 +166,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(1, $user[0]['stat']);
         $this->assertFalse($transaction);
     }
@@ -192,6 +198,7 @@ final class TransactionTest extends AbstractTestDatabase
         $user = $this->pdo->query('SELECT * FROM users WHERE user = :user')
            ->bind(':user', 'test_user')
            ->resultset();
+        $this->assertIsArray($user);
         $this->assertEquals(1, $user[0]['stat']);
         $this->assertFalse($transaction);
     }

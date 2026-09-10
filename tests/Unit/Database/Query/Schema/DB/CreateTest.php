@@ -12,7 +12,7 @@ use Tests\Database\TestDatabaseQuery;
 final class CreateTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase(): void
     {
         $schema = new Create('test', $this->pdoSchema);
 
@@ -23,7 +23,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateCreateDatabaseIfExists()
+    public function testItCanGenerateCreateDatabaseIfExists(): void
     {
         $schema = new Create('test', $this->pdoSchema);
 
@@ -34,7 +34,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateCreateDatabaseIfExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfExistsFalse(): void
     {
         $schema = new Create('test', $this->pdoSchema);
 
@@ -45,7 +45,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateCreateDatabaseIfNotExists()
+    public function testItCanGenerateCreateDatabaseIfNotExists(): void
     {
         $schema = new Create('test', $this->pdoSchema);
 
@@ -56,7 +56,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateCreateDatabaseIfNotExistsFalse()
+    public function testItCanGenerateCreateDatabaseIfNotExistsFalse(): void
     {
         $schema = new Create('test', $this->pdoSchema);
 

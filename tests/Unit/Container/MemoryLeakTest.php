@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Container;
 
+use Omega\Container\Attribute\Inject;
 use Omega\Container\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -99,18 +100,34 @@ class MemoryLeakTest extends AbstractTestContainer
     #[Group('memory-leak')]
     public function testLeakRepeatedMakeNonShared(): void
     {
-        $initialBindingsCount  = count($this->getProtectedProperty('bindings'));
-        $initialInstancesCount = count($this->getProtectedProperty('instances'));
-        $initialAliasesCount   = count($this->getProtectedProperty('aliases'));
+        $bindings = $this->getProtectedProperty('bindings');
+        $this->assertIsArray($bindings);
+        $initialBindingsCount  = count($bindings);
+
+        $instances = $this->getProtectedProperty('instances');
+        $this->assertIsArray($instances);
+        $initialInstancesCount = count($instances);
+
+        $aliases = $this->getProtectedProperty('aliases');
+        $this->assertIsArray($aliases);
+        $initialAliasesCount   = count($aliases);
 
         // Make many non-shared instances of a simple class that is not bound
         for ($i = 0; $i < $this->iterations; $i++) {
             $this->container->make(stdClass::class);
         }
 
-        $finalBindingsCount  = count($this->getProtectedProperty('bindings'));
-        $finalInstancesCount = count($this->getProtectedProperty('instances'));
-        $finalAliasesCount   = count($this->getProtectedProperty('aliases'));
+        $bindings = $this->getProtectedProperty('bindings');
+        $this->assertIsArray($bindings);
+        $finalBindingsCount  = count($bindings);
+
+        $instances = $this->getProtectedProperty('instances');
+        $this->assertIsArray($instances);
+        $finalInstancesCount = count($instances);
+
+        $aliases = $this->getProtectedProperty('aliases');
+        $this->assertIsArray($aliases);
+        $finalAliasesCount   = count($aliases);
 
         // Assert that bindings, instances, and aliases do not grow
         $this->assertEquals($initialBindingsCount, $finalBindingsCount);
@@ -139,8 +156,8 @@ class MemoryLeakTest extends AbstractTestContainer
             $this->container->call($callable);
         }
 
-        // If no exception is thrown, it's a pass for this basic check
-        $this->assertTrue(true);
+        // If no exception is thrown, the basic check passes; verify a resolution still works.
+        $this->assertInstanceOf(DependencyClass::class, $this->container->call($callable));
     }
 
     /**
@@ -159,6 +176,7 @@ class MemoryLeakTest extends AbstractTestContainer
         $injectable = new class {
             public DependencyClass $dependency;
 
+            #[Inject]
             public function setDependency(DependencyClass $dependency): void
             {
                 $this->dependency = $dependency;
@@ -170,7 +188,7 @@ class MemoryLeakTest extends AbstractTestContainer
             $this->container->injectOn($injectable);
         }
 
-        // If no exception is thrown, it's a pass for this basic check
-        $this->assertTrue(true);
+        // If no exception is thrown, the basic check passes; verify injection still works.
+        $this->assertInstanceOf(DependencyClass::class, $injectable->dependency);
     }
 }

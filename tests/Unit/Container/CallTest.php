@@ -143,6 +143,7 @@ class CallTest extends AbstractTestContainer
         $result = $this->container->call(function (DependencyClass $dependency, string $name) {
             return [$dependency, $name];
         }, ['name' => 'test']);
+        $this->assertIsArray($result);
         $this->assertInstanceOf(DependencyClass::class, $result[0]);
         $this->assertEquals('test', $result[1]);
     }

@@ -44,7 +44,8 @@ it('can add field using method fields', function () {
 
 it('can add field using iterator array', function () {
     $fields = new class() implements IteratorAggregate {
-        private $fields = [
+        /** @var array<string, string> */
+        private array $fields = [
             'field_1' => 'test',
             'field_2' => 'test',
         ];

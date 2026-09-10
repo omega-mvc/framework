@@ -17,7 +17,6 @@ it('can get error message when valadation is fallen using method if_valid', func
     $valid->field('test')->min_len(5);
 
     $valid->if_valid(function () {
-        expect(true)->toBeTrue();
     })->else(function ($err) {
         expect($err)->toHaveCount(1);
     });

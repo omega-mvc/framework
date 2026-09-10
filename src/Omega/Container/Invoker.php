@@ -17,8 +17,8 @@ namespace Omega\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use Closure;
 use Psr\Container\ContainerExceptionInterface;
-use ReflectionClass;
 use ReflectionException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
@@ -69,7 +69,7 @@ final readonly class Invoker
      *
      * Supports closures, functions, static and instance methods, invokable classes.
      *
-     * @param callable|object|array<string>|string $callable The callable to invoke
+     * @param callable|object|array{0: object|string, 1: string}|string $callable The callable to invoke
      * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
      * @return mixed The result of the callable execution
      * @throws BindingResolutionException If a dependency cannot be resolved
@@ -87,25 +87,17 @@ final readonly class Invoker
 
         // Handle string ClassName::class (invokable)
         if (is_string($callable) && class_exists($callable)) {
-            $reflectionClass = new ReflectionClass($callable);
-            if (false === $reflectionClass->hasMethod('__invoke')) {
+            if (!method_exists($callable, '__invoke')) {
                 throw new BindingResolutionException(
-                    sprintf(
-                        "Class %s does not have an __invoke() method. Cannot be used as invokable.",
-                        $callable
-                    )
+                    sprintf('The class %s is not invokable.', $callable)
                 );
             }
 
-            $instance     = $this->container->get($callable);
-            $invokeMethod = $this->container->getReflectionMethod($callable, '__invoke');
-            $dependencies = $this->resolveMethodDependencies($invokeMethod, $instance, $parameters);
-
-            return $invokeMethod->invokeArgs($instance, $dependencies);
+            return $this->callMethod(instance: $callable, method: '__invoke', parameters: $parameters);
         }
 
         // Handle closure / function
-        if (is_callable($callable) && !is_string($callable)) {
+        if ($callable instanceof Closure) {
             $reflector    = new ReflectionFunction($callable);
             $dependencies = $this->resolveFunctionDependencies($reflector, $parameters);
 
@@ -142,7 +134,17 @@ final readonly class Invoker
     {
         // resolve class name
         if (is_string($instance)) {
-            $instance = $this->container->get($instance);
+            $resolved = $this->container->get($instance);
+            if (!is_object($resolved)) {
+                throw new BindingResolutionException(
+                    sprintf(
+                        "Resolved class %s is not an object instance.",
+                        $instance
+                    )
+                );
+            }
+
+            $instance = $resolved;
         }
 
         $reflector    = $this->container->getReflectionMethod($instance, $method);
@@ -156,7 +158,7 @@ final readonly class Invoker
      *
      * @param ReflectionFunctionAbstract $reflection Reflection of the function/closure
      * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
-     * @return array The resolved dependencies in order
+     * @return array<int, mixed> The resolved dependencies in order
      * @throws BindingResolutionException If a dependency cannot be resolved
      * @throws CircularAliasException If a circular alias is detected
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
@@ -179,7 +181,7 @@ final readonly class Invoker
      * @param ReflectionMethod $method The reflection of the method
      * @param object $instance The object instance to invoke the method on
      * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
-     * @return array The resolved dependencies in order
+     * @return array<int, mixed> The resolved dependencies in order
      * @throws BindingResolutionException If a dependency cannot be resolved
      * @throws CircularAliasException If a circular alias is detected
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
@@ -197,6 +199,12 @@ final readonly class Invoker
         );
     }
 
+    /**
+     * Resolve a single parameter from overrides or via the container.
+     *
+     * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
+     * @return mixed The resolved parameter value
+     */
     private function resolveParameter(ReflectionParameter $parameter, array &$parameters): mixed
     {
         $name = $parameter->getName();

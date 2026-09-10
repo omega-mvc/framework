@@ -9,9 +9,9 @@ use Exception;
 use Omega\Validator\Rule as Rules;
 
 /**
- * @internal
- *
  * @property self $not
+ *
+ * @method self equals_field(string $field_name) Backwards-compatible alias handled by __call()
  */
 final class Valid
 {
@@ -151,7 +151,7 @@ final class Valid
      *
      * Reset only boolean false.
      *
-     * @param callable(): bool $condition Closure return boolean
+     * @param callable(): mixed $condition Closure return boolean, runtime-checked
      */
     public function where($condition): string
     {
@@ -177,7 +177,7 @@ final class Valid
      *
      * Reset only boolean false.
      *
-     * @param callable(): bool $condition Closure return boolean
+     * @param callable(): mixed $condition Closure return boolean, runtime-checked
      */
     public function if($condition): self
     {
@@ -222,25 +222,27 @@ final class Valid
      */
     public function valid(callable $custom_validation, string $message = 'Valid custom validation'): self
     {
-        if (is_callable($custom_validation)) {
-            $byte           = random_bytes(3);
-            $hex            = bin2hex($byte);
-            $rule_name      = 'validate_' . $hex;
-            $rule_invert    = 'invert_validate_' . $hex;
-            $message_invert = 'Not, ' . $message;
-            $invert         = fn (mixed $field, mixed $input, mixed $param, mixed $value): bool => !call_user_func(
+        $byte           = random_bytes(3);
+        $hex            = bin2hex($byte);
+        $rule_name      = 'validate_' . $hex;
+        $rule_invert    = 'invert_validate_' . $hex;
+        $message_invert = 'Not, ' . $message;
+        $invert = static function (string $field, array $input, array $param, mixed $value) use ($custom_validation): bool {
+            /** @var array<string, string> $input */
+            /** @var array<string, string> $param */
+            return !call_user_func(
                 $custom_validation,
                 $field,
                 $input,
                 $param,
                 $value
             );
+        };
 
-            Rules::add_validator($rule_name, $custom_validation, $message);
-            Rules::add_validator($rule_invert, $invert, $message_invert);
+        Rules::add_validator($rule_name, $custom_validation, $message);
+        Rules::add_validator($rule_invert, $invert, $message_invert);
 
-            $this->validation_rule[] = $rule_name;
-        }
+        $this->validation_rule[] = $rule_name;
 
         return $this;
     }

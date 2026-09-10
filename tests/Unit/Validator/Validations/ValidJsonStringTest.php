@@ -16,8 +16,8 @@ $correct = [
 ];
 $incorrect = [
     'tets1' => '{}}',
-    'tets1' => '{test:true}',
-    'tets1' => '{"test":text}',
+    'tets2' => '{test:true}',
+    'tets3' => '{"test":text}',
 ];
 
 // validate with correct input field

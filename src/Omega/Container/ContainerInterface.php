@@ -125,7 +125,7 @@ interface ContainerInterface extends PSRContainerInterface
     /**
      * Call a callable and automatically inject its dependencies.
      *
-     * @param callable|object|array|string $callable The callable to invoke.
+     * @param callable|object|array{0: object|string, 1: string}|string $callable The callable to invoke.
      * @param array<int|string, mixed> $parameters Optional parameters to override injection.
      * @return mixed The result returned by the callable.
      * @throws BindingResolutionException Thrown when resolving a binding fails.

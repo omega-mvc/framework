@@ -12,7 +12,7 @@ use Tests\Database\TestDatabaseQuery;
 final class UpdateTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanUpdateBetween()
+    public function testItCanUpdateBetween(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()
@@ -32,7 +32,7 @@ final class UpdateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanUpdateCompare()
+    public function testItCanUpdateCompare(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()
@@ -52,7 +52,7 @@ final class UpdateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanUpdateEqual()
+    public function testItCanUpdateEqual(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()
@@ -72,7 +72,7 @@ final class UpdateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanUpdateIn()
+    public function testItCanUpdateIn(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()
@@ -92,7 +92,7 @@ final class UpdateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanUpdateLike()
+    public function testItCanUpdateLike(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()
@@ -112,7 +112,7 @@ final class UpdateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanUpdateWhere()
+    public function testItCanUpdateWhere(): void
     {
         $update = Query::from('test', $this->pdo)
             ->update()

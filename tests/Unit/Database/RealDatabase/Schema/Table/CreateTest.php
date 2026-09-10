@@ -26,7 +26,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
@@ -43,7 +43,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanExecuteQueryWithMultyPrimeryKey()
+    public function testItCanExecuteQueryWithMultyPrimeryKey(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
@@ -62,7 +62,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanExecuteQueryWithMultyUniqe()
+    public function testItCanExecuteQueryWithMultyUniqe(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
@@ -80,7 +80,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateCreateDatabaseWithEngine()
+    public function testItCanGenerateCreateDatabaseWithEngine(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
 
@@ -99,7 +99,7 @@ final class CreateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateDefaultConstraint()
+    public function testItCanGenerateDefaultConstraint(): void
     {
         $schema = new Create($this->env['database'], 'profiles', $this->pdoSchema);
         $schema('PersonID')->int()->unsigned()->default(1);

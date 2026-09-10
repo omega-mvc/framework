@@ -26,7 +26,7 @@ final class RawTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateCreateDatabase()
+    public function testItCanGenerateCreateDatabase(): void
     {
         $schema = new Raw(
             'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',

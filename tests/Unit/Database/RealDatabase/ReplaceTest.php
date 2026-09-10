@@ -37,7 +37,7 @@ final class ReplaceTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanReplaceOnNewData()
+    public function testItCanReplaceOnNewData(): void
     {
         Query::from('users', $this->pdo)
             ->replace()
@@ -56,7 +56,7 @@ final class ReplaceTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanReplaceOnExistData()
+    public function testItCanReplaceOnExistData(): void
     {
         Query::from('users', $this->pdo)
             ->insert()
@@ -84,7 +84,7 @@ final class ReplaceTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateInsertusingOneQuery()
+    public function testItCanUpdateInsertusingOneQuery(): void
     {
         Query::from('users', $this->pdo)
             ->insert()

@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Omega\Validator\Rule;
 
-/**
- * @internal
- */
 final class FilterPool
 {
-    /** @var array<int, array<string, string|Filter>> */
+    /** @var array<int, array{field: string, rule: string|Filter}> */
     private array $pool = [];
 
     /**

@@ -119,7 +119,7 @@ class Update extends AbstractExecute
         $refTable->table($this->table);
 
         $this->join[] = $refTable->stringJoin();
-        $binds        = (fn () => $this->{'subQuery'})->call($refTable);
+        $binds        = $refTable->getSubQuery();
 
         if (null !== $binds) {
             $this->binds = array_merge($this->binds, $binds->getBind());

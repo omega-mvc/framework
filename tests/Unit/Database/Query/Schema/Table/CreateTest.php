@@ -14,7 +14,7 @@ use Tests\Database\TestDatabaseQuery;
 final class CreateTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanGenerateQueryUsingAddColumn()
+    public function testItCanGenerateQueryUsingAddColumn(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -28,7 +28,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryUsingWithMultyPrimeryKey()
+    public function testItCanGenerateQueryUsingWithMultyPrimeryKey(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -43,7 +43,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryUsingAddColumnWithoutPrimeryKey()
+    public function testItCanGenerateQueryUsingAddColumnWithoutPrimeryKey(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -56,7 +56,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryUsingAddColumnWithUnique()
+    public function testItCanGenerateQueryUsingAddColumnWithUnique(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -70,7 +70,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryUsingAddColumnWithMultyUnique()
+    public function testItCanGenerateQueryUsingAddColumnWithMultyUnique(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -85,7 +85,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryUsingColumns()
+    public function testItCanGenerateQueryUsingColumns(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->columns([
@@ -101,7 +101,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQuery()
+    public function testItCanGenerateQuery(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema('PersonID')->int();
@@ -115,7 +115,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateDefaultConstraint()
+    public function testItCanGenerateDefaultConstraint(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema('PersonID')->int()->unsigned()->default(1);
@@ -131,7 +131,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryWithDatatypeAndConstrait()
+    public function testItCanGenerateQueryWithDatatypeAndConstrait(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema('PersonID')->int()->notNull();
@@ -146,7 +146,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryWithStorageEngine()
+    public function testItCanGenerateQueryWithStorageEngine(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -162,7 +162,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryWithCharacterSet()
+    public function testItCanGenerateQueryWithCharacterSet(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');
@@ -178,7 +178,7 @@ final class CreateTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanGenerateQueryWithEngineStoreAndCharacterSet()
+    public function testItCanGenerateQueryWithEngineStoreAndCharacterSet(): void
     {
         $schema = new Create('testing_db', 'test', $this->pdoSchema);
         $schema->addColumn()->raw('PersonID int');

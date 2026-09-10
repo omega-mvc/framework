@@ -27,7 +27,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     {
         $exception = new PDOException($errorMessage);
 
-        $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
+        $connection = (fn (): bool => $this->causedByLostConnection($exception))->call($this->pdo);
         $this->assertTrue($connection);
     }
 
@@ -40,6 +40,9 @@ final class LostConnectionTest extends AbstractTestDatabase
         $this->assertFalse($connection);
     }
 
+    /**
+     * @return list<array{0: string}>
+     */
     public static function lostConnectionErrorProvider(): array
     {
         return [
@@ -69,6 +72,9 @@ final class LostConnectionTest extends AbstractTestDatabase
         ];
     }
 
+    /**
+     * @return list<array{0: string}>
+     */
     public static function nonLostConnectionErrorProvider(): array
     {
         return [
@@ -101,7 +107,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     {
         $exception = new Exception('Some generic error');
 
-        $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
+        $connection = (fn (): bool => $this->causedByLostConnection($exception))->call($this->pdo);
         $this->assertFalse($connection);
     }
 
@@ -114,7 +120,7 @@ final class LostConnectionTest extends AbstractTestDatabase
     {
         $exception = new RuntimeException('server has gone away');
 
-        $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
+        $connection = (fn (): bool => $this->causedByLostConnection($exception))->call($this->pdo);
         $this->assertTrue($connection);
     }
 
@@ -129,7 +135,7 @@ final class LostConnectionTest extends AbstractTestDatabase
             . str_repeat(' with more details', 50);
         $exception   = new PDOException($longMessage);
 
-        $connection = (fn () => $this->{'causedByLostConnection'}($exception))->call($this->pdo);
+        $connection = (fn (): bool => $this->causedByLostConnection($exception))->call($this->pdo);
         $this->assertTrue($connection);
     }
 }

@@ -1,9 +1,9 @@
 <?php
 
-use Omega\Validator\Collection;
+use Omega\Collection\Collection;
 
 it('count total items in collection', function () {
-    expect(Collection::make([
+    expect(new Collection([
         'key_1' => 'item_1',
         'key_2' => 'item_2',
         'key_3' => 'item_3',
@@ -13,5 +13,5 @@ it('count total items in collection', function () {
 });
 
 it('count total items in collection (null)', function () {
-    expect(Collection::make())->count(0)->toEqual(0);
+    expect(new Collection([]))->count(0)->toEqual(0);
 });

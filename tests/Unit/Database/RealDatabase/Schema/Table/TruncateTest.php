@@ -37,7 +37,7 @@ final class TruncateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGenerateTruncateDatabase()
+    public function testItCanGenerateTruncateDatabase(): void
     {
         $schema = new Truncate($this->env['database'], 'users', $this->pdoSchema);
 

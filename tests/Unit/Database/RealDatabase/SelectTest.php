@@ -34,7 +34,7 @@ final class SelectTest extends AbstractTestDatabase
         $this->dropConnection();
     }
 
-    private function profileFactory()
+    private function profileFactory(): void
     {
         // factory
         $this->pdo
@@ -63,13 +63,14 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQuery()
+    public function testItCanSelectQuery(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayHasKey('password', $users[0]);
         $this->assertArrayHasKey('stat', $users[0]);
@@ -80,13 +81,14 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryOnlyuser()
+    public function testItCanSelectQueryOnlyuser(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select(['user'])
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayNotHasKey('password', $users[0]);
         $this->assertArrayNotHasKey('stat', $users[0]);
@@ -97,7 +99,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithBetween()
+    public function testItCanSelectQueryWithBetween(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -105,6 +107,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -113,7 +116,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithCompare()
+    public function testItCanSelectQueryWithCompare(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -121,6 +124,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -129,7 +133,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithEqual()
+    public function testItCanSelectQueryWithEqual(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -137,6 +141,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -145,7 +150,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithIn()
+    public function testItCanSelectQueryWithIn(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -153,6 +158,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -161,7 +167,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithLike()
+    public function testItCanSelectQueryWithLike(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -169,6 +175,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -177,7 +184,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithWhere()
+    public function testItCanSelectQueryWithWhere(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -187,6 +194,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -195,7 +203,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithMultyCondition()
+    public function testItCanSelectQueryWithMultyCondition(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -206,6 +214,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -214,7 +223,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithLimit()
+    public function testItCanSelectQueryWithLimit(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -222,6 +231,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayHasKey('password', $users[0]);
         $this->assertArrayHasKey('stat', $users[0]);
@@ -232,7 +242,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithOffset()
+    public function testItCanSelectQueryWithOffset(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -241,6 +251,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayHasKey('password', $users[0]);
         $this->assertArrayHasKey('stat', $users[0]);
@@ -251,7 +262,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithLimitOffset()
+    public function testItCanSelectQueryWithLimitOffset(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -259,6 +270,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayHasKey('password', $users[0]);
         $this->assertArrayHasKey('stat', $users[0]);
@@ -269,7 +281,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQueryWithStritMode()
+    public function testItCanSelectQueryWithStritMode(): void
     {
         $users = Query::from('users', $this->pdo)
             ->select()
@@ -279,6 +291,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertEquals('taylor', $users[0]['user']);
     }
 
@@ -287,7 +300,7 @@ final class SelectTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectJoin()
+    public function testItCanSelectJoin(): void
     {
         $this->profileFactory();
 
@@ -298,6 +311,7 @@ final class SelectTest extends AbstractTestDatabase
             ->all()
         ;
 
+        $this->assertIsArray($users);
         $this->assertArrayHasKey('user', $users[0]);
         $this->assertArrayHasKey('password', $users[0]);
         $this->assertArrayHasKey('stat', $users[0]);

@@ -37,8 +37,8 @@ use ReflectionException;
 #[CoversClass(Container::class)]
 abstract class AbstractTestContainer extends TestCase
 {
-    /** @var Container|null Container instance for test support, accessible by child tests. */
-    protected ?Container $container;
+    /** @var Container Container instance for test support, accessible by child tests. */
+    protected Container $container;
 
     /**
      * Sets up the environment before each test method.
@@ -66,14 +66,14 @@ abstract class AbstractTestContainer extends TestCase
      */
     protected function tearDown(): void
     {
-        $this->container = null;
+        $this->container->flush();
     }
 
     /**
      * Call protected.
      *
-     * @param string $methodName Holds the method name.
-     * @param array  $args Holds an array of arguments.
+     * @param string              $methodName Holds the method name.
+     * @param array<int|string, mixed> $args Holds an array of arguments.
      * @return mixed
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @noinspection PhpExpressionResultUnusedInspection

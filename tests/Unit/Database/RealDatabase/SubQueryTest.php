@@ -188,7 +188,7 @@ final class SubQueryTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectSubQueryUsingWhere()
+    public function testItCanSelectSubQueryUsingWhere(): void
     {
         $this->createUserSchema();
         $this->createOrderSchema();
@@ -198,8 +198,9 @@ final class SubQueryTest extends AbstractTestDatabase
         $users = new Select('users', ['name', 'email'], $this->pdo);
         $users->whereIn('id', (new Select('orders', ['user_id'], $this->pdo))
             ->compare('total_amount', '>', 1000));
-        $users = $users->get();
+        $users = $users->all();
 
+        $this->assertIsArray($users);
         $this->assertCount(2, $users);
         $this->assertSame('Alice', $users[0]['name']);
         $this->assertSame('Charlie', $users[1]['name']);
@@ -210,7 +211,7 @@ final class SubQueryTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectSubQueryUsingFrom()
+    public function testItCanSelectSubQueryUsingFrom(): void
     {
         $this->createUserSchema();
         $this->createOrderSchema();

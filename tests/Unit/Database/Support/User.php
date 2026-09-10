@@ -8,6 +8,11 @@ use Omega\Database\Model\Model;
 use Omega\Database\Model\ModelCollection;
 use PHPUnit\Framework\Attributes\CoversClass;
 
+/**
+ * @property-read array<array-key, mixed> $profile
+ * @property mixed                        $stat
+ * @property-read array<array-key, mixed> $orders
+ */
 #[CoversClass(Model::class)]
 class User extends Model
 {
@@ -16,7 +21,7 @@ class User extends Model
     /** @var string[] Hide from shoing column */
     protected array $stash = ['password'];
 
-    public function profile(): User|Profile
+    public function profile(): Model
     {
         return $this->hasOne(Profile::class, 'user');
     }

@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Database;
 
+use Omega\Database\AbstractConnection;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\DatabaseManager;
 use Omega\Database\Exceptions\InvalidConfigurationException;
@@ -47,11 +48,11 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Schema::class)]
 abstract class AbstractTestDatabase extends TestCase
 {
-    /** @var array<string, string|int> Database connection environment variables */
+    /** @var array{driver: string, host?: string, username?: string, password?: string, database: string, port?: int, charset?: string, prefix?: string} Database connection environment variables */
     protected array $env;
 
-    /** @var ConnectionInterface Main PDO connection instance for tests */
-    protected ConnectionInterface $pdo;
+    /** @var AbstractConnection Main PDO connection instance for tests */
+    protected AbstractConnection $pdo;
 
     /** @var SchemaConnection Schema-level connection instance */
     protected SchemaConnection $pdoSchema;
@@ -69,7 +70,9 @@ abstract class AbstractTestDatabase extends TestCase
      */
     protected function createConnection(): void
     {
-        $this->setupEnv($_ENV['DB_CONNECTION'] ?? 'mysql');
+        $connection = $_ENV['DB_CONNECTION'] ?? 'mysql';
+
+        $this->setupEnv(is_string($connection) ? $connection : 'mysql');
 
         $this->pdoSchema = new SchemaConnection($this->env);
         $this->schema    = new Schema($this->pdoSchema, $this->env['database']);
@@ -118,7 +121,7 @@ abstract class AbstractTestDatabase extends TestCase
     /**
      * Get configuration for supported database connections.
      *
-     * @return array<string, array<string, string|int>> Configuration array
+     * @return array<string, array{driver: string, host?: string, username?: string, password?: string, database: string, port?: int, charset?: string, prefix?: string}> Configuration array
      */
     protected function getConfiguration(): array
     {
@@ -150,9 +153,10 @@ abstract class AbstractTestDatabase extends TestCase
     {
         $configuration = $this->getConfiguration();
 
-        $this->env = match ($useConnection) {
+$this->env = match ($useConnection) {
             'mysql', 'mariadb' => $configuration['mysql'],
-            'sqlite' => $configuration['sqlite'],
+            'sqlite'           => $configuration['sqlite'],
+            default            => $configuration['mysql'],
         };
     }
 
@@ -169,6 +173,9 @@ abstract class AbstractTestDatabase extends TestCase
             ->execute();
     }
 
+    /**
+     * @return class-string<AbstractConnection>
+     */
     protected function resolveConnectionClass(string $driver): string
     {
         return match ($driver) {

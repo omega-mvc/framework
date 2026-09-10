@@ -43,6 +43,9 @@ use stdClass;
 #[CoversClass(ReflectionCache::class)]
 final class ReflectionCacheTest extends TestCase
 {
+    /** @var class-string Class name reflected through the cache to exercise erased reflection types */
+    private string $reflectedClassName = stdClass::class;
+
     /** @var ReflectionCache Cache instance for storing reflection classes, methods, and constructor params */
     private ReflectionCache $cache;
 
@@ -74,11 +77,11 @@ final class ReflectionCacheTest extends TestCase
         $creator   = function () use (&$callCount) {
             $callCount++;
 
-            return new ReflectionClass(stdClass::class);
+            return new ReflectionClass($this->reflectedClassName);
         };
 
-        $result1 = $this->cache->getReflectionClass(stdClass::class, $creator);
-        $result2 = $this->cache->getReflectionClass(stdClass::class, $creator);
+        $result1 = $this->cache->getReflectionClass($this->reflectedClassName, $creator);
+        $result2 = $this->cache->getReflectionClass($this->reflectedClassName, $creator);
 
         $this->assertSame($result1, $result2);
         $this->assertEquals(1, $callCount, 'Creator should only be called once.');
@@ -119,12 +122,24 @@ final class ReflectionCacheTest extends TestCase
     {
         $callCount = 0;
         $fixture   = new class {
-            public function __construct(int $time = 0, string $name = '')
+            public function __construct(
+                private int $time = 0,
+                private string $name = '',
+            ) {
+            }
+
+            /**
+             * @return array{0: int, 1: string}
+             */
+            public function signature(): array
             {
+                return [$this->time, $this->name];
             }
         };
         $ref    = new ReflectionClass($fixture);
-        $params = $ref->getConstructor()->getParameters();
+        $constructor = $ref->getConstructor();
+        $this->assertNotNull($constructor);
+        $params = $constructor->getParameters();
 
         $creator = function () use (&$callCount, $params) {
             $callCount++;
@@ -152,18 +167,18 @@ final class ReflectionCacheTest extends TestCase
         $creator   = function () use (&$callCount) {
             $callCount++;
 
-            return new ReflectionClass(stdClass::class);
+            return new ReflectionClass($this->reflectedClassName);
         };
 
         // Populate the cache
-        $this->cache->getReflectionClass(stdClass::class, $creator);
+        $this->cache->getReflectionClass($this->reflectedClassName, $creator);
         $this->assertEquals(1, $callCount);
 
         // Clear the cache
         $this->cache->clear();
 
         // Try to get the item again
-        $this->cache->getReflectionClass(stdClass::class, $creator);
+        $this->cache->getReflectionClass($this->reflectedClassName, $creator);
         $this->assertEquals(2, $callCount, 'Creator should be called again after clearing the cache.');
     }
 }

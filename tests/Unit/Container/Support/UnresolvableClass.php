@@ -35,7 +35,17 @@ final class UnresolvableClass
     /**
      * @param UnresolvableInterface $dependency Dependency that cannot be resolved.
      */
-    public function __construct(UnresolvableInterface $dependency)
+    public function __construct(private UnresolvableInterface $dependency)
     {
+    }
+
+    /**
+     * Get the unresolvable dependency.
+     *
+     * @return UnresolvableInterface
+     */
+    public function getDependency(): UnresolvableInterface
+    {
+        return $this->dependency;
     }
 }

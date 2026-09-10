@@ -23,11 +23,11 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
+use stdClass;
 use Tests\Container\Support\CallableClass;
 use Tests\Container\Support\CallableNoDeps;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\InvokableInvokeClass;
-use TypeError;
 
 /**
  * Class InvokerTest
@@ -146,6 +146,7 @@ final class InvokerTest extends TestCase
         $this->assertSame('invoked', $result);
 
         $instance = $this->container->get(InvokableInvokeClass::class);
+        $this->assertInstanceOf(InvokableInvokeClass::class, $instance);
         $this->assertInstanceOf(DependencyClass::class, $instance->dep);
     }
 
@@ -183,10 +184,9 @@ final class InvokerTest extends TestCase
      */
     public function testItThrowsExceptionForUnsupportedCallableType(): void
     {
-        $this->expectException(TypeError::class);
+        $this->expectException(BindingResolutionException::class);
 
-        /** @noinspection PhpStrictTypeCheckingInspection */
-        $this->invoker->call(123);
+        $this->invoker->call(new stdClass());
     }
 
     /**

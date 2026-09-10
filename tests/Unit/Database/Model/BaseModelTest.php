@@ -56,7 +56,10 @@ final class BaseModelTest extends AbstractTestDatabase
             ->execute();
     }
 
-    private function createProfiles($profiles): void
+    /**
+     * @param array<int, array<string, bool|int|string|null>> $profiles
+     */
+    private function createProfiles(array $profiles): void
     {
         new Insert('profiles', $this->pdo)
             ->rows($profiles)
@@ -77,14 +80,17 @@ final class BaseModelTest extends AbstractTestDatabase
             ->execute();
     }
 
-    private function createOrders($orders): void
+    /**
+     * @param array<int, array<string, bool|int|string|null>> $orders
+     */
+    private function createOrders(array $orders): void
     {
         new Insert('orders', $this->pdo)
             ->rows($orders)
             ->execute();
     }
 
-    public function testItCanCreateData()
+    public function testItCanCreateData(): void
     {
         $user = new User($this->pdo, [
             [
@@ -92,19 +98,19 @@ final class BaseModelTest extends AbstractTestDatabase
                 'password' => password_hash('password', PASSWORD_DEFAULT),
                 'stat'     => 50,
             ],
-        ], [[]]);
+        ]);
 
         $this->assertTrue($user->insert());
     }
 
-    public function testItCanReadData()
+    public function testItCanReadData(): void
     {
         $user = new User($this->pdo, []);
 
         $this->assertTrue($user->read());
     }
 
-    public function testItCanUpdateData()
+    public function testItCanUpdateData(): void
     {
         $user = $this->user();
 
@@ -113,13 +119,13 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertTrue($user->update());
     }
 
-    public function testItCanDeleteData()
+    public function testItCanDeleteData(): void
     {
         $user = $this->user();
         $this->assertTrue($user->delete());
     }
 
-    public function testItCanGetFirst()
+    public function testItCanGetFirst(): void
     {
         $users = $this->user();
 
@@ -129,7 +135,7 @@ final class BaseModelTest extends AbstractTestDatabase
         ], $users->first());
     }
 
-    public function testItCanGetHasOne()
+    public function testItCanGetHasOne(): void
     {
         // profile
         $profile = [
@@ -145,7 +151,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($profile, $result->first());
     }
 
-    public function testItCanGetHasOneUsingMagicGetter()
+    public function testItCanGetHasOneUsingMagicGetter(): void
     {
         // profile
         $profile = [
@@ -160,7 +166,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($profile, $user->profile);
     }
 
-    public function testItCanGetHasOneWithTableName()
+    public function testItCanGetHasOneWithTableName(): void
     {
         // profile
         $profile = [
@@ -176,7 +182,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($profile, $result->first());
     }
 
-    public function testItCanGetHasMany()
+    public function testItCanGetHasMany(): void
     {
         // order
         $order = [
@@ -200,7 +206,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($order, $result->toArrayArray());
     }
 
-    public function testItCanGetHasManyWithMagicGetter()
+    public function testItCanGetHasManyWithMagicGetter(): void
     {
         // order
         $order = [
@@ -223,7 +229,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($order, $user->orders);
     }
 
-    public function testItCanGetHasManyWithTableName()
+    public function testItCanGetHasManyWithTableName(): void
     {
         // order
         $order = [
@@ -247,14 +253,14 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals($order, $result->toArrayArray());
     }
 
-    public function testItCanCheckisCleanWith()
+    public function testItCanCheckisCleanWith(): void
     {
         $user = $this->user();
         $this->assertTrue($user->isClean(), 'Check all column');
         $this->assertTrue($user->isClean('stat'), 'Check spesifik column');
     }
 
-    public function testItCanCheckisDirty()
+    public function testItCanCheckisDirty(): void
     {
         $user = $this->user();
         $user->setter('stat', 75);
@@ -262,14 +268,14 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertTrue($user->isDirty('stat'), 'Check spesifik column');
     }
 
-    public function testItCanCheckColumnIsExist()
+    public function testItCanCheckColumnIsExist(): void
     {
         $user = $this->user();
 
         $this->assertTrue($user->isExist());
     }
 
-    public function testItCanGetChangeColumn()
+    public function testItCanGetChangeColumn(): void
     {
         $user = $this->user();
         $this->assertEquals([], $user->changes(), 'original fresh data');
@@ -280,14 +286,14 @@ final class BaseModelTest extends AbstractTestDatabase
         ], $user->changes(), 'change first column');
     }
 
-    public function testItCanHiddeColumn()
+    public function testItCanHiddeColumn(): void
     {
         $user = $this->user();
 
         $this->assertArrayNotHasKey('password', $user->first(), 'password must hidden by stash');
     }
 
-    public function testItCanConvertToArray()
+    public function testItCanConvertToArray(): void
     {
         $user = $this->user();
 
@@ -297,10 +303,9 @@ final class BaseModelTest extends AbstractTestDatabase
                 'stat' => 100,
             ],
         ], $user->toArray());
-        $this->assertIsIterable($user);
     }
 
-    public function testItCanGetFirstPrimaryKey()
+    public function testItCanGetFirstPrimaryKey(): void
     {
         $user = $this->user();
 
@@ -309,102 +314,102 @@ final class BaseModelTest extends AbstractTestDatabase
 
     // getter setter - should return firts query
 
-    public function testItCanGetUsingGetterInColumn()
+    public function testItCanGetUsingGetterInColumn(): void
     {
         $user = $this->user();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user->getter('stat', 0));
     }
 
-    public function testItCanSetUsingSetterterInColumn()
+    public function testItCanSetUsingSetterterInColumn(): void
     {
         $user = $this->user();
 
         $user->setter('stat', 80);
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    public function testItCanCheckExist()
+    public function testItCanCheckExist(): void
     {
         $user = $this->user();
 
         $this->assertTrue($user->has('user'));
     }
 
-    public function testItCanGetUsingMagicGetterInColumn()
+    public function testItCanGetUsingMagicGetterInColumn(): void
     {
         $user = $this->user();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user->stat);
     }
 
-    public function testItCanSetUsingMagicSetterterInColumn()
+    public function testItCanSetUsingMagicSetterterInColumn(): void
     {
         $user = $this->user();
 
         $user->stat = 80;
-        $columns    = (fn () => $this->{'columns'})->call($user);
+        $columns    = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    public function testItCanGetUsingArray()
+    public function testItCanGetUsingArray(): void
     {
         $user = $this->user();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user['stat']);
     }
 
-    public function testItCanSetUsingArray()
+    public function testItCanSetUsingArray(): void
     {
         $user = $this->user();
 
         $user['stat'] = 80;
-        $columns      = (fn () => $this->{'columns'})->call($user);
+        $columns      = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
-    public function testItCanCheckUsingMagicIsset()
+    public function testItCanCheckUsingMagicIsset(): void
     {
         $user = $this->user();
         $this->assertTrue(isset($user['user']));
     }
 
-    public function testItCanUnsetUsingArray()
+    public function testItCanUnsetUsingArray(): void
     {
         $user = $this->user();
 
         unset($user['stat']);
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(100, $columns[0]['stat']);
     }
 
-    public function testItCanGetCollection()
+    public function testItCanGetCollection(): void
     {
         $user = $this->user();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $models  = $user->get()->toArray();
 
         // tranform to column
         $arr = [];
         foreach ($models as $new) {
-            $arr[] = (fn () => $this->{'columns'})->call($new)[0];
+            $arr[] = $new->toArray()[0];
         }
         $this->assertEquals($columns, $arr);
     }
 
-    public function testItCanFindUsingId()
+    public function testItCanFindUsingId(): void
     {
         $user = User::find('taylor', $this->pdo);
 
         $this->assertTrue($user->has('user'));
     }
 
-    public function testItCanFindUsingWhere()
+    public function testItCanFindUsingWhere(): void
     {
         $user = User::where('user = :user', [
             'user' => 'taylor',
@@ -413,27 +418,27 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertTrue($user->has('user'));
     }
 
-    public function testItCanFindUsingEqual()
+    public function testItCanFindUsingEqual(): void
     {
         $user = User::equal('user', 'taylor', $this->pdo);
 
         $this->assertTrue($user->has('user'));
     }
 
-    public function testItCanFindAll()
+    public function testItCanFindAll(): void
     {
-        $columns = (fn () => $this->{'columns'})->call($this->user());
+        $columns = $this->user()->toArray();
         $models  = User::all($this->pdo)->toArray();
 
         // tranform to column
         $arr = [];
         foreach ($models as $new) {
-            $arr[] = (fn () => $this->{'columns'})->call($new)[0];
+            $arr[] = $new->toArray()[0];
         }
         $this->assertEquals($columns, $arr);
     }
 
-    public function testItCanFindOrCreate()
+    public function testItCanFindOrCreate(): void
     {
         $user = User::findOrCreate('taylor', [
             'user'     => 'taylor',
@@ -445,7 +450,7 @@ final class BaseModelTest extends AbstractTestDatabase
         $this->assertEquals('taylor', $user->getter('user', 'nuno'));
     }
 
-    public function testItCanFindOrCreateButNotExits()
+    public function testItCanFindOrCreateButNotExits(): void
     {
         $user = User::findOrCreate('pradana', [
             'user'     => 'pradana',

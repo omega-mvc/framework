@@ -252,8 +252,6 @@ class Collection extends AbstractCollectionImmutable
      * This is the internal implementation for `filter()` and `reject()`.
      * When `$invert` is true, the logic is reversed.
      *
-     * @internal
-     *
      * @param callable(TValue, TKey=): bool $condition The condition callback.
      * @param bool $invert Whether to invert the filter logic.
      * @return $this
@@ -470,8 +468,6 @@ class Collection extends AbstractCollectionImmutable
      * Recursively flatten an array to the given depth.
      *
      * This is the internal implementation for `flatten()`.
-     *
-     * @internal
      *
      * @param array<array-key, mixed> $array The array to flatten.
      * @param float|int $depth Remaining flatten depth.

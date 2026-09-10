@@ -15,8 +15,8 @@ $correct = [
 ];
 $incorrect = [
     'tets1' => '2001;0db8;85a3;08d3;1319;8a2e;0370;7334',
-    'tets1' => '0,0,0,0',
-    'tets1' => '256.0.0.0',
+    'tets2' => '0,0,0,0',
+    'tets3' => '256.0.0.0',
 ];
 
 // validate with correct input field

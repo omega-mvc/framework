@@ -57,6 +57,7 @@ trait UserTrait
             ->equal('user', $user)
             ->all();
 
+        $this->assertIsArray($data);
         assertTrue(count($data) === 1, 'expect user exist in database');
     }
 
@@ -76,6 +77,7 @@ trait UserTrait
             ->equal('user', $user)
             ->all();
 
+        $this->assertIsArray($data);
         assertTrue(count($data) === 0, 'expect user not exist in database');
     }
 
@@ -96,6 +98,8 @@ trait UserTrait
             ->equal('user', $user)
             ->all();
 
-        assertEquals($expect, (int) $data[0]['stat'], 'expect user stat');
+        $this->assertIsArray($data);
+        $this->assertIsInt($data[0]['stat']);
+        assertEquals($expect, $data[0]['stat'], 'expect user stat');
     }
 }

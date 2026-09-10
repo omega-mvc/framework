@@ -37,7 +37,17 @@ final class ClassWithMissingDependency
     /**
      * @param UnresolvableInterface $dep Unresolvable dependency used to trigger resolution errors.
      */
-    public function __construct(UnresolvableInterface $dep)
+    public function __construct(private UnresolvableInterface $dep)
     {
+    }
+
+    /**
+     * Get the unresolvable dependency.
+     *
+     * @return UnresolvableInterface
+     */
+    public function getDep(): UnresolvableInterface
+    {
+        return $this->dep;
     }
 }

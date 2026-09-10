@@ -57,17 +57,4 @@ abstract class TestDatabaseQuery extends TestCase
         $this->pdo       = $this->createStub(ConnectionInterface::class);
         $this->pdoSchema = $this->createStub(SchemaConnection::class);
     }
-
-    /**
-     * Tears down the environment after each test method.
-     *
-     * Cleans up any references and resets state to ensure no test
-     * interference.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        unset($this->pdo, $this->pdoSchema);
-    }
 }

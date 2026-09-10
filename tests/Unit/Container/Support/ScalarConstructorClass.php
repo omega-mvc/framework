@@ -37,7 +37,17 @@ final class ScalarConstructorClass
     /**
      * @param string $name Non-resolvable scalar dependency.
      */
-    public function __construct(string $name)
+    public function __construct(private string $name)
     {
+    }
+
+    /**
+     * Get the scalar constructor value.
+     *
+     * @return string
+     */
+    public function getName(): string
+    {
+        return $this->name;
     }
 }
