@@ -132,23 +132,26 @@ final class ConsoleBranding extends SymfonyConsole
      */
     protected function renderRuntimeInfo(OutputInterface $output): void
     {
-        $env    = $this->app->getEnvironment();
-        $debug  = $this->app->isDebugMode() ? 'ON' : 'OFF';
-        $php    = PHP_VERSION;
-        $memory = $this->formatBytes(memory_get_usage(true));
+        $env       = $this->app->getEnvironment();
+        $debug     = $this->app->isDebugMode();
+        $php       = PHP_VERSION;
+        $memory    = $this->formatBytes(memory_get_usage(true));
 
         $cacheFile = $this->app->getApplicationCachePath() . 'commands.php';
-        $isCached  = file_exists($cacheFile) ? 'YES' : 'NO';
+        $isCached  = file_exists($cacheFile);
+
+        [$debugLabel, $debugColor] = $debug ? ['ON', 'green'] : ['OFF', 'red'];
+        [$cacheLabel, $cacheColor] = $isCached ? ['YES', 'green'] : ['NO', 'yellow'];
 
         $output->writeln(sprintf(
             '<fg=gray> Environment:</> <fg=yellow>%s</>  |  <fg=gray>Debug:</> <fg=%s>%s</>  |  '
             . '<fg=gray>PHP:</> %s  |  <fg=gray>Command Cache:</> <fg=%s>%s</>  |  <fg=gray>Memory:</> %s',
             $env,
-            $debug === 'ON' ? 'green' : 'red',
-            $debug,
+            $debugColor,
+            $debugLabel,
             $php,
-            $isCached === 'YES' ? 'green' : 'yellow',
-            $isCached,
+            $cacheColor,
+            $cacheLabel,
             $memory
         ));
     }
@@ -182,10 +185,18 @@ final class ConsoleBranding extends SymfonyConsole
     {
         $units = ['B', 'KB', 'MB', 'GB'];
 
-        for ($i = 0; $bytes >= 1024 && $i < 3; $i++) {
-            $bytes /= 1024;
+        if ($bytes >= 1024 ** 3) {
+            return \round($bytes / 1024 ** 3, 2) . ' ' . $units[3];
         }
 
-        return round($bytes, 2) . ' ' . $units[$i];
+        if ($bytes >= 1024 ** 2) {
+            return \round($bytes / 1024 ** 2, 2) . ' ' . $units[2];
+        }
+
+        if ($bytes >= 1024) {
+            return \round($bytes / 1024, 2) . ' ' . $units[1];
+        }
+
+        return \round($bytes, 2) . ' ' . $units[0];
     }
 }

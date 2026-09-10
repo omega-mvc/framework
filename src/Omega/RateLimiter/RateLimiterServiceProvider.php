@@ -91,7 +91,10 @@ class RateLimiterServiceProvider extends AbstractServiceProvider
      */
     protected function registerThrottleMiddleware(): void
     {
-        $rate = $this->app[RateLimiterFactory::class];
+        /** @var CacheManager $cache */
+        $cache = $this->app->get('cache');
+        $rate  = new RateLimiterFactory($cache);
+
         $this->app->set(ThrottleMiddleware::class, fn() => new ThrottleMiddleware(
             limiter: $rate->createFixedWindow(
                 limit: 60,

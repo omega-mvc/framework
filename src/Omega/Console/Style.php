@@ -86,10 +86,10 @@ class Style extends SymfonyStyle
     #[Override]
     public function writeln(string|iterable $messages, int $type = self::OUTPUT_NORMAL): void
     {
-        foreach ((array) $messages as $message) {
-            $message = (string) $message;
+        $messages = (array) $messages;
 
-            $message = rtrim($message, "\r\n");
+        array_walk($messages, function (mixed $message) use ($type): void {
+            $message = rtrim((string) $message, "\r\n");
 
             if ($message !== '') {
                 $message = $this->indent . $message;
@@ -99,7 +99,7 @@ class Style extends SymfonyStyle
             }
 
             parent::writeln($message, $type);
-        }
+        });
     }
 
     /**
@@ -319,10 +319,7 @@ class Style extends SymfonyStyle
     private function processMessage(string|iterable $message): string
     {
         if (is_iterable($message)) {
-            return implode(PHP_EOL, array_map(
-                fn(string $m): string => $m,
-                (array) $message
-            ));
+            return \implode(PHP_EOL, (array) $message);
         }
 
         return $message;

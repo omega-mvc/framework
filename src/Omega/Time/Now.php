@@ -64,8 +64,8 @@ class Now
 {
     use DateTimeFormatTrait;
 
-    /** @var int|false Current Unix timestamp of the object. */
-    private int|false $timestamp;
+    /** @var int Current Unix timestamp of the object. */
+    private int $timestamp;
 
     /** @var DateTimeImmutable The internal immutable DateTime instance. */
     private DateTimeImmutable $date;

@@ -108,6 +108,10 @@ abstract class AbstractFacade implements FacadeInterface
             return static::$instance[$name];
         }
 
+        if (static::$app === null) {
+            throw new FacadeObjectNotSetException(static::class);
+        }
+
         return static::$instance[$name] = static::$app->make($name);
     }
 

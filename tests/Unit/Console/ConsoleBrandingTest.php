@@ -82,6 +82,33 @@ it('renders the command cache status when the cache file exists', function (): v
     }
 });
 
+it('renders both the debug and command cache status as enabled', function (): void {
+    $base = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'omega-branding-' . bin2hex(random_bytes(4));
+    $cacheDir = $base . DIRECTORY_SEPARATOR . 'bootstrap' . DIRECTORY_SEPARATOR . 'cache';
+    $cacheFile = $cacheDir . DIRECTORY_SEPARATOR . 'commands.php';
+    mkdir($cacheDir, 0777, true);
+    file_put_contents($cacheFile, '<?php return [];');
+
+    try {
+        $app = new Application($base);
+        $app->set('app.debug', true);
+        $branding = new ConsoleBranding($app, 'Omega Test:', '1.0.0');
+        $branding->addCommand((new Command('greet'))->setCode(static fn (): int => 0));
+        $output = new BufferedOutput();
+
+        $branding->doRun(new ArrayInput(['greet']), $output);
+
+        $display = $output->fetch();
+        expect($display)->toContain('Debug: ON')
+            ->and($display)->toContain('Command Cache: YES');
+    } finally {
+        @unlink($cacheFile);
+        @rmdir($cacheDir);
+        @rmdir(dirname($cacheDir));
+        @rmdir($base);
+    }
+});
+
 it('detects silent commands by their options', function (): void {
     $app = new Application('/');
     $branding = new ConsoleBranding($app, 'Omega Test:', '1.0.0');

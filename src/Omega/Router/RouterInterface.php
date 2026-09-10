@@ -130,7 +130,7 @@ interface RouterInterface
      * Registers a new route that matches any HTTP method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function any(string $expression, mixed $function): Route;
@@ -139,7 +139,7 @@ interface RouterInterface
      * Registers a new route for the GET method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function get(string $expression, mixed $function): Route;
@@ -148,7 +148,7 @@ interface RouterInterface
      * Registers a new route for the POST method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function post(string $expression, mixed $function): Route;
@@ -157,7 +157,7 @@ interface RouterInterface
      * Registers a new route for the PUT method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function put(string $expression, mixed $function): Route;
@@ -166,7 +166,7 @@ interface RouterInterface
      * Registers a new route for the PATCH method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function patch(string $expression, mixed $function): Route;
@@ -175,7 +175,7 @@ interface RouterInterface
      * Registers a new route for the DELETE method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function delete(string $expression, mixed $function): Route;
@@ -184,7 +184,7 @@ interface RouterInterface
      * Registers a new route for the OPTIONS method.
      *
      * @param string $expression Route pattern or expression.
-     * @param callable $function Callback executed when the route is matched.
+     * @param array|callable|string $function Callback executed when the route is matched.
      * @return Route
      */
     public static function options(string $expression, mixed $function): Route;

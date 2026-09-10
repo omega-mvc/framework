@@ -75,7 +75,8 @@ readonly class FixedWindow implements PolicyInterface
     public function consume(string $key, int $token = 1): RateLimit
     {
         $windowKey = $this->getWindowKey($key);
-        $consumed  = (int) $this->cache->get($windowKey, 0);
+        $cached    = $this->cache->get($windowKey, 0);
+        $consumed  = is_int($cached) ? $cached : 0;
 
         if ($consumed + $token > $this->limit) {
             return new RateLimit(
@@ -112,7 +113,8 @@ readonly class FixedWindow implements PolicyInterface
     public function peek(string $key): RateLimit
     {
         $windowKey = $this->getWindowKey($key);
-        $consumed  = (int) $this->cache->get($windowKey, 0);
+        $cached    = $this->cache->get($windowKey, 0);
+        $consumed  = is_int($cached) ? $cached : 0;
 
         return new RateLimit(
             identifier: $key,

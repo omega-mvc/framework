@@ -172,3 +172,30 @@ it('creates a progress bar without a message', function (): void {
 
     $output->fetch();
 });
+
+it('writes nothing when given an empty messages array', function (): void {
+    $output = new BufferedOutput();
+    $style = new Style(new ArrayInput([]), $output);
+
+    $style->writeln([]);
+
+    expect($output->fetch())->toBe('');
+});
+
+it('does not indent an empty string line', function (): void {
+    $output = new BufferedOutput();
+    $style = new Style(new ArrayInput([]), $output);
+
+    $style->writeln('');
+
+    expect($output->fetch())->toBe(PHP_EOL);
+});
+
+it('renders an empty iterable message in a styled block', function (): void {
+    $output = new BufferedOutput();
+    $style = new Style(new ArrayInput([]), $output);
+
+    $style->success([]);
+
+    expect($output->fetch())->toBe('   SUCCESS  ' . PHP_EOL . PHP_EOL);
+});
