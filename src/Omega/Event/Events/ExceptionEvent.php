@@ -20,6 +20,7 @@ use Throwable;
 /**
  * Event dispatched when an exception is logged.
  *
+ * @phpstan-consistent-constructor
  * @category  Omega
  * @package   Event
  * @subpackage Events

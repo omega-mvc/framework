@@ -38,10 +38,10 @@ abstract class AbstractTextException extends InvalidArgumentException implements
     /**
      * Constructs a new AbstractTextException with a formatted message.
      *
-     * @param string $message The exception message format string.
-     * @param mixed  ...$args Values to replace placeholders in the message.
+     * @param string                                 $message The exception message format string.
+     * @param bool|float|int|string|null ...$args Values to replace placeholders in the message.
      */
-    public function __construct(string $message, ...$args)
+    public function __construct(string $message, bool|float|int|string|null ...$args)
     {
         parent::__construct(sprintf($message, ...$args));
     }

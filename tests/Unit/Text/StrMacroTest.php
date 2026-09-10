@@ -13,7 +13,7 @@ covers(MacroNotFoundException::class);
 covers(Str::class);
 
 it('can register string macro', function (): void {
-    Str::macro('addPrefix', fn ($text, $prefix) => $prefix . $text);
+    Str::macro('addPrefix', fn (string $text, string $prefix) => $prefix . $text);
 
     expect(Str::addPrefix('laravel', 'i love '))->toBe('i love laravel');
 
@@ -25,7 +25,7 @@ it('can throw error when macro not found', function (): void {
 })->throws(MacroNotFoundException::class);
 
 it('can reset string macro', function (): void {
-    Str::macro('addPrefix', fn ($text, $prefix) => $prefix . $text);
+    Str::macro('addPrefix', fn (string $text, string $prefix) => $prefix . $text);
 
     $addPrefix = Str::addPrefix('a', 'b');
     expect($addPrefix)->toBe('ba');

@@ -20,6 +20,7 @@ use Omega\Event\Event;
 /**
  * Event dispatched during model lifecycle operations.
  *
+ * @phpstan-consistent-constructor
  * @category  Omega
  * @package   Event
  * @subpackage Events

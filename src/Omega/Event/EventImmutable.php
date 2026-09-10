@@ -16,6 +16,8 @@ namespace Omega\Event;
 
 use Omega\Event\Exceptions\EventImmutableException;
 
+use function get_debug_type;
+use function is_string;
 use function sprintf;
 
 /**
@@ -56,7 +58,7 @@ final class EventImmutable extends AbstractEvent
      * be modified afterwards.
      *
      * @param string $name The event name.
-     * @param array $arguments Initial event arguments.
+     * @param array<string, mixed> $arguments Initial event arguments.
      *
      * @throws EventImmutableException If an attempt is made to reconstruct or reinitialize the event.
      */
@@ -74,7 +76,6 @@ final class EventImmutable extends AbstractEvent
     }
 
     /**
-    /**
      * Prevents modification of event arguments.
      *
      * Immutable events do not allow runtime modification of their state.
@@ -86,10 +87,12 @@ final class EventImmutable extends AbstractEvent
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
+        $offsetName = is_string($offset) ? $offset : get_debug_type($offset);
+
         throw new EventImmutableException(
             sprintf(
                 'Cannot set the argument %s of the immutable event %s.',
-                $offset,
+                $offsetName,
                 $this->name
             )
         );
@@ -106,10 +109,12 @@ final class EventImmutable extends AbstractEvent
      */
     public function offsetUnset(mixed $offset): void
     {
+        $offsetName = is_string($offset) ? $offset : get_debug_type($offset);
+
         throw new EventImmutableException(
             sprintf(
                 'Cannot remove the argument %s of the immutable event %s.',
-                $offset,
+                $offsetName,
                 $this->name
             )
         );

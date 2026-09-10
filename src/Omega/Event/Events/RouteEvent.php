@@ -19,6 +19,7 @@ use Omega\Event\Event;
 /**
  * Event dispatched during route matching.
  *
+ * @phpstan-consistent-constructor
  * @category  Omega
  * @package   Event
  * @subpackage Events
@@ -52,7 +53,7 @@ class RouteEvent extends Event
      * @param string $uri        The request URI.
      * @param string $method     The HTTP method.
      * @param mixed  $callable   The matched callable.
-     * @param array  $parameters The route parameters.
+     * @param array<string, mixed> $parameters The route parameters.
      * @return static
      */
     public static function after(string $uri, string $method, mixed $callable, array $parameters): static

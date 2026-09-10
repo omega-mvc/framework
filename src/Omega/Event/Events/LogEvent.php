@@ -19,6 +19,7 @@ use Omega\Event\Event;
 /**
  * Event dispatched when a log entry is written.
  *
+ * @phpstan-consistent-constructor
  * @category  Omega
  * @package   Event
  * @subpackage Events
@@ -35,7 +36,7 @@ class LogEvent extends Event
      *
      * @param string $level   The log level.
      * @param string $message The log message.
-     * @param array  $context The log context.
+     * @param array<string, mixed> $context The log context.
      * @return static
      */
     public static function written(string $level, string $message, array $context = []): static

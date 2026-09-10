@@ -20,6 +20,8 @@ use Omega\Event\SubscriberInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 
+use function is_string;
+
 /**
  * Listener that creates an audit trail for model operations.
  *
@@ -117,6 +119,10 @@ class AuditTrailListener implements SubscriberInterface
         /** @var Model|null $model */
         $model = $event->getArgument('model');
         $table = $event->getArgument('table', 'unknown');
+
+        if (!is_string($table)) {
+            $table = 'unknown';
+        }
 
         $data = $model instanceof Model ? $model->toArray() : [];
 

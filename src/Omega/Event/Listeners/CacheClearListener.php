@@ -18,6 +18,8 @@ use Omega\Cache\CacheManager;
 use Omega\Event\EventInterface;
 use Omega\Event\SubscriberInterface;
 
+use function is_string;
+
 /**
  * Listener that clears cache when model data changes.
  *
@@ -99,8 +101,9 @@ class CacheClearListener implements SubscriberInterface
         }
 
         $table = $event->getArgument('table', '');
-        if ($table !== '') {
-            $this->cache->clear("model.{$table}");
+
+        if (is_string($table) && $table !== '') {
+            $this->cache->delete("model.{$table}");
         }
     }
 }

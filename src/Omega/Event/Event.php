@@ -17,6 +17,8 @@ namespace Omega\Event;
 use Omega\Event\Exceptions\InvalidEventArgumentNameException;
 use ReturnTypeWillChange;
 
+use function is_string;
+
 /**
  * Mutable event implementation.
  *
@@ -96,7 +98,7 @@ class Event extends AbstractEvent
      *
      * Returns the previous argument set before clearing.
      *
-     * @return array The previous arguments.
+     * @return array<string, mixed> The previous arguments.
      */
     public function clearArguments(): array
     {
@@ -120,9 +122,9 @@ class Event extends AbstractEvent
     #[ReturnTypeWillChange]
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        if ($offset == null) {
+        if (!is_string($offset)) {
             throw new InvalidEventArgumentNameException(
-                'The argument name cannot be null.'
+                'The argument name must be a string.'
             );
         }
 
@@ -138,6 +140,8 @@ class Event extends AbstractEvent
     #[ReturnTypeWillChange]
     public function offsetUnset(mixed $offset): void
     {
-        $this->removeArgument($offset);
+        if (is_string($offset)) {
+            $this->removeArgument($offset);
+        }
     }
 }

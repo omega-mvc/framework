@@ -21,6 +21,8 @@ use Omega\Event\SubscriberInterface;
 
 use function count;
 use function is_array;
+use function is_callable;
+use function is_int;
 
 /**
  * Central event dispatcher responsible for managing and executing event listeners.
@@ -80,7 +82,7 @@ class Dispatcher implements DispatcherInterface
      * If the listener is not registered, null is returned.
      *
      * @param string $eventName The event name.
-     * @param callable $callback The listener callback.
+     * @param callable(EventInterface): void $callback The listener callback.
      * @return int|null The priority of the listener or null if not found.
      */
     public function getListenerPriority(string $eventName, callable $callback): ?int
@@ -89,7 +91,9 @@ class Dispatcher implements DispatcherInterface
             return null;
         }
 
-        return $this->listeners[$eventName]->getPriority($callback);
+        $priority = $this->listeners[$eventName]->getPriority($callback);
+
+        return is_int($priority) ? $priority : null;
     }
 
     /**
@@ -178,19 +182,26 @@ class Dispatcher implements DispatcherInterface
         foreach ($subscriber->getSubscribedEvents() as $eventName => $params) {
             if (is_array($params)) {
                 $priority = $params[1] ?? Priority::NORMAL;
+                $listener = [$subscriber, $params[0]];
 
-                $this->addListener(
-                    $eventName,
-                    [$subscriber, $params[0]],
-                    $priority instanceof Priority
-                        ? $priority->value
-                        : $priority
-                );
+                if ($params[0] !== '' && is_callable($listener)) {
+                    $this->addListener(
+                        $eventName,
+                        $listener,
+                        $priority instanceof Priority
+                            ? $priority->value
+                            : $priority
+                    );
+                }
 
                 continue;
             }
 
-            $this->addListener($eventName, [$subscriber, $params]);
+            $listener = [$subscriber, $params];
+
+            if ($params !== '' && is_callable($listener)) {
+                $this->addListener($eventName, $listener);
+            }
         }
     }
 
@@ -201,9 +212,19 @@ class Dispatcher implements DispatcherInterface
     {
         foreach ($subscriber->getSubscribedEvents() as $eventName => $params) {
             if (is_array($params)) {
-                $this->removeListener($eventName, [$subscriber, $params[0]]);
-            } else {
-                $this->removeListener($eventName, [$subscriber, $params]);
+                $listener = [$subscriber, $params[0]];
+
+                if ($params[0] !== '' && is_callable($listener)) {
+                    $this->removeListener($eventName, $listener);
+                }
+
+                continue;
+            }
+
+            $listener = [$subscriber, $params];
+
+            if ($params !== '' && is_callable($listener)) {
+                $this->removeListener($eventName, $listener);
             }
         }
     }

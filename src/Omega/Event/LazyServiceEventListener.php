@@ -25,6 +25,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use function call_user_func;
 use function get_class;
 use function is_callable;
+use function is_object;
 use function method_exists;
 use function sprintf;
 
@@ -47,7 +48,6 @@ use function sprintf;
  */
 final class LazyServiceEventListener
 {
-    /**
     /**
      * Creates a lazy event listener bound to a service in the container.
      *
@@ -122,6 +122,16 @@ final class LazyServiceEventListener
             );
         }
 
+        if (!is_object($service)) {
+            throw new InvalidServiceMethodException(
+                sprintf(
+                    'The "%s" service is not an object and cannot expose the "%s" method.',
+                    $this->serviceId,
+                    $this->method
+                )
+            );
+        }
+
         if (!method_exists($service, $this->method)) {
             throw new ServiceMethodNotFoundException(
                 sprintf(
@@ -133,6 +143,19 @@ final class LazyServiceEventListener
             );
         }
 
-        call_user_func([$service, $this->method], $event);
+        $listener = [$service, $this->method];
+
+        if (!is_callable($listener)) {
+            throw new ServiceMethodNotFoundException(
+                sprintf(
+                    'The "%s" method is not callable on "%s" (from service "%s")',
+                    $this->method,
+                    get_class($service),
+                    $this->serviceId
+                )
+            );
+        }
+
+        call_user_func($listener, $event);
     }
 }

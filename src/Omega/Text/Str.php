@@ -17,10 +17,7 @@ namespace Omega\Text;
 use Omega\Macroable\MacroableTrait;
 use Omega\Text\Exceptions\NoReturnException;
 
-use function array_keys;
-use function array_map;
 use function array_pop;
-use function array_values;
 use function explode;
 use function iconv;
 use function implode;
@@ -68,8 +65,8 @@ use const STR_PAD_LEFT;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  *
- * @method static addPrefix(string $string, string $string1)
- * @method static hay()
+ * @method static string addPrefix(string $string, string $string1)
+ * @method static void    hay()
  */
 final class Str
 {
@@ -91,9 +88,9 @@ final class Str
      *
      * @param string $text  The string to search
      * @param int    $index Character index
-     * @return string|false Returns the character or false if index invalid
+     * @return string Returns the character
      */
-    public static function charAt(string $text, int $index): string|false
+    public static function charAt(string $text, int $index): string
     {
         return mb_substr($text, $index, 1);
     }
@@ -146,7 +143,7 @@ final class Str
      *
      * @param string $text    Input string
      * @param string $pattern Regex pattern
-     * @return array<int, string>|null Array of matches or null if none
+     * @return array<string>|null Array of matches or null if none
      */
     public static function match(string $text, string $pattern): ?array
     {
@@ -191,9 +188,9 @@ final class Str
      * @param string   $text   Input string
      * @param int      $start  Start position
      * @param int|null $length Optional length of slice
-     * @return string|false Substring or false on failure
+     * @return string Substring
      */
-    public static function slice(string $text, int $start, ?int $length = null): string|false
+    public static function slice(string $text, int $start, ?int $length = null): string
     {
         $textLength = $length ?? self::length($text);
 
@@ -311,10 +308,10 @@ final class Str
             return strtolower($text);
         }
 
-        $text = preg_replace('/(?<!^)[A-Z]/', '-$0', $text);
+        $text = preg_replace('/(?<!^)[A-Z]/', '-$0', $text) ?? '';
         $text = str_replace([' ', '_', '+'], '-', $text);
 
-        return strtolower(preg_replace('/-+/', '-', $text));
+        return strtolower(preg_replace('/-+/', '-', $text) ?? '');
     }
 
     /**
@@ -370,19 +367,22 @@ final class Str
         $original = $text;
 
         // replace non letter or digits by -
-        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
+        $text = preg_replace('~[^\pL\d]+~u', '-', $text) ?? $original;
 
         // transliterate
-        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+        $transliterated = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
+
+        // keep the cleaned text when transliteration is not available
+        $text = false === $transliterated ? $text : $transliterated;
 
         // remove unwanted characters
-        $text = preg_replace('~[^-\w]+~', '', $text);
+        $text = preg_replace('~[^-\w]+~', '', $text) ?? $text;
 
         // trim
         $text = trim($text, '-');
 
         // remove duplicate -
-        $text = preg_replace('~-+~', '-', $text);
+        $text = preg_replace('~-+~', '-', $text) ?? $text;
 
         // lowercase
         $text = mb_strtolower($text);
@@ -434,7 +434,7 @@ final class Str
         string $closeDelimiter = '}'
     ): string {
         if ('{' === $openDelimiter && '}' === $closeDelimiter) {
-            $template = preg_replace(['/\\{\s+/', '/\s+\\}/'], ['{', '}'], $template);
+            $template = preg_replace(['/\\{\s+/', '/\s+\\}/'], ['{', '}'], $template) ?? $template;
         }
 
         $keys = [];
@@ -488,29 +488,25 @@ final class Str
             $start = strlen($text) + $start;
         }
 
-        $end = $start + $maskLength;
+        $end      = $start + $maskLength;
         $start--;
-        $arrText = preg_split('//', $text, -1, PREG_SPLIT_NO_EMPTY);
-        $newText = array_map(function (int $index, string $string) use ($mask, $start, $end): string {
-            if ($index > $start && $index < $end) {
-                return $mask;
-            }
+        $newText  = '';
 
-            return $string;
-        }, array_keys($arrText), array_values($arrText));
+        for ($index = 0, $length = strlen($text); $index < $length; $index++) {
+            $newText .= $index > $start && $index < $end ? $mask : $text[$index];
+        }
 
-        return implode('', $newText);
+        return $newText;
     }
 
     /**
      * Check if input is a string.
      *
-     * @param string $text Input
+     * @param mixed $text Input
      * @return bool True if string
      */
-    public static function isString(string $text): bool
+    public static function isString(mixed $text): bool
     {
-        /** @noinspection PhpConditionAlreadyCheckedInspection */
         return is_string($text);
     }
 

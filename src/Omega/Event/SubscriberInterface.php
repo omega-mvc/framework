@@ -45,7 +45,7 @@ interface SubscriberInterface
      *
      * Priority defaults to 0 if not specified.
      *
-     * @return array<string, string|array{0: string, 1?: int}>
+     * @return array<string, string|array{0: string, 1?: int|Priority}>
      */
     public static function getSubscribedEvents(): array;
 }

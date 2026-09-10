@@ -85,17 +85,14 @@ it('can return ends with', function (): void {
 });
 
 it('can return length', function (): void {
-    expect($this->text->length())->toBeInt();
     expect($this->text->length())->toBe(14);
 });
 
 it('can return index of', function (): void {
-    expect($this->text->length())->toBeInt();
     expect($this->text->indexOf('symfony'))->toBe(7);
 });
 
 it('can return last index of', function (): void {
-    expect($this->text->length())->toBeInt();
     expect($this->text->indexOf('o'))->toBe(3);
 });
 

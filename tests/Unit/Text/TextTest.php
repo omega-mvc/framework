@@ -15,12 +15,12 @@ covers(Str::class);
 covers(Text::class);
 
 it('can create new instance using helper', function (): void {
-    expect(string('text'))->toBeInstanceOf(Text::class);
-    expect(text('text'))->toBeInstanceOf(Text::class);
+    expect(string('text')->getText())->toBe('text');
+    expect(text('text')->getText())->toBe('text');
 });
 
 it('can create new instance using str class', function (): void {
-    expect(Str::of('text'))->toBeInstanceOf(Text::class);
+    expect(Str::of('text')->getText())->toBe('text');
 });
 
 it('can set get current text', function (): void {
@@ -49,15 +49,10 @@ it('can set get log of string', function (): void {
     $class->upper()->lower()->firstUpper();
 
     $logs = $class->logs();
-    expect($logs)->toBeArray();
-    foreach ($logs as $log) {
-        expect($log)->toHaveKey('function');
-        expect($log)->toHaveKey('return');
-        expect($log)->toHaveKey('type');
+    expect($logs)->toHaveCount(4);
 
-        if ($log['type'] === 'string') {
-            expect($log['return'])->toBeString();
-        }
+    foreach ($logs as $log) {
+        expect($log)->toHaveKeys(['function', 'return', 'type']);
     }
 });
 

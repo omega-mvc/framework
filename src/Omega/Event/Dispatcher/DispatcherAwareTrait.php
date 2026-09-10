@@ -43,7 +43,7 @@ trait DispatcherAwareTrait
      * This property is optional until explicitly set via setDispatcher().
      * Attempting to access it before initialization will result in an exception.
      */
-    private ?DispatcherInterface $dispatcher;
+    private ?DispatcherInterface $dispatcher = null;
 
     /**
      * Retrieves the associated event dispatcher.

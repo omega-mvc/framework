@@ -17,6 +17,7 @@ namespace Omega\Text;
 use Omega\Text\Exceptions\NoReturnException;
 
 use function gettype;
+use function is_string;
 
 /**
  * Class Text
@@ -41,7 +42,7 @@ final class Text
     /** @var string Current string. */
     private string $current;
 
-    /** @var array<string, array<string, string>> Log of string modifications. */
+    /** @var array<int, array{function: string, return: array<int|string, string>|bool|string, type: string}> Log of string modifications. */
     private array $latest;
 
     /** @var bool Throw exception when string method returns false instead of string. */
@@ -63,12 +64,12 @@ final class Text
      *
      * @param bool|string|array<int|string, string> $text New incoming text
      * @param string                                $functionName Name of the method calling this execution
-     * @return string
+     * @return bool|string|array<int|string, string>
      * @noinspection PhpReturnValueOfMethodIsNeverUsedInspection
      */
-    private function execute(array|bool|string $text, string $functionName): string
+    private function execute(array|bool|string $text, string $functionName): array|bool|string
     {
-        if (Str::isString($text)) {
+        if (is_string($text)) {
             $this->current = $text;
         }
 
@@ -117,7 +118,7 @@ final class Text
     /**
      * Get the modification history of the string.
      *
-     * @return array<string, array<string, string>>
+     * @return array<int, array{function: string, return: array<int|string, string>|bool|string, type: string}>
      */
     public function logs(): array
     {
@@ -191,7 +192,7 @@ final class Text
     {
         $text = Str::slice($this->current, $start, $length);
 
-        if ($this->throwOnFailure && false === $text) {
+        if ($this->throwOnFailure && '' === $text) {
             throw new NoReturnException(__FUNCTION__, $this->current);
         }
 

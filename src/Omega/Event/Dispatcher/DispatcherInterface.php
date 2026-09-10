@@ -59,7 +59,7 @@ interface DispatcherInterface
      * Execution order is determined by priority (higher values run first).
      *
      * @param string $eventName The name of the event to listen to.
-     * @param callable $callback The listener callback to execute when the event is dispatched.
+     * @param callable(EventInterface): void $callback The listener callback to execute when the event is dispatched.
      * @param int $priority Execution priority of the listener (higher = earlier execution).
      * @return bool True if the listener was successfully registered.
      */
@@ -93,7 +93,7 @@ interface DispatcherInterface
      * Listeners are returned in execution order (priority-sorted).
      *
      * @param string|null $event The event name or null for all events.
-     * @return callable[] A list of listeners grouped or filtered by event name.
+     * @return ($event is null ? array<string, list<callable(EventInterface): void>> : list<callable(EventInterface): void>) A list of listeners grouped or filtered by event name.
      */
     public function getListeners(?string $event = null): array;
 
@@ -103,7 +103,7 @@ interface DispatcherInterface
      * If an event name is provided, the check is limited to that event only.
      * Otherwise, all events are searched.
      *
-     * @param callable $callback The listener callback to check.
+     * @param callable(EventInterface): void $callback The listener callback to check.
      * @param string|null $eventName The event name to restrict the search, or null for global search.
      * @return bool True if the listener is registered, false otherwise.
      */
@@ -115,7 +115,7 @@ interface DispatcherInterface
      * If the listener is not registered, this operation has no effect.
      *
      * @param string $eventName The name of the event.
-     * @param callable $listener The listener to remove.
+     * @param callable(EventInterface): void $listener The listener to remove.
      * @return void
      */
     public function removeListener(string $eventName, callable $listener): void;

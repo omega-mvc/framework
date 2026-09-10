@@ -18,8 +18,12 @@ use ArrayAccess;
 use Countable;
 use ReturnTypeWillChange;
 use Serializable;
+use UnexpectedValueException;
 
 use function count;
+use function is_array;
+use function is_bool;
+use function is_string;
 use function serialize;
 use function unserialize;
 
@@ -33,6 +37,7 @@ use function unserialize;
  * It is designed to be extended for domain-specific events while providing
  * a consistent core behavior for event dispatching systems.
  *
+ * @implements ArrayAccess<string, mixed>
  * @category  Omega
  * @package   Event
  * @link      https://omega-mvc.github.io
@@ -54,7 +59,7 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
      * Creates a new event instance.
      *
      * @param string $name The unique name of the event.
-     * @param array $arguments Optional associative array of event arguments.
+     * @param array<string, mixed> $arguments Optional associative array of event arguments.
      */
     public function __construct(protected string $name, protected array $arguments = [])
     {
@@ -100,7 +105,7 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     /**
      * Returns all event arguments.
      *
-     * @return array Associative array of all arguments.
+     * @return array<string, mixed> Associative array of all arguments.
      */
     public function getArguments(): array
     {
@@ -151,7 +156,7 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     /**
      * Prepares the event data for serialization.
      *
-     * @return array Structured data representing the event state.
+     * @return array{name: string, arguments: array<string, mixed>, stopped: bool} Structured data representing the event state.
      */
     public function __serialize(): array
     {
@@ -170,20 +175,57 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
      */
     public function unserialize(string $data): void
     {
-        $this->__unserialize(unserialize($data));
+        $payload = unserialize($data);
+
+        if (!is_array($payload)) {
+            throw new UnexpectedValueException('Invalid serialized event data.');
+        }
+
+        $this->__unserialize($payload);
     }
 
     /**
      * Restores the event state from an array structure.
      *
-     * @param array $data Event data including name, arguments, and stopped flag.
+     * @param array<mixed, mixed> $data Event data including name, arguments, and stopped flag.
      * @return void
+     * @throws UnexpectedValueException If the serialized event data is malformed.
      */
     public function __unserialize(array $data): void
     {
-        $this->name = $data['name'];
-        $this->arguments = $data['arguments'];
-        $this->stopped = $data['stopped'];
+        $name = $data['name'] ?? null;
+        $arguments = $data['arguments'] ?? null;
+        $stopped = $data['stopped'] ?? null;
+
+        if (!is_string($name) || !is_array($arguments) || !is_bool($stopped)) {
+            throw new UnexpectedValueException('Invalid serialized event data.');
+        }
+
+        $this->name = $name;
+        $this->arguments = $this->normalizeArguments($arguments);
+        $this->stopped = $stopped;
+    }
+
+    /**
+     * Validates that unserialized arguments only use string keys.
+     *
+     * @param array<mixed, mixed> $arguments The unserialized arguments.
+     * @return array<string, mixed> The validated arguments.
+     * @throws UnexpectedValueException If a non-string argument key is encountered.
+     */
+    private function normalizeArguments(array $arguments): array
+    {
+        $normalized = [];
+
+        foreach ($arguments as $key => $value) {
+            if (!is_string($key)) {
+                throw new UnexpectedValueException('Invalid serialized event data.');
+            }
+
+            $normalized[$key] = $value;
+        }
+
+        return $normalized;
     }
 
     /**
@@ -195,7 +237,7 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     #[ReturnTypeWillChange]
     public function offsetExists(mixed $offset): bool
     {
-        return $this->hasArgument($offset);
+        return is_string($offset) && $this->hasArgument($offset);
     }
 
     /**
@@ -207,6 +249,10 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     #[ReturnTypeWillChange]
     public function offsetGet(mixed $offset): mixed
     {
+        if (!is_string($offset)) {
+            return null;
+        }
+
         return $this->getArgument($offset);
     }
 }

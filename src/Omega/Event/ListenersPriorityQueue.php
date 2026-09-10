@@ -19,8 +19,8 @@ use Countable;
 use IteratorAggregate;
 use ReturnTypeWillChange;
 
+use function array_merge;
 use function array_search;
-use function call_user_func_array;
 use function count;
 use function krsort;
 
@@ -42,6 +42,8 @@ use function krsort;
  * @copyright Copyright (c) 2026 Adriano Giovannini
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @implements IteratorAggregate<int, callable(EventInterface): void>
  */
 final class ListenersPriorityQueue implements IteratorAggregate, Countable
 {
@@ -54,6 +56,8 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      * ]
      *
      * Higher numeric priority values have precedence.
+     *
+     * @var array<int, array<int, callable(EventInterface): void>>
      */
     private array $listeners = [];
 
@@ -63,7 +67,7 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      * Multiple listeners can share the same priority level.
      * Listeners are appended in insertion order within the same priority bucket.
      *
-     * @param callable $callback The event listener to register.
+     * @param callable(EventInterface): void $callback The event listener to register.
      * @param int $priority Execution priority (higher values run first).
      * @return ListenersPriorityQueue
      */
@@ -79,7 +83,7 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      *
      * The listener is searched across all priority levels.
      *
-     * @param callable $callback The listener to remove.
+     * @param callable(EventInterface): void $callback The listener to remove.
      * @return ListenersPriorityQueue
      */
     public function remove(callable $callback): ListenersPriorityQueue
@@ -98,7 +102,7 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      *
      * The search is performed across all priority levels.
      *
-     * @param callable $callback The listener to check.
+     * @param callable(EventInterface): void $callback The listener to check.
      * @return bool True if the listener exists, false otherwise.
      */
     public function has(callable $callback): bool
@@ -118,7 +122,7 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      * If the listener exists in multiple buckets (should not normally happen),
      * the first matching priority encountered is returned.
      *
-     * @param callable $callback The listener to inspect.
+     * @param callable(EventInterface): void $callback The listener to inspect.
      * @param mixed $default Value returned if the listener is not found.
      * @return mixed The priority level or the default value.
      */
@@ -140,7 +144,7 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      * 1. Priority (higher first)
      * 2. Insertion order within the same priority
      *
-     * @return callable[] Ordered list of listeners.
+     * @return list<callable(EventInterface): void> Ordered list of listeners.
      */
     public function getAll(): array
     {
@@ -150,13 +154,13 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
 
         krsort($this->listeners);
 
-        return call_user_func_array('array_merge', $this->listeners);
+        return array_merge(...$this->listeners);
     }
 
     /**
      * Returns an iterator over all listeners in execution order.
      *
-     * @return ArrayIterator Iterator of ordered listeners.
+     * @return ArrayIterator<int, callable(EventInterface): void> Iterator of ordered listeners.
      */
     #[ReturnTypeWillChange]
     public function getIterator(): ArrayIterator
