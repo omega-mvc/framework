@@ -6,7 +6,7 @@
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 
@@ -47,7 +47,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
  * @link       https://omega-mvc.github.io
  * @author     Adriano Giovannini <agisoftt@gmail.com>
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license    https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version    2.0.0
  */
 #[CoversClass(Delete::class)]

@@ -6,7 +6,7 @@
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 
@@ -37,7 +37,7 @@ use function round;
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 class ScheduleTime
@@ -45,7 +45,7 @@ class ScheduleTime
     /** @var Closure The callback function to execute when the schedule is due. */
     private Closure $callBack;
 
-    /** @var array Parameters to pass to the callback function. */
+    /** @var array<string, mixed> Parameters to pass to the callback function. */
     private array $params;
 
     /** @var int Timestamp representing the current time for this schedule. */
@@ -58,7 +58,7 @@ class ScheduleTime
         }
     }
 
-    /** @var array<int, array<string,int|string>|int> The expected times for cron execution. */
+    /** @var array<int, array<string, int|string>> The expected times for cron execution. */
     private array $timeExpect { // phpcs:ignore
         get {
             return $this->timeExpect; // phpcs:ignore
@@ -76,13 +76,6 @@ class ScheduleTime
     public bool $anonymously  = false { // phpcs:ignore
         get {
             return $this->anonymously; // phpcs:ignore
-        }
-    }
-
-    /** @var bool Tracks if the cron task execution failed. */
-    private bool $isFail = false { // phpcs:ignore
-        get {
-            return $this->isFail; // phpcs:ignore
         }
     }
 
@@ -107,7 +100,7 @@ class ScheduleTime
      * ScheduleTime constructor.
      *
      * @param Closure $callBack The callback to execute when the schedule is due.
-     * @param array $params Optional parameters for the callback.
+     * @param array<string, mixed> $params Optional parameters for the callback.
      * @param int $timestamp Base timestamp to determine execution time.
      * @return void
      */
@@ -231,10 +224,8 @@ class ScheduleTime
             try {
                 $outPut              = call_user_func($this->callBack, $this->params) ?? [];
                 $this->retryAttempts = 0;
-                $this->isFail        = false;
             } catch (Throwable $th) {
                 $this->retryAttempts--;
-                $this->isFail = true;
                 $outPut       = ['error' => $th->getMessage()];
             }
 
