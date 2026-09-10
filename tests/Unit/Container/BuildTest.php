@@ -137,6 +137,7 @@ class BuildTest extends AbstractTestContainer
         $container = $this->container;
         $instance  = $container->build(Service::class, ['value' => 'custom']);
 
+        $this->assertInstanceOf(Service::class, $instance);
         $this->assertEquals('custom', $instance->value);
     }
 
@@ -222,6 +223,7 @@ class BuildTest extends AbstractTestContainer
     {
         $this->container->bind(UnionDependencyOne::class, fn () => new UnionDependencyOne());
         $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
+        $this->assertInstanceOf(ClassWithUnionTypeConstructor::class, $instance);
         $this->assertInstanceOf(UnionDependencyOne::class, $instance->dependency);
     }
 
@@ -239,6 +241,7 @@ class BuildTest extends AbstractTestContainer
     {
         $this->container->bind(UnionDependencyTwo::class, fn () => new UnionDependencyTwo());
         $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
+        $this->assertInstanceOf(ClassWithUnionTypeConstructor::class, $instance);
         $this->assertInstanceOf(UnionDependencyTwo::class, $instance->dependency);
     }
 
@@ -270,6 +273,7 @@ class BuildTest extends AbstractTestContainer
     {
         // Resolve to null when no type is bound and the parameter is nullable
         $instance = $this->container->build(ClassWithNullableUnionTypeConstructor::class);
+        $this->assertInstanceOf(ClassWithNullableUnionTypeConstructor::class, $instance);
         $this->assertNull($instance->dependency);
     }
 

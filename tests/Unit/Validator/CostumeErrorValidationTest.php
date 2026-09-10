@@ -34,7 +34,7 @@ it('can create costume error', function () {
     $val = new Validator(['tets' => null]);
     $val->test->required();
 
-    expect($val->getError())->test->toEqual('Test can\'t be null');
+    expect($val->errors()->test)->toEqual('Test can\'t be null');
 });
 
 it('can create costume error (containt \'not\' method)', function () {
@@ -43,7 +43,7 @@ it('can create costume error (containt \'not\' method)', function () {
     $val = new Validator(['test' => 'null']);
     $val->test->not()->required();
 
-    expect($val->getError())->test->toEqual('Test can\'t be null');
+    expect($val->errors()->test)->toEqual('Test can\'t be null');
 });
 
 it('can create costume error multy', function () {

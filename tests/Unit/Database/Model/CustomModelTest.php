@@ -14,7 +14,8 @@ use Tests\Database\Support\Profile;
 #[CoversClass(Insert::class)]
 final class CustomModelTest extends AbstractTestDatabase
 {
-    private $profiles = [
+    /** @var array<string, array<string, string|int>> */
+    private array $profiles = [
         'taylor' => [
             'user'   => 'taylor',
             'name'   => 'taylor otwell',
@@ -45,7 +46,7 @@ final class CustomModelTest extends AbstractTestDatabase
     {
         $this->createConnection();
         $this->createProfileSchema();
-        $this->createProfiles($this->profiles);
+        $this->createProfiles(array_values($this->profiles));
     }
 
     protected function tearDown(): void
@@ -67,7 +68,10 @@ final class CustomModelTest extends AbstractTestDatabase
            ->execute();
     }
 
-    private function createProfiles($profiles): bool
+    /**
+     * @param array<int, array<string, bool|int|string|null>> $profiles
+     */
+    private function createProfiles(array $profiles): bool
     {
         return (new Insert('profiles', $this->pdo))
             ->rows($profiles)

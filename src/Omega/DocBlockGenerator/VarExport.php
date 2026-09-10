@@ -166,8 +166,6 @@ final class VarExport
 
     /**
      * @param array<array-key, mixed> $array
-     *
-     * @internal
      */
     private function compileArray(array $array): void
     {
@@ -207,9 +205,6 @@ final class VarExport
         $this->wrapClosure($compile, $capturedVars);
     }
 
-    /**
-     * @internal
-     */
     private function compileObject(object $object): void
     {
         $hash = spl_object_hash($object);
@@ -235,8 +230,6 @@ final class VarExport
     /**
      * Compile a stdClass object using (object) [...] cast syntax.
      * Uses Reflection to access all properties consistently.
-     *
-     * @internal
      */
     private function compileStdClass(object $object): void
     {
@@ -260,8 +253,6 @@ final class VarExport
      *
      * Note: if the class does not implement __set_state(), requiring the
      * output file will throw an Error at runtime — same as var_export behavior.
-     *
-     * @internal
      */
     private function compileSetState(object $object): void
     {
@@ -279,9 +270,6 @@ final class VarExport
         $this->addToBuffer(')');
     }
 
-    /**
-     * @internal
-     */
     private function compileString(string $string): void
     {
         $this->addToBuffers(
@@ -289,25 +277,16 @@ final class VarExport
         );
     }
 
-    /**
-     * @internal
-     */
     private function compileInteger(int $int): void
     {
         $this->addToBuffer((string) $int);
     }
 
-    /**
-     * @internal
-     */
     private function compileBoolean(bool $bool): void
     {
         $this->addToBuffer($bool ? 'true' : 'false');
     }
 
-    /**
-     * @internal
-     */
     private function compileFloat(float $float): void
     {
         $formattedFloat = $float == round($float)
@@ -317,17 +296,11 @@ final class VarExport
         $this->addToBuffer($formattedFloat);
     }
 
-    /**
-     * @internal
-     */
     private function compileNull(): void
     {
         $this->addToBuffer('null');
     }
 
-    /**
-     * @internal
-     */
     private function compileFallback(mixed $value): void
     {
         $this->addToBuffer(var_export($value, true));

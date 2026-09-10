@@ -43,4 +43,14 @@ final class ClassWithProperties
 
     /** @var string Private property used for reflection tests. */
     private string $privateProperty = 'private';
+
+    /**
+     * Expose the private property value.
+     *
+     * @return string
+     */
+    public function getPrivateProperty(): string
+    {
+        return $this->privateProperty;
+    }
 }

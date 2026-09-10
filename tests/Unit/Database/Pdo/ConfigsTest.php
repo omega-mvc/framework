@@ -13,6 +13,7 @@ use Omega\Database\SqliteConnection;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use RuntimeException;
 
 #[CoversClass(MysqlConnection::class)]
 #[CoversClass(MariadbConnection::class)]
@@ -28,6 +29,11 @@ final class ConfigsTest extends TestCase
      * Driver connections connect eagerly in their constructor, so the
      * protected `buildDsn()` implementation is exercised via reflection on
      * an instance created without invoking the constructor.
+     *
+     * @param class-string       $connectionClass
+     * @param array<string, mixed> $config
+     *
+     * @return string
      */
     private function buildDsn(string $connectionClass, array $config): string
     {
@@ -45,7 +51,13 @@ final class ConfigsTest extends TestCase
         $buildDsn = $reflection->getMethod('buildDsn');
         $buildDsn->setAccessible(true);
 
-        return $buildDsn->invoke($connection);
+        $dsn = $buildDsn->invoke($connection);
+
+        if (!is_string($dsn)) {
+            throw new RuntimeException('buildDsn() must return a string DSN.');
+        }
+
+        return $dsn;
     }
 
     /**
@@ -53,7 +65,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItNormalizesLegacyConfigKeys()
+    public function testItNormalizesLegacyConfigKeys(): void
     {
         $reflection = new ReflectionClass(MysqlConnection::class);
         $connection = $reflection->newInstanceWithoutConstructor();
@@ -69,6 +81,7 @@ final class ConfigsTest extends TestCase
             'options'       => [\PDO::ATTR_PERSISTENT => false],
         ]);
 
+        $this->assertIsArray($configs);
         $this->assertSame('mysql', $configs['driver']);
         $this->assertSame('db_from_name', $configs['database']);
         $this->assertSame('legacy_user', $configs['username']);
@@ -80,7 +93,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithAllParameters()
+    public function testItCanCreateMysqlDsnWithAllParameters(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -101,7 +114,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithMinimalParameters()
+    public function testItCanCreateMysqlDsnWithMinimalParameters(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -120,7 +133,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithCustomPort()
+    public function testItCanCreateMysqlDsnWithCustomPort(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -140,7 +153,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithCustomCharset()
+    public function testItCanCreateMysqlDsnWithCustomCharset(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -160,7 +173,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnWithZeroPort()
+    public function testItCanCreateMysqlDsnWithZeroPort(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -180,7 +193,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreateMysqlDsnThrowsExceptionWhenHostMissing(): void
     {
         $config = [
             'driver'   => 'mysql',
@@ -197,7 +210,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMysqlDsnThrowsExceptionWhenDatabaseMissing()
+    public function testItCanCreateMysqlDsnThrowsExceptionWhenDatabaseMissing(): void
     {
         $config = [
             'driver' => 'mysql',
@@ -216,7 +229,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMariadbDsnWithAllParameters()
+    public function testItCanCreateMariadbDsnWithAllParameters(): void
     {
         $config = [
             'driver'   => 'mariadb',
@@ -237,7 +250,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateMariadbDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreateMariadbDsnThrowsExceptionWhenHostMissing(): void
     {
         $config = [
             'driver'   => 'mariadb',
@@ -256,7 +269,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithAllParameters()
+    public function testItCanCreatePgsqlDsnWithAllParameters(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -277,7 +290,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithMinimalParameters()
+    public function testItCanCreatePgsqlDsnWithMinimalParameters(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -296,7 +309,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithCustomPort()
+    public function testItCanCreatePgsqlDsnWithCustomPort(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -316,7 +329,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithCustomEncoding()
+    public function testItCanCreatePgsqlDsnWithCustomEncoding(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -336,7 +349,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnWithZeroPort()
+    public function testItCanCreatePgsqlDsnWithZeroPort(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -356,7 +369,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnThrowsExceptionWhenHostMissing()
+    public function testItCanCreatePgsqlDsnThrowsExceptionWhenHostMissing(): void
     {
         $config = [
             'driver'   => 'pgsql',
@@ -374,7 +387,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreatePgsqlDsnThrowsExceptionWhenDatabaseMissing()
+    public function testItCanCreatePgsqlDsnThrowsExceptionWhenDatabaseMissing(): void
     {
         $config = [
             'driver' => 'pgsql',
@@ -394,7 +407,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnWithMemoryDatabase()
+    public function testItCanCreateSqliteDsnWithMemoryDatabase(): void
     {
         $config = [
             'driver'   => 'sqlite',
@@ -412,7 +425,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnWithmodeMemoryQueryParameter()
+    public function testItCanCreateSqliteDsnWithmodeMemoryQueryParameter(): void
     {
         $config = [
             'driver'   => 'sqlite',
@@ -430,7 +443,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnWithCacheSharedAndmodeMemoryQueryParameter()
+    public function testItCanCreateSqliteDsnWithCacheSharedAndmodeMemoryQueryParameter(): void
     {
         $config = [
             'driver'   => 'sqlite',
@@ -448,7 +461,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnThrowsExceptionWhenDatabaseMissing()
+    public function testItCanCreateSqliteDsnThrowsExceptionWhenDatabaseMissing(): void
     {
         $config = [
             'driver' => 'sqlite',
@@ -465,7 +478,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCanCreateSqliteDsnThrowsExceptionForInvalidPath()
+    public function testItCanCreateSqliteDsnThrowsExceptionForInvalidPath(): void
     {
         $config = [
             'driver'   => 'sqlite',
@@ -484,7 +497,7 @@ final class ConfigsTest extends TestCase
      *
      * @group database
      */
-    public function testItCannotCreateConnectionWithUnsupportedDriver()
+    public function testItCannotCreateConnectionWithUnsupportedDriver(): void
     {
         $config = [
             'driver' => 'oracle',

@@ -20,8 +20,8 @@ $correct = [
     'test7' => '1-(555)-555-5555',
 ];
 $incorrect = [
-    'test' => '666111222',
-    'test' => '004461234123',
+    'test8' => '666111222',
+    'test9' => '004461234123',
 ];
 // validate with correct input field
 

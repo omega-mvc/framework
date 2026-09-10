@@ -16,3 +16,7 @@ services:
         class: Omega\PHPStan\Type\ReflectionFunctionAbstractReturnTypeExtension
         tags:
             - phpstan.broker.dynamicMethodReturnTypeExtension
+    -
+        class: Omega\PHPStan\Type\ValidatorMagicPropertiesClassReflectionExtension
+        tags:
+            - phpstan.broker.propertiesClassReflectionExtension

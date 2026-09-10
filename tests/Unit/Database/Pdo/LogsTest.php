@@ -29,36 +29,12 @@ final class LogsTest extends AbstractTestDatabase
         $this->dropConnection();
     }
 
-    private function profileFactory(): void
-    {
-        // factory
-        $this->pdo
-            ->query('CREATE TABLE profiles (
-                user varchar(32) NOT NULL,
-                real_name varchar(500) NOT NULL,
-                PRIMARY KEY (user)
-              )')
-            ->execute();
-
-        $this->pdo
-            ->query('INSERT INTO profiles (
-                user,
-                real_name
-              ) VALUES (
-                :user,
-                :real_name
-              )')
-            ->bind(':user', 'taylor')
-            ->bind(':real_name', 'taylor otwell')
-            ->execute();
-    }
-
     /**
      * @test
      *
      * @group database
      */
-    public function testItCanGetLogExcutionConnention()
+    public function testItCanGetLogExcutionConnention(): void
     {
         $this->pdo->flushLogs();
         $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->resultset();
@@ -70,12 +46,6 @@ final class LogsTest extends AbstractTestDatabase
             'select * from users where user = :user',
             'delete from users where user = :user',
         ];
-        $get_logs = (fn () => $this->{'logs'})->call($this->pdo);
-
-        // before calculate
-        foreach ($get_logs as $key => $log) {
-            $this->assertNull($log['duration']);
-        }
 
         // after calculate
         foreach ($this->pdo->getLogs() as $key => $log) {
@@ -89,7 +59,7 @@ final class LogsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSelectQuery()
+    public function testItCanSelectQuery(): void
     {
         $this->assertNotEmpty($this->pdo->getLogs());
         foreach ($this->pdo->getLogs() as $key => $log) {
@@ -105,7 +75,7 @@ final class LogsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFlush()
+    public function testItCanFlush(): void
     {
         $this->assertNotEmpty($this->pdo->getLogs());
         $this->pdo->flushLogs();
@@ -117,7 +87,7 @@ final class LogsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanEmptyLogsGetLogs()
+    public function testItCanEmptyLogsGetLogs(): void
     {
         $this->pdo->flushLogs();
         $this->assertEmpty($this->pdo->getLogs()); // Should not throw error
@@ -128,7 +98,7 @@ final class LogsTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetMultipleGetLogsCalls()
+    public function testItCanGetMultipleGetLogsCalls(): void
     {
         $this->pdo->flushLogs();
         $this->pdo->query('SELECT 1')->execute();

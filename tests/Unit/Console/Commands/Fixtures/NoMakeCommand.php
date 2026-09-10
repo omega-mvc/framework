@@ -11,7 +11,6 @@ use Symfony\Component\Console\Input\InputArgument;
 /**
  * Command fixture extending AbstractMakeCommand without a Make attribute.
  *
- * @internal
  */
 #[AsCommand(
     name: 'plain:make',

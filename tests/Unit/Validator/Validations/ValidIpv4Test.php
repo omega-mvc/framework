@@ -11,14 +11,14 @@ it('can render invert valid_ipv4 validation')
 ;
 
 $correct = [
-    'test' => '127.0.0.1',
-    'test' => '1.1.1.1',
-    'test' => '255.255.255.255',
+    'test1' => '127.0.0.1',
+    'test2' => '1.1.1.1',
+    'test3' => '255.255.255.255',
 ];
 $incorrect = [
     'tets1' => '2001:0zb8:85a3:08d3:1319:8a2e:0370:7334',
-    'tets1' => '0,0,0,0',
-    'tets1' => '256.0.0.0',
+    'tets2' => '0,0,0,0',
+    'tets3' => '256.0.0.0',
 ];
 
 // validate with correct input field

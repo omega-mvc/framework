@@ -35,7 +35,17 @@ final class CircularA
     /**
      * @param CircularB $b Dependency creating a circular reference.
      */
-    public function __construct(CircularB $b)
+    public function __construct(private CircularB $b)
     {
+    }
+
+    /**
+     * Get the circular dependency.
+     *
+     * @return CircularB
+     */
+    public function getB(): CircularB
+    {
+        return $this->b;
     }
 }

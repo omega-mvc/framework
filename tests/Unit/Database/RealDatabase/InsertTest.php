@@ -37,7 +37,7 @@ final class InsertTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanInsertData()
+    public function testItCanInsertData(): void
     {
         Query::from('users', $this->pdo)
             ->insert()
@@ -56,7 +56,7 @@ final class InsertTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanInsertMultyRaw()
+    public function testItCanInsertMultyRaw(): void
     {
         Query::from('users', $this->pdo)
             ->insert()
@@ -82,7 +82,7 @@ final class InsertTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanReplaceOnExistData()
+    public function testItCanReplaceOnExistData(): void
     {
         Query::from('users', $this->pdo)
             ->insert()
@@ -111,7 +111,7 @@ final class InsertTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateInsertusingOneQuery()
+    public function testItCanUpdateInsertusingOneQuery(): void
     {
         Query::from('users', $this->pdo)
             ->insert()

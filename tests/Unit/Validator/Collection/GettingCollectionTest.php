@@ -1,6 +1,6 @@
 <?php
 
-use Omega\Validator\Collection;
+use Omega\Collection\Collection;
 
 it('can get item using get', function () {
     $collection = new Collection(['key' => 'item']);
@@ -9,13 +9,15 @@ it('can get item using get', function () {
 });
 
 it('can get item using get (default) but not exist', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection([]);
 
     expect($collection)->get('key', 'no item')->toEqual('no item');
 });
 
 it('can get item using get (no default set) but not exist', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection([]);
 
     expect($collection)->get('key')->toBeNull();
 });
@@ -27,7 +29,8 @@ it('can get item using __get', function () {
 });
 
 it('can get item using __get (no default set) but not exist', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection(['seed' => 'value']);
 
     expect($collection)->item->toBeNull();
 });

@@ -8,9 +8,6 @@ use Omega\Validator\Traits\CustomFilterTrait;
 use Omega\Validator\Traits\CustomValidationTrait;
 use Omega\Validator\Traits\InvertValidationTrait;
 
-/**
- * @internal
- */
 final class Rule extends \GUMP
 {
     // validation
@@ -39,6 +36,7 @@ final class Rule extends \GUMP
      */
     protected function get_messages(): array
     {
+        /** @var array<string, string> $messages */
         $messages = parent::get_messages();
 
         // add inveret custom validate message

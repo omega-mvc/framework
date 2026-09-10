@@ -6,9 +6,6 @@ namespace Omega\Validator;
 
 use Closure;
 
-/**
- * @internal
- */
 final class ValidationCondition
 {
     /** @var array<int, string> */
@@ -30,7 +27,7 @@ final class ValidationCondition
      *
      * Error message send using param closure
      *
-     * @param callable(string): void $condition Excute condtion
+     * @param callable(array<int, string>): void $condition Excute condtion
      */
     public function else($condition): void
     {

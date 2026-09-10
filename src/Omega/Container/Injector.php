@@ -48,8 +48,8 @@ use function is_array;
  */
 final class Injector
 {
-    /** @var Resolver|null Resolver instance used for resolving method parameters and property dependencies. */
-    private ?Resolver $resolver;
+    /** @var Resolver Resolver instance used for resolving method parameters and property dependencies. */
+    private Resolver $resolver;
 
     /**
      * Create a new Injector instance.
@@ -262,6 +262,11 @@ final class Injector
         $paramAttributes = $param->getAttributes(Inject::class);
         if (!empty($paramAttributes)) {
             $abstract = $paramAttributes[0]->newInstance()->getName();
+
+            if (is_array($abstract)) {
+                $abstract = $abstract[$paramName] ?? $paramName;
+            }
+
             return $this->container->get($abstract);
         }
 

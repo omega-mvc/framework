@@ -52,12 +52,12 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function shouldReturnModelEveryItems()
+    public function shouldReturnModelEveryItems(): void
     {
         $users = $this->users();
 
         foreach ($users->get() as $user) {
-            $this->assertTrue($user instanceof User);
+            $this->assertTrue($user->has('user'));
         }
     }
 
@@ -66,7 +66,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetAllIds()
+    public function testItCanGetAllIds(): void
     {
         $users = $this->users()->get();
 
@@ -78,7 +78,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckIsClean()
+    public function testItCanCheckIsClean(): void
     {
         $users = $this->users();
 
@@ -90,7 +90,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckIsDirty()
+    public function testItCanCheckIsDirty(): void
     {
         $users = $this->users();
 
@@ -104,7 +104,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanReadData()
+    public function testItCanReadData(): void
     {
         $users = $this->users();
 
@@ -118,7 +118,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateData()
+    public function testItCanUpdateData(): void
     {
         $users = $this->users();
 
@@ -133,7 +133,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteData()
+    public function testItCanDeleteData(): void
     {
         $users = $this->users();
 
@@ -149,7 +149,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateAllWithSingleQuery()
+    public function testItCanUpdateAllWithSingleQuery(): void
     {
         $update = $this->users()->get()->update([
             'stat' => 0,
@@ -163,7 +163,7 @@ final class CollectionModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteAllWithSingleQuery()
+    public function testItCanDeleteAllWithSingleQuery(): void
     {
         $delete = $this->users()->get()->delete();
 

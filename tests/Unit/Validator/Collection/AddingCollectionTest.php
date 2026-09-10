@@ -1,6 +1,6 @@
 <?php
 
-use Omega\Validator\Collection;
+use Omega\Collection\Collection;
 
 it('can add array using __construct', function () {
     $collection = new Collection(['key' => 'value']);
@@ -9,11 +9,12 @@ it('can add array using __construct', function () {
 });
 
 it('can add array using make', function () {
-    expect(Collection::make(['key' => 'value']))->key->toEqual('value');
+    expect(new Collection(['key' => 'value']))->key->toEqual('value');
 });
 
 it('can add array using replace', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection([]);
 
     expect($collection)
         ->replace(['key' => 'value'])
@@ -21,7 +22,8 @@ it('can add array using replace', function () {
 });
 
 it('can add array using set', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection([]);
 
     expect($collection)
         ->set('key', 'value')
@@ -37,7 +39,8 @@ it('can edit exist array using set', function () {
 });
 
 it('can add array using __set', function () {
-    $collection = new Collection();
+    /** @var Collection<string, string> $collection */
+    $collection = new Collection([]);
 
     $collection->key = 'value';
 

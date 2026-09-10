@@ -8,9 +8,6 @@ use Exception;
 use Omega\Validator\Rule as Rules;
 use Random\RandomException;
 
-/**
- * @internal
- */
 final class Filter
 {
     /** @var string[] */
@@ -92,7 +89,7 @@ final class Filter
      *
      * Reset only boolean false.
      *
-     * @param callable(): bool $condition Closure return boolean
+     * @param callable(): mixed $condition Closure return boolean, runtime-checked
      * @throws Exception
      */
     public function where(callable $condition): string
@@ -119,7 +116,7 @@ final class Filter
      *
      * Reset only boolean false.
      *
-     * @param callable(): bool $condition Closure return boolean
+     * @param callable(): mixed $condition Closure return boolean, runtime-checked
      * @throws Exception
      */
     public function if(callable $condition): self
@@ -164,15 +161,13 @@ final class Filter
      */
     public function filter(callable $custom_filter): Filter
     {
-        if (is_callable($custom_filter)) {
-            $byte           = random_bytes(3);
-            $hex            = bin2hex($byte);
-            $rule_name      = 'filter_' . $hex;
+        $byte           = random_bytes(3);
+        $hex            = bin2hex($byte);
+        $rule_name      = 'filter_' . $hex;
 
-            Rules::add_filter($rule_name, $custom_filter);
+        Rules::add_filter($rule_name, $custom_filter);
 
-            $this->filter_rule[] = $rule_name;
-        }
+        $this->filter_rule[] = $rule_name;
 
         return $this;
     }

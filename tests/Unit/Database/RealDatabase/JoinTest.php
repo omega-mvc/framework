@@ -65,7 +65,7 @@ final class JoinTest extends AbstractTestDatabase
 
     // factory
 
-    private function factory()
+    private function factory(): void
     {
         $this->pdo
             ->query('INSERT INTO roles (role_name) VALUES
@@ -97,7 +97,7 @@ final class JoinTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanJoinInSelectQuery()
+    public function testItCanJoinInSelectQuery(): void
     {
         $this->createUsersSchema();
         $this->createRolesSchema();
@@ -107,8 +107,9 @@ final class JoinTest extends AbstractTestDatabase
         $users = Query::from('users', $this->pdo)
             ->select(['users.name', 'roles.role_name'])
             ->join(InnerJoin::ref('roles', 'role_id', 'id'))
-            ->get();
+            ->all();
 
+        $this->assertIsArray($users);
         $this->assertEquals('Alice', $users[0]['name']);
         $this->assertEquals('Admin', $users[0]['role_name']);
     }
@@ -118,7 +119,7 @@ final class JoinTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanJoinInUpdateQuery()
+    public function testItCanJoinInUpdateQuery(): void
     {
         $this->createUsersSchema();
         $this->createRolesSchema();
@@ -141,6 +142,7 @@ final class JoinTest extends AbstractTestDatabase
             ')
             ->resultset();
 
+        $this->assertIsArray($users);
         $this->assertEquals('Eve', $users[0]['name']);
         $this->assertEquals('Admin', $users[0]['role_name']);
     }
@@ -181,6 +183,7 @@ final class JoinTest extends AbstractTestDatabase
             ')
             ->resultset();
 
+        $this->assertIsArray($users);
         $this->assertEquals('Bob', $users[0]['name']);
         $this->assertEquals('Editor', $users[0]['role_name']);
     }

@@ -60,4 +60,14 @@ final class ClassWithMethods
     private function privateMethod(): void
     {
     }
+
+    /**
+     * Invoke the private method to exercise it outside of reflection.
+     *
+     * @return void
+     */
+    public function callPrivateMethod(): void
+    {
+        $this->privateMethod();
+    }
 }

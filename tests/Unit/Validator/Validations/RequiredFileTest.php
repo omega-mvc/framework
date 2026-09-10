@@ -25,6 +25,9 @@ $incorrect = [
     'files' => [],
 ];
 
+/**
+ * @param array<string, mixed> $input
+ */
 function validTest(array $input, bool $use_not = false): bool
 {
     $val = new Omega\Validator\Validator($input);

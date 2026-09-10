@@ -6,6 +6,7 @@ namespace Omega\Validator;
 
 use Closure;
 use Exception;
+use Omega\Collection\Collection;
 use Omega\Validator\Messages\Message;
 use Omega\Validator\Messages\MessagePool;
 use Omega\Validator\Rule\Filter;
@@ -14,8 +15,8 @@ use Omega\Validator\Rule\Valid;
 use Omega\Validator\Rule\ValidPool;
 
 /**
- * @property Collection $errors
- * @property Collection $filters
+ * @property Collection<string, string> $errors
+ * @property Collection<string, mixed> $filters
  */
 final class Validator
 {
@@ -51,8 +52,8 @@ final class Validator
      * Create validation and filter using static.
      *
      * @param array<string, mixed>                      $fileds        Field array to validate
-     * @param callable(ValidPool=): (ValidPool|mixed)   $validate_pool Closure with param as ValidPool
-     * @param callable(FilterPool=): (FilterPool|mixed) $filter_pool   Closure with param as ValidPool
+     * @param callable(ValidPool): (ValidPool|mixed)   $validate_pool Closure with param as ValidPool
+     * @param callable(FilterPool): (FilterPool|mixed) $filter_pool   Closure with param as ValidPool
      *
      * @return static
      */
@@ -181,7 +182,10 @@ final class Validator
 
         $this->set_messages();
 
-        return $this->Rule->get_errors_array();
+        /** @var array<string, string> $errors */
+        $errors = $this->Rule->get_errors_array();
+
+        return $errors;
     }
 
     /**
@@ -199,7 +203,7 @@ final class Validator
     /**
      * Inline validation field.
      *
-     * @param callable(ValidPool=): (ValidPool|mixed) $rule_validation Closure with param as ValidPool,
+     * @param callable(ValidPool): (ValidPool|mixed) $rule_validation Closure with param as ValidPool,
      *                                                                 if null return validate this currect validation
      */
     public function isValid($rule_validation = null): bool
@@ -225,7 +229,7 @@ final class Validator
      * Inline validation field.
      * Invert from is_valid.
      *
-     * @param callable(ValidPool=): (ValidPool|mixed) $rule_validation Closure with param as ValidPool,
+     * @param callable(ValidPool): (ValidPool|mixed) $rule_validation Closure with param as ValidPool,
      *                                                                 if null return validate this currect validation
      *
      * @return bool True if have a error
@@ -239,10 +243,11 @@ final class Validator
      * Execute closuer when validation is true,
      * and return else statment.
      *
-     * @param callable(ValidPool=): (ValidPool|mixed) $condition Excute closure
+     * @param callable(): mixed $condition Excute closure
      */
     public function if_valid($condition): ValidationCondition
     {
+        /** @var array<int, string>|true $val */
         $val = $this->Rule->validate($this->fields, $this->valid_pool->get_pool());
 
         if ($val === true) {
@@ -279,13 +284,16 @@ final class Validator
      */
     public function validOrError(?\Exception $exception = null): bool|array
     {
-        return $this->Rule->validate($this->fields, $this->valid_pool->get_pool());
+        /** @var array<int, string>|bool $errors */
+        $errors = $this->Rule->validate($this->fields, $this->valid_pool->get_pool());
+
+        return $errors;
     }
 
     /**
      * Filter the input data.
      *
-     * @param callable(FilterPool=): (FilterPool|mixed) $rule_filter Closure of FilterPool
+     * @param callable(FilterPool): (FilterPool|mixed) $rule_filter Closure of FilterPool
      *
      * @return array<string, mixed> Fields input after filter
      */
@@ -314,8 +322,8 @@ final class Validator
     /**
      * Run validation and filter if success.
      *
-     * @return bool|mixed True if validation failed,
-     *                    array filter if validation valid
+     * @return bool|array<string, mixed> True if validation failed,
+     *                                   array filter if validation valid
      */
     public function failedOrFilter(): array|bool
     {
@@ -343,7 +351,7 @@ final class Validator
      * Adding validation rule using ValidPool Callback.
      * Pass param as ValidPool in callback to adding rule.
      *
-     * @param callable(ValidPool=): (ValidPool|mixed) $pools Closure with param as ValidPool
+     * @param callable(ValidPool): (ValidPool|mixed) $pools Closure with param as ValidPool
      */
     public function validation($pools): self
     {
@@ -358,7 +366,7 @@ final class Validator
      * Adding Filter rule using FilterPool Callback.
      * Pass param as FilterPool in callback to adding rule.
      *
-     * @param callable(FilterPool=): (FilterPool|mixed) $pools Closure with param as FilterPool
+     * @param callable(FilterPool): (FilterPool|mixed) $pools Closure with param as FilterPool
      */
     public function filters($pools): self
     {
@@ -372,7 +380,7 @@ final class Validator
     /**
      * Helper to get rules from Closure.
      *
-     * @param callable(ValidPool=): (ValidPool|mixed) $rule_validation closure of ValidPool
+     * @param callable(ValidPool): (ValidPool|mixed) $rule_validation closure of ValidPool
      *
      * @return ValidPool Validation rules
      */
@@ -391,7 +399,7 @@ final class Validator
     /**
      * Helper to get rules from Closure.
      *
-     * @param callable(FilterPool=): (FilterPool|mixed) $rule_filter closure of FillterPoll
+     * @param callable(FilterPool): (FilterPool|mixed) $rule_filter closure of FillterPoll
      *
      * @return FilterPool Filter rules
      */
@@ -410,7 +418,7 @@ final class Validator
     /**
      * Helper to get custom message from Closure.
      *
-     * @param callable(MessagePool=): (MessagePool|mixed) $rule_filter closure of MessagePool
+     * @param callable(MessagePool): (MessagePool|mixed) $rule_filter closure of MessagePool
      *
      * @return MessagePool Custom error Message
      */
@@ -429,7 +437,7 @@ final class Validator
     /**
      * Set field-rule specific error messages.
      *
-     * @param callable(MessagePool=): (MessagePool|mixed) $pools Closure with param as MessagePool
+     * @param callable(MessagePool): (MessagePool|mixed) $pools Closure with param as MessagePool
      */
     public function messages($pools = null): MessagePool
     {

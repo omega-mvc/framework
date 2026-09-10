@@ -135,6 +135,16 @@ abstract class AbstractJoin
     }
 
     /**
+     * Get the subquery bound to this join, if any.
+     *
+     * @return InnerQuery|null The subquery instance, or null when none is bound.
+     */
+    public function getSubQuery(): ?InnerQuery
+    {
+        return $this->subQuery;
+    }
+
+    /**
      * Set reference table for the join.
      *
      * @param string $refTable Name of the reference table

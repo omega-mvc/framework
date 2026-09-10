@@ -37,7 +37,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDelete()
+    public function testItCanDelete(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -52,7 +52,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithBetween()
+    public function testItCanDeleteWithBetween(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -68,7 +68,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithCompare()
+    public function testItCanDeleteWithCompare(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -84,7 +84,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithEqual()
+    public function testItCanDeleteWithEqual(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -100,7 +100,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithIn()
+    public function testItCanDeleteWithIn(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -116,7 +116,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithLike()
+    public function testItCanDeleteWithLike(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -132,7 +132,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithWhere()
+    public function testItCanDeleteWithWhere(): void
     {
         Query::from('users', $this->pdo)
             ->delete()
@@ -150,7 +150,7 @@ final class DeleteTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteWithMultyCondition()
+    public function testItCanDeleteWithMultyCondition(): void
     {
         Query::from('users', $this->pdo)
             ->delete()

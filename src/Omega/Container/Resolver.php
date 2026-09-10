@@ -99,7 +99,7 @@ final class Resolver
      *
      * @param ReflectionParameter[] $dependencies The constructor parameters to resolve
      * @param array<int|string, mixed> $parameters Optional overrides for parameters
-     * @return array Resolved dependency instances
+     * @return array<int|string, mixed> Resolved dependency instances
      */
     private function resolveDependencies(array $dependencies, array $parameters = []): array
     {
@@ -136,22 +136,6 @@ final class Resolver
         $result = $this->tryResolveFromDefault($parameter);
         if ($result !== self::NOT_RESOLVED) {
             return $result;
-        }
-
-        return $this->unresolvable($parameter);
-    }
-
-    /**
-     * Resolve a parameter without type hint.
-     *
-     * @param ReflectionParameter $parameter The parameter to resolve
-     * @return mixed The resolved value or default
-     * @throws BindingResolutionException If the parameter cannot be resolved
-     */
-    private function resolveUnTypedParameter(ReflectionParameter $parameter): mixed
-    {
-        if ($parameter->isDefaultValueAvailable()) {
-            return $parameter->getDefaultValue();
         }
 
         return $this->unresolvable($parameter);
@@ -204,7 +188,11 @@ final class Resolver
     }
 
     /**
-     * Estrazione della validazione (Guard Clause).
+     * Guard clause: verify the reflector targets an instantiable class.
+     *
+     * @param ReflectionClass<object> $reflector The class reflector to validate
+     * @return void
+     * @throws BindingResolutionException Thrown when the class is not instantiable.
      */
     private function ensureInstantiable(ReflectionClass $reflector): void
     {
@@ -213,6 +201,19 @@ final class Resolver
         }
     }
 
+    /**
+     * Resolve a single constructor or method parameter.
+     *
+     * @param ReflectionParameter $dependency The parameter to resolve
+     * @param array<int|string, mixed> $parameters Optional overrides for parameters
+     * @param array<int|string, mixed> $lastOverride Last parameter override values from the container
+     * @return mixed The resolved value
+     * @throws BindingResolutionException If the parameter cannot be resolved
+     * @throws CircularAliasException If a circular dependency is detected
+     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
+     * @throws EntryNotFoundException If a required container entry is missing
+     * @throws ReflectionException If reflection fails
+     */
     private function resolveSingleDependency(
         ReflectionParameter $dependency,
         array $parameters,

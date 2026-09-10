@@ -12,7 +12,7 @@ use Tests\Database\TestDatabaseQuery;
 final class DeleteTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanDeleteBetween()
+    public function testItCanDeleteBetween(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()
@@ -31,7 +31,7 @@ final class DeleteTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanDeleteCompare()
+    public function testItCanDeleteCompare(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()
@@ -50,7 +50,7 @@ final class DeleteTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanDeleteEqual()
+    public function testItCanDeleteEqual(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()
@@ -69,7 +69,7 @@ final class DeleteTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanDeleteIn()
+    public function testItCanDeleteIn(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()
@@ -88,7 +88,7 @@ final class DeleteTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanDeleteLike()
+    public function testItCanDeleteLike(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()
@@ -107,7 +107,7 @@ final class DeleteTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanDeleteWhere()
+    public function testItCanDeleteWhere(): void
     {
         $delete = Query::from('test', $this->pdo)
             ->delete()

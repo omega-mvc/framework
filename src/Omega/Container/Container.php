@@ -49,6 +49,7 @@ use const ARRAY_FILTER_USE_BOTH;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ * @implements ArrayAccess<string, mixed>
  */
 class Container implements ArrayAccess, ContainerInterface
 {
@@ -272,6 +273,9 @@ class Container implements ArrayAccess, ContainerInterface
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
+     *
+     * @param callable|object|array{0: object|string, 1: string}|string $callable The callable to invoke
+     * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
      */
     public function call(callable|object|array|string $callable, array $parameters = []): mixed
     {
@@ -420,7 +424,7 @@ class Container implements ArrayAccess, ContainerInterface
      *
      * Non-closure values are automatically wrapped in a factory closure.
      *
-     * @param mixed $offset The entry identifier.
+     * @param string $offset The entry identifier.
      * @param mixed $value  The value or factory to bind.
      * @return void
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -435,13 +439,13 @@ class Container implements ArrayAccess, ContainerInterface
      *
      * This also removes any aliases pointing to the same abstract.
      *
-     * @param mixed $offset The entry identifier to remove.
+     * @param string $offset The entry identifier to remove.
      * @return void
      * @throws CircularAliasException If a circular alias reference is detected.
      */
     public function offsetUnset(mixed $offset): void
     {
-        $offset = $this->getAlias((string)$offset);
+        $offset = $this->getAlias($offset);
 
         unset($this->instances[$offset], $this->bindings[$offset]);
 
@@ -558,9 +562,9 @@ class Container implements ArrayAccess, ContainerInterface
      * If no binding exists, the abstract itself is returned.
      *
      * @param string $abstract The abstract type.
-     * @return mixed The concrete implementation or the abstract itself.
+     * @return Closure|string The concrete implementation or the abstract itself.
      */
-    protected function getConcrete(string $abstract): mixed
+    protected function getConcrete(string $abstract): Closure|string
     {
         if (isset($this->bindings[$abstract])) {
             return $this->bindings[$abstract]['concrete'];

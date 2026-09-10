@@ -303,6 +303,7 @@ class InjectOnTest extends AbstractTestContainer
             public bool $resolved = false;
 
             /**
+             * @param ArrayAccess<string, mixed> $dependency
              * @noinspection PhpUnused
              * @noinspection PhpUnusedParameterInspection
              */
@@ -349,11 +350,14 @@ class InjectOnTest extends AbstractTestContainer
     public function testIsTypeInjectable(): void
     {
         $dummy = new class {
+            /**
+             * @param ArrayAccess<string, mixed> $interface
+             */
             public function method(
                 string $builtin,        // built-in
                 ArrayAccess $interface, // non-builtin
                 int $otherBuiltin       // built-in
-            ) {
+            ): void {
             }
         };
 

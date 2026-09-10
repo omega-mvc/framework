@@ -37,7 +37,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdate()
+    public function testItCanUpdate(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -53,7 +53,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithBetween()
+    public function testItCanUpdateWithBetween(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -70,7 +70,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithCompare()
+    public function testItCanUpdateWithCompare(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -87,7 +87,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithEqual()
+    public function testItCanUpdateWithEqual(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -104,7 +104,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithIn()
+    public function testItCanUpdateWithIn(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -121,7 +121,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithLike()
+    public function testItCanUpdateWithLike(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -138,7 +138,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithWhere()
+    public function testItCanUpdateWithWhere(): void
     {
         Query::from('users', $this->pdo)
             ->update()
@@ -157,7 +157,7 @@ final class UpdateTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateWithMultyCondition()
+    public function testItCanUpdateWithMultyCondition(): void
     {
         Query::from('users', $this->pdo)
             ->update()

@@ -12,7 +12,7 @@ use Tests\Database\TestDatabaseQuery;
 final class RawTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanGenerateQueryUsingAddColumn()
+    public function testItCanGenerateQueryUsingAddColumn(): void
     {
         $schema = new Raw(
             'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',

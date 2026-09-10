@@ -90,8 +90,8 @@ it('can run validation using method if_valid', function () {
 
     $valid->test->required();
 
-    $valid->if_valid(function () {
-        expect(true)->toBeTrue();
+    $valid->if_valid(function () use ($valid) {
+        expect($valid->getError())->toBe([]);
     })->else(function ($err) {
         expect($err)->toBe([]);
     });

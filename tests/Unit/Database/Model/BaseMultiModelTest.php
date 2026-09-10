@@ -70,7 +70,10 @@ final class BaseMultiModelTest extends AbstractTestDatabase
             ->execute();
     }
 
-    private function createProfiles($profiles): void
+    /**
+     * @param array<int, array<string, bool|int|string|null>> $profiles
+     */
+    private function createProfiles(array $profiles): void
     {
         (new Insert('profiles', $this->pdo))
             ->rows($profiles)
@@ -91,7 +94,10 @@ final class BaseMultiModelTest extends AbstractTestDatabase
             ->execute();
     }
 
-    private function createOrders($orders): void
+    /**
+     * @param array<int, array<string, bool|int|string|null>> $orders
+     */
+    private function createOrders(array $orders): void
     {
         (new Insert('orders', $this->pdo))
             ->rows($orders)
@@ -103,9 +109,9 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanReadData()
+    public function testItCanReadData(): void
     {
-        $user = new User($this->pdo, [[]], ['user' => ['taylor']]);
+        $user = new User($this->pdo, [[]]);
 
         $this->assertTrue($user->read());
     }
@@ -115,7 +121,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUpdateData()
+    public function testItCanUpdateData(): void
     {
         $user = $this->users();
 
@@ -129,7 +135,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanDeleteData()
+    public function testItCanDeleteData(): void
     {
         $user = $this->users();
         $this->assertTrue($user->delete());
@@ -140,7 +146,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetFirst()
+    public function testItCanGetFirst(): void
     {
         $users = $this->users();
 
@@ -155,7 +161,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetHasOne()
+    public function testItCanGetHasOne(): void
     {
         // profile
         $profile = [
@@ -175,7 +181,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetHasOneUsingMagicGetter()
+    public function testItCanGetHasOneUsingMagicGetter(): void
     {
         // profile
         $profile = [
@@ -195,7 +201,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetHasMany()
+    public function testItCanGetHasMany(): void
     {
         // order
         $order = [
@@ -224,7 +230,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckisClean()
+    public function testItCanCheckisClean(): void
     {
         $user = $this->users();
         $this->assertTrue($user->isClean(), 'Check all column');
@@ -236,7 +242,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckisDirty()
+    public function testItCanCheckisDirty(): void
     {
         $user = $this->users();
         $user->setter('stat', 75);
@@ -249,7 +255,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetChangeColumn()
+    public function testItCanGetChangeColumn(): void
     {
         $user = $this->users();
         $this->assertEquals([], $user->changes(), 'original fresh data');
@@ -265,7 +271,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanHiddeColumn()
+    public function testItCanHiddeColumn(): void
     {
         $user = $this->users();
 
@@ -277,7 +283,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanConvertToArray()
+    public function testItCanConvertToArray(): void
     {
         $user = $this->users();
 
@@ -287,7 +293,6 @@ final class BaseMultiModelTest extends AbstractTestDatabase
                 'stat' => 100,
             ],
         ], $user->toArray());
-        $this->assertIsIterable($user);
     }
 
     // getter setter - should return firts query
@@ -297,11 +302,11 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetUsingGetterInColumn()
+    public function testItCanGetUsingGetterInColumn(): void
     {
         $user = $this->users();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user->getter('stat', 0));
     }
 
@@ -310,12 +315,12 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSetUsingSetterterInColumn()
+    public function testItCanSetUsingSetterterInColumn(): void
     {
         $user = $this->users();
 
         $user->setter('stat', 80);
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
@@ -324,7 +329,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckExist()
+    public function testItCanCheckExist(): void
     {
         $user = $this->users();
 
@@ -336,11 +341,11 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetUsingMagicGetterInColumn()
+    public function testItCanGetUsingMagicGetterInColumn(): void
     {
         $user = $this->users();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user->stat);
     }
 
@@ -349,12 +354,12 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSetUsingMagicSetterterInColumn()
+    public function testItCanSetUsingMagicSetterterInColumn(): void
     {
         $user = $this->users();
 
         $user->stat = 80;
-        $columns    = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
@@ -365,11 +370,11 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetUsingArray()
+    public function testItCanGetUsingArray(): void
     {
         $user = $this->users();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals($columns[0]['stat'], $user['stat']);
     }
 
@@ -378,12 +383,12 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanSetUsingArray()
+    public function testItCanSetUsingArray(): void
     {
         $user = $this->users();
 
         $user['stat'] = 80;
-        $columns      = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(80, $columns[0]['stat']);
     }
 
@@ -392,7 +397,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanCheckUsingMagicIsset()
+    public function testItCanCheckUsingMagicIsset(): void
     {
         $user = $this->users();
         $this->assertTrue(isset($user['user']));
@@ -405,12 +410,12 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanUnsetUsingArray()
+    public function testItCanUnsetUsingArray(): void
     {
         $user = $this->users();
 
         unset($user['stat']);
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $this->assertEquals(100, $columns[0]['stat']);
     }
 
@@ -421,17 +426,17 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanGetCollection()
+    public function testItCanGetCollection(): void
     {
         $user = $this->users();
 
-        $columns = (fn () => $this->{'columns'})->call($user);
+        $columns = $user->toArray();
         $models  = $user->get()->toArray();
 
         // tranform to column
         $arr = [];
         foreach ($models as $new) {
-            $arr[] = (fn () => $this->{'columns'})->call($new)[0];
+            $arr[] = $new->toArray()[0];
         }
         $this->assertEquals($columns, $arr);
     }
@@ -443,7 +448,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindUsingId()
+    public function testItCanFindUsingId(): void
     {
         $user = User::find('taylor', $this->pdo);
 
@@ -455,7 +460,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindUsingWhere()
+    public function testItCanFindUsingWhere(): void
     {
         $user = User::where('user = :user', [
             'user' => 'taylor',
@@ -469,7 +474,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindUsingEqual()
+    public function testItCanFindUsingEqual(): void
     {
         $user = User::equal('user', 'taylor', $this->pdo);
 
@@ -481,7 +486,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindAll()
+    public function testItCanFindAll(): void
     {
         $users   = Query::from('users', $this->pdo)->select()->get()->toArray();
         $models  = User::all($this->pdo);
@@ -498,7 +503,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindOrCreate()
+    public function testItCanFindOrCreate(): void
     {
         $user = User::findOrCreate('taylor', [
             'user'     => 'taylor',
@@ -515,7 +520,7 @@ final class BaseMultiModelTest extends AbstractTestDatabase
      *
      * @group database
      */
-    public function testItCanFindOrCreateButNotExits()
+    public function testItCanFindOrCreateButNotExits(): void
     {
         $user = User::findOrCreate('pradana2', [
             'user'     => 'pradana2',

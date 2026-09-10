@@ -16,7 +16,7 @@ use Tests\Database\TestDatabaseQuery;
 final class SelectTest extends TestDatabaseQuery
 {
     /** @test */
-    public function testItCanSelectBetween()
+    public function testItCanSelectBetween(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -35,7 +35,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectCompare()
+    public function testItCanSelectCompare(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -54,7 +54,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectEqual()
+    public function testItCanSelectEqual(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -73,7 +73,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectIn()
+    public function testItCanSelectIn(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -92,7 +92,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectLike()
+    public function testItCanSelectLike(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -111,7 +111,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectWhere()
+    public function testItCanSelectWhere(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -337,7 +337,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectWithOrderIfNotNull()
+    public function testItCanSelectWithOrderIfNotNull(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()
@@ -350,7 +350,7 @@ final class SelectTest extends TestDatabaseQuery
     }
 
     /** @test */
-    public function testItCanSelectWithOrderIfNull()
+    public function testItCanSelectWithOrderIfNull(): void
     {
         $select = Query::from('test', $this->pdo)
             ->select()

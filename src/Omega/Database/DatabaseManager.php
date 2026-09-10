@@ -53,8 +53,9 @@ class DatabaseManager implements ConnectionInterface
      * The configuration array contains named connection definitions that
      * will be used to lazily instantiate Connection instances on demand.
      *
-     * @param array<string, array<string, mixed>> $configs
+     * @param array<string, array<string, mixed>|null> $configs
      *        Database connection configurations indexed by connection name.
+     *        A null value marks a slot as not configured and is treated as absent.
      */
     public function __construct(private readonly array $configs)
     {
