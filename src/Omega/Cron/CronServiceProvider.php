@@ -28,7 +28,14 @@ class CronServiceProvider extends AbstractServiceProvider
 
         $this->app->set(
             'schedule',
-            fn (): Schedule => new Schedule(now()->getTimestamp(), $this->app->get('cron.log'))
+            function (): Schedule {
+                $logger = $this->app->get('cron.log');
+
+                return new Schedule(
+                    now()->getTimestamp(),
+                    $logger instanceof InterpolateInterface ? $logger : null
+                );
+            }
         );
     }
 }

@@ -8,7 +8,7 @@ declare(strict_types=1);
  * @link      https://omega-mvc.github.io
  * @author    Axel Magold <axel.magold@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Axel Magold (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 

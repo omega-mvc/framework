@@ -6,7 +6,7 @@
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 
@@ -15,6 +15,8 @@ declare(strict_types=1);
 namespace Omega\Cron;
 
 use Closure;
+
+use function time;
 
 /**
  * Class Schedule
@@ -30,7 +32,7 @@ use Closure;
  * @link      https://omega-mvc.github.io
  * @author    Adriano Giovannini <agisoftt@gmail.com>
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
+ * @license   GPL-3.0-or-later
  * @version   2.0.0
  */
 class Schedule
@@ -66,12 +68,12 @@ class Schedule
      * Add a new task to the schedule pool.
      *
      * @param Closure $callBack The function to execute for this task.
-     * @param array $params Optional parameters to pass to the callback.
+     * @param array<string, mixed> $params Optional parameters to pass to the callback.
      * @return ScheduleTime The created ScheduleTime instance.
      */
     public function call(Closure $callBack, array $params = []): ScheduleTime
     {
-        return $this->pools[] = new ScheduleTime($callBack, $params, $this->time);
+        return $this->pools[] = new ScheduleTime($callBack, $params, $this->time ?? time());
     }
 
     /**
@@ -90,7 +92,9 @@ class Schedule
     public function execute(): void
     {
         foreach ($this->pools as $cron) {
-            $cron->setLogger($this->logger);
+            if (null !== $this->logger) {
+                $cron->setLogger($this->logger);
+            }
 
             if (null !== $this->time) {
                 $cron->setTime($this->time);
