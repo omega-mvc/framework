@@ -1,20 +1,9 @@
 <?php
 
-/**
- * Part of Omega - Tests\Exceptions Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Exceptions;
 
-use Exception;
 use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -33,361 +22,233 @@ use Omega\Facade\Bootstrapper\FacadeBootstrapper;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use ReflectionMethod;
+use Tests\Exceptions\Support\LogStore;
 use Tests\FixturesPathTrait;
 use Throwable;
 
 use function file;
-use function Omega\View\view;
 use function str_contains;
 
-/**
- * Unit tests for Omega exception handling and HTTP components.
- *
- * Verifies ExceptionHandler, HttpException, Http, Request, Response,
- * ApplicationManifest, Str, Templator, and TemplatorFinder behavior.
- * Ensures exceptions are reported, rendered, and JSON responses handled.
- *
- * @category  Tests
- * @package   Exceptions
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Application::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(EntryNotFoundException::class)]
-#[CoversClass(ExceptionHandler::class)]
-#[CoversClass(HttpException::class)]
-#[CoversClass(Http::class)]
-#[CoversClass(Request::class)]
-#[CoversClass(Response::class)]
-#[CoversClass(ApplicationManifest::class)]
-#[CoversClass(Str::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-final class ExceptionHandlerTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /** @var Application Application instance used in the tests. */
-    private Application $app;
+covers(Application::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(EntryNotFoundException::class);
+covers(ExceptionHandler::class);
+covers(HttpException::class);
+covers(Http::class);
+covers(Request::class);
+covers(Response::class);
+covers(ApplicationManifest::class);
+covers(Str::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
 
-    /** @var Http Http instance used to simulate requests. */
-    private Http $http;
+beforeEach(function (): void {
+    LogStore::reset();
 
-    /** @var ExceptionHandler Custom exception handler for testing. */
-    private ExceptionHandler $exceptionHandler;
+    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
-    /** @var string[] Mock logger to capture reported exception messages during tests. */
-    public static array $logs = [];
+    $this->app->set('environment', 'testing');
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws Exception Trow when a generic error occurred.
-     */
-    protected function setUp(): void
-    {
-        $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
+        basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
+        applicationCachePath: $this->app->getApplicationCachePath(),
+        vendorPath: '/package/'
+    ));
 
-        $this->app->set('environment', 'testing');
+    $this->app->set(
+        Http::class,
+        fn () => new $this->http($this->app)
+    );
 
-        $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
-            applicationCachePath: $this->app->getApplicationCachePath(),
-            vendorPath: '/package/'
-        ));
+    $this->app->set(
+        ExceptionHandler::class,
+        fn () => $this->exceptionHandler
+    );
 
-        $this->app->set(
-            Http::class,
-            fn () => new $this->http($this->app)
-        );
+    $this->http = new class ($this->app) extends Http {
+        protected array $bootstrappers = [
+            ConfigBootstrapper::class,
+            FacadeBootstrapper::class,
+            RegisterProviders::class,
+            BootProviders::class,
+        ];
 
-        $this->app->set(
-            ExceptionHandler::class,
-            fn () => $this->exceptionHandler
-        );
+        protected function dispatcher(Request $request): array
+        {
+            throw new HttpException(429, 'Too Many Request');
+        }
+    };
 
-        $this->http = new class ($this->app) extends Http {
-            protected array $bootstrappers = [
-                ConfigBootstrapper::class,
-                FacadeBootstrapper::class,
-                RegisterProviders::class,
-                BootProviders::class,
-            ];
-
-            protected function dispatcher(Request $request): array
-            {
-                throw new HttpException(429, 'Too Many Request');
-            }
-        };
-
-        $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
-            public function render(Request $request, Throwable $th): Response
-            {
-                // try to bypass test for json format
-                if ($request->isJson()) {
-                    return $this->handleJsonResponse($th);
-                }
-
-                if ($th instanceof HttpException) {
-                    return new Response($th->getMessage(), $th->getStatusCode(), $th->getHeaders());
-                }
-
-                return parent::render($request, $th);
+    $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
+        public function render(Request $request, Throwable $th): Response
+        {
+            if ($request->isJson()) {
+                return $this->handleJsonResponse($th);
             }
 
-            public function report(Throwable $th): void
-            {
-                ExceptionHandlerTest::$logs[] = $th->getMessage();
+            if ($th instanceof HttpException) {
+                return new Response($th->getMessage(), $th->getStatusCode(), $th->getHeaders());
             }
-        };
-    }
 
-    /**
-     * Tears down the environment after each test method.
-     *
-     * This method is called automatically by PHPUnit after each test runs.
-     * It is responsible for cleaning up resources, flushing the application
-     * state, unsetting properties, and resetting any static or global state
-     * to avoid side effects between tests.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $this->app->flush();
-
-        ExceptionHandlerTest::$logs = [];
-        HandleExceptions::resetHandlersState();
-    }
-
-    /**
-     * Test it can render exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanRenderException(): void
-    {
-        /** @var Http $http */
-        $http     = $this->app->make(Http::class);
-        $response =   $http->handle(new Request('/test'));
-
-        $this->assertEquals('Too Many Request', $response->getContent());
-        $this->assertEquals(429, $response->getStatusCode());
-    }
-
-    /**
-     * Test it can report exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanReportException(): void
-    {
-        /** @var Http $http */
-        $http     = $this->app->make(Http::class);
-        $http->handle(new Request('/test'));
-
-        $this->assertEquals(['Too Many Request'], ExceptionHandlerTest::$logs);
-    }
-
-    /**
-     * Test it can render json.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanRenderJson(): void
-    {
-        $this->app->bootedCallback(function () {
-            $this->app->set('app.debug', false);
-        });
-
-        /** @var Http $http */
-        $http     = $this->app->make(Http::class);
-        $response    =   $http->handle(new Request('/test', [], [], [], [], [], [
-            'content-type' => 'application/json',
-        ]));
-
-        $this->assertEquals([
-            'code'     => 500,
-            'messages' => [
-                'message'   => 'Internal Server Error',
-            ],
-        ], $response->getContent());
-        $this->assertEquals(429, $response->getStatusCode());
-    }
-
-    /**
-     * Test it can render son for debug.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanRenderJsonForDebug(): void
-    {
-        $this->app->bootedCallback(function () {
-            $this->app->set('app.debug', true);
-        });
-
-        $http = $this->app->make(Http::class);
-        /** @var Http $http */
-
-
-        $response = $http->handle(new Request(
-            '/test',
-            [],
-            [],
-            [],
-            [],
-            [],
-            ['content-type' => 'application/json']
-        ));
-
-        $content = $response->getContent();
-        /** @var array{messages: array{message: string, exception: string, line: int}} $content */
-
-
-
-        // Verifiche principali
-        $this->assertEquals('Too Many Request', $content['messages']['message']);
-        $this->assertEquals(
-            'Omega\Http\Exceptions\HttpException',
-            $content['messages']['exception']
-        );
-
-        // 🔎 Calcolo dinamico della riga del throw
-        $reflection = new ReflectionMethod($this->http, 'dispatcher');
-        $fileName    = $reflection->getFileName();
-        /** @var list<string>|false $source */
-        $source      = ($fileName !== false) ? file($fileName) : [];
-
-
-
-
-
-        $expectedLine = null;
-
-        foreach (($source ?: []) as $number => $line) {
-            if (str_contains((string)$line, 'throw new HttpException')) {
-                $expectedLine = $number + 1; // file() è 0-indexed
-                break;
-            }
+            return parent::render($request, $th);
         }
 
+        public function report(Throwable $th): void
+        {
+            LogStore::push($th->getMessage());
+        }
+    };
+});
 
+afterEach(function (): void {
+    $this->app->flush();
+    LogStore::reset();
+    HandleExceptions::resetHandlersState();
+});
 
+it('can render an exception', function (): void {
+    $http = $this->app->make(Http::class);
 
-        $this->assertNotNull(
-            $expectedLine,
-            'Unable to detect HttpException throw line dynamically.'
-        );
-
-        $this->assertEquals($expectedLine, $content['messages']['line']);
-
-        $this->assertEquals(429, $response->getStatusCode());
+    if (!$http instanceof Http) {
+        throw new \RuntimeException('Expected an Http instance.');
     }
 
-    /**
-     * Test it can render http exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItCanRenderHttpException(): void
-    {
-        $this->app->set('path.view', $this->setFixturePath('/fixtures/exceptions/'));
-        $this->app->set('paths.view', [
-            $this->setFixturePath('/fixtures/exceptions/'),
-            $this->setFixturePath('/fixtures/exceptions/pages/'),
-        ]);
-        $this->app->set(
-            TemplatorFinder::class,
-            fn () => new TemplatorFinder(
-                array_map(fn($item) => is_string($item) ? $item : '', (array) ($this->app->get('paths.view') ?? [])),
-                ['.php', '.template.php']
-            )
-        );
+    $response = $http->handle(new Request('/test'));
 
+    expect($response->getContent())->toBe('Too Many Request');
+    expect($response->getStatusCode())->toBe(429);
+});
 
+it('can report an exception', function (): void {
+    $http = $this->app->make(Http::class);
 
+    if (!$http instanceof Http) {
+        throw new \RuntimeException('Expected an Http instance.');
+    }
 
+    $http->handle(new Request('/test'));
 
-        $this->app->set(
-            'view.instance',
-            fn (TemplatorFinder $finder) => new Templator($finder, $this->setFixturePath('/fixtures/exceptions'))
-        );
+    expect(LogStore::all())->toEqual(['Too Many Request']);
+});
 
-        $this->app->set(
-            'view.response',
-            fn () => function (string $viewPath, $portal = []): Response {
-                /** @var array<string, mixed> $portal */
-                $templator = $this->app->make('view.instance');
-                if (!$templator instanceof Templator) {
-                    $finder = $this->app->make(TemplatorFinder::class);
-                    $templator = $finder instanceof TemplatorFinder
-                        ? new Templator($finder, $this->setFixturePath('/fixtures/exceptions'))
-                        : new Templator(
-                            $this->setFixturePath('/fixtures/exceptions'),
-                            $this->setFixturePath('/fixtures/exceptions')
-                        );
-                }
-                return new Response((string) $templator->render($viewPath, $portal));
+it('can render an exception as json', function (): void {
+    $this->app->bootedCallback(fn () => $this->app->set('app.debug', false));
+
+    $http = $this->app->make(Http::class);
+
+    if (!$http instanceof Http) {
+        throw new \RuntimeException('Expected an Http instance.');
+    }
+
+    $response = $http->handle(new Request('/test', [], [], [], [], [], [
+        'content-type' => 'application/json',
+    ]));
+
+    expect($response->getContent())->toEqual([
+        'code'     => 500,
+        'messages' => [
+            'message' => 'Internal Server Error',
+        ],
+    ]);
+    expect($response->getStatusCode())->toBe(429);
+});
+
+it('can render an exception as json for debug', function (): void {
+    $this->app->bootedCallback(fn () => $this->app->set('app.debug', true));
+
+    $http = $this->app->make(Http::class);
+
+    if (!$http instanceof Http) {
+        throw new \RuntimeException('Expected an Http instance.');
+    }
+
+    $response = $http->handle(new Request('/test', [], [], [], [], [], [
+        'content-type' => 'application/json',
+    ]));
+
+    $content = $response->getContent();
+    $this->assertIsArray($content);
+
+    $messages = $content['messages'];
+    $this->assertIsArray($messages);
+
+    expect($messages['message'])->toBe('Too Many Request');
+    expect($messages['exception'])->toBe('Omega\Http\Exceptions\HttpException');
+
+    $reflection = new ReflectionMethod($this->http, 'dispatcher');
+    $fileName   = $reflection->getFileName();
+    $source     = $fileName !== false ? file($fileName) : [];
+
+    $expectedLine = null;
+
+    foreach (($source ?: []) as $number => $line) {
+        if (str_contains((string) $line, 'throw new HttpException')) {
+            $expectedLine = $number + 1;
+            break;
+        }
+    }
+
+    $this->assertNotNull($expectedLine, 'Unable to detect HttpException throw line dynamically.');
+
+    expect($messages['line'])->toBe($expectedLine);
+    expect($response->getStatusCode())->toBe(429);
+});
+
+it('can render an http exception through a view', function (): void {
+    $app         = $this->app;
+    $fixturePath = $this->setFixturePath('/fixtures/exceptions');
+
+    $app->set('path.view', $this->setFixturePath('/fixtures/exceptions/'));
+    $app->set('paths.view', [
+        $this->setFixturePath('/fixtures/exceptions/'),
+        $this->setFixturePath('/fixtures/exceptions/pages/'),
+    ]);
+    $app->set(
+        TemplatorFinder::class,
+        fn () => new TemplatorFinder(
+            array_map(fn ($item) => is_string($item) ? $item : '', (array) ($app->get('paths.view') ?? [])),
+            ['.php', '.template.php']
+        )
+    );
+
+    $app->set(
+        'view.instance',
+        fn (TemplatorFinder $finder) => new Templator($finder, $fixturePath)
+    );
+
+    $app->set(
+        'view.response',
+        fn () => function (string $viewPath, array $portal = []) use ($app, $fixturePath): Response {
+            $templator = $app->make('view.instance');
+
+            if (!$templator instanceof Templator) {
+                $finder = $app->make(TemplatorFinder::class);
+                $templator = $finder instanceof TemplatorFinder
+                    ? new Templator($finder, $fixturePath)
+                    : new Templator($fixturePath, $fixturePath);
             }
-        );
 
+            /** @var array<string, mixed> $portal */
+            return new Response((string) $templator->render($viewPath, $portal));
+        }
+    );
 
+    $app->set(ExceptionHandler::class, fn () => new ExceptionHandler($app));
 
+    $handler = $app->make(ExceptionHandler::class);
 
-
-        $this->app->set(ExceptionHandler::class, fn () => new ExceptionHandler($this->app));
-
-        $handler = $this->app->make(ExceptionHandler::class);
-        /** @var ExceptionHandler $handler */
-
-
-        $exception = new HttpException(429, 'Internal Error', null, []);
-        /** @var Response $render */
-        $render    = $handler->render(new Request('/test'), $exception);
-
-
-        $content = $render->getContent();
-        $this->assertTrue(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'));
+    if (!$handler instanceof ExceptionHandler) {
+        throw new \RuntimeException('Expected an ExceptionHandler instance.');
     }
-}
+
+    $exception = new HttpException(429, 'Internal Error', null, []);
+    $render    = $handler->render(new Request('/test'), $exception);
+
+    $content = $render->getContent();
+
+    expect(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'))->toBeTrue();
+});
