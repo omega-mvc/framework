@@ -39,6 +39,8 @@ use PHPUnit\Framework\Assert;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @implements ArrayAccess<array-key, mixed>
  */
 class TestResponse implements ArrayAccess
 {
@@ -47,7 +49,7 @@ class TestResponse implements ArrayAccess
     /** @var Response The underlying HTTP response being tested. */
     protected Response $response;
 
-    /** @var array Decoded response content (associativo). */
+    /** @var array<array-key, mixed> Decoded response content (associativo). */
     protected array $decoded = [];
 
     /**
@@ -77,7 +79,14 @@ class TestResponse implements ArrayAccess
     public function getContent(): string
     {
         $content = $this->response->getContent();
-        return is_string($content) ? $content : json_encode($content);
+
+        if (is_string($content)) {
+            return $content;
+        }
+
+        $encoded = json_encode($content);
+
+        return is_string($encoded) ? $encoded : '';
     }
 
     /**
@@ -117,6 +126,10 @@ class TestResponse implements ArrayAccess
      */
     public function offsetExists(mixed $offset): bool
     {
+        if (!is_string($offset) && !is_int($offset)) {
+            return false;
+        }
+
         return isset($this->decoded[$offset]);
     }
 
@@ -132,6 +145,10 @@ class TestResponse implements ArrayAccess
      */
     public function offsetGet(mixed $offset): mixed
     {
+        if (!is_string($offset) && !is_int($offset)) {
+            return null;
+        }
+
         return $this->decoded[$offset] ?? null;
     }
 

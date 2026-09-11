@@ -132,7 +132,6 @@ final class TestResponseTest extends TestCase
         $response = new TestResponse(new Response($data, 200, []));
 
         $content = $response->getContent();
-        $this->assertIsString($content);
         $this->assertStringContainsString('"foo":"bar"', $content);
     }
 

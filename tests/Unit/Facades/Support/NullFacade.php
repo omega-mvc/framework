@@ -32,6 +32,8 @@ use Omega\Facade\AbstractFacade;
  * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version    2.0.0
+ *
+ * @method static bool has(string $key)
  */
 class NullFacade extends AbstractFacade
 {

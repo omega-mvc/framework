@@ -43,11 +43,11 @@ use function Omega\Collection\data_get;
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
  *
- * @implements ArrayAccess<string, mixed>
+ * @implements ArrayAccess<array-key, mixed>
  */
 class TestJsonResponse extends TestResponse implements ArrayAccess
 {
-    /** @var array<string, mixed> The response data cast to an array. */
+    /** @var array<array-key, mixed> The response data cast to an array. */
     private array $responseData;
 
     /**
@@ -61,17 +61,20 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      */
     public function __construct(Response $response)
     {
-        $this->response     = $response;
-        $this->responseData = (array) $response->getContent();
-        if (!is_array($response->getContent())) {
+        $content = $response->getContent();
+
+        if (!is_array($content)) {
             throw new Exception('Response body is not Array.');
         }
+
+        $this->response     = $response;
+        $this->responseData = $content;
     }
 
     /**
      * Set the response data.
      *
-     * @param array<string, mixed> $responseData The array to replace the current response data
+     * @param array<array-key, mixed> $responseData The array to replace the current response data
      * @return $this
      */
     public function setResponseData(array $responseData): self
@@ -84,7 +87,6 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      * Get the "data" part of the response.
      *
      * @return mixed The value stored under the 'data' key
-     * @return void
      */
     public function getData(): mixed
     {
@@ -96,10 +98,13 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      *
      * @param mixed $offset The array key
      * @return bool True if the key exists, false otherwise
-     * @return void
      */
     public function offsetExists(mixed $offset): bool
     {
+        if (!is_string($offset) && !is_int($offset)) {
+            return false;
+        }
+
         return array_key_exists($offset, $this->responseData);
     }
 
@@ -108,12 +113,15 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      *
      * @param mixed $offset The array key
      * @return mixed The value stored at the given key
-     * @return void
      */
     #[ReturnTypeWillChange]
     public function offsetGet(mixed $offset): mixed
     {
-        return $this->responseData[$offset];
+        if (!is_string($offset) && !is_int($offset)) {
+            return null;
+        }
+
+        return $this->responseData[$offset] ?? null;
     }
 
     /**
@@ -125,7 +133,9 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->responseData[$offset] = $value;
+        if (is_string($offset) || is_int($offset)) {
+            $this->responseData[$offset] = $value;
+        }
     }
 
     /**
@@ -136,7 +146,9 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      */
     public function offsetUnset(mixed $offset): void
     {
-        unset($this->responseData[$offset]);
+        if (is_string($offset) || is_int($offset)) {
+            unset($this->responseData[$offset]);
+        }
     }
 
     /**

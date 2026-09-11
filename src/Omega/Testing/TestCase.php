@@ -30,6 +30,7 @@ use ReflectionException;
 use Throwable;
 
 use function array_key_exists;
+use function is_array;
 
 /**
  * TestCase
@@ -61,8 +62,8 @@ class TestCase extends PhpUnitTestCase
     /**
      * Clean up after each test.
      *
-     * This method flushes the application, resets facades and service providers,
-     * and unsets the $app and $kernel properties.
+     * This method flushes the application and resets the facades and service
+     * provider state so no side effects leak between tests.
      *
      * @return void
      */
@@ -71,14 +72,12 @@ class TestCase extends PhpUnitTestCase
         $this->app->flush();
         AbstractFacade::flushInstance();
         AbstractServiceProvider::flushModule();
-        unset($this->app);
-        unset($this->kernel);
     }
 
     /**
      * Call a service method and return a TestJsonResponse.
      *
-     * @param array|string|callable $call The service method to call, can be a string or an array for object callables.
+     * @param array{0: object|string, 1: string}|callable|string $call The service method to call.
      * @param array<string, string> $params Parameters to pass to the method.
      * @return TestJsonResponse The response wrapped in a TestJsonResponse instance.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
@@ -86,15 +85,28 @@ class TestCase extends PhpUnitTestCase
      */
     protected function json(array|string|callable $call, array $params = []): TestJsonResponse
     {
-        $data     = $this->app->call($call, $params);
-        $response = new Response($data);
+        $data = $this->app->call($call, $params);
 
-        if (array_key_exists('code', $data)) {
-            $response->setResponseCode((int) $data['code']);
+        if (!is_array($data)) {
+            throw new Exception('Response body is not Array.');
         }
 
-        if (array_key_exists('headers', $data)) {
-            $response->setHeaders($data['headers']);
+        $response = new Response($data);
+
+        if (array_key_exists('code', $data) && is_numeric($data['code'])) {
+            $response->setResponseCode(intval($data['code']));
+        }
+
+        if (array_key_exists('headers', $data) && is_array($data['headers'])) {
+            $headers = [];
+
+            foreach ($data['headers'] as $name => $value) {
+                if (is_string($name) && is_string($value)) {
+                    $headers[$name] = $value;
+                }
+            }
+
+            $response->setHeaders($headers);
         }
 
         return new TestJsonResponse($response);
@@ -218,10 +230,9 @@ class TestCase extends PhpUnitTestCase
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      * @throws Throwable
-     * @noinspection PhpUnusedParameterInspection
      */
     protected function delete(string $url, array $delete): TestResponse
     {
-        return $this->call(url: $url, post: $_POST, method: 'DELETE');
+        return $this->call(url: $url, post: $delete, method: 'DELETE');
     }
 }

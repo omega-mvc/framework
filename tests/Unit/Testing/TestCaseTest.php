@@ -102,7 +102,9 @@ final class TestCaseTest extends TestCase
 
         $this->assertInstanceOf(TestJsonResponse::class, $response);
         $this->assertEquals('ok', $response['status']);
-        $this->assertEquals('bar', $response['data']['foo']);
+        $dataPart = $response['data'];
+        $this->assertIsArray($dataPart);
+        $this->assertEquals('bar', $dataPart['foo']);
     }
 
     /**
@@ -301,7 +303,9 @@ final class TestCaseTest extends TestCase
 
         $this->assertInstanceOf(TestJsonResponse::class, $response1);
         $this->assertEquals('ok', $response1['status']);
-        $this->assertEquals('bar', $response1['data']['foo']);
+        $dataPart = $response1['data'];
+        $this->assertIsArray($dataPart);
+        $this->assertEquals('bar', $dataPart['foo']);
 
         $internalResponse1 = new ReflectionClass($response1)->getProperty('response');
         $internalResponse1->setAccessible(true);

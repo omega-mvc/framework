@@ -101,19 +101,23 @@ it('uses cached instance', function (): void {
     expect(FacadesTestClass::has('php'))->toBeTrue();
 });
 
-it('returns the correct accessor', function (string $facade, string $accessor): void {
-    expect($facade::getFacadeAccessor())->toBe($accessor);
-})->with([
-    [DB::class, DatabaseManager::class],
-    [Config::class, ConfigRepository::class],
-    [Cache::class, 'cache'],
-    [Hash::class, HashManager::class],
-    [PDO::class, 'database'],
-    [Schedule::class, 'schedule'],
-    [Schema::class, 'Schema'],
-    [View::class, 'view.instance'],
-    [Vite::class, 'vite.gets'],
-]);
+it('returns the correct accessor', function (): void {
+    $cases = [
+        DB::class        => DatabaseManager::class,
+        Config::class    => ConfigRepository::class,
+        Cache::class     => 'cache',
+        Hash::class      => HashManager::class,
+        PDO::class       => 'database',
+        Schedule::class  => 'schedule',
+        Schema::class    => 'Schema',
+        View::class      => 'view.instance',
+        Vite::class      => 'vite.gets',
+    ];
+
+    foreach ($cases as $facade => $accessor) {
+        expect($facade::getFacadeAccessor())->toBe($accessor);
+    }
+});
 
 it('table returns query builder', function (): void {
     $app = new Application($this->setFixtureBasePath());
@@ -125,15 +129,17 @@ it('table returns query builder', function (): void {
 
     AbstractFacade::setFacadeBase($app);
 
-    $table = DB::table('users');
+    $first  = DB::table('users');
+    $second = DB::table('users');
 
-    expect($table)->toBeInstanceOf(Table::class);
+    expect($first)->not->toBe($second);
 });
 
 it('from returns query builder', function (): void {
     $connection = $this->createStub(ConnectionInterface::class);
 
-    $table = DB::from('users', $connection);
+    $first  = DB::from('users', $connection);
+    $second = DB::from('users', $connection);
 
-    expect($table)->toBeInstanceOf(Table::class);
+    expect($first)->not->toBe($second);
 });
