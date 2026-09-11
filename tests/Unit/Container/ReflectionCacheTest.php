@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -17,168 +7,105 @@ namespace Tests\Container;
 use DateTime;
 use Omega\Container\Container;
 use Omega\Container\ReflectionCache;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use stdClass;
 
-/**
- * Class ReflectionCacheTest
- *
- * This test class verifies the behavior of the ReflectionCache utility. It ensures that
- * reflection objects for classes, methods, and constructor parameters are cached correctly
- * to avoid repeated creation, and that caches can be cleared when needed.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Container::class)]
-#[CoversClass(ReflectionCache::class)]
-final class ReflectionCacheTest extends TestCase
-{
-    /** @var class-string Class name reflected through the cache to exercise erased reflection types */
-    private string $reflectedClassName = stdClass::class;
+covers(Container::class);
+covers(ReflectionCache::class);
 
-    /** @var ReflectionCache Cache instance for storing reflection classes, methods, and constructor params */
-    private ReflectionCache $cache;
+beforeEach(function (): void {
+    $this->cache = new ReflectionCache();
+});
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+it('gets and caches a reflection class', function (): void {
+    $callCount = 0;
+    $reflect   = static fn (object $class): ReflectionClass => new ReflectionClass($class);
+    $creator   = function () use (&$callCount, $reflect): ReflectionClass {
+        $callCount++;
 
-        $this->cache = new ReflectionCache();
+        return $reflect(new stdClass());
+    };
+
+    $result1 = $this->cache->getReflectionClass(stdClass::class, $creator);
+    $result2 = $this->cache->getReflectionClass(stdClass::class, $creator);
+
+    expect($result1)->toBe($result2);
+    expect($callCount)->toBe(1);
+});
+
+it('gets and caches a reflection method', function (): void {
+    $callCount = 0;
+    $creator   = function () use (&$callCount) {
+        $callCount++;
+
+        return new ReflectionMethod(DateTime::class, 'getTimestamp');
+    };
+
+    $result1 = $this->cache->getReflectionMethod(DateTime::class, 'getTimestamp', $creator);
+    $result2 = $this->cache->getReflectionMethod(DateTime::class, 'getTimestamp', $creator);
+
+    expect($result1)->toBe($result2);
+    expect($callCount)->toBe(1);
+});
+
+it('gets and caches constructor parameters', function (): void {
+    $callCount = 0;
+    $fixture   = new class {
+        public function __construct(
+            private int $time = 0,
+            private string $name = '',
+        ) {
+        }
+
+        /**
+         * @return array{0: int, 1: string}
+         */
+        public function signature(): array
+        {
+            return [$this->time, $this->name];
+        }
+    };
+    $ref         = new ReflectionClass($fixture);
+    $constructor = $ref->getConstructor();
+
+    expect($constructor)->not->toBeNull();
+
+    if ($constructor === null) {
+        throw new \RuntimeException('Expected the fixture class to have a constructor.');
     }
 
-    /**
-     * Test it gets and caches reflection class.
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItGetsAndCachesReflectionClass(): void
-    {
-        $callCount = 0;
-        $creator   = function () use (&$callCount) {
-            $callCount++;
+    $params  = $constructor->getParameters();
+    $creator = function () use (&$callCount, $params) {
+        $callCount++;
 
-            return new ReflectionClass($this->reflectedClassName);
-        };
+        return $params;
+    };
 
-        $result1 = $this->cache->getReflectionClass($this->reflectedClassName, $creator);
-        $result2 = $this->cache->getReflectionClass($this->reflectedClassName, $creator);
+    $result1 = $this->cache->getConstructorParameters($fixture::class, $creator);
+    $result2 = $this->cache->getConstructorParameters($fixture::class, $creator);
 
-        $this->assertSame($result1, $result2);
-        $this->assertEquals(1, $callCount, 'Creator should only be called once.');
-        /** @noinspection PhpConditionAlreadyCheckedInspection */
-        $this->assertInstanceOf(ReflectionClass::class, $result1);
-    }
+    expect($result1)->toBe($result2);
+    expect($callCount)->toBe(1);
+    expect($result1)->toEqual($params);
+});
 
-    /**
-     * Test it gets and caches reflection method.
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItGetsAndCachesReflectionMethod(): void
-    {
-        $callCount = 0;
-        $creator   = function () use (&$callCount) {
-            $callCount++;
+it('clears all caches', function (): void {
+    $callCount = 0;
+    $reflect   = static fn (object $class): ReflectionClass => new ReflectionClass($class);
+    $creator   = function () use (&$callCount, $reflect): ReflectionClass {
+        $callCount++;
 
-            return new ReflectionMethod(DateTime::class, 'getTimestamp');
-        };
+        return $reflect(new stdClass());
+    };
 
-        $result1 = $this->cache->getReflectionMethod(DateTime::class, 'getTimestamp', $creator);
-        $result2 = $this->cache->getReflectionMethod(DateTime::class, 'getTimestamp', $creator);
+    $this->cache->getReflectionClass(stdClass::class, $creator);
 
-        $this->assertSame($result1, $result2);
-        $this->assertEquals(1, $callCount, 'Creator should only be called once.');
-        /** @noinspection PhpConditionAlreadyCheckedInspection */
-        $this->assertInstanceOf(ReflectionMethod::class, $result1);
-    }
+    expect($callCount)->toBe(1);
 
-    /**
-     * Test it gets and caches constructor parameters.
-     *
-     * @return void
-     */
-    public function testItGetsAndCachesConstructorParameters(): void
-    {
-        $callCount = 0;
-        $fixture   = new class {
-            public function __construct(
-                private int $time = 0,
-                private string $name = '',
-            ) {
-            }
+    $this->cache->clear();
 
-            /**
-             * @return array{0: int, 1: string}
-             */
-            public function signature(): array
-            {
-                return [$this->time, $this->name];
-            }
-        };
-        $ref    = new ReflectionClass($fixture);
-        $constructor = $ref->getConstructor();
-        $this->assertNotNull($constructor);
-        $params = $constructor->getParameters();
+    $this->cache->getReflectionClass(stdClass::class, $creator);
 
-        $creator = function () use (&$callCount, $params) {
-            $callCount++;
-
-            return $params;
-        };
-
-        $result1 = $this->cache->getConstructorParameters($fixture::class, $creator);
-        $result2 = $this->cache->getConstructorParameters($fixture::class, $creator);
-
-        $this->assertSame($result1, $result2);
-        $this->assertEquals(1, $callCount, 'Creator should only be called once.');
-        $this->assertEquals($params, $result1);
-    }
-
-    /**
-     * Test it clear al caches.
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testItClearsAllCaches(): void
-    {
-        $callCount = 0;
-        $creator   = function () use (&$callCount) {
-            $callCount++;
-
-            return new ReflectionClass($this->reflectedClassName);
-        };
-
-        // Populate the cache
-        $this->cache->getReflectionClass($this->reflectedClassName, $creator);
-        $this->assertEquals(1, $callCount);
-
-        // Clear the cache
-        $this->cache->clear();
-
-        // Try to get the item again
-        $this->cache->getReflectionClass($this->reflectedClassName, $creator);
-        $this->assertEquals(2, $callCount, 'Creator should be called again after clearing the cache.');
-    }
-}
+    expect($callCount)->toBe(2);
+});

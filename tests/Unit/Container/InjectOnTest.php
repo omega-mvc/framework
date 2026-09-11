@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -21,10 +11,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Injector;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Psr\Container\ContainerExceptionInterface;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use stdClass;
 use Tests\Container\Support\AnotherService;
@@ -42,336 +29,179 @@ use Tests\Container\Support\SetterInjectionClass;
 use Tests\Container\Support\StaticSetterClass;
 use Tests\Container\Support\UnresolvableSetterClass;
 
-/**
- * Class InjectOnTest
- *
- * This test class verifies the behavior of the container's `injectOn` method, which performs
- * dependency injection on existing objects. It ensures that:
- *
- * - Setter methods are automatically called with resolved dependencies.
- * - Non-setter methods and static methods are ignored.
- * - Only class-typed parameters are injected, while scalar or unresolvable parameters are skipped.
- * - Multiple setters and nested dependencies are correctly resolved.
- * - Objects annotated with `#[Inject]` attributes on properties or constructor parameters
- *   receive proper dependency injection.
- * - The original instance is returned unchanged after injection.
- *
- * These tests cover a variety of scenarios, including handling of nested objects, multiple
- * dependencies, attribute-based injection, and edge cases like unresolvable or static setters.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(Inject::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(Container::class)]
-#[CoversClass(EntryNotFoundException::class)]
-#[CoversClass(Injector::class)]
-class InjectOnTest extends AbstractTestContainer
-{
-    /**
-     * Test inject call setters.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectCallsSetters(): void
-    {
-        $instance = new SetterInjectionClass();
-        $this->container->injectOn($instance);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(Container::class);
+covers(EntryNotFoundException::class);
+covers(Inject::class);
+covers(Injector::class);
 
-        $this->assertInstanceOf(DependencyClass::class, $instance->dependency);
+beforeEach(function (): void {
+    $this->container = new Container();
+});
+
+it('calls setters with resolved dependencies', function (): void {
+    $instance = new SetterInjectionClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBeInstanceOf(DependencyClass::class);
+});
+
+it('skips non-setter methods', function (): void {
+    $instance = new NonSetterClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->called)->toBeFalse();
+});
+
+it('injects only class types', function (): void {
+    $instance = new ScalarSetterClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->name)->toBe('default');
+});
+
+it('ignores unresolvable setters', function (): void {
+    $instance = new UnresolvableSetterClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBeNull();
+});
+
+it('skips static setters', function (): void {
+    StaticSetterClass::$called = false;
+    $instance = new class {
+    };
+
+    $this->container->injectOn($instance);
+
+    expect(StaticSetterClass::$called)->not->toBeTrue();
+});
+
+it('injects multiple setters', function (): void {
+    $instance = new MultipleSetterClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency1)->toBeInstanceOf(DependencyClass::class);
+    expect($instance->dependency2)->toBeInstanceOf(AnotherService::class);
+});
+
+it('resolves nested dependencies', function (): void {
+    $instance = new NestedDependencyClass();
+    $this->container->injectOn($instance);
+
+    expect($instance->dependant)->toBeInstanceOf(Dependant::class);
+
+    $dependant = $instance->dependant;
+
+    if (!$dependant instanceof Dependant) {
+        throw new \RuntimeException('Expected a Dependant instance.');
     }
 
-    /**
-     * Test inject skips non setters.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectSkipsNonSetters(): void
-    {
-        $instance = new NonSetterClass();
-        $this->container->injectOn($instance);
+    expect($dependant->dep)->not->toBe($dependant);
+});
 
-        $this->assertFalse($instance->called);
+it('returns the original instance', function (): void {
+    $instance         = new stdClass();
+    $returnedInstance = $this->container->injectOn($instance);
+
+    expect($returnedInstance)->toBe($instance);
+});
+
+it('injects through the Inject attribute', function (): void {
+    $instance         = new InjectionUsingAttribute();
+    $returnedInstance = $this->container->injectOn($instance);
+
+    expect($returnedInstance)->toBe($instance);
+
+    if (!$returnedInstance instanceof InjectionUsingAttribute) {
+        throw new \RuntimeException('Expected an InjectionUsingAttribute instance.');
     }
 
-    /**
-     *
-     * Test inject only class types.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectOnlyClassTypes(): void
-    {
-        $instance = new ScalarSetterClass();
-        $this->container->injectOn($instance);
+    expect($returnedInstance->dependency)->toBe('foo');
+});
 
-        $this->assertEquals('default', $instance->name);
+it('injects through the Inject attribute on a parameter', function (): void {
+    $this->container->set('db.host', 'localhost');
+    $instance = new InjectionUsingAttributeOnParameter();
+    $returnedInstance = $this->container->injectOn($instance);
+
+    expect($returnedInstance)->toBe($instance);
+
+    if (!$returnedInstance instanceof InjectionUsingAttributeOnParameter) {
+        throw new \RuntimeException('Expected an InjectionUsingAttributeOnParameter instance.');
     }
 
-    /**
-     * Test inject ignores unresolvable.
-     *
-     * @return void
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws ReflectionException
-     */
-    public function testInjectIgnoresUnresolvable(): void
-    {
-        $instance = new UnresolvableSetterClass();
-        $this->container->injectOn($instance);
+    expect($returnedInstance->dependency)->toBe('localhost');
+});
 
-        $this->assertNull($instance->dependency);
+it('injects through the Inject attribute on a property', function (): void {
+    $this->container->set('db.host', 'localhost');
+    $instance = new InjectionUsingAttributeOnProperty();
+    $returnedInstance = $this->container->injectOn($instance);
+
+    expect($returnedInstance)->toBe($instance);
+
+    if (!$returnedInstance instanceof InjectionUsingAttributeOnProperty) {
+        throw new \RuntimeException('Expected an InjectionUsingAttributeOnProperty instance.');
     }
 
-    /**
-     * Test injects skips static.
-     *
-     * @return void
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws ReflectionException
-     */
-    public function testInjectSkipsStatic(): void
-    {
-        StaticSetterClass::$called = false; // Reset static property
-        $instance                  = new class { // Create a dummy object to inject on
-            // This object has no setters, so injectOn won't modify it,
-            // but we want to ensure it doesn't accidentally trigger static setters
-        };
-        $this->container->injectOn($instance);
+    expect($returnedInstance->dependency)->toBe('localhost');
+});
 
-        $this->assertFalse(StaticSetterClass::$called);
-    }
+it('catches binding resolution exceptions during method injection', function (): void {
+    $instance = new class {
+        public bool $resolved = false;
 
-    /**
-     * Test injects multiple setters.
-     *
-     * @return void
-     * @throws BindingResolutionException
-     * @throws CircularAliasException
-     * @throws ContainerExceptionInterface
-     * @throws EntryNotFoundException
-     * @throws ReflectionException
-     */
-    public function testInjectMultipleSetters(): void
-    {
-        $instance = new MultipleSetterClass();
-        $this->container->injectOn($instance);
+        /**
+         * @param ArrayAccess<string, mixed> $dependency
+         * @noinspection PhpUnused
+         * @noinspection PhpUnusedParameterInspection
+         */
+        #[Inject]
+        public function setDependency(ArrayAccess $dependency): void
+        {
+            $this->resolved = true;
+        }
+    };
 
-        $this->assertInstanceOf(DependencyClass::class, $instance->dependency1);
-        $this->assertInstanceOf(AnotherService::class, $instance->dependency2);
-    }
+    $this->container->injectOn($instance);
 
-    /**
-     * Test inject resolves nested.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectResolvesNested(): void
-    {
-        $instance = new NestedDependencyClass();
-        $this->container->injectOn($instance);
+    expect($instance->resolved)->toBeFalse();
+});
 
-        /** @noinspection PhpConditionAlreadyCheckedInspection */
-        $this->assertInstanceOf(NestedDependencyClass::class, $instance);
-        $this->assertInstanceOf(Dependant::class, $instance->dependant);
-        $this->assertInstanceOf(Dependency::class, $instance->dependant->dep);
-    }
+it('catches binding resolution exceptions during property injection', function (): void {
+    $instance = new class {
+        #[Inject(ArrayAccess::class)]
+        public string $dependency = 'initial';
+    };
 
-    /**
-     * Test inject returns original.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectReturnsOriginal(): void
-    {
-        $instance         = new stdClass();
-        $returnedInstance = $this->container->injectOn($instance);
+    $this->container->injectOn($instance);
 
-        $this->assertSame($instance, $returnedInstance);
-    }
+    expect($instance->dependency)->toBe('initial');
+});
 
-    /**
-     * Test inject using in inject attribute.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectUsingInjectAttribute(): void
-    {
-        $instance         = new InjectionUsingAttribute();
-        $returnedInstance = $this->container->injectOn($instance);
+it('recognizes injectable types', function (): void {
+    $dummy = new class {
+        /**
+         * @param ArrayAccess<string, mixed> $interface
+         */
+        public function method(
+            string $builtin,
+            ArrayAccess $interface,
+            int $otherBuiltin
+        ): void {
+        }
+    };
 
-        $this->assertSame($instance, $returnedInstance);
-        $this->assertEquals('foo', $returnedInstance->dependency);
-    }
+    $params = (new ReflectionClass($dummy))->getMethod('method')->getParameters();
 
-    /**
-     * Test inject using inject attribute on parameter.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectUsingInjectAttributeOnParameter(): void
-    {
-        $this->container->set('db.host', 'localhost');
-        $instance = new InjectionUsingAttributeOnParameter();
-        $returnedInstance = $this->container->injectOn($instance);
+    $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
+    $method->setAccessible(true);
 
-        $this->assertSame($instance, $returnedInstance);
-        $this->assertEquals('localhost', $returnedInstance->dependency);
-    }
+    $injector = new Injector($this->container);
 
-    /**
-     * Test inject using inject attribute on property.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testInjectUsingInjectAttributeOnProperty(): void
-    {
-        $this->container->set('db.host', 'localhost');
-        $instance = new InjectionUsingAttributeOnProperty();
-        $returnedInstance = $this->container->injectOn($instance);
-
-        $this->assertSame($instance, $returnedInstance);
-        $this->assertEquals('localhost', $returnedInstance->dependency);
-    }
-
-    /**
-     * Test method injection catch binding resolution exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testMethodInjectionCatchBindingResolutionException(): void
-    {
-        $instance = new class {
-            public bool $resolved = false;
-
-            /**
-             * @param ArrayAccess<string, mixed> $dependency
-             * @noinspection PhpUnused
-             * @noinspection PhpUnusedParameterInspection
-             */
-            #[Inject]
-            public function setDependency(ArrayAccess $dependency): void
-            {
-                $this->resolved = true;
-            }
-        };
-
-        $this->container->injectOn($instance);
-
-        $this->assertFalse($instance->resolved);
-    }
-
-    /**
-     * Test property injection catch binding resolution exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testPropertyInjectionCatchBindingResolutionException(): void
-    {
-        $instance = new class {
-            #[Inject(ArrayAccess::class)]
-            public string $dependency = 'initial';
-        };
-
-        $this->container->injectOn($instance);
-
-        $this->assertEquals('initial', $instance->dependency);
-    }
-
-    /**
-     * Test is type injectable.
-     *
-     * @return void
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testIsTypeInjectable(): void
-    {
-        $dummy = new class {
-            /**
-             * @param ArrayAccess<string, mixed> $interface
-             */
-            public function method(
-                string $builtin,        // built-in
-                ArrayAccess $interface, // non-builtin
-                int $otherBuiltin       // built-in
-            ): void {
-            }
-        };
-
-        $reflector = new ReflectionClass($dummy);
-        $params = $reflector->getMethod('method')->getParameters();
-
-        $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
-        /** @noinspection PhpExpressionResultUnusedInspection */
-        $method->setAccessible(true);
-
-        $injector = new Injector($this->container);
-
-        $this->assertFalse($method->invoke($injector, $params[0]), 'String should not be injectable');
-        $this->assertTrue($method->invoke($injector, $params[1]), 'Interface should be injectable');
-        $this->assertFalse($method->invoke($injector, $params[2]), 'Int should not be injectable');
-    }
-}
+    expect($method->invoke($injector, $params[0]))->toBeFalse();
+    expect($method->invoke($injector, $params[1]))->toBeTrue();
+    expect($method->invoke($injector, $params[2]))->toBeFalse();
+});

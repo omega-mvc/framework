@@ -1,17 +1,5 @@
 <?php
 
-/** @noinspection PhpExpressionResultUnusedInspection */
-
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -21,10 +9,6 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Resolver;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use ReflectionProperty;
 use RuntimeException;
 use stdClass;
@@ -32,108 +16,52 @@ use Tests\Container\Support\CircularA;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\TypedConstructorClass;
 
-/**
- * Class ResolverTest
- *
- * This test class verifies the functionality of the Resolver component, ensuring it can
- * correctly resolve classes without constructors, classes with dependencies, and
- * detects circular dependencies, throwing appropriate exceptions when necessary.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Container::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(EntryNotFoundException::class)]
-#[CoversClass(Resolver::class)]
-final class ResolverTest extends TestCase
-{
-    /**
-     * Test it can resolve a class without a constructor.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testResolveClassWithoutConstructor()
-    {
-        $container = new Container();
-        $resolver  = new Resolver($container);
-        $instance  = $resolver->resolveClass(stdClass::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(Container::class);
+covers(EntryNotFoundException::class);
+covers(Resolver::class);
 
-        $this->assertInstanceOf(stdClass::class, $instance);
+it('resolves a class without a constructor', function (): void {
+    $resolver = new Resolver(new Container());
+
+    expect($resolver->resolveClass(stdClass::class))->toBeInstanceOf(stdClass::class);
+});
+
+it('resolves a class with dependencies', function (): void {
+    $resolver = new Resolver(new Container());
+
+    $instance = $resolver->resolveClass(TypedConstructorClass::class);
+
+    expect($instance)->toBeInstanceOf(TypedConstructorClass::class);
+
+    if (!$instance instanceof TypedConstructorClass) {
+        throw new \RuntimeException('Expected a TypedConstructorClass instance.');
     }
 
-    /**
-     * Test it cn resolve a class with dependencies.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testResolveClassWithDependencies()
-    {
-        $container = new Container();
-        $resolver  = new Resolver($container);
-        $instance  = $resolver->resolveClass(TypedConstructorClass::class);
+    expect($instance->dep)->not->toBe($instance);
+});
 
-        $this->assertInstanceOf(TypedConstructorClass::class, $instance);
-        $this->assertInstanceOf(DependencyClass::class, $instance->dep);
-    }
+it('throws on circular dependencies', function (): void {
+    $resolver = new Resolver(new Container());
 
-    /**
-     * Test it throws exception on circular dependency.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testCircularDependencyThrowsException()
-    {
-        $this->expectException(BindingResolutionException::class);
-        $this->expectExceptionMessageIsOrContains('Circular dependency detected');
+    expect(fn () => $resolver->resolveClass(CircularA::class))
+        ->toThrow(BindingResolutionException::class, 'Circular dependency detected');
+});
 
-        $container = new Container();
-        $resolver  = new Resolver($container);
+it('resets the parameter override path after a failed make', function (): void {
+    $container = new Container();
 
-        $resolver->resolveClass(CircularA::class);
-    }
+    expect(function () use ($container): void {
+        $container->bind('error', function (): void {
+            throw new RuntimeException('Fail');
+        });
 
-    /**
-     * Test with parameter override path exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testWithParameterOverridePathException(): void
-    {
-        $container = new Container();
+        $container->make('error');
+    })->toThrow(RuntimeException::class);
 
-        $this->expectException(RuntimeException::class);
+    $reflection = new ReflectionProperty($container, 'with');
+    $reflection->setAccessible(true);
 
-        try {
-            $container->bind('error', function () {
-                throw new RuntimeException("Fail");
-            });
-
-            $container->make('error');
-        } finally {
-            $ref = new ReflectionProperty($container, 'with');
-            $ref->setAccessible(true);
-            $this->assertEmpty($ref->getValue($container));
-        }
-    }
-}
+    expect($reflection->getValue($container))->toBeEmpty();
+});

@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -19,9 +9,6 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Resolver;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use stdClass;
 use Tests\Container\Support\CircularA;
 use Tests\Container\Support\ClassWithMissingDependency;
@@ -37,273 +24,119 @@ use Tests\Container\Support\TypedConstructorClass;
 use Tests\Container\Support\UnionDependencyOne;
 use Tests\Container\Support\UnionDependencyTwo;
 
-/**
- * Tests the container's ability to construct objects.
- *
- * This test class verifies that the container can correctly build instances
- * of classes, taking into account various constructor scenarios, including:
- *
- * - Classes with no dependencies.
- * - Classes with dependencies that must be resolved from the container.
- * - Classes requiring custom parameters.
- * - Classes constructed from closures.
- * - Classes with missing dependencies (expecting exceptions).
- * - Circular dependencies (expecting exceptions).
- * - Typed and union type constructors.
- * - Nullable constructor parameters.
- * - Scalar constructor parameters (expecting exceptions).
- * - Private constructors (expecting exceptions).
- *
- * Each test ensures that the container resolves dependencies correctly,
- * respects binding rules, and throws appropriate exceptions when
- * construction is not possible.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(Container::class)]
-#[CoversClass(EntryNotFoundException::class)]
-#[CoversClass(Resolver::class)]
-class BuildTest extends AbstractTestContainer
-{
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->container->flush();
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(Container::class);
+covers(EntryNotFoundException::class);
+covers(Resolver::class);
+
+beforeEach(function (): void {
+    $this->container = new Container();
+});
+
+it('builds a class without dependencies', function (): void {
+    expect($this->container->build(stdClass::class))->toBeInstanceOf(stdClass::class);
+});
+
+it('builds a class with dependencies', function (): void {
+    $instance = $this->container->build(Dependant::class);
+
+    expect($instance)->toBeInstanceOf(Dependant::class);
+
+    if (!$instance instanceof Dependant) {
+        throw new \RuntimeException('Expected a Dependant instance.');
     }
 
-    /**
-     * Test build constructs class.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildConstructsClass(): void
-    {
-        $container = $this->container;
-        $instance  = $container->build(stdClass::class);
+    expect($instance->dep)->not->toBe($instance);
+});
 
-        $this->assertInstanceOf(stdClass::class, $instance);
+it('builds a class with custom parameters', function (): void {
+    $instance = $this->container->build(Service::class, ['value' => 'custom']);
+
+    expect($instance)->toBeInstanceOf(Service::class);
+
+    if (!$instance instanceof Service) {
+        throw new \RuntimeException('Expected a Service instance.');
     }
 
-    /**
-     * Test build with dependencies.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildWithDependencies(): void
-    {
-        $container = $this->container;
-        $instance  = $container->build(Dependant::class);
+    expect($instance->value)->toBe('custom');
+});
 
-        $this->assertInstanceOf(Dependant::class, $instance);
-        $this->assertInstanceOf(Dependency::class, $instance->dep);
+it('builds from a closure', function (): void {
+    expect($this->container->build(fn () => 'foo'))->toBe('foo');
+});
+
+it('throws when a dependency is missing', function (): void {
+    expect(fn () => $this->container->build(ClassWithMissingDependency::class))
+        ->toThrow(BindingResolutionException::class);
+});
+
+it('throws on circular dependencies', function (): void {
+    expect(fn () => $this->container->build(CircularA::class))
+        ->toThrow(BindingResolutionException::class);
+});
+
+it('builds classes with typed constructors', function (): void {
+    $instance = $this->container->build(TypedConstructorClass::class);
+
+    expect($instance)->toBeInstanceOf(TypedConstructorClass::class);
+
+    if (!$instance instanceof TypedConstructorClass) {
+        throw new \RuntimeException('Expected a TypedConstructorClass instance.');
     }
 
-    /**
-     * Test build with custom parameters.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildWithCustomParameters(): void
-    {
-        $container = $this->container;
-        $instance  = $container->build(Service::class, ['value' => 'custom']);
+    expect($instance->dep)->not->toBe($instance);
+});
 
-        $this->assertInstanceOf(Service::class, $instance);
-        $this->assertEquals('custom', $instance->value);
+it('resolves the first bound union type', function (): void {
+    $this->container->bind(UnionDependencyOne::class, fn () => new UnionDependencyOne());
+    $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
+
+    expect($instance)->toBeInstanceOf(ClassWithUnionTypeConstructor::class);
+
+    if (!$instance instanceof ClassWithUnionTypeConstructor) {
+        throw new \RuntimeException('Expected a ClassWithUnionTypeConstructor instance.');
     }
 
-    /**
-     * Test build from closure.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildFromClosure(): void
-    {
-        $container = $this->container;
-        $result    = $container->build(fn () => 'foo');
+    expect($instance->dependency)->toBeInstanceOf(UnionDependencyOne::class);
+});
 
-        $this->assertEquals('foo', $result);
+it('resolves the second bound union type', function (): void {
+    $this->container->bind(UnionDependencyTwo::class, fn () => new UnionDependencyTwo());
+    $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
+
+    expect($instance)->toBeInstanceOf(ClassWithUnionTypeConstructor::class);
+
+    if (!$instance instanceof ClassWithUnionTypeConstructor) {
+        throw new \RuntimeException('Expected a ClassWithUnionTypeConstructor instance.');
     }
 
-    /**
-     * Test build missing dependency.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildMissingDependency(): void
-    {
-        $this->expectException(BindingResolutionException::class);
+    expect($instance->dependency)->toBeInstanceOf(UnionDependencyTwo::class);
+});
 
-        $container = $this->container;
-        $container->build(ClassWithMissingDependency::class);
+it('throws when no union type is bound', function (): void {
+    expect(fn () => $this->container->build(ClassWithUnionTypeConstructor::class))
+        ->toThrow(BindingResolutionException::class);
+});
+
+it('resolves nullable union type constructors to null', function (): void {
+    $instance = $this->container->build(ClassWithNullableUnionTypeConstructor::class);
+
+    expect($instance)->toBeInstanceOf(ClassWithNullableUnionTypeConstructor::class);
+
+    if (!$instance instanceof ClassWithNullableUnionTypeConstructor) {
+        throw new \RuntimeException('Expected a ClassWithNullableUnionTypeConstructor instance.');
     }
 
-    /**
-     * Test build circular dependency.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildCircularDependency(): void
-    {
-        $this->expectException(BindingResolutionException::class);
+    expect($instance->dependency)->toBeNull();
+});
 
-        $container = $this->container;
-        $container->build(CircularA::class);
-    }
+it('throws for scalar constructor parameters', function (): void {
+    expect(fn () => $this->container->build(ScalarConstructorClass::class))
+        ->toThrow(BindingResolutionException::class);
+});
 
-    /**
-     * Test build typed constructor.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildTypedConstructor(): void
-    {
-        $instance = $this->container->build(TypedConstructorClass::class);
-
-        $this->assertInstanceOf(TypedConstructorClass::class, $instance);
-        $this->assertInstanceOf(DependencyClass::class, $instance->dep);
-    }
-
-    /**
-     * Test build resolves first union type.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function buildResolvesFirstUnionType(): void
-    {
-        $this->container->bind(UnionDependencyOne::class, fn () => new UnionDependencyOne());
-        $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
-        $this->assertInstanceOf(ClassWithUnionTypeConstructor::class, $instance);
-        $this->assertInstanceOf(UnionDependencyOne::class, $instance->dependency);
-    }
-
-    /**
-     * Test build resolves second union type.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function buildResolvesSecondUnionType(): void
-    {
-        $this->container->bind(UnionDependencyTwo::class, fn () => new UnionDependencyTwo());
-        $instance = $this->container->build(ClassWithUnionTypeConstructor::class);
-        $this->assertInstanceOf(ClassWithUnionTypeConstructor::class, $instance);
-        $this->assertInstanceOf(UnionDependencyTwo::class, $instance->dependency);
-    }
-
-    /**
-     * Test build throws when no union type is bound.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildThrowsWhenNoUnionTypeIsBound(): void
-    {
-        $this->expectException(BindingResolutionException::class);
-        $this->container->build(ClassWithUnionTypeConstructor::class);
-    }
-
-    /**
-     * Test build nullable union type constructor.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildNullableUnionTypeConstructor(): void
-    {
-        // Resolve to null when no type is bound and the parameter is nullable
-        $instance = $this->container->build(ClassWithNullableUnionTypeConstructor::class);
-        $this->assertInstanceOf(ClassWithNullableUnionTypeConstructor::class, $instance);
-        $this->assertNull($instance->dependency);
-    }
-
-    /**
-     * Test build with scalar param throws.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildWithScalarParamThrows(): void
-    {
-        $this->expectException(BindingResolutionException::class);
-        $this->container->build(ScalarConstructorClass::class);
-    }
-
-    /**
-     * Test build private constructor throws exception.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBuildPrivateConstructorThrowsException(): void
-    {
-        $this->expectException(BindingResolutionException::class);
-        $this->container->build(PrivateConstructorClass::class);
-    }
-}
+it('throws for private constructors', function (): void {
+    expect(fn () => $this->container->build(PrivateConstructorClass::class))
+        ->toThrow(BindingResolutionException::class);
+});

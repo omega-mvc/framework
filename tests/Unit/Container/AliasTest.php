@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -19,184 +9,74 @@ use Omega\Container\Exceptions\AliasException;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use Tests\Container\Support\DummyClass;
 
-/**
- * Tests the container aliasing system.
- *
- * This test suite verifies that aliases correctly map identifiers,
- * support recursive resolution, respect binding precedence, propagate
- * shared instances, and properly detect invalid or circular alias definitions.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(AliasException::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(Container::class)]
-#[CoversClass(EntryNotFoundException::class)]
-class AliasTest extends AbstractTestContainer
-{
-    /**
-     * Test alias basic
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasBasic(): void
-    {
-        $container = $this->container;
-        $container->bind(self::class . 'Foo', fn () => 'foo');
-        $container->alias(self::class . 'Foo', 'foo-alias');
+covers(AliasException::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(Container::class);
+covers(EntryNotFoundException::class);
 
-        $this->assertEquals('foo', $container->get('foo-alias'));
-    }
+beforeEach(function (): void {
+    $this->container = new Container();
+});
 
-    /**
-     * Test alias recursive resolution.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasRecursiveResolution(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => 'bar');
-        $container->alias('foo', 'alias1');
-        $container->alias('alias1', 'alias2');
+it('resolves a basic alias', function (): void {
+    $this->container->bind('foo', fn () => 'foo');
+    $this->container->alias('foo', 'foo-alias');
 
-        $this->assertEquals('bar', $container->get('alias2'));
-    }
+    expect($this->container->get('foo-alias'))->toBe('foo');
+});
 
-    /**
-     * Test alias shadow.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasShadow(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => 'foo-instance');
-        $container->bind('bar', fn () => 'bar-instance');
-        $container->alias('foo', 'shadow');
-        $container->alias('bar', 'shadow');
+it('resolves alias chains recursively', function (): void {
+    $this->container->bind('foo', fn () => 'bar');
+    $this->container->alias('foo', 'alias1');
+    $this->container->alias('alias1', 'alias2');
 
-        $this->assertEquals('bar-instance', $container->get('shadow'));
-    }
+    expect($this->container->get('alias2'))->toBe('bar');
+});
 
-    /**
-     * Test get alias.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testAliasGetAlias(): void
-    {
-        $container = $this->container;
-        $container->alias('foo', 'bar');
+it('lets the latest alias definition shadow previous ones', function (): void {
+    $this->container->bind('foo', fn () => 'foo-instance');
+    $this->container->bind('bar', fn () => 'bar-instance');
+    $this->container->alias('foo', 'shadow');
+    $this->container->alias('bar', 'shadow');
 
-        $this->assertEquals('foo', $container->getAlias('bar'));
-    }
+    expect($this->container->get('shadow'))->toBe('bar-instance');
+});
 
-    /**
-     * Test alias used in bind.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasUsedInBind(): void
-    {
-        $container = $this->container;
-        $container->alias('foo', 'bar');
-        $container->bind('bar', fn () => 'baz');
+it('returns the resolved abstract for an alias', function (): void {
+    $this->container->alias('foo', 'bar');
 
-        $this->assertEquals('baz', $container->get('foo'));
-    }
+    expect($this->container->getAlias('bar'))->toBe('foo');
+});
 
-    /**
-     * Test alias throws exception on self alias.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     */
-    public function testAliasThrowsAliasExceptionOnSelfAlias(): void
-    {
-        $this->expectException(AliasException::class);
-        $this->container->alias('foo', 'foo');
-    }
+it('resolves a binding through an alias used as abstract', function (): void {
+    $this->container->alias('foo', 'bar');
+    $this->container->bind('bar', fn () => 'baz');
 
-    /**
-     * Test alias throws circular exception on circular reference.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasThrowsCircularAliasExceptionOnCircularReference(): void
-    {
-        $this->expectException(CircularAliasException::class);
-        $container = $this->container;
-        $container->alias('foo', 'bar');
-        $container->alias('bar', 'foo');
-        $container->get('foo');
-    }
+    expect($this->container->get('foo'))->toBe('baz');
+});
 
-    /**
-     * Test alias share binding.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testAliasSharedBinding(): void
-    {
-        // Bind as shared (singleton)
-        $this->container->bind(DummyClass::class, null, true);
-        $this->container->alias(DummyClass::class, 'dummy_alias');
+it('throws when an alias maps to itself', function (): void {
+    expect(fn () => $this->container->alias('foo', 'foo'))
+        ->toThrow(AliasException::class);
+});
 
-        $instance1 = $this->container->get(DummyClass::class);
-        $instance2 = $this->container->get('dummy_alias');
+it('throws when an alias chain is circular', function (): void {
+    $this->container->alias('foo', 'bar');
+    $this->container->alias('bar', 'foo');
 
-        $this->assertSame($instance1, $instance2);
-    }
-}
+    expect(fn () => $this->container->get('foo'))
+        ->toThrow(CircularAliasException::class);
+});
+
+it('shares the resolved instance between a binding and its alias', function (): void {
+    $this->container->bind(DummyClass::class, null, true);
+    $this->container->alias(DummyClass::class, 'dummy_alias');
+
+    $instance1 = $this->container->get(DummyClass::class);
+    $instance2 = $this->container->get('dummy_alias');
+
+    expect($instance1)->toBe($instance2);
+});

@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
@@ -20,379 +10,154 @@ use Omega\Container\Exceptions\AliasException;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
 use stdClass;
 use Tests\Container\Support\AnotherService;
 use Tests\Container\Support\ConcreteService;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\ServiceInterface;
 
-/**
- * Tests the behavior of container bindings.
- *
- * This test class covers various scenarios related to binding abstractions to concrete implementations
- * within the dependency injection container. It verifies that:
- *
- * - Simple and closure-based bindings resolve correctly.
- * - Shared (singleton) and non-shared bindings behave as expected.
- * - Bindings can be overridden.
- * - Bindings respect alias resolution.
- * - The container correctly reports whether a binding exists (`has` and `bound`).
- * - All current bindings can be retrieved and are updated after overrides.
- * - Flush clears all bindings.
- *
- * Each test ensures that the container resolves dependencies correctly and consistently.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(AliasException::class)]
-#[CoversClass(BindingResolutionException::class)]
-#[CoversClass(CircularAliasException::class)]
-#[CoversClass(Container::class)]
-#[CoversClass(EntryNotFoundException::class)]
-class BindingTest extends AbstractTestContainer
-{
-    /**
-     * Test bind basic concrete.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindBasicConcrete(): void
-    {
-        $container = $this->container;
+covers(AliasException::class);
+covers(BindingResolutionException::class);
+covers(CircularAliasException::class);
+covers(Container::class);
+covers(EntryNotFoundException::class);
 
-        $container->bind(ServiceInterface::class, ConcreteService::class);
-        $instance = $container->get(ServiceInterface::class);
+beforeEach(function (): void {
+    $this->container = new Container();
+});
 
-        $this->assertInstanceOf(ConcreteService::class, $instance);
-    }
+it('binds an abstraction to a concrete class', function (): void {
+    $this->container->bind(ServiceInterface::class, ConcreteService::class);
 
-    /**
-     * Test bind closure.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindClosure(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => 'bar');
+    expect($this->container->get(ServiceInterface::class))
+        ->toBeInstanceOf(ConcreteService::class);
+});
 
-        $this->assertEquals('bar', $container->get('foo'));
-    }
+it('binds a closure', function (): void {
+    $this->container->bind('foo', fn () => 'bar');
 
-    /**
-     * Test bind shared singleton.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindSharedSingleton(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => new stdClass(), true);
+    expect($this->container->get('foo'))->toBe('bar');
+});
 
-        $instance1 = $container->get('foo');
-        $instance2 = $container->get('foo');
+it('binds a shared singleton', function (): void {
+    $this->container->bind('foo', fn () => new stdClass(), true);
 
-        $this->assertSame($instance1, $instance2);
-    }
+    $instance1 = $this->container->get('foo');
+    $instance2 = $this->container->get('foo');
 
-    /**
-     * Test bind non-shared creates new.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindNonSharedCreatesNew(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => new stdClass());
+    expect($instance1)->toBe($instance2);
+});
 
-        $instance1 = $container->make('foo');
-        $instance2 = $container->make('foo');
+it('creates a new instance for non-shared bindings', function (): void {
+    $this->container->bind('foo', fn () => new stdClass());
 
-        $this->assertNotSame($instance1, $instance2);
-    }
+    $instance1 = $this->container->make('foo');
+    $instance2 = $this->container->make('foo');
 
-    /**
-     * Test bind override previous.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindOverridePrevious(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', fn () => 'bar');
-        $container->bind('foo', fn () => 'baz');
+    expect($instance1)->not->toBe($instance2);
+});
 
-        $this->assertEquals('baz', $container->get('foo'));
-    }
+it('overrides a previous binding', function (): void {
+    $this->container->bind('foo', fn () => 'bar');
+    $this->container->bind('foo', fn () => 'baz');
 
-    /**
-     * Test bind string class.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindStringClass(): void
-    {
-        $container = $this->container;
-        $container->bind(stdClass::class, stdClass::class);
+    expect($this->container->get('foo'))->toBe('baz');
+});
 
-        $this->assertInstanceOf(stdClass::class, $container->get(stdClass::class));
-    }
+it('binds a class name to itself', function (): void {
+    $this->container->bind(stdClass::class, stdClass::class);
 
-    /**
-     * Test bind concrete null defaults to abstract.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindConcreteNullDefaultsToAbstract(): void
-    {
-        $container = $this->container;
-        $container->bind(stdClass::class);
+    expect($this->container->get(stdClass::class))->toBeInstanceOf(stdClass::class);
+});
 
-        $this->assertInstanceOf(stdClass::class, $container->get(stdClass::class));
-    }
+it('uses the abstract as concrete when concrete is null', function (): void {
+    $this->container->bind(stdClass::class);
 
-    /**
-     * Test bind multiple unrelated.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindMultipleUnrelated(): void
-    {
-        $container = $this->container;
-        $container->bind('foo', stdClass::class);
-        $container->bind('bar', AnotherService::class);
+    expect($this->container->get(stdClass::class))->toBeInstanceOf(stdClass::class);
+});
 
-        $this->assertInstanceOf(stdClass::class, $container->get('foo'));
-        $this->assertInstanceOf(AnotherService::class, $container->get('bar'));
-    }
+it('binds multiple unrelated identifiers', function (): void {
+    $this->container->bind('foo', stdClass::class);
+    $this->container->bind('bar', AnotherService::class);
 
-    /**
-     * Test bind closure scalar return.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindClosureScalarReturn(): void
-    {
-        $this->container->bind('string_value', fn () => 'hello');
-        $this->assertEquals('hello', $this->container->get('string_value'));
+    expect($this->container->get('foo'))->toBeInstanceOf(stdClass::class);
+    expect($this->container->get('bar'))->toBeInstanceOf(AnotherService::class);
+});
 
-        $this->container->bind('int_value', fn () => 123);
-        $this->assertEquals(123, $this->container->get('int_value'));
-    }
+it('returns scalar values from bound closures', function (): void {
+    $this->container->bind('string_value', fn () => 'hello');
+    $this->container->bind('int_value', fn () => 123);
 
-    /**
-     * Test bind closure with parameter.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindClosureWithParameter(): void
-    {
-        $this->container->bind('with_param', function (DependencyClass $dep) {
-            return $dep;
-        });
+    expect($this->container->get('string_value'))->toBe('hello');
+    expect($this->container->get('int_value'))->toBe(123);
+});
 
-        $result = $this->container->get('with_param');
-        $this->assertInstanceOf(DependencyClass::class, $result);
-    }
+it('injects dependencies into bound closures', function (): void {
+    $this->container->bind('with_param', function (DependencyClass $dep) {
+        return $dep;
+    });
 
-    /**
-     * Test bind respect alias resolution.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testBindRespectsAliasResolution(): void
-    {
-        $this->container->alias(ServiceInterface::class, 'my_interface_alias');
-        $this->container->bind('my_interface_alias', AnotherService::class);
+    expect($this->container->get('with_param'))->toBeInstanceOf(DependencyClass::class);
+});
 
-        // Even though we bound 'my_interface_alias', get(ServiceInterface::class) should resolve it
-        $instance = $this->container->get(ServiceInterface::class);
+it('respects alias resolution on bindings', function (): void {
+    $this->container->alias(ServiceInterface::class, 'my_interface_alias');
+    $this->container->bind('my_interface_alias', AnotherService::class);
 
-        $this->assertInstanceOf(AnotherService::class, $instance);
-    }
+    $instance = $this->container->get(ServiceInterface::class);
 
-    /**
-     * Test has returns true for existing binding.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testHasReturnsTrueForExistingBinding(): void
-    {
-        $this->container->bind('foo', stdClass::class);
+    expect($instance)->toBeInstanceOf(AnotherService::class);
+});
 
-        $this->assertTrue($this->container->has('foo'));
-    }
+it('reports an existing binding through has', function (): void {
+    $this->container->bind('foo', stdClass::class);
 
-    /**
-     * Test has returns false for missing binding.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testHasReturnsFalseForMissingBinding(): void
-    {
-        $this->assertFalse($this->container->has('non-existent-binding'));
-    }
+    expect($this->container->has('foo'))->toBeTrue();
+});
 
-    /**
-     * Test bound mirrors has behavior.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testBoundMirrorsHasBehavior(): void
-    {
-        $this->container->bind('foo', stdClass::class);
+it('reports a missing binding through has', function (): void {
+    expect($this->container->has('non-existent-binding'))->toBeFalse();
+});
 
-        $this->assertTrue($this->container->bound('foo'));
-        $this->assertFalse($this->container->bound('non-existent'));
-    }
+it('mirrors has behavior through bound', function (): void {
+    $this->container->bind('foo', stdClass::class);
 
-    /**
-     * Test bound respects alias resolution.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testBoundRespectsAliasResolution(): void
-    {
-        $this->container->bind(ServiceInterface::class, ConcreteService::class);
-        $this->container->alias(ServiceInterface::class, 'my_service_alias');
+    expect($this->container->bound('foo'))->toBeTrue();
+    expect($this->container->bound('non-existent'))->toBeFalse();
+});
 
-        $this->assertTrue($this->container->bound('my_service_alias'));
-        $this->assertTrue($this->container->has('my_service_alias')); // Should also be true for consistency
-    }
+it('respects alias resolution through bound', function (): void {
+    $this->container->bind(ServiceInterface::class, ConcreteService::class);
+    $this->container->alias(ServiceInterface::class, 'my_service_alias');
 
-    /**
-     * Test get binding returns all current bindings.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testGetBindingsReturnsAllCurrentBindings(): void
-    {
-        $this->container->bind('foo', stdClass::class); // Explicitly non-shared
-        $this->container->bind('bar', ConcreteService::class, true); // Explicitly shared
+    expect($this->container->bound('my_service_alias'))->toBeTrue();
+    expect($this->container->has('my_service_alias'))->toBeTrue();
+});
 
-        $bindings = $this->container->getBindings();
+it('returns all current bindings with their metadata', function (): void {
+    $this->container->bind('foo', stdClass::class);
+    $this->container->bind('bar', ConcreteService::class, true);
 
-        $this->assertArrayHasKey('foo', $bindings);
-        $this->assertArrayHasKey('bar', $bindings);
+    $bindings = $this->container->getBindings();
 
-        // Assert that concrete is always a Closure
-        $this->assertInstanceOf(Closure::class, $bindings['foo']['concrete']);
-        $this->assertInstanceOf(Closure::class, $bindings['bar']['concrete']);
+    expect($bindings)->toHaveKeys(['foo', 'bar']);
+    expect($bindings['foo']['shared'])->toBeFalse();
+    expect($bindings['bar']['shared'])->toBeTrue();
+});
 
-        // Assert shared status
-        $this->assertFalse($bindings['foo']['shared']);
-        $this->assertTrue($bindings['bar']['shared']);
-    }
+it('updates bindings after an override', function (): void {
+    $this->container->bind('foo', stdClass::class);
+    $this->container->bind('foo', ConcreteService::class);
 
-    /**
-     * Test get bindings update after override.
-     *
-     * @return void
-     * @throws BindingResolutionException Thrown when resolving a binding fails.
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
-     * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
-     * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
-     */
-    public function testGetBindingsUpdatedAfterOverride(): void
-    {
-        $this->container->bind('foo', stdClass::class);
-        $this->container->bind('foo', ConcreteService::class); // Override
+    $bindings = $this->container->getBindings();
 
-        $bindings = $this->container->getBindings();
+    expect($bindings)->toHaveKeys(['foo']);
+    expect($this->container->get('foo'))->toBeInstanceOf(ConcreteService::class);
+});
 
-        $this->assertArrayHasKey('foo', $bindings);
-        $this->assertInstanceOf(Closure::class, $bindings['foo']['concrete']);
+it('empties bindings after flush', function (): void {
+    $this->container->bind('foo', stdClass::class);
+    $this->container->flush();
 
-        // To further verify, resolve 'foo' and check its type
-        $instance = $this->container->get('foo');
-        $this->assertInstanceOf(ConcreteService::class, $instance);
-    }
-
-    /**
-     * Test get bindings empty after flush.
-     *
-     * @return void
-     * @throws CircularAliasException Thrown when alias resolution loops recursively.
-     */
-    public function testGetBindingsEmptyAfterFlush(): void
-    {
-        $this->container->bind('foo', stdClass::class);
-        $this->container->flush();
-
-        $bindings = $this->container->getBindings();
-
-        $this->assertEmpty($bindings);
-    }
-}
+    expect($this->container->getBindings())->toBeEmpty();
+});

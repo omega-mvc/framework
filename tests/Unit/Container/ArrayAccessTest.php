@@ -1,149 +1,65 @@
 <?php
 
-/**
- * Part of Omega - Tests\Container Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
-/** @noinspection PhpConditionAlreadyCheckedInspection */
-
 declare(strict_types=1);
 
 namespace Tests\Container;
 
 use Omega\Container\Container;
 use Omega\Container\Exceptions\AliasException;
-use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Tests\Container\Support\DummyClass;
 
-/**
- * Tests the ArrayAccess implementation of the container.
- *
- * This test class verifies that the container behaves correctly when accessed
- * like an array, including setting, getting, checking existence, unsetting
- * entries, resolving closures, handling shared bindings, and respecting aliases.
- *
- * @category  Tests
- * @package   Container
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(AliasException::class)]
-#[CoversClass(Container::class)]
-class ArrayAccessTest extends AbstractTestContainer
-{
-    /**
-     * Test array set.
-     *
-     * @return void
-     */
-    public function testArraySet(): void
-    {
-        $container        = $this->container;
-        $container['foo'] = 'bar';
-        $this->assertTrue(isset($container['foo']));
-    }
+covers(AliasException::class);
+covers(Container::class);
 
-    /**
-     * Test array get.
-     *
-     * @return void
-     */
-    public function testArrayGet(): void
-    {
-        $container        = $this->container;
-        $container['foo'] = 'bar';
-        $this->assertEquals('bar', $container['foo']);
-    }
+beforeEach(function (): void {
+    $this->container = new Container();
+});
 
-    /**
-     * Test array exists.
-     *
-     * @return void
-     */
-    public function testArrayExists(): void
-    {
-        $container        = $this->container;
-        $container['foo'] = 'bar';
-        $this->assertTrue(isset($container['foo']));
-        $this->assertFalse(isset($container['baz']));
-    }
+it('sets an entry through array access', function (): void {
+    $this->container['foo'] = 'bar';
 
-    /**
-     * est array unset.
-     *
-     * @return void
-     */
-    public function testArrayUnset(): void
-    {
-        $container        = $this->container;
-        $container['foo'] = 'bar';
-        $this->assertTrue(isset($container['foo']));
-        unset($container['foo']);
-        $this->assertFalse(isset($container['foo']));
-    }
+    expect(isset($this->container['foo']))->toBeTrue();
+});
 
-    /**
-     * Test array get returns new instance.
-     *
-     * @return void
-     */
-    public function testArrayGetReturnsNewInstance(): void
-    {
-        $container = $this->container;
-        $container['foo'] = fn () => new stdClass();
-        $instance1 = $container['foo'];
-        $instance2 = $container['foo'];
-        $this->assertNotSame($instance1, $instance2);
-    }
+it('gets an entry through array access', function (): void {
+    $this->container['foo'] = 'bar';
 
-    /**
-     * Test array get resolves container.
-     *
-     * @return void
-     */
-    public function testArrayGetResolvesContainer(): void
-    {
-        $container = $this->container;
-        $container['std'] = fn () => new stdClass(); // Bind a closure that returns an instance
-        $instance = $container['std'];
-        $this->assertInstanceOf(stdClass::class, $instance);
-    }
+    expect($this->container['foo'])->toBe('bar');
+});
 
-    /**
-     * Test offset set stores shared binding.
-     *
-     * @return void
-     */
-    public function testOffsetSetStoresSharedBinding(): void
-    {
-        $container = $this->container;
-        $container['foo'] = fn () => new stdClass();
-        $instance1 = $container['foo'];
-        $instance2 = $container['foo'];
-        $this->assertNotSame($instance1, $instance2);
-    }
+it('reports whether an entry exists', function (): void {
+    $this->container['foo'] = 'bar';
 
-    /**
-     * Test array access respects alias.
-     *
-     * @return void
-     * @throws AliasException Thrown when an alias maps to itself.
-     */
-    public function testArrayAccessRespectsAlias(): void
-    {
-        $this->container->alias(DummyClass::class, 'dummy_alias');
-        $this->container['dummy_alias'] = fn () => new DummyClass();
-        $instance = $this->container['dummy_alias'];
-        $this->assertInstanceOf(DummyClass::class, $instance);
-    }
-}
+    expect(isset($this->container['foo']))->toBeTrue();
+    expect(isset($this->container['baz']))->toBeFalse();
+});
+
+it('removes an entry through array access', function (): void {
+    $this->container['foo'] = 'bar';
+    unset($this->container['foo']);
+
+    expect(isset($this->container['foo']))->toBeFalse();
+});
+
+it('creates a new instance on each array read', function (): void {
+    $this->container['foo'] = fn () => new stdClass();
+
+    $instance1 = $this->container['foo'];
+    $instance2 = $this->container['foo'];
+
+    expect($instance1)->not->toBe($instance2);
+});
+
+it('resolves the container instance through array access', function (): void {
+    $this->container['std'] = fn () => new stdClass();
+
+    expect($this->container->offsetGet('std'))->toBeInstanceOf(stdClass::class);
+});
+
+it('respects aliases through array access', function (): void {
+    $this->container->alias(DummyClass::class, 'dummy_alias');
+    $this->container['dummy_alias'] = fn () => new DummyClass();
+
+    expect($this->container->offsetGet('dummy_alias'))->toBeInstanceOf(DummyClass::class);
+});
