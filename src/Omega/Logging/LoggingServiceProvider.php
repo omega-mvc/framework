@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Omega\Logging;
 
+use ArrayAccess;
 use Omega\Container\AbstractServiceProvider;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -23,6 +24,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use ReflectionException;
+use RuntimeException;
 
 use function array_filter;
 use function array_keys;
@@ -61,33 +63,80 @@ class LoggingServiceProvider extends AbstractServiceProvider
      */
     public function boot(): void
     {
-        $config  = $this->app->get('config');
-        $logging = $config['logging'];
-        $default = $logging['default'];
+        $config = $this->app->get('config');
+
+        if (!is_array($config) && !$config instanceof ArrayAccess) {
+            throw new RuntimeException('The config service must be an array or implement ArrayAccess.');
+        }
+
+        $logging = $this->normalizeConfig($config['logging'] ?? []);
+        $default = $logging['default'] ?? null;
+
+        if (!is_string($default)) {
+            throw new RuntimeException('The default logging driver must be a string.');
+        }
+
         $drivers = array_filter(
             $logging,
             static fn (string $name): bool => 'default' !== $name,
             ARRAY_FILTER_USE_KEY
         );
 
-        array_walk($drivers, function (array $options, string $name): void {
+        array_walk($drivers, function (mixed $options, string $name): void {
+            if (!is_array($options)) {
+                return;
+            }
+
             $this->app->set(
                 "logging.$name",
-                fn () => $this->createDriver($options)
+                fn (): LoggerInterface => $this->createDriver($this->normalizeConfig($options))
             );
         });
 
         $this->app->set('logging', function () use ($default, $drivers): LoggingManager {
-            $manager = new LoggingManager($default, $this->app["logging.$default"]);
+            $defaultDriver = $this->app->get("logging.$default");
 
-            array_walk($drivers, function (array $options, string $name) use ($manager, $default): void {
-                if ($name !== $default) {
-                    $manager->setDriver($name, $this->app["logging.$name"]);
+            if (!$defaultDriver instanceof LoggerInterface) {
+                throw new RuntimeException('The default logging driver is not a logger.');
+            }
+
+            $manager = new LoggingManager($default, $defaultDriver);
+
+            array_walk($drivers, function (mixed $options, string $name) use ($manager, $default): void {
+                if ($name !== $default && is_array($options)) {
+                    $driver = $this->app->get("logging.$name");
+
+                    if ($driver instanceof LoggerInterface) {
+                        $manager->setDriver($name, $driver);
+                    }
                 }
             });
 
             return $manager;
         });
+    }
+
+    /**
+     * Normalize a raw configuration value into a string-keyed array.
+     *
+     * @param mixed $value The configuration value.
+     * @return array<string, mixed> The normalized configuration array.
+     */
+    private function normalizeConfig(mixed $value): array
+    {
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+
+        foreach ($value as $key => $item) {
+            if (is_string($key)) {
+                $normalized[$key] = $item;
+            }
+        }
+
+        return $normalized;
     }
 
     /**
@@ -99,18 +148,22 @@ class LoggingServiceProvider extends AbstractServiceProvider
      */
     private function createDriver(array $config): LoggerInterface
     {
-        return match ($config['type'] ?? '') {
-            'stream' => new Stream(
-                $config['path'],
-                $config['minimum'] ?? LogLevel::DEBUG,
-                $config['options'] ?? []
-            ),
-            default => throw new LogArgumentException(
-                sprintf(
-                    'Unsupported logger type [%s].',
-                    $config['type'] ?? ''
-                )
-            ),
-        };
+        $type = $config['type'] ?? '';
+
+        if ($type === 'stream') {
+            $path    = $config['path'] ?? '';
+            $minimum = $config['minimum'] ?? LogLevel::DEBUG;
+            $options = $this->normalizeConfig($config['options'] ?? []);
+
+            if (!is_string($path) || !is_string($minimum)) {
+                throw new LogArgumentException('Unable to create the stream logger: invalid configuration.');
+            }
+
+            return new Stream($path, $minimum, $options);
+        }
+
+        throw new LogArgumentException(
+            sprintf('Unsupported logger type [%s].', is_string($type) ? $type : 'unknown')
+        );
     }
 }

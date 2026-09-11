@@ -35,7 +35,7 @@ afterEach(function (): void {
     AbstractFacade::setFacadeBase(null);
     AbstractFacade::flushInstance();
 
-    if (isset($this->app) && $this->app) {
+    if (isset($this->app)) {
         $this->app->flush();
     }
 

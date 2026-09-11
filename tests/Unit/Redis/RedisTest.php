@@ -28,10 +28,8 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    if (isset($this->redis) && $this->redis) {
-        $this->redis->flushDb();
-        $this->redis = null;
-    }
+    $this->redis->flushDb();
+    $this->redis = null;
 });
 
 it('can set and get values', function (): void {

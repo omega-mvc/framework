@@ -47,8 +47,10 @@ interface RedisInterface
 
     /**
      * Get redis client connection.
+     *
+     * @return \Redis
      */
-    public function client(): object;
+    public function client(): \Redis;
 
     /**
      * Get connection name.

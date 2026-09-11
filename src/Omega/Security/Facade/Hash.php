@@ -41,9 +41,9 @@ use Omega\Facade\AbstractFacade;
  * @method static HashManager   setDefaultDriver(HashInterface $driver)
  * @method static HashManager   setDriver(string $driver_name, HashInterface $driver)
  * @method static HashInterface driver(?string $driver = null)
- * @method static array         info(string $hashed_value)
- * @method static string        make(string $value, array $options = [])
- * @method static bool          verify(string $value, string $hashed_value, array $options = [])
+ * @method static array{algo: int|string|null, algoName: string, options: array<string, mixed>} info(string $hashed_value)
+ * @method static string        make(string $value, array<string, mixed> $options = [])
+ * @method static bool          verify(string $value, string $hashed_value, array<string, mixed> $options = [])
  * @method static bool          isValidAlgorithm(string $hash)
  *
  * @see HashManager

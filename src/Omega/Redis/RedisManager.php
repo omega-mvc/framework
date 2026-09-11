@@ -7,14 +7,12 @@ namespace Omega\Redis;
 use Closure;
 use Exception;
 
-use function is_callable;
-
 class RedisManager implements RedisInterface
 {
     /** @var array<string, RedisInterface|Closure(): RedisInterface> */
     private array $driver = [];
 
-    /** @var array{default?: string, connections?: array<string, array<string, mixed>>} */
+    /** @var array{default?: string, connections?: array<string, array{host?: string, port?: int, timeout?: float, retry_interval?: int, read_timeout?: float, persistent?: bool, persistent_id?: string, password?: string, database?: int, unix_socket?: string}>} */
     private array $config = [];
 
     private ?RedisInterface $defaultDriver = null;
@@ -29,7 +27,7 @@ class RedisManager implements RedisInterface
     }
 
     /**
-     * @param array{default?: string, connections?: array<string, array<string, mixed>>} $config
+     * @param array{default?: string, connections?: array<string, array{host?: string, port?: int, timeout?: float, retry_interval?: int, read_timeout?: float, persistent?: bool, persistent_id?: string, password?: string, database?: int, unix_socket?: string}>} $config
      */
     public function setConfig(array $config): self
     {
@@ -60,17 +58,17 @@ class RedisManager implements RedisInterface
      */
     private function resolve(string $driverName): RedisInterface
     {
-        $driver = $this->driver[$driverName];
+        $driver = $this->driver[$driverName] ?? null;
 
-        if (is_callable($driver)) {
+        if ($driver instanceof Closure) {
             $driver = $driver();
         }
 
-        if (null === $driver) {
-            throw new Exception("Can not use driver $driverName.");
+        if ($driver instanceof RedisInterface) {
+            return $this->driver[$driverName] = $driver;
         }
 
-        return $this->driver[$driverName] = $driver;
+        throw new Exception("Can not use driver $driverName.");
     }
 
     /**
@@ -201,7 +199,7 @@ class RedisManager implements RedisInterface
      *
      * @throws Exception
      */
-    public function client(): object
+    public function client(): \Redis
     {
         return $this->driver()->client();
     }

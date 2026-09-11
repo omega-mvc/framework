@@ -33,7 +33,7 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    if (isset($this->app) && $this->app) {
+    if (isset($this->app)) {
         $this->app->flush();
     }
 
@@ -54,6 +54,7 @@ it('registers every configured driver', function (): void {
     $app = makeApp($this->tempDir, driverConfig($this->tempDir));
     $this->app = $app;
     $logging = $app->get('logging');
+    $this->assertInstanceOf(LoggingManager::class, $logging);
 
     expect($logging->getDriver('stream'))->toBeInstanceOf(Stream::class);
     expect($logging->getDriver('custom'))->toBeInstanceOf(Stream::class);
@@ -63,13 +64,17 @@ it('writes log entries with the default driver', function (): void {
     $app = makeApp($this->tempDir, driverConfig($this->tempDir));
     $this->app = $app;
 
-    $app->get('logging')->log(LogLevel::INFO, 'via provider');
+    $logging = $app->get('logging');
+    $this->assertInstanceOf(LoggingManager::class, $logging);
+
+    $logging->log(LogLevel::INFO, 'via provider');
 
     expect(file_get_contents($this->tempDir . '/omega.log'))->toContain('via provider');
 });
 
 it('throws an exception for an unsupported driver type', function (): void {
     $config = driverConfig($this->tempDir);
+    $this->assertIsArray($config['logging']);
     $config['logging']['bogus'] = ['type' => 'unsupported'];
 
     $app = makeApp($this->tempDir, $config);
@@ -78,6 +83,12 @@ it('throws an exception for an unsupported driver type', function (): void {
     $app->get('logging.bogus');
 })->throws(LogArgumentException::class, 'Unsupported logger type [unsupported].');
 
+/**
+ * Build a logging configuration for the provider tests.
+ *
+ * @param string $tempDir The temporary directory for the log files.
+ * @return array<string, mixed>
+ */
 function driverConfig(string $tempDir): array
 {
     return [
@@ -99,6 +110,13 @@ function driverConfig(string $tempDir): array
     ];
 }
 
+/**
+ * Build an application with the logging provider booted.
+ *
+ * @param string               $tempDir The temporary directory for the log files.
+ * @param array<string, mixed> $config  The application configuration.
+ * @return Application The configured application instance.
+ */
 function makeApp(string $tempDir, array $config): Application
 {
     $app = new Application(slash(__DIR__ . '/../fixtures/support/'));

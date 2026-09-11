@@ -233,29 +233,39 @@ class Stream extends AbstractLogger
      */
     public function setLogFilePath(string $logDirectory): void
     {
-        if ($this->options['filename']) {
-            if (
-                is_string($this->options['filename'])
-                && (str_contains($this->options['filename'], '.log')
-                || str_contains($this->options['filename'], '.txt'))
-            ) {
-                $this->logFilePath = $logDirectory . slash(path: '/') . $this->options['filename'];
+        $filename  = $this->options['filename'];
+        $extension = $this->options['extension'];
+
+        if ($filename) {
+            $extension = is_string($extension) ? $extension : 'txt';
+
+            if (is_string($filename) && (str_contains($filename, '.log') || str_contains($filename, '.txt'))) {
+                $this->logFilePath = $logDirectory . slash(path: '/') . $filename;
+            } elseif (is_string($filename)) {
+                $this->logFilePath = $logDirectory
+                    . slash(path: '/')
+                    . $filename
+                    . '.'
+                    . $extension;
             } else {
                 $this->logFilePath = $logDirectory
                     . slash(path: '/')
-                    . $this->options['filename']
+                    . 'log'
                     . '.'
-                    . $this->options['extension'];
+                    . $extension;
             }
         } elseif ($this->isLogFilePath($logDirectory)) {
             $this->logFilePath = $logDirectory;
         } else {
+            $prefix    = is_string($this->options['prefix']) ? $this->options['prefix'] : '';
+            $extension = is_string($this->options['extension']) ? $this->options['extension'] : 'txt';
+
             $this->logFilePath = $logDirectory
                     . slash(path: '/')
-                    . $this->options['prefix']
+                    . $prefix
                     . date('Y-m-d')
                     . '.'
-                    . $this->options['extension'];
+                    . $extension;
         }
     }
 
@@ -342,7 +352,9 @@ class Stream extends AbstractLogger
                 $this->lastLine = trim($message);
                 ++$this->logLineCount;
 
-                if ($this->options['flushFrequency'] && $this->logLineCount % $this->options['flushFrequency'] === 0) {
+                $flushFrequency = $this->options['flushFrequency'];
+
+                if (is_int($flushFrequency) && $this->logLineCount % $flushFrequency === 0) {
                     if (is_resource($this->fileHandle)) {
                         fflush($this->fileHandle);
                     }
@@ -496,23 +508,27 @@ class Stream extends AbstractLogger
      */
     public function log(mixed $level, string|Stringable $message, array $context = []): void
     {
-        if (!isset($this->logLevels[$level])) {
-            throw new LogArgumentException(
-                'Invalid log level: '
-                . $level
-            );
+        if (is_int($level) || is_string($level)) {
+            $key = (string) $level;
+
+            if (isset($this->logLevels[$key])) {
+                if ($this->logLevels[$this->logLevelThreshold] < $this->logLevels[$key]) {
+                    return;
+                }
+
+                if (!is_string($level)) {
+                    throw new LogArgumentException('Log level must be a string, ' . gettype($level) . ' given.');
+                }
+
+                $this->write($this->formatMessage($level, $message, $context));
+
+                return;
+            }
+
+            throw new LogArgumentException('Invalid log level: ' . $key);
         }
 
-        if ($this->logLevels[$this->logLevelThreshold] < $this->logLevels[$level]) {
-            return;
-        }
-
-        if (!is_string($level)) {
-            throw new LogArgumentException('Log level must be a string, ' . gettype($level) . ' given.');
-        }
-
-        $message = $this->formatMessage($level, $message, $context);
-        $this->write($message);
+        throw new LogArgumentException('Invalid log level: ' . gettype($level));
     }
 
     /**

@@ -85,7 +85,7 @@ class Crypt
      * separated by a semicolon. For example: "AES-256-CBC;16".
      *
      * @param string $cipherAlgo  The cipher definition string.
-     * @return array{string,int}  An array containing the algorithm name and IV length.
+     * @return array{string, int<1, max>}  An array containing the algorithm name and IV length.
      * @throws InvalidCipherDefinitionException If the cipher definition is invalid or malformed.
      */
     private function algoParse(string $cipherAlgo): array
@@ -96,7 +96,13 @@ class Crypt
             throw new InvalidCipherDefinitionException('Cipher algo must provide chars length');
         }
 
-        return [$parse[0], (int) $parse[1]];
+        $chars = (int) $parse[1];
+
+        if ($chars < 1) {
+            throw new InvalidCipherDefinitionException('Cipher chars length must be a positive integer.');
+        }
+
+        return [$parse[0], $chars];
     }
 
     /**
@@ -123,20 +129,25 @@ class Crypt
      * @param string      $plainText   The plaintext string to encrypt.
      * @param string|null $passPhrase  Optional override pass phrase for encryption.
      * @return string The Base64-encoded encrypted string.
+     * @throws InvalidCipherDefinitionException If the OpenSSL encryption fails.
      */
     public function encrypt(string $plainText, ?string $passPhrase = null): string
     {
         $hash = $passPhrase === null ? null : $this->hash($passPhrase);
 
-        return base64_encode(
-            openssl_encrypt(
-                $plainText,
-                $this->cipherAlgo,
-                $hash ?? $this->hash,
-                OPENSSL_RAW_DATA,
-                $this->iv
-            )
+        $encrypted = openssl_encrypt(
+            $plainText,
+            $this->cipherAlgo,
+            $hash ?? $this->hash,
+            OPENSSL_RAW_DATA,
+            $this->iv
         );
+
+        if ($encrypted === false) {
+            throw new InvalidCipherDefinitionException('Unable to encrypt payload using the configured cipher.');
+        }
+
+        return base64_encode($encrypted);
     }
 
     /**
@@ -148,17 +159,24 @@ class Crypt
      * @param string      $encrypted   The Base64-encoded encrypted string.
      * @param string|null $passPhrase  Optional override pass phrase for decryption.
      * @return string The decrypted plaintext string.
+     * @throws InvalidCipherDefinitionException If the OpenSSL decryption fails.
      */
     public function decrypt(string $encrypted, ?string $passPhrase = null): string
     {
         $hash = $passPhrase === null ? null : $this->hash($passPhrase);
 
-        return openssl_decrypt(
+        $decrypted = openssl_decrypt(
             base64_decode($encrypted),
             $this->cipherAlgo,
             $hash ?? $this->hash,
             OPENSSL_RAW_DATA,
             $this->iv
         );
+
+        if ($decrypted === false) {
+            throw new InvalidCipherDefinitionException('Unable to decrypt payload using the configured cipher.');
+        }
+
+        return $decrypted;
     }
 }

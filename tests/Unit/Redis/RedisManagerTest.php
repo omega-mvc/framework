@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Redis;
 
 use Omega\Redis\Redis;
-use Omega\Redis\RedisInterface;
 use Omega\Redis\RedisManager;
 use RedisException;
 
@@ -34,7 +33,7 @@ it('can set and get default driver', function (): void {
 
     $manager->setDefaultDriver($driver);
 
-    expect($manager->driver())->toBeInstanceOf(RedisInterface::class);
+    expect($manager->driver()->getName())->toBe('PHPRedis');
     expect($manager->driver())->toBe($driver);
 
     $manager->set('manager-key', 'manager-value');
@@ -57,7 +56,7 @@ it('can set and get named drivers', function (): void {
     ]);
     $manager->setDriver('second', $namedDriver);
 
-    expect($manager->driver('second'))->toBeInstanceOf(RedisInterface::class);
+    expect($manager->driver('second')->getName())->toBe('PHPRedis');
     expect($manager->driver('second'))->toBe($namedDriver);
 
     $manager->driver('second')->set('named-key', 'named-value');
@@ -74,7 +73,7 @@ it('can use closure as driver', function (): void {
         return createRedisDriver();
     });
 
-    expect($manager->driver('lazy'))->toBeInstanceOf(RedisInterface::class);
+    expect($manager->driver('lazy')->getName())->toBe('PHPRedis');
 
     $manager->driver('lazy')->set('lazy-key', 'lazy-value');
 

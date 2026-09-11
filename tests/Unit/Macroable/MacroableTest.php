@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Macroable;
 
+use Closure;
 use Omega\Macroable\Exceptions\MacroNotFoundException;
 use Omega\Macroable\MacroableTrait;
 
@@ -12,10 +13,37 @@ use function get_class;
 covers(MacroableTrait::class);
 covers(MacroNotFoundException::class);
 
+/**
+ * @method bool          test()
+ * @method bool          test_param(bool $bool)
+ * @method object        whoAmI()
+ * @method string        className()
+ * @method string        upper(string $value)
+ * @method mixed         missing()
+ * @method static bool   test()
+ * @method static bool   test_param(bool $bool)
+ * @method static object whoAmI()
+ * @method static string className()
+ * @method static string upper(string $value)
+ * @method static mixed  missing()
+ */
+class MacroableFixture
+{
+    use MacroableTrait;
+}
+
+final class MacroableScopeHelper
+{
+    public static function className(): Closure
+    {
+        return static function (): string {
+            return static::class;
+        };
+    }
+}
+
 beforeEach(function (): void {
-    $this->mockClass = new class {
-        use MacroableTrait;
-    };
+    $this->mockClass = new MacroableFixture();
 });
 
 afterEach(function (): void {
@@ -58,9 +86,7 @@ it('binds instance macro to this', function (): void {
 });
 
 it('binds static macro to class', function (): void {
-    $this->mockClass->macro('className', function () {
-        return static::class;
-    });
+    $this->mockClass->macro('className', MacroableScopeHelper::className());
 
     expect($this->mockClass::className())->toBe(get_class($this->mockClass));
 });

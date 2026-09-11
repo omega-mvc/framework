@@ -18,6 +18,7 @@ use Closure;
 use Omega\Macroable\Exceptions\MacroNotFoundException;
 
 use function array_key_exists;
+use function is_callable;
 
 /**
  * Provides the ability to dynamically register methods ("macros") at runtime.
@@ -59,17 +60,17 @@ trait MacroableTrait
      */
     public static function __callStatic(string $method, array $parameters)
     {
-        if (!array_key_exists($method, self::$macros)) {
-            throw new MacroNotFoundException($method);
-        }
-
-        $macro = static::$macros[$method];
+        $macro = self::$macros[$method] ?? null;
 
         if ($macro instanceof Closure) {
             $macro = $macro->bindTo(null, static::class);
         }
 
-        return $macro(...$parameters);
+        if (is_callable($macro)) {
+            return $macro(...$parameters);
+        }
+
+        throw new MacroNotFoundException($method);
     }
 
     /**
@@ -82,17 +83,17 @@ trait MacroableTrait
      */
     public function __call(string $method, array $parameters)
     {
-        if (!array_key_exists($method, self::$macros)) {
-            throw new MacroNotFoundException($method);
-        }
-
-        $macro = static::$macros[$method];
+        $macro = self::$macros[$method] ?? null;
 
         if ($macro instanceof Closure) {
             $macro = $macro->bindTo($this, static::class);
         }
 
-        return $macro(...$parameters);
+        if (is_callable($macro)) {
+            return $macro(...$parameters);
+        }
+
+        throw new MacroNotFoundException($method);
     }
 
     /**

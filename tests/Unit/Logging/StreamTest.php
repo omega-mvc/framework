@@ -106,7 +106,9 @@ it('throws an exception for a non-string log level', function (): void {
 
     $property = new ReflectionProperty(Stream::class, 'logLevels');
     $property->setAccessible(true);
-    $property->setValue($logger, [0 => 0] + $property->getValue($logger));
+    $levels = $property->getValue($logger);
+    $this->assertIsArray($levels);
+    $property->setValue($logger, [0 => 0] + $levels);
 
     $logger->log(0, 'message');
 })->throws(LogArgumentException::class, 'Log level must be a string, integer given.');
@@ -117,6 +119,7 @@ it('throws an exception when a write fails', function (): void {
     $readonly = $this->tempDir . '/readonly.bin';
     touch($readonly);
     $handle = fopen($readonly, 'r');
+    $this->assertIsResource($handle);
 
     setProperty($logger, 'fileHandle', $handle);
 
@@ -192,8 +195,11 @@ it('can set the date format', function (): void {
     $logger = new Stream($this->tempDir . '/date-format.log');
 
     $logger->setDateFormat('Y-m-d');
+    $logger->log(LogLevel::INFO, 'dated');
 
-    expect(true)->toBeTrue();
+    expect(file_get_contents($logger->getLogFilePath()))
+        ->toMatch('/\[\d{4}-\d{2}-\d{2}\]/')
+        ->toContain('dated');
 });
 
 it('throws an exception when the file handle cannot be set', function (): void {
@@ -539,7 +545,7 @@ it('handles a non-resource handle on destruction', function (): void {
     setProperty($logger, 'fileHandle', 'foo');
     $logger = null;
 
-    expect(true)->toBeTrue();
+    $this->addToAssertionCount(1);
 });
 
 function setProperty(object $object, string $property, mixed $value): void

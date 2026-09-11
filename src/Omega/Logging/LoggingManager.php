@@ -19,8 +19,6 @@ use Omega\Logging\Exception\UnknownDriverException;
 use Psr\Log\LoggerInterface;
 use Stringable;
 
-use function is_callable;
-
 /**
  * Class LoggingManager.
  *
@@ -36,6 +34,8 @@ use function is_callable;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @method string getLogFilePath() Returns the path of the log file the default driver is writing to.
  */
 class LoggingManager implements LoggerInterface
 {
@@ -45,7 +45,7 @@ class LoggingManager implements LoggerInterface
      * Each driver can be a direct instance of {@see LoggerInterface} or a lazy-loaded
      * closure returning a logger instance.
      *
-     * @var array<string, LoggerInterface|Closure(): LoggerInterface>
+     * @var array<string, LoggerInterface|Closure(): (LoggerInterface|null)>
      */
     private array $driver = [];
 
@@ -87,8 +87,8 @@ class LoggingManager implements LoggerInterface
      * Drivers can be added either as ready-to-use instances or as closures
      * that return a {@see LoggerInterface} instance upon resolution.
      *
-     * @param string                                 $driverName The unique driver name.
-     * @param Closure(): LoggerInterface|LoggerInterface $driver  The driver instance or a closure returning it.
+     * @param string                                     $driverName The unique driver name.
+     * @param LoggerInterface|Closure(): (LoggerInterface|null) $driver The driver instance or a closure returning it.
      * @return self Returns the current instance for method chaining.
      */
     public function setDriver(string $driverName, Closure|LoggerInterface $driver): self
@@ -110,17 +110,17 @@ class LoggingManager implements LoggerInterface
      */
     private function resolve(string $driverName): LoggerInterface
     {
-        $driver = $this->driver[$driverName];
+        $driver = $this->driver[$driverName] ?? null;
 
-        if (is_callable($driver)) {
+        if ($driver instanceof Closure) {
             $driver = $driver();
         }
 
-        if (null === $driver) {
-            throw new UnknownDriverException($driverName);
+        if ($driver instanceof LoggerInterface) {
+            return $this->driver[$driverName] = $driver;
         }
 
-        return $this->driver[$driverName] = $driver;
+        throw new UnknownDriverException($driverName);
     }
 
     /**
@@ -149,8 +149,8 @@ class LoggingManager implements LoggerInterface
      * This allows direct method calls (e.g., `$logger->write('message')`) on
      * the manager without explicitly calling `getDriver()`.
      *
-     * @param string $method     The method name being called.
-     * @param array  $parameters The parameters passed to the method.
+     * @param string                $method     The method name being called.
+     * @param array<string, mixed>  $parameters The parameters passed to the method.
      * @return mixed The result returned by the underlying log driver.
      * @throws UnknownDriverException if a requested log driver is unknown, unregistered, or unsupported.
      */

@@ -42,16 +42,20 @@ class RedisServiceProvider extends AbstractServiceProvider
     public function register(): void
     {
         $this->app->set(RedisManager::class, function () {
-            $config = $this->app->get('config')['redis'] ?? [];
+            /** @var array{redis?: array{default?: string, connections?: array<string, array{host?: string, port?: int, timeout?: float, retry_interval?: int, read_timeout?: float, persistent?: bool, persistent_id?: string, password?: string, database?: int, unix_socket?: string}>}} $config */
+            $config = $this->app->get('config');
 
             $manager = new RedisManager();
-            $manager->setConfig($config);
+            $manager->setConfig($config['redis'] ?? []);
 
             return $manager;
         });
 
         $this->app->set(RedisInterface::class, function () {
-            return $this->app->get(RedisManager::class)->connection();
+            /** @var RedisManager $manager */
+            $manager = $this->app->get(RedisManager::class);
+
+            return $manager->connection();
         });
     }
 }

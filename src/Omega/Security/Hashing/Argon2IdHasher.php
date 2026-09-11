@@ -14,8 +14,6 @@ declare(strict_types=1);
 
 namespace Omega\Security\Hashing;
 
-use Omega\Security\Exceptions\Argon2IdHashingNotSupportedException;
-
 use const PASSWORD_ARGON2ID;
 
 /**
@@ -44,10 +42,6 @@ class Argon2IdHasher extends ArgonHasher implements HashInterface
             'time_cost'   => $options['time'] ?? $this->time,
             'threads'     => $options['threads'] ?? $this->threads,
         ]);
-
-        if (!is_string($hash)) {
-            throw new Argon2IdHashingNotSupportedException(PASSWORD_ARGON2ID . ' hashing not supported.');
-        }
 
         return $hash;
     }

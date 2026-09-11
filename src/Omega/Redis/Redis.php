@@ -8,6 +8,9 @@ namespace Omega\Redis;
 
 use Redis as PhpRedis;
 
+use function array_values;
+use function is_array;
+
 /**
  * @method int|false    hSet(string $key, string $hashKey, string $value)
  * @method string|false hGet(string $key, string $hashKey)
@@ -109,13 +112,19 @@ class Redis implements RedisInterface
      */
     public function keys(string $pattern): array
     {
-        return $this->redis->keys($pattern);
+        $keys = $this->redis->keys($pattern);
+
+        if (!is_array($keys)) {
+            return [];
+        }
+
+        return array_values($keys);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function client(): object
+    public function client(): \Redis
     {
         return $this->redis;
     }

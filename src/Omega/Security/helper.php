@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\Security;
 
 use Random\RandomException;
+use RuntimeException;
 
 /**
  * Security helper functions for simplified encryption and decryption.
@@ -39,19 +40,24 @@ if (!function_exists('encrypt')) {
      * Encrypts the given plain text using the specified algorithm and optional pass phrase.
      *
      * This helper provides a convenient shortcut to the Crypt class, allowing encryption
-     * without manually instantiating Crypt. If no pass phrase is provided, the underlying
-     * Crypt implementation will generate or handle a default key as needed.
+     * without manually instantiating Crypt. A pass phrase is required to derive the
+     * encryption key.
      *
      * @param string      $plain_text  The raw text that will be encrypted.
      * @param string|null $pass_phrase Optional pass phrase used to derive or provide the encryption key.
      * @param string      $algo        The encryption algorithm identifier (e.g., Algo::AES_256_CBC).
      * @return string The encrypted and encoded string output.
+     * @throws RuntimeException        If no pass phrase is provided to derive the encryption key.
      * @throws RandomException If the encryption process requires secure randomness
      *                         and the system fails to generate it.
      */
     function encrypt(string $plain_text, ?string $pass_phrase = null, string $algo = Algo::AES_256_CBC): string
     {
-        return new Crypt($pass_phrase, $algo)->encrypt($plain_text);
+        if ($pass_phrase === null) {
+            throw new RuntimeException('A pass phrase is required to encrypt data.');
+        }
+
+        return (new Crypt($pass_phrase, $algo))->encrypt($plain_text);
     }
 }
 
@@ -68,11 +74,16 @@ if (!function_exists('decrypt')) {
      *                                 decryption will fail.
      * @param string      $algo        The encryption algorithm identifier (e.g., Algo::AES_256_CBC).
      * @return string The decrypted plain text.
+     * @throws RuntimeException        If no pass phrase is provided to derive the decryption key.
      * @throws RandomException If secure randomness is required during the decryption process
      *                         and cannot be obtained from the system.
      */
     function decrypt(string $encrypted, ?string $pass_phrase = null, string $algo = Algo::AES_256_CBC): string
     {
-        return new Crypt($pass_phrase, $algo)->decrypt($encrypted);
+        if ($pass_phrase === null) {
+            throw new RuntimeException('A pass phrase is required to decrypt data.');
+        }
+
+        return (new Crypt($pass_phrase, $algo))->decrypt($encrypted);
     }
 }
