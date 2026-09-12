@@ -11,9 +11,12 @@ use Omega\DocBlockGenerator\Method;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
+use const DIRECTORY_SEPARATOR;
+
 use function file_exists;
 use function file_put_contents;
 use function is_string;
+use function rtrim;
 
 #[AsCommand(
     name: 'make:seeder',
@@ -30,17 +33,19 @@ final class MakeSeedCommand extends AbstractCommand
     public function __invoke(): int
     {
         $name = $this->getArgument('name');
-        $filePath = $this->app->get('path.seeder');
+        $directory = $this->app->get('path.seeder');
 
         if (!is_string($name)) {
             $this->io->error('The "name" argument must be a string.');
             return self::FAILURE;
         }
 
-        if (!is_string($filePath)) {
+        if (!is_string($directory)) {
             $this->io->error("The \"path.seeder\" binding must resolve to a string path.");
             return self::FAILURE;
         }
+
+        $filePath = rtrim($directory, '/' . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name . '.php';
 
         if (file_exists($filePath) && !$this->getOption('force')) {
             $this->io->error("Seeder [{$name}] already exists!");

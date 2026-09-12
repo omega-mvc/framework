@@ -29,27 +29,29 @@ covers(MakeSeedCommand::class);
 function make_seeder_app(): array
 {
     $base = sys_get_temp_dir() . '/omegaseeder-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+
+    $save = $base . '/seeders';
+    mkdir($save, 0777, true);
 
     $app = new Application($base);
-    $app->set('path.seeder', $base . '/UserSeeder.php');
+    $app->set('path.seeder', $save);
 
-    return [$app, $base];
+    return [$app, $save];
 }
 
 it('creates a seeder file for make:seeder', function (): void {
-    [$app, $base] = make_seeder_app();
+    [$app, $save] = make_seeder_app();
 
     $command = new MakeSeedCommand();
     $command->app = $app;
 
     $result = (new CommandTester($command))->run(['name' => 'UserSeeder']);
 
-    $content = (string) file_get_contents($base . '/UserSeeder.php');
+    $content = (string) file_get_contents($save . '/UserSeeder.php');
 
     expect($result->statusCode)->toBe(Command::SUCCESS)
         ->and($result->getDisplay())->toContain('Seeder [UserSeeder] created successfully.')
-        ->and(file_exists($base . '/UserSeeder.php'))->toBeTrue()
+        ->and(file_exists($save . '/UserSeeder.php'))->toBeTrue()
         ->and($content)->toContain('namespace Database\Seeders;')
         ->and($content)->toContain('extends AbstractSeeder');
 
@@ -86,8 +88,8 @@ it('fails when the path.seeder binding is not a string', function (): void {
 });
 
 it('reports that the seeder already exists without force', function (): void {
-    [$app, $base] = make_seeder_app();
-    file_put_contents($base . '/UserSeeder.php', 'x');
+    [$app, $save] = make_seeder_app();
+    file_put_contents($save . '/UserSeeder.php', 'x');
 
     $command = new MakeSeedCommand();
     $command->app = $app;
@@ -101,8 +103,8 @@ it('reports that the seeder already exists without force', function (): void {
 });
 
 it('overwrites an existing seeder file with --force', function (): void {
-    [$app, $base] = make_seeder_app();
-    file_put_contents($base . '/UserSeeder.php', 'old');
+    [$app, $save] = make_seeder_app();
+    file_put_contents($save . '/UserSeeder.php', 'old');
 
     $command = new MakeSeedCommand();
     $command->app = $app;
@@ -110,7 +112,7 @@ it('overwrites an existing seeder file with --force', function (): void {
     $result = (new CommandTester($command))->run(['name' => 'UserSeeder', '--force' => true]);
 
     expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and((string) file_get_contents($base . '/UserSeeder.php'))->not->toContain('old');
+        ->and((string) file_get_contents($save . '/UserSeeder.php'))->not->toContain('old');
 
     $app->flush();
 });
@@ -122,7 +124,7 @@ it('fails when the seeder file cannot be written', function (): void {
     $app = new Application($base);
     $blocker = $base . 'blocker';
     touch($blocker);
-    $app->set('path.seeder', $blocker . '/UserSeeder.php');
+    $app->set('path.seeder', $blocker . '/seeders');
 
     $command = new MakeSeedCommand();
     $command->app = $app;

@@ -84,6 +84,8 @@ class DatabaseServiceProvider extends AbstractServiceProvider
             fn (): ConnectionInterface => ConnectionFactory::make($dsn)
         );
 
+        $this->app->alias('database', ConnectionInterface::class);
+
         $this->app->set(
             SchemaConnection::class,
             fn (): SchemaConnection => new SchemaConnection($dsn)
