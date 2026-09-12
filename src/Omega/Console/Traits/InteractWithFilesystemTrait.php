@@ -14,11 +14,17 @@ declare(strict_types=1);
 
 namespace Omega\Console\Traits;
 
-use Symfony\Component\Finder\Finder;
-
-use function array_map;
+use function basename;
+use function fnmatch;
 use function is_dir;
-use function iterator_to_array;
+use function is_file;
+use function is_link;
+use function realpath;
+use function scandir;
+use function sort;
+use function str_starts_with;
+
+use const DIRECTORY_SEPARATOR;
 
 /**
  * Trait providing filesystem utilities for console commands or services.
@@ -47,6 +53,11 @@ trait InteractWithFilesystemTrait
     /**
      * Recursively searches for files in a directory matching given patterns.
      *
+     * Matching is performed against the file name with fnmatch() glob patterns,
+     * mirroring the previous Symfony Finder based behavior without the external
+     * dependency. Hidden files and symlinks are ignored, and results are sorted
+     * by path for deterministic output.
+     *
      * @param string               $directory Directory to search in.
      * @param string|string[]      $patterns  A pattern or an array of patterns to match (e.g., '*.php').
      * @param string[]             $exclude   An array of patterns to exclude (e.g., ['Test*.php']).
@@ -58,20 +69,83 @@ trait InteractWithFilesystemTrait
             return [];
         }
 
-        $finder = new Finder();
-        $finder->files()->in($directory);
+        $patterns = (array) $patterns;
+        $files    = [];
 
-        foreach ((array)$patterns as $pattern) {
-            $finder->name($pattern);
+        foreach ($this->collectFiles($directory) as $path) {
+            if (!is_file($path)) {
+                continue;
+            }
+
+            $name = basename($path);
+
+            if (str_starts_with($name, '.')) {
+                continue;
+            }
+
+            if ($this->matchesAnyPattern($name, $exclude)) {
+                continue;
+            }
+
+            if ($this->matchesAnyPattern($name, $patterns)) {
+                $files[] = realpath($path) ?: $path;
+            }
         }
 
-        foreach ($exclude as $exPattern) {
-            $finder->notName($exPattern);
+        sort($files);
+
+        return $files;
+    }
+
+    /**
+     * Recursively collect the absolute paths of every file in a directory subtree.
+     *
+     * Symlinked entries are skipped to avoid infinite recursion, mirroring the
+     * previous finder behavior of not following links.
+     *
+     * @param string $directory Directory to scan.
+     * @return list<string> Absolute paths of every file in the subtree.
+     */
+    private function collectFiles(string $directory): array
+    {
+        $files = [];
+
+        foreach (scandir($directory) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $path = $directory . DIRECTORY_SEPARATOR . $entry;
+
+            if (is_link($path)) {
+                continue;
+            }
+
+            if (is_dir($path)) {
+                $files = [...$files, ...$this->collectFiles($path)];
+            } elseif (is_file($path)) {
+                $files[] = $path;
+            }
         }
 
-        return array_map(
-            static fn($file) => $file->getRealPath(),
-            iterator_to_array($finder, false)
-        );
+        return $files;
+    }
+
+    /**
+     * Check whether a file name matches any of the given glob patterns.
+     *
+     * @param string   $name     File name to test.
+     * @param string[] $patterns Glob patterns to match against.
+     * @return bool True when at least one pattern matches.
+     */
+    private function matchesAnyPattern(string $name, array $patterns): bool
+    {
+        foreach ($patterns as $pattern) {
+            if (fnmatch($pattern, $name)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

@@ -18,6 +18,7 @@ use Exception;
 use Omega\Application\ApplicationInterface;
 use Omega\Console\Attribute\AsCommand;
 use Omega\Container\Exceptions\BindingResolutionException;
+use Omega\Console\Traits\InteractWithFilesystemTrait;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Application\Bootstrapper\BootProviders;
@@ -34,8 +35,8 @@ use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\Finder;
 
+use function basename;
 use function class_exists;
 use function file_exists;
 use function getenv;
@@ -73,6 +74,8 @@ use function str_contains;
  */
 class ConsoleApplication
 {
+    use InteractWithFilesystemTrait;
+
     /** @var array<int, class-string> The list of bootstrapper classes to run during initialization. */
     protected array $bootstrappers = [
         ConfigBootstrapper::class,
@@ -241,11 +244,8 @@ class ConsoleApplication
                 continue;
             }
 
-            $finder = new Finder();
-            $finder->files()->name('*Command.php')->in($path);
-
-            foreach ($finder as $file) {
-                $className = $namespace . $file->getBasename('.php');
+            foreach ($this->findFiles($path, '*Command.php') as $file) {
+                $className = $namespace . basename($file, '.php');
                 if (!class_exists($className) || !is_a($className, Command::class, true)) {
                     continue;
                 }
