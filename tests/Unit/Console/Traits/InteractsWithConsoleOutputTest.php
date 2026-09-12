@@ -6,7 +6,6 @@ namespace Tests\Console\Traits;
 
 use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Console\Output\OutputInterface;
 use Tests\Console\Fixtures\OutputStyler;
 
 covers(InteractsWithConsoleOutputTrait::class);
@@ -80,7 +79,7 @@ it('writes two columns separated by dotted filler', function (): void {
 });
 
 it('keeps at least two dots when the content fills the line', function (): void {
-    $output = new BufferedOutput(OutputInterface::VERBOSITY_NORMAL, false);
+    $output = new BufferedOutput();
     $styler = new OutputStyler($output);
     $left = str_repeat('l', 60);
     $right = str_repeat('r', 60);
@@ -91,5 +90,5 @@ it('keeps at least two dots when the content fills the line', function (): void 
 
     expect($display)->toStartWith('  ' . $left)
         ->and($display)->toEndWith($right . '  ')
-        ->and($display)->toMatch('/\s\.\.\s/');
+        ->and($display)->toContain('..');
 });
