@@ -34,6 +34,7 @@ it('throws InvalidArgumentException for non-existent file', function (): void {
 
 it('computes size from a resource', function (): void {
     $handle = fopen('php://memory', 'r+');
+    $this->assertIsResource($handle);
     fwrite($handle, 'test content');
     rewind($handle);
 

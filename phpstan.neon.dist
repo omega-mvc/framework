@@ -8,6 +8,7 @@ parameters:
     tmpDir: cache/phpstan
     excludePaths:
         - tests/Unit/fixtures
+        - src/Omega/Console/stubs
     bootstrapFiles:
         - vendor/autoload.php
 

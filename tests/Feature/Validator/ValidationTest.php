@@ -55,7 +55,7 @@ it('run validation condtion with valid failed condition', function () {
 
     $val->if_valid(function () {
         // skip, invalid validation
-        expect(false)->toBeTrue();
+        throw new \LogicException('This branch should never run for invalid input.');
     })->else(function ($err) use ($val) {
         expect($val->isValid())->toBeFalse();
     });

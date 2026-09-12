@@ -9,6 +9,7 @@ use Omega\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
+use RuntimeException;
 use Throwable;
 
 use function is_string;
@@ -55,6 +56,11 @@ final class SeedCommand extends AbstractCommand
 
         try {
             $seeder = $this->app->make($targetClass);
+
+            if (!is_object($seeder)) {
+                throw new RuntimeException('Unable to resolve the seeder class to an object.');
+            }
+
             $this->app->call([$seeder, 'run']);
 
             $this->io->success("Success run seeder: {$targetClass}");

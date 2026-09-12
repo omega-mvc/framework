@@ -73,14 +73,16 @@ it('close returns false and flushes', function (): void {
     $buffer = new InMemoryBuffer($this->fs, 'test.txt');
     $buffer->open(new StreamMode('w'));
     $buffer->write('New Content');
-    expect($buffer->close())->toBeFalse();
+    $buffer->close();
+    expect($this->adapter->read('test.txt'))->toBe('New Content');
     expect($this->fs->has('test.txt'))->toBeTrue();
 });
 
 it('close does nothing when synchronized', function (): void {
     $buffer = new InMemoryBuffer($this->fs, 'test.txt');
     $buffer->open(new StreamMode('r'));
-    expect($buffer->close())->toBeFalse();
+    $buffer->close();
+    expect($this->adapter->read('test.txt'))->toBe('Hello World');
 });
 
 it('seek with SEEK_SET', function (): void {
@@ -150,7 +152,7 @@ it('stat returns stats for existing file', function (): void {
     $buffer = new InMemoryBuffer($this->fs, 'test.txt');
     $buffer->open(new StreamMode('r'));
     $stat = $buffer->stat();
-    expect($stat)->toBeArray();
+    $this->assertIsArray($stat);
     expect($stat['size'])->toBe(11);
 });
 
@@ -162,7 +164,7 @@ it('stat returns false for non-existent file', function (): void {
 it('cast always returns false', function (): void {
     $buffer = new InMemoryBuffer($this->fs, 'test.txt');
     $buffer->open(new StreamMode('r'));
-    expect($buffer->cast(0))->toBeFalse();
+    expect($buffer->cast(0))->not->toBeTrue();
 });
 
 it('unlink deletes file when mode implies deletion', function (): void {

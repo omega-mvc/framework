@@ -71,7 +71,7 @@ it('returns false when renaming non-existent file', function (): void {
 
 it('returns mime type for a file', function (): void {
     $mimeType = $this->adapter->mimeType('file1.txt');
-    expect($mimeType)->toBeString();
+    expect($mimeType)->not->toBeEmpty();
 });
 
 it('constructs with no files', function (): void {

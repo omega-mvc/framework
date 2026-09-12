@@ -27,9 +27,11 @@ afterEach(function (): void {
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($iterator as $file) {
-            $file->isDir()
-                ? rmdir($file->getPathname())
-                : unlink($file->getPathname());
+            if ($file instanceof \SplFileInfo) {
+                $file->isDir()
+                    ? rmdir($file->getPathname())
+                    : unlink($file->getPathname());
+            }
         }
         rmdir($this->tmpDir);
     }
@@ -182,7 +184,7 @@ it('returns stat for open file', function (): void {
     $stream = new Local($this->tmpFile);
     $stream->open(new StreamMode('r'));
     $stat = $stream->stat();
-    expect($stat)->toBeArray();
+    $this->assertIsArray($stat);
     expect($stat['size'])->toBe(5);
     $stream->close();
 });

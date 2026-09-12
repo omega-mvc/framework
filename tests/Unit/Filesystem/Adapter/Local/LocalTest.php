@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use OutOfBoundsException;
 use RuntimeException;
 use Omega\Filesystem\Adapter\Local\Local;
+use Omega\Filesystem\Stream\StreamMode;
 use Omega\Filesystem\Util\Checksum;
 use Omega\Filesystem\Util\Size;
 
@@ -25,7 +26,9 @@ afterEach(function (): void {
             \RecursiveIteratorIterator::CHILD_FIRST
         );
         foreach ($iterator as $file) {
-            $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+            if ($file instanceof \SplFileInfo) {
+                $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+            }
         }
         rmdir($this->dir);
     }
@@ -33,7 +36,7 @@ afterEach(function (): void {
 
 it('constructs with existing directory', function (): void {
     $adapter = new Local($this->dir);
-    expect($adapter)->toBeInstanceOf(Local::class);
+    expect($adapter->isDirectory('.'))->toBeTrue();
 });
 
 it('throws when directory does not exist and create is false', function (): void {
@@ -127,7 +130,7 @@ it('returns mime type', function (): void {
     $adapter = new Local($this->dir, true);
     $adapter->write('test.txt', 'hello');
     $mimeType = $adapter->mimeType('test.txt');
-    expect($mimeType)->toBeString();
+    expect($mimeType)->not->toBeEmpty();
 });
 
 it('computes key from path', function (): void {
@@ -153,5 +156,6 @@ it('creates a stream', function (): void {
     $adapter = new Local($this->dir, true);
     $adapter->write('test.txt', 'content');
     $stream = $adapter->createStream('test.txt');
-    expect($stream)->toBeInstanceOf(\Omega\Filesystem\Stream\Local::class);
+    expect($stream->open(new StreamMode('r')))->toBeTrue();
+    expect($stream->read(7))->toBe('content');
 });

@@ -76,13 +76,12 @@ it('throws when deleting non-existent file', function (): void {
 it('gets a file object', function (): void {
     $this->fs->write('file.txt', 'content');
     $file = $this->fs->get('file.txt');
-    expect($file)->toBeInstanceOf(File::class);
     expect($file->getKey())->toBe('file.txt');
 });
 
 it('gets a file with create flag', function (): void {
     $file = $this->fs->get('new.txt', true);
-    expect($file)->toBeInstanceOf(File::class);
+    expect($file->getKey())->toBe('new.txt');
 });
 
 it('throws when getting non-existent file without create', function (): void {
@@ -112,7 +111,7 @@ it('lists keys with prefix', function (): void {
 it('returns modification time', function (): void {
     $this->fs->write('file.txt', 'content');
     $mtime = $this->fs->mtime('file.txt');
-    expect($mtime)->toBeInt();
+    expect($mtime)->toBeGreaterThanOrEqual(0);
 });
 
 it('throws when getting mtime of non-existent file', function (): void {
@@ -138,13 +137,13 @@ it('creates a stream for non-stream adapter', function (): void {
 
 it('creates a file object', function (): void {
     $file = $this->fs->createFile('file.txt');
-    expect($file)->toBeInstanceOf(File::class);
+    expect($file->getKey())->toBe('file.txt');
 });
 
 it('returns mime type for file with mime provider', function (): void {
     $this->fs->write('file.txt', 'hello');
     $mimeType = $this->fs->mimeType('file.txt');
-    expect($mimeType)->toBeString();
+    expect($mimeType)->not->toBeEmpty();
 });
 
 it('throws when getting mime type of non-existent file', function (): void {

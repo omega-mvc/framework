@@ -8,7 +8,7 @@ use Omega\Filesystem\Adapter\Memory\InMemory;
 use Omega\Filesystem\Exception\FileNotFoundException;
 use Omega\Filesystem\File;
 use Omega\Filesystem\Filesystem;
-use Omega\Filesystem\Stream\StreamInterface;
+use Omega\Filesystem\Stream\InMemoryBuffer;
 
 covers(File::class);
 
@@ -55,7 +55,7 @@ it('sets size directly', function (): void {
 
 it('gets modification time', function (): void {
     $mtime = $this->file->getMtime();
-    expect($mtime)->toBeInt();
+    expect($mtime)->toBeGreaterThanOrEqual(0);
 });
 
 it('sets content and returns byte count', function (): void {
@@ -75,7 +75,7 @@ it('deletes file', function (): void {
 
 it('creates a stream', function (): void {
     $stream = $this->file->createStream();
-    expect($stream)->toBeInstanceOf(StreamInterface::class);
+    expect($stream)->toBeInstanceOf(InMemoryBuffer::class);
 });
 
 it('renames file', function (): void {
