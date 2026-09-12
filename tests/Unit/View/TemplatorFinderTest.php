@@ -1,253 +1,156 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
 
-/**
- * Test suite for the TemplatorFinder component.
- *
- * Ensures that template files can be located correctly across registered paths
- * and extensions, validates path and extension management, cache behavior,
- * and proper exception handling when templates cannot be found.
- *
- * @category  Tests
- * @package   View
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(ViewFileNotFoundException::class)]
-#[CoversClass(TemplatorFinder::class)]
-final class TemplatorFinderTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Test it can find templator file location.
-     *
-     * @return void
-     */
-    public function testItCanFindTemplatorFileLocation(): void
-    {
-        $base = $this->setFixturePath('/fixtures/view/sample/Templators');
+covers(ViewFileNotFoundException::class);
+covers(TemplatorFinder::class);
 
-        $view = new TemplatorFinder([$base], ['.php']);
+it('can find templator file location', function (): void {
+    $base = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $this->assertEquals(
-            $this->setFixturePath('/fixtures/view/sample/Templators/php.php'),
-            $view->find('php')
-        );
-    }
+    $view = new TemplatorFinder([$base], ['.php']);
 
-    /**
-     * Test it can find templator file location will throw.
-     *
-     * @return void
-     * @throws ViewFileNotFoundException If the template cannot be found in any registered path.
-     */
-    public function testItCanFindTemplatorFileLocationWillThrow(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    expect($view->find('php'))->toEqual(
+        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+    );
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can find templator file location will throw', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
 
-        $this->expectException(ViewFileNotFoundException::class);
-        $view->find('blade');
-    }
+    $view = new TemplatorFinder([$loader], ['.php']);
 
-    /**
-     * Test it can find in path.
-     *
-     * @return void
-     */
-    public function testItCanFindInPath(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $this->expectException(ViewFileNotFoundException::class);
+    $view->find('blade');
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can find in path', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $this->assertEquals(
-            $this->setFixturePath('/fixtures/view/sample/Templators/php.php'),
-            (fn () => $this->{'findInPath'}('php', [$loader]))->call($view)
-        );
-    }
+    $view = new TemplatorFinder([$loader], ['.php']);
 
-    /**
-     * Test it can fnd in path will throw exception
-     *
-     * @return void
-     * @throws ViewFileNotFoundException If the template cannot be found in any registered path.
-     */
-    public function testItCanFindInPathWillThrowException(): void
-    {
-        $loader = $this->setFixturePath('Templators');
+    $this->assertEquals(
+        $this->setFixturePath('/fixtures/view/sample/Templators/php.php'),
+        (fn () => $this->{'findInPath'}('php', [$loader]))->call($view)
+    );
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can find in path will throw exception', function (): void {
+    $loader = $this->setFixturePath('Templators');
 
-        $this->expectException(ViewFileNotFoundException::class);
-        (fn () => $this->{'findInPath'}('blade', [$loader]))->call($view);
-    }
+    $view = new TemplatorFinder([$loader], ['.php']);
 
-    public function testFindInPathWithEmptyPathsThrows(): void
-    {
-        $view = new TemplatorFinder([], ['.php']);
+    $this->expectException(ViewFileNotFoundException::class);
+    (fn () => $this->{'findInPath'}('blade', [$loader]))->call($view);
+});
 
-        $this->expectException(ViewFileNotFoundException::class);
+it('find in path with empty paths throws', function (): void {
+    $view = new TemplatorFinder([], ['.php']);
 
-        (fn () => $this->{'findInPath'}('php', []))->call($view);
-    }
+    $this->expectException(ViewFileNotFoundException::class);
 
-    public function testFindInPathWithNoExtensionsThrows(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    (fn () => $this->{'findInPath'}('php', []))->call($view);
+});
 
-        $view = new TemplatorFinder([$loader], []);
+it('find in path with no extensions throws', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $this->expectException(ViewFileNotFoundException::class);
+    $view = new TemplatorFinder([$loader], []);
 
-        (fn () => $this->{'findInPath'}('php', [$loader]))->call($view);
-    }
+    $this->expectException(ViewFileNotFoundException::class);
 
-    /**
-     * Test it can add path.
-     *
-     * @return void
-     */
-    public function testItCanAddPath(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    (fn () => $this->{'findInPath'}('php', [$loader]))->call($view);
+});
 
-        $view = new TemplatorFinder([], ['.php']);
-        $view->addPath($loader);
+it('can add path', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $this->assertEquals($this->setFixturePath('/fixtures/view/sample/Templators/php.php'), $view->find('php'));
-    }
+    $view = new TemplatorFinder([], ['.php']);
+    $view->addPath($loader);
 
-    /**
-     * Test it can set path.
-     *
-     * @return void
-     */
-    public function testItCanSetPath(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    expect($view->find('php'))->toEqual(
+        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+    );
+});
 
-        $view  = new TemplatorFinder([], ['.php']);
-        $paths = (fn () => $this->{'paths'})->call($view);
-        $this->assertEquals([], $paths);
-        $view->setPaths([$loader]);
-        $paths = (fn () => $this->{'paths'})->call($view);
-        $this->assertEquals([$loader], $paths);
-    }
+it('can set path', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
 
-    public function testSetPathsCoversForeachWithEmptyElement(): void
-    {
-        $view = new TemplatorFinder([], ['.php']);
+    $view  = new TemplatorFinder([], ['.php']);
+    $paths = (fn () => $this->{'paths'})->call($view);
+    expect($paths)->toEqual([]);
+    $view->setPaths([$loader]);
+    $paths = (fn () => $this->{'paths'})->call($view);
+    expect($paths)->toEqual([$loader]);
+});
 
-        $dummyPath = __DIR__;
-        $view->setPaths([$dummyPath]);
+it('set paths covers foreach with empty element', function (): void {
+    $view = new TemplatorFinder([], ['.php']);
 
-        $paths = (fn() => $this->{'paths'})->call($view);
-        $this->assertEquals([realpath($dummyPath)], $paths);
-    }
+    $dummyPath = __DIR__;
+    $view->setPaths([$dummyPath]);
 
-    /**
-     * Test it can not add multi path.
-     *
-     * @return void
-     */
-    public function testItCanNotAddMultiPath(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $paths = (fn() => $this->{'paths'})->call($view);
+    expect($paths)->toEqual([realpath($dummyPath)]);
+});
 
-        $view = new TemplatorFinder([], ['.php']);
-        $view->addPath($loader);
-        $view->addPath($loader);
-        $view->addPath($loader);
+it('can not add multi path', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
 
-        $this->assertEquals([$loader], $view->getPaths());
-    }
+    $view = new TemplatorFinder([], ['.php']);
+    $view->addPath($loader);
+    $view->addPath($loader);
+    $view->addPath($loader);
 
-    /**
-     * Test it can add extension.
-     *
-     * @return void
-     */
-    public function testItCanAddExtension(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    expect($view->getPaths())->toEqual([$loader]);
+});
 
-        $view = new TemplatorFinder([$loader]);
-        $view->addExtension('.php');
+it('can add extension', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $this->assertEquals($this->setFixturePath('/fixtures/view/sample/Templators/php.php'), $view->find('php'));
-    }
+    $view = new TemplatorFinder([$loader]);
+    $view->addExtension('.php');
 
-    /**
-     * Test it can flush.
-     *
-     * @return void
-     */
-    public function testItCanFlush(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    expect($view->find('php'))->toEqual(
+        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+    );
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can flush', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
 
-        $view->find('php');
-        /** @var array<string, string> $views */
-        $views = (fn () => $this->{'views'})->call($view);
-        $this->assertCount(1, $views);
-        $view->flush();
-        /** @var array<string, string> $views */
-        $views = (fn () => $this->{'views'})->call($view);
-        $this->assertCount(0, $views);
-    }
+    $view = new TemplatorFinder([$loader], ['.php']);
 
-    /**
-     * Test it can get paths registered.
-     *
-     * @return void
-     */
-    public function testItCanGetPathsRegistered(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $view->find('php');
+    /** @var array<string, string> $views */
+    $views = (fn () => $this->{'views'})->call($view);
+    expect($views)->toHaveCount(1);
+    $view->flush();
+    /** @var array<string, string> $views */
+    $views = (fn () => $this->{'views'})->call($view);
+    expect($views)->toHaveCount(0);
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can get paths registered', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
 
-        $this->assertEquals([$loader], $view->getPaths());
-    }
+    $view = new TemplatorFinder([$loader], ['.php']);
 
-    /**
-     * Test it can get extensions registered.
-     *
-     * @return void
-     */
-    public function testItCanGetExtensionsRegistered(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    expect($view->getPaths())->toEqual([$loader]);
+});
 
-        $view = new TemplatorFinder([$loader], ['.php']);
+it('can get extensions registered', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
 
-        $this->assertEquals(['.php'], $view->getExtensions());
-    }
-}
+    $view = new TemplatorFinder([$loader], ['.php']);
+
+    expect($view->getExtensions())->toEqual(['.php']);
+});

@@ -1,17 +1,5 @@
 <?php
 
-/** @noinspection PhpExpressionResultUnusedInspection */
-
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View\Templator;
@@ -21,128 +9,60 @@ use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator;
 use Omega\View\Templator\IncludeTemplator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use Tests\FixturesPathTrait;
 
-/**
- * Test suite for the IncludeTemplator.
- *
- * Ensures that `{% include %}` directives are processed correctly
- * and that dependencies are tracked when including views.
- *
- * @category   Tests
- * @package    View
- * @subpackage Templator
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(IncludeTemplator::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-#[CoversClass(ViewFileNotFoundException::class)]
-final class IncludeTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Instance of the Templator class used to render template strings
-     * for testing purposes. It wraps a TemplatorFinder that manages
-     * template paths and extensions.
-     *
-     * @var Templator
-     */
-    private Templator $templator;
+covers(IncludeTemplator::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
+covers(ViewFileNotFoundException::class);
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function (): void {
+    $this->templator = new Templator(
+        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
+        $this->setFixturePath('/fixtures/view/templator/')
+    );
+});
 
-        $this->templator = new Templator(
-            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
-            $this->setFixturePath('/fixtures/view/templator/')
-        );
-    }
+it('can render include', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body>{% include(\'/view/component.php\') %}</body></html>'
+    );
+    expect($out)->toEqual('<html><head></head><body><p>Call From Component</p></body></html>');
+});
 
-    /**
-     * Test it can render include.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderInclude(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body>{% include(\'/view/component.php\') %}</body></html>'
-        );
-        $this->assertEquals('<html><head></head><body><p>Call From Component</p></body></html>', $out);
-    }
+it('can fetch dependency view', function (): void {
+    $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator')], ['']);
+    $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
+    $templator->templates('<html><head></head><body>{% include(\'view/component.php\') %}</body></html>', 'test');
+    expect($templator->getDependency('test'))->toEqual([
+        $finder->find('view/component.php') => 1,
+    ]);
+});
 
-    /**
-     * Test it can fetch dependency view.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanFetchDependencyView(): void
-    {
-        $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator')], ['']);
-        $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
-        $templator->templates('<html><head></head><body>{% include(\'view/component.php\') %}</body></html>', 'test');
-        $this->assertEquals([
-            $finder->find('view/component.php') => 1,
-        ], $templator->getDependency('test'));
-    }
+it('throws exception when include not found', function (): void {
+    $this->expectException(ViewFileNotFoundException::class);
+    $this->expectExceptionMessageIsOrContains('View file not found: `nonexistent.php`');
 
-    /**
-     * Test it throws an exception when the included template does not exist.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItThrowsExceptionWhenIncludeNotFound(): void
-    {
-        $this->expectException(ViewFileNotFoundException::class);
-        $this->expectExceptionMessageIsOrContains('View file not found: `nonexistent.php`');
+    $this->templator->templates(
+        '<html>{% include(\'nonexistent.php\') %}</html>'
+    );
+});
 
-        $this->templator->templates(
-            '<html>{% include(\'nonexistent.php\') %}</html>'
-        );
-    }
+it('returns included template when depth zero', function (): void {
+    $reflection = new ReflectionClass($this->templator);
+    $property = $reflection->getProperty('finder');
+    $property->setAccessible(true);
+    /** @var TemplatorFinder $finder */
+    $finder = $property->getValue($this->templator);
 
-    /**
-     * Test it returns included template immediately when makeDept is 0.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItReturnsIncludedTemplateWhenDepthZero(): void
-    {
-        $reflection = new ReflectionClass($this->templator);
-        $property = $reflection->getProperty('finder');
-        $property->setAccessible(true);
-        /** @var TemplatorFinder $finder */
-        $finder = $property->getValue($this->templator);
+    $includeTemplator = new IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+    $includeTemplator->maksDept(0);
 
-        $includeTemplator = new IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
-        $includeTemplator->maksDept(0);
+    $template = "{% include('view/component.php') %}";
+    $out      = $includeTemplator->parse($template);
 
-        $template = "{% include('view/component.php') %}";
-        $out      = $includeTemplator->parse($template);
-
-        $this->assertStringContainsString('<p>Call From Component</p>', $out);
-    }
-}
+    expect($out)->toContain('<p>Call From Component</p>');
+});

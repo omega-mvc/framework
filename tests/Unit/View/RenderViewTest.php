@@ -1,21 +1,9 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Portal;
 use Omega\View\View;
@@ -26,100 +14,62 @@ use function ob_get_clean;
 use function ob_start;
 use function str_replace;
 
-/**
- * Test suite for the View renderer.
- *
- * Verifies that view files (HTML and PHP) are rendered correctly using
- * the View class and that missing view files trigger the expected exception.
- *
- * @category  Tests
- * @package   View
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Portal::class)]
-#[CoversClass(ViewFileNotFoundException::class)]
-#[CoversClass(View::class)]
-final class RenderViewTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Test it can render using view classes.
-     *
-     * @return void
-     */
-    public function testItCanRenderUsingViewClasses(): void
-    {
-        $testHtml  = $this->setFixturePath('/fixtures/view/sample/sample.html');
-        $testPhp   = $this->setFixturePath('/fixtures/view/sample/sample.php');
+covers(Portal::class);
+covers(ViewFileNotFoundException::class);
+covers(View::class);
 
-        ob_start();
-        View::render($testHtml)->send();
-        $renderHtml = ob_get_clean();
+it('can render using view classes', function (): void {
+    $testHtml  = $this->setFixturePath('/fixtures/view/sample/sample.html');
+    $testPhp   = $this->setFixturePath('/fixtures/view/sample/sample.php');
 
-        ob_start();
-        View::render($testPhp, ['contents' => ['say' => 'hay']])->send();
-        $renderPhp = ob_get_clean();
+    ob_start();
+    View::render($testHtml)->send();
+    $renderHtml = ob_get_clean();
 
-        $this->assertEquals(
-            "<html><head></head><body></body></html>\n",
-            str_replace("\r\n", "\n", (string) $renderHtml),
-            'it must same output with template html'
-        );
+    ob_start();
+    View::render($testPhp, ['contents' => ['say' => 'hay']])->send();
+    $renderPhp = ob_get_clean();
 
-        $this->assertEquals(
-            "<html><head></head><body><h1>hay</h1></body></html>\n",
-            str_replace("\r\n", "\n", (string) $renderPhp),
-            'it must same output with template html'
-        );
-    }
+    expect(str_replace("\r\n", "\n", (string) $renderHtml))->toEqual(
+        "<html><head></head><body></body></html>\n"
+    );
 
-    /**
-     * Test it throw when file not found.
-     *
-     * @return void
-     */
-    public function testItThrowWhenFileNotFound(): void
-    {
-        $this->expectException(ViewFileNotFoundException::class);
-        View::render('unknown');
-    }
+    expect(str_replace("\r\n", "\n", (string) $renderPhp))->toEqual(
+        "<html><head></head><body><h1>hay</h1></body></html>\n"
+    );
+});
 
-    /**
-     * Test the has() method of Portal via View rendering.
-     *
-     * @return void
-     */
-    public function testPortalHasMethod(): void
-    {
-        $data = [
-            'auth' => ['user' => 'admin'],
-            'meta' => ['title' => 'Home'],
-            'contents' => ['say' => 'hello'],
-        ];
+it('throw when file not found', function (): void {
+    $this->expectException(ViewFileNotFoundException::class);
+    View::render('unknown');
+});
 
-        $viewPath = $this->setFixturePath('/fixtures/view/sample/sample.php');
+it('portal has method', function (): void {
+    $data = [
+        'auth' => ['user' => 'admin'],
+        'meta' => ['title' => 'Home'],
+        'contents' => ['say' => 'hello'],
+    ];
 
-        $response = View::render($viewPath, $data);
+    $viewPath = $this->setFixturePath('/fixtures/view/sample/sample.php');
 
-        $reflection = new ReflectionClass(View::class);
-        $authProp = $reflection->getMethod('render')->getStaticVariables()['auth'] ?? null;
+    $response = View::render($viewPath, $data);
 
-        $authPortal = new Portal($data['auth']);
-        $metaPortal = new Portal($data['meta']);
-        $contentPortal = new Portal($data['contents']);
+    $reflection = new ReflectionClass(View::class);
+    $authProp = $reflection->getMethod('render')->getStaticVariables()['auth'] ?? null;
 
-        $this->assertTrue($authPortal->has('user'));
-        $this->assertFalse($authPortal->has('unknown'));
+    $authPortal = new Portal($data['auth']);
+    $metaPortal = new Portal($data['meta']);
+    $contentPortal = new Portal($data['contents']);
 
-        $this->assertTrue($metaPortal->has('title'));
-        $this->assertFalse($metaPortal->has('unknown'));
+    expect($authPortal->has('user'))->toBeTrue();
+    expect($authPortal->has('unknown'))->toBeFalse();
 
-        $this->assertTrue($contentPortal->has('say'));
-        $this->assertFalse($contentPortal->has('other'));
-    }
-}
+    expect($metaPortal->has('title'))->toBeTrue();
+    expect($metaPortal->has('unknown'))->toBeFalse();
+
+    expect($contentPortal->has('say'))->toBeTrue();
+    expect($contentPortal->has('other'))->toBeFalse();
+});

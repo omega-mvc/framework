@@ -1,26 +1,14 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View;
 
 use Exception;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Omega\Text\Str;
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Tests\FixturesPathTrait;
 use Throwable;
@@ -33,703 +21,453 @@ use function substr_count;
 use function trim;
 use function unlink;
 
-/**
- * Test suite for the Templator rendering engine.
- *
- * This class verifies the full template lifecycle, including compilation,
- * caching, rendering, inclusion, control structures, variables, sections,
- * slots, comments, raw blocks, and error handling.
- *
- * It also ensures that templates behave consistently with and without cache,
- * and that the Templator integrates correctly with the TemplatorFinder.
- *
- * @category  Tests
- * @package   View
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-#[CoversClass(Str::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-#[CoversClass(ViewFileNotFoundException::class)]
-final class TemplatorTest extends TestCase
+uses(FixturesPathTrait::class);
+
+covers(Str::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
+covers(ViewFileNotFoundException::class);
+
+function assertSee(string $text, string $find): void
 {
-    use FixturesPathTrait;
+    expect(Str::contains($text, $find))->toBeTrue();
+}
 
-    /**
-     * Tears down the environment after each test method.
-     *
-     * This method is called automatically by PHPUnit after each test runs.
-     * It is responsible for cleaning up resources, flushing the application
-     * state, unsetting properties, and resetting any static or global state
-     * to avoid side effects between tests.
-     *
-     * @return void
-     */
-    protected function tearDown(): void
-    {
-        $files = glob($this->setFixturePath('/fixtures/view/caches/*.php'));
-        if ($files === false) {
-            return;
-        }
-        foreach ($files as $file) {
-            if (is_file($file)) {
-                unlink($file);
-            }
+function assertBlind(string $text, string $find): void
+{
+    expect(Str::contains($text, $find))->toBeFalse();
+}
+
+afterEach(function (): void {
+    $files = glob($this->setFixturePath('/fixtures/view/caches/*.php'));
+    if ($files === false) {
+        return;
+    }
+    foreach ($files as $file) {
+        if (is_file($file)) {
+            unlink($file);
         }
     }
+});
 
-    /**
-     * Assert that the given text contains the expected substring.
-     *
-     * This helper method is used to improve test readability when checking
-     * that a rendered template includes specific output fragments.
-     *
-     * @param string $text The rendered output to inspect.
-     * @param string $find The substring expected to be present.
-     * @return void
-     */
-    private function assertSee(string $text, string $find): void
-    {
-        $this->assertTrue(Str::contains($text, $find));
-    }
+it('can set new finder', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-    /**
-     * Assert that the given text does NOT contain the specified substring.
-     *
-     * This helper method is mainly used to verify that certain template elements
-     * (such as comments or skipped blocks) are not rendered in the final output.
-     *
-     * @param string $text The rendered output to inspect.
-     * @param string $find The substring that must not be present.
-     * @return void
-     */
-    private function assertBlind(string $text, string $find): void
-    {
-        $this->assertTrue(!Str::contains($text, $find));
-    }
+    $finder     = new TemplatorFinder([$loader]);
+    $templator  = new Templator(new TemplatorFinder([$loader], ['.php']), $cache);
+    $get_finder = (fn () => $this->{'finder'})->call($templator);
+    expect($get_finder)->not->toBe($finder);
 
-    /**
-     * Test it can set new finder.
-     *
-     * @return void
-     */
-    public function testItCanSetNewFinder()
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $templator->setFinder($finder);
+    $get_finder = (fn () => $this->{'finder'})->call($templator);
+    expect($get_finder)->toBe($finder);
+});
 
-        $finder     = new TemplatorFinder([$loader]);
-        $templator  = new Templator(new TemplatorFinder([$loader], ['.php']), $cache);
-        $get_finder = (fn () => $this->{'finder'})->call($templator);
-        $this->assertNotSame($finder, $get_finder);
+it('can compile template file', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches/');
 
-        $templator->setFinder($finder);
-        $get_finder = (fn () => $this->{'finder'})->call($templator);
-        $this->assertSame($finder, $get_finder);
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->compile('include.php');
 
-    /**
-     * Test it can compile template file.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanCompileTemplateFile(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches/');
+    assertSee(trim($out), '<p>taylor</p>');
+    expect($cache . md5('include.php') . '.php')->toBeReadableFile();
+});
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->compile('include.php');
+it('can compile set template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $this->assertSee(trim($out), '<p>taylor</p>');
-        $this->assertFileExists($cache . md5('include.php') . '.php');
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->compile('set.php');
 
-    /**
-     * Test it can compile set template.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanCompileSetTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(Str::contains($out, '<?php $foo = \'bar\'; ?>'))->toBeTrue();
+    expect(Str::contains($out, '<?php $bar = 123; ?>'))->toBeTrue();
+    expect(Str::contains($out, '<?php $arr = [12, \'34\']; ?>'))->toBeTrue();
+});
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->compile('set.php');
+it('can render php template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $contain = Str::contains($out, '<?php $foo = \'bar\'; ?>');
-        $this->assertTrue($contain);
-        $contain = Str::contains($out, '<?php $bar = 123; ?>');
-        $this->assertTrue($contain);
-        $contain = Str::contains($out, '<?php $arr = [12, \'34\']; ?>');
-        $this->assertTrue($contain);
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('php.php', []);
 
-    /**
-     * Test it can render php templare.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderPhpTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body>taylor</body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('php.php', []);
+    $out  = $view->render('php.php', [], false);
+    expect(trim($out))->toEqual('<html><head></head><body>taylor</body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body>taylor</body></html>', trim($out));
+it('can render include template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $out  = $view->render('php.php', [], false);
-        $this->assertEquals('<html><head></head><body>taylor</body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('include.php', []);
 
-    /**
-     * est it can render include template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderIncludeTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    assertSee(trim($out), '<p>taylor</p>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('include.php', []);
+    $out  = $view->render('include.php', [], false);
+    assertSee(trim($out), '<p>taylor</p>');
+});
 
-        $this->assertSee(trim($out), '<p>taylor</p>');
+it('can render include nesting template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $out  = $view->render('include.php', [], false);
-        $this->assertSee(trim($out), '<p>taylor</p>');
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('nesting.include.php', []);
 
-    /**
-     * Test it can render include nesting template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderIncludeNestingTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    assertSee(trim($out), '<p>taylor</p>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('nesting.include.php', []);
+    $out  = $view->render('nesting.include.php', [], false);
+    assertSee(trim($out), '<p>taylor</p>');
+});
 
-        $this->assertSee(trim($out), '<p>taylor</p>');
+it('can render name template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $out  = $view->render('nesting.include.php', [], false);
-        $this->assertSee(trim($out), '<p>taylor</p>');
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17]);
 
-    /**
-     * Test it can render name template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderNameTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17]);
+    $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17], false);
+    expect(trim($out))->toEqual('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>', trim($out));
+it('can render name template with ternary', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17], false);
-        $this->assertEquals('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('naming-ternary.php', ['age' => false]);
 
-    /**
-     * Test it can render name template with ternary.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderNameTemplateWithTernary(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body><h1>your nuno, ages 28 </h1></body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('naming-ternary.php', ['age' => false]);
+    $out  = $view->render('naming-ternary.php', ['age' => false], false);
+    expect(trim($out))->toEqual('<html><head></head><body><h1>your nuno, ages 28 </h1></body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body><h1>your nuno, ages 28 </h1></body></html>', trim($out));
+it('can render name template in sub folder', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $out  = $view->render('naming-ternary.php', ['age' => false], false);
-        $this->assertEquals('<html><head></head><body><h1>your nuno, ages 28 </h1></body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('Groups/nesting.php', ['name' => 'taylor', 'age' => 17]);
 
-    /**
-     * Test it can render name template in sub folder.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderNameTemplateInSubFolder(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>');
+});
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('Groups/nesting.php', ['name' => 'taylor', 'age' => 17]);
+it('can render if template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        $this->assertEquals('<html><head></head><body><h1>your taylor, ages 17 </h1></body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('if.php', ['true' => true]);
 
-    /**
-     * Test it can render if template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderIfTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body><h1> show </h1><h1></h1></body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('if.php', ['true' => true]);
+    // without cache
+    $out  = $view->render('if.php', ['true' => true], false);
+    expect(trim($out))->toEqual('<html><head></head><body><h1> show </h1><h1></h1></body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body><h1> show </h1><h1></h1></body></html>', trim($out));
+it('can render else if template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        // without cache
-        $out  = $view->render('if.php', ['true' => true], false);
-        $this->assertEquals('<html><head></head><body><h1> show </h1><h1></h1></body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('else.php', ['true' => false]);
 
-    /**
-     * Test it can render else if template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderElseIfTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body><h1> hide </body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('else.php', ['true' => false]);
+    // without cache
+    $out  = $view->render('else.php', ['true' => false], false);
+    expect(trim($out))->toEqual('<html><head></head><body><h1> hide </body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body><h1> hide </body></html>', trim($out));
+it('can render each template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        // without cache
-        $out  = $view->render('else.php', ['true' => false], false);
-        $this->assertEquals('<html><head></head><body><h1> hide </body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('each.php', ['numbers' => [1, 2, 3]]);
 
-    /**
-     * Test it can render each template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderEachTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect(trim($out))->toEqual('<html><head></head><body>123</body></html>');
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('each.php', ['numbers' => [1, 2, 3]]);
+    // without cache
+    $out  = $view->render('each.php', ['numbers' => [1, 2, 3]], false);
+    expect(trim($out))->toEqual('<html><head></head><body>123</body></html>');
+});
 
-        $this->assertEquals('<html><head></head><body>123</body></html>', trim($out));
+it('can render section template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        // without cache
-        $out  = $view->render('each.php', ['numbers' => [1, 2, 3]], false);
-        $this->assertEquals('<html><head></head><body>123</body></html>', trim($out));
-    }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('slot.php', [
+        'title'   => 'taylor otwell',
+        'product' => 'laravel',
+        'year'    => 2023,
+    ]);
 
-    /**
-     * Test it can render section template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderSectionTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    assertSee($out, 'taylor otwell');
+    assertSee($out, 'laravel');
+    assertSee($out, '2023');
+});
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('slot.php', [
+it('can throw error section template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    try {
+        $view->render('slot_miss.php', [
             'title'   => 'taylor otwell',
             'product' => 'laravel',
             'year'    => 2023,
         ]);
+    } catch (Throwable $th) {
+        expect($th->getMessage())->toEqual("Slot with extends 'Slots/layout.php' required 'title'");
+    }
+});
 
-        $this->assertSee($out, 'taylor otwell');
-        $this->assertSee($out, 'laravel');
-        $this->assertSee($out, '2023');
+it('can render template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $view->suffix = '.php';
+    $out          = $view->render('portfolio', [
+        'title'    => 'cool portfolio',
+        'products' => ['laravel', 'forge'],
+    ]);
+
+    assertSee($out, 'cool portfolio');
+    assertSee($out, 'taylor');
+    assertSee($out, 'laravel');
+    assertSee($out, 'forge');
+});
+
+it('can render comment template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('comment.php', []);
+
+    assertBlind($out, 'this a comment');
+
+    // without cache
+    $out  = $view->render('comment.php', [], false);
+    assertBlind($out, 'this a comment');
+});
+
+it('can render repeat template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('repeat.include.php', []);
+
+    expect(substr_count($out, 'some text'))->toEqual(6);
+
+    // without cache
+    $out  = $view->render('repeat.include.php', [], false);
+    expect(substr_count($out, 'some text'))->toEqual(6);
+});
+
+it('can render name template with raw', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('namingskip.php', ['render' => 'oke']);
+
+    expect(trim($out))->toEqual(
+        '<html><head></head><body><h1>oke, your {{ name }}, ages {{ age }}</h1></body></html>'
+    );
+});
+
+it('can render each break template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('eachbreak.php', ['numbers' => [1, 2, 3]]);
+
+    expect(trim($out))->toEqual('<html><head></head><body></body></html>');
+});
+
+it('can render each continue template', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('eachcontinue.php', ['numbers' => [1, 2, 3]]);
+
+    expect(trim($out))->toEqual('<html><head></head><body></body></html>');
+});
+
+it('can get raw parameter data', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $out  = $view->render('parent-data.php', ['full.name' => 'taylor otwell']);
+
+    expect(trim($out))->toEqual(
+        '<html><head></head><body><h1>my name is taylor otwell </h1></body></html>'
+    );
+});
+
+it('can check template file exist', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    expect($view->viewExist('php.php'))->toBeTrue();
+    expect($view->viewExist('notexist.php'))->toBeFalse();
+});
+
+it('can make templator using string', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $template = new Templator($loader, $cache);
+    $this->assertInstanceOf(Templator::class, $template);
+    /** @var TemplatorFinder $finder */
+    $finder = (fn () => $this->{'finder'})->call($template);
+    expect($finder->getExtensions())->toEqual(['.template.php', '.php']);
+    expect($finder->getPaths())->toEqual([$loader]);
+});
+
+it('prepend dependency with existing child', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $parent = 'parent.php';
+    $child  = 'child.php';
+    $templator->addDependency($parent, $child, 1);
+
+    $templator->prependDependency($parent, [$child => 5]);
+
+    /** @var array<string, array<string, int>> $dependencies */
+    $dependencies = (fn() => $this->{'dependency'})->call($templator);
+    expect($dependencies[$parent][$child])->toEqual(5);
+});
+
+it('get view cleans buffer on throwable', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/bad.php';
+    file_put_contents($badTemplate, '<?php throw new RuntimeException("boom");');
+
+    try {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageIsOrContains('boom');
+
+        $view->render('bad.php', []);
+    } finally {
+        unlink($badTemplate);
+    }
+});
+
+it('render cache logic branches', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cacheDir = $this->setFixturePath('/fixtures/view/caches');
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cacheDir);
+    $template = 'php.php';
+    $templatePath = $loader . '/' . $template;
+    $cachePath = $cacheDir . '/' . md5($template) . '.php';
+
+    // SCENARIO 1: Cache abilitata ma file non esistente (Colpisce file_exists == false)
+    $view->render($template, [], true);
+    expect($cachePath)->toBeReadableFile();
+
+    // SCENARIO 2: Cache abilitata, file esistente e timestamp valido (HIT DELLA CACHE)
+    touch($templatePath, time() - 100);
+    touch($cachePath, time());
+    $out = $view->render($template, [], true);
+    assertSee($out, 'taylor');
+
+    // SCENARIO 3: Cache abilitata, file esistente MA timestamp scaduto (Cache obsoleta)
+    touch($templatePath, time());
+    touch($cachePath, time() - 100);
+    $out = $view->render($template, [], true);
+    assertSee($out, 'taylor');
+
+    // SCENARIO 4: Cache disabilitata esplicitamente tramite parametro
+    $out = $view->render($template, [], false);
+    assertSee($out, 'taylor');
+});
+
+it('can clear dependencies', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $templator->addDependency('parent.php', 'child.php', 1);
+    expect($templator->getDependency('parent.php'))->toBe(['child.php' => 1]);
+
+    $result = $templator->clearDependencies();
+
+    expect($templator->getDependency('parent.php'))->toBe([]);
+    expect($result)->toBe($templator);
+});
+
+it('render returns empty string when template unreadable', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/unreadable.php';
+    file_put_contents($badTemplate, 'anything');
+    chmod($badTemplate, 0000);
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $out = $view->render('unreadable.php', []);
+    } finally {
+        restore_error_handler();
+        chmod($badTemplate, 0644);
+        unlink($badTemplate);
     }
 
-    /**
-     * Test it can throw error section template.
-     *
-     * @return void
-     */
-    public function testItCanThrowErrorSectionTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
+    expect($out)->toBe('');
+});
 
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+it('compile returns empty string when template unreadable', function (): void {
+    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $cache  = $this->setFixturePath('/fixtures/view/caches');
 
-        try {
-            $view->render('slot_miss.php', [
-                'title'   => 'taylor otwell',
-                'product' => 'laravel',
-                'year'    => 2023,
-            ]);
-        } catch (Throwable $th) {
-            $this->assertEquals("Slot with extends 'Slots/layout.php' required 'title'", $th->getMessage());
-        }
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/unreadable_compile.php';
+    file_put_contents($badTemplate, 'anything');
+    chmod($badTemplate, 0000);
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $out = $view->compile('unreadable_compile.php');
+    } finally {
+        restore_error_handler();
+        chmod($badTemplate, 0644);
+        unlink($badTemplate);
     }
 
-    /**
-     * Test it can render template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $view->suffix = '.php';
-        $out          = $view->render('portfolio', [
-            'title'    => 'cool portfolio',
-            'products' => ['laravel', 'forge'],
-        ]);
-
-        $this->assertSee($out, 'cool portfolio');
-        $this->assertSee($out, 'taylor');
-        $this->assertSee($out, 'laravel');
-        $this->assertSee($out, 'forge');
-    }
-
-    /**
-     * Test it can render comment template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderCommentTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('comment.php', []);
-
-        $this->assertBlind($out, 'this a comment');
-
-        // without cache
-        $out  = $view->render('comment.php', [], false);
-        $this->assertBlind($out, 'this a comment');
-    }
-
-    /**
-     * Test it can render repeat template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderRepeatTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('repeat.include.php', []);
-
-        $this->assertEquals(6, substr_count($out, 'some text'));
-
-        // without cache
-        $out  = $view->render('repeat.include.php', [], false);
-        $this->assertEquals(6, substr_count($out, 'some text'));
-    }
-
-    /**
-     * Test it can render name template with raw.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderNameTemplateWithRaw(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('namingskip.php', ['render' => 'oke']);
-
-        $this->assertEquals(
-            '<html><head></head><body><h1>oke, your {{ name }}, ages {{ age }}</h1></body></html>',
-            trim($out)
-        );
-    }
-
-    /**
-     * Test it can render each break template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderEachBreakTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('eachbreak.php', ['numbers' => [1, 2, 3]]);
-
-        $this->assertEquals('<html><head></head><body></body></html>', trim($out));
-    }
-
-    /**
-     * Test it can render each continue template.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanRenderEachContinueTemplate(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('eachcontinue.php', ['numbers' => [1, 2, 3]]);
-
-        $this->assertEquals('<html><head></head><body></body></html>', trim($out));
-    }
-
-    /**
-     * Test it can get raw parameter data.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItCanGetRawParameterData(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-        $out  = $view->render('parent-data.php', ['full.name' => 'taylor otwell']);
-
-        $this->assertEquals(
-            '<html><head></head><body><h1>my name is taylor otwell </h1></body></html>',
-            trim($out)
-        );
-    }
-
-    /**
-     * Test it can check template file exist.
-     *
-     * @return void
-     */
-    public function testItCanCheckTemplateFileExist(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $this->assertTrue($view->viewExist('php.php'));
-        $this->assertFalse($view->viewExist('notexist.php'));
-    }
-
-    /**
-     * Test it can make templator using string.
-     *
-     * @return void
-     * @noinspection PhpConditionAlreadyCheckedInspection
-     */
-    public function testItCanMakeTemplatorUsingString(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $template = new Templator($loader, $cache);
-        $this->assertInstanceOf(Templator::class, $template);
-        /** @var TemplatorFinder $finder */
-        $finder = (fn () => $this->{'finder'})->call($template);
-        $this->assertEquals(['.template.php', '.php'], $finder->getExtensions());
-        $this->assertEquals([$loader], $finder->getPaths());
-    }
-
-    /**
-     * Test prepend dependency with existing child.
-     *
-     * @return void
-     */
-    public function testPrependDependencyWithExistingChild(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $parent = 'parent.php';
-        $child  = 'child.php';
-        $templator->addDependency($parent, $child, 1);
-
-        $templator->prependDependency($parent, [$child => 5]);
-
-        /** @var array<string, array<string, int>> $dependencies */
-        $dependencies = (fn() => $this->{'dependency'})->call($templator);
-        $this->assertEquals(5, $dependencies[$parent][$child]);
-    }
-
-    /**
-     * Test get view cleans buffer on throwable.
-     *
-     * @return void
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testGetViewCleansBufferOnThrowable(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $badTemplate = $loader . '/bad.php';
-        file_put_contents($badTemplate, '<?php throw new RuntimeException("boom");');
-
-        try {
-            $this->expectException(RuntimeException::class);
-            $this->expectExceptionMessageIsOrContains('boom');
-
-            $view->render('bad.php', []);
-        } finally {
-            unlink($badTemplate);
-        }
-    }
-
-    public function testRenderCacheLogicBranches(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cacheDir = $this->setFixturePath('/fixtures/view/caches');
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cacheDir);
-        $template = 'php.php';
-        $templatePath = $loader . '/' . $template;
-        $cachePath = $cacheDir . '/' . md5($template) . '.php';
-
-        // SCENARIO 1: Cache abilitata ma file non esistente (Colpisce file_exists == false)
-        // Questo è quello che accade normalmente nel tuo primo render
-        $view->render($template, [], true);
-        $this->assertFileExists($cachePath);
-
-        // SCENARIO 2: Cache abilitata, file esistente e timestamp valido (HIT DELLA CACHE)
-        // Colpisce il rigo 186 (ex rosso) e il path "tutto true"
-        touch($templatePath, time() - 100); // Template vecchio
-        touch($cachePath, time());          // Cache nuova
-        $out = $view->render($template, [], true);
-        $this->assertSee($out, 'taylor');
-
-        // SCENARIO 3: Cache abilitata, file esistente MA timestamp scaduto (Cache obsoleta)
-        // Colpisce il ramo filemtime(...) >= filemtime(...) == false
-        touch($templatePath, time());          // Template nuovo
-        touch($cachePath, time() - 100);       // Cache vecchia
-        $out = $view->render($template, [], true);
-        $this->assertSee($out, 'taylor');
-
-        // SCENARIO 4: Cache disabilitata esplicitamente tramite parametro
-        // Colpisce il ramo $cache == false
-        $out = $view->render($template, [], false);
-        $this->assertSee($out, 'taylor');
-    }
-
-    /**
-     * Test it can clear dependencies.
-     *
-     * @return void
-     */
-    public function testItCanClearDependencies(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $templator->addDependency('parent.php', 'child.php', 1);
-        $this->assertSame(['child.php' => 1], $templator->getDependency('parent.php'));
-
-        $result = $templator->clearDependencies();
-
-        $this->assertSame([], $templator->getDependency('parent.php'));
-        $this->assertSame($templator, $result);
-    }
-
-    /**
-     * Test render returns an empty string when the template file cannot be read.
-     *
-     * @return void
-     */
-    public function testRenderReturnsEmptyStringWhenTemplateUnreadable(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $badTemplate = $loader . '/unreadable.php';
-        file_put_contents($badTemplate, 'anything');
-        chmod($badTemplate, 0000);
-
-        set_error_handler(static fn (): bool => true);
-        try {
-            $out = $view->render('unreadable.php', []);
-        } finally {
-            restore_error_handler();
-            chmod($badTemplate, 0644);
-            unlink($badTemplate);
-        }
-
-        $this->assertSame('', $out);
-    }
-
-    /**
-     * Test compile returns an empty string when the template file cannot be read.
-     *
-     * @return void
-     */
-    public function testCompileReturnsEmptyStringWhenTemplateUnreadable(): void
-    {
-        $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-        $cache  = $this->setFixturePath('/fixtures/view/caches');
-
-        $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
-
-        $badTemplate = $loader . '/unreadable_compile.php';
-        file_put_contents($badTemplate, 'anything');
-        chmod($badTemplate, 0000);
-
-        set_error_handler(static fn (): bool => true);
-        try {
-            $out = $view->compile('unreadable_compile.php');
-        } finally {
-            restore_error_handler();
-            chmod($badTemplate, 0644);
-            unlink($badTemplate);
-        }
-
-        $this->assertSame('', $out);
-    }
-}
+    expect($out)->toBe('');
+});

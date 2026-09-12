@@ -1,126 +1,52 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
 use Exception;
-use Omega\Text\Str;
 use Omega\View\Templator;
-use Omega\View\Templator\UseTemplator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
+use Omega\View\Templator\UseTemplator;
+use Omega\Text\Str;
 use Tests\FixturesPathTrait;
 
-/**
- * Test suite for the UseTemplator.
- *
- * Ensures that `{% use %}` directives correctly generate PHP `use`
- * statements and support multiple and aliased imports.
- *
- * @category   Tests
- * @package    View
- * @subpackage Templator
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(UseTemplator::class)]
-#[CoversClass(Str::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-final class UseTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Instance of the Templator class used to render template strings
-     * for testing purposes. It wraps a TemplatorFinder that manages
-     * template paths and extensions.
-     *
-     * @var Templator
-     */
-    private Templator $templator;
+covers(UseTemplator::class);
+covers(Str::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function (): void {
+    $this->templator = new Templator(
+        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+        $this->setFixturePath('/fixtures/view/templator/')
+    );
+});
 
-        $this->templator = new Templator(
-            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->setFixturePath('/fixtures/view/templator/')
-        );
-    }
+it('can render use', function (): void {
+    $out   = $this->templator->templates("'<html>{% use ('Test\Test') %}</html>");
+    expect(Str::contains($out, 'use Test\Test'))->toBeTrue();
+});
 
-    /**
-     * Test it can render use.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderUse(): void
-    {
-        $out   = $this->templator->templates("'<html>{% use ('Test\Test') %}</html>");
-        $match = Str::contains($out, 'use Test\Test');
-        $this->assertTrue($match);
-    }
+it('can render use multi time', function (): void {
+    $out   = $this->templator->templates(
+        "'<html>{% use ('Test\Test') %}{% use ('Test\Test as Test2') %}</html>"
+    );
+    expect(Str::contains($out, 'use Test\Test'))->toBeTrue();
+    expect(Str::contains($out, 'use Test\Test as Test2'))->toBeTrue();
+});
 
-    /**
-     * Test it can render multi time.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderUseMultiTime(): void
-    {
-        $out   = $this->templator->templates(
-            "'<html>{% use ('Test\Test') %}{% use ('Test\Test as Test2') %}</html>"
-        );
-        $match     = Str::contains($out, 'use Test\Test');
-        $this->assertTrue($match);
-        $match     = Str::contains($out, 'use Test\Test as Test2');
-        $this->assertTrue($match);
-    }
+it('returns template if no use directive', function (): void {
+    $templator = new UseTemplator(
+        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+        $this->setFixturePath('/fixtures/view/templator/')
+    );
 
-    /**
-     * Test it returns template unchanged if no use directive is present.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItReturnsTemplateIfNoUseDirective(): void
-    {
-        $templator = new UseTemplator(
-            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->setFixturePath('/fixtures/view/templator/')
-        );
+    $template = "<html><body>No use here</body></html>";
 
-        $template = "<html><body>No use here</body></html>";
+    $out = $templator->parse($template);
 
-        $out = $templator->parse($template);
-
-        $this->assertEquals($template, $out);
-    }
-}
+    expect($out)->toEqual($template);
+});

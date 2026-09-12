@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\View\Templator;
@@ -18,192 +8,91 @@ use Exception;
 use Omega\View\Templator;
 use Omega\View\Templator\NameTemplator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use Tests\FixturesPathTrait;
 
-/**
- * Test suite for the NameTemplator.
- *
- * Ensures that variable interpolation, escapes, raw output,
- * ternary operators, function calls, and raw blocks are rendered correctly.
- *
- * @category   Tests
- * @package    View
- * @subpackage Templator
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(NameTemplator::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-final class NamingTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Instance of the Templator class used to render template strings
-     * for testing purposes. It wraps a TemplatorFinder that manages
-     * template paths and extensions.
-     *
-     * @var Templator
-     */
-    private Templator $templator;
+covers(NameTemplator::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function (): void {
+    $this->templator = new Templator(
+        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
+        $this->setFixturePath('/fixtures/view/templator/')
+    );
+});
 
-        $this->templator = new Templator(
-            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
-            $this->setFixturePath('/fixtures/view/templator/')
-        );
-    }
+it('can render naming', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body><h1>your {{ $name }}, ages {{ $age }} </h1></body></html>'
+    );
+    expect($out)->toEqual(
+        '<html><head></head><body><h1>your <?php echo htmlspecialchars($name); ?>, '
+        . 'ages <?php echo htmlspecialchars($age); ?> </h1></body></html>'
+    );
+});
 
-    /**
-     * Test it can render naming.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderNaming(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body><h1>your {{ $name }}, ages {{ $age }} </h1></body></html>'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><h1>your <?php echo htmlspecialchars($name); ?>, '
-            . 'ages <?php echo htmlspecialchars($age); ?> </h1></body></html>',
-            $out
-        );
-    }
+it('can render naming without escape', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body><h1>your {!! $name !!}, '
+        . 'ages {!! $age !!} </h1></body></html>'
+    );
+    expect($out)->toEqual(
+        '<html><head></head><body><h1>your <?php echo $name; ?>, '
+        . 'ages <?php echo $age; ?> </h1></body></html>'
+    );
+});
 
-    /**
-     * Test it can render naming without escape.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderNamingWithoutEscape(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body><h1>your {!! $name !!}, '
-            . 'ages {!! $age !!} </h1></body></html>'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><h1>your <?php echo $name; ?>, '
-            . 'ages <?php echo $age; ?> </h1></body></html>',
-            $out
-        );
-    }
+it('can render naming with call function', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body><h1>time: }{{ now()->getTimestamp() }}</h1></body></html>'
+    );
+    expect($out)->toEqual(
+        '<html><head></head><body><h1>time: }<?php echo htmlspecialchars'
+        . '(now()->getTimestamp()); ?></h1></body></html>'
+    );
+});
 
-    /**
-     * Test it can render naming with call function.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderNamingWithCallFunction(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body><h1>time: }{{ now()->getTimestamp() }}</h1></body></html>'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><h1>time: }<?php echo htmlspecialchars'
-            . '(now()->getTimestamp()); ?></h1></body></html>',
-            $out
-        );
-    }
+it('can render naming ternary', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body><h1>your '
+        . '{{ $name ?? \'nuno\' }}, ages '
+        . '{{ $age ? 17 : 28 }} </h1></body></html>'
+    );
+    expect($out)->toEqual(
+        '<html><head></head><body><h1>your '
+        . '<?php echo htmlspecialchars($name ?? \'nuno\'); ?>, ages '
+        . '<?php echo htmlspecialchars($age ? 17 : 28); ?> </h1>'
+        . '</body></html>'
+    );
+});
 
-    /**
-     * Test it can render naming ternary.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderNamingTernary(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body><h1>your '
-            . '{{ $name ?? \'nuno\' }}, ages '
-            . '{{ $age ? 17 : 28 }} </h1></body></html>'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><h1>your '
-            . '<?php echo htmlspecialchars($name ?? \'nuno\'); ?>, ages '
-            . '<?php echo htmlspecialchars($age ? 17 : 28); ?> </h1>'
-            . '</body></html>',
-            $out
-        );
-    }
+it('can render naming skip', function (): void {
+    $out = $this->templator->templates(
+        '<html><head></head><body><h1>{{ $render }}, '
+        . '{% raw %}your {{ name }}, ages {{ age }}{% endraw %}</h1></body></html>'
+    );
+    expect($out)->toEqual(
+        '<html><head></head><body><h1><?php echo htmlspecialchars($render); ?>, '
+        . 'your {{ name }}, ages {{ age }}</h1></body></html>'
+    );
+});
 
-    /**
-     * Test it can render naming skip.
-     *
-     * @return void
-     * @throws Exception If the templator fails to process the template.
-     */
-    public function testItCanRenderNamingSkip(): void
-    {
-        $out = $this->templator->templates(
-            '<html><head></head><body><h1>{{ $render }}, '
-            . '{% raw %}your {{ name }}, ages {{ age }}{% endraw %}</h1></body></html>'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><h1><?php echo htmlspecialchars($render); ?>, '
-            . 'your {{ name }}, ages {{ age }}</h1></body></html>',
-            $out
-        );
-    }
+it('handles empty template without any variables', function (): void {
+    $out = $this->templator->templates('');
+    expect($out)->toEqual('');
+});
 
-    /**
-     * Test it handles empty template without any variables.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItHandlesEmptyTemplate(): void
-    {
-        $out = $this->templator->templates('');
-        $this->assertSame('', $out);
-    }
+it('handles template with only raw blocks', function (): void {
+    $template = '{% raw %}RAW_CONTENT{% endraw %}';
+    $out = $this->templator->templates($template);
+    expect($out)->toEqual('RAW_CONTENT');
+});
 
-    /**
-     * Test it handles template with only raw blocks.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItHandlesOnlyRawBlocks(): void
-    {
-        $template = '{% raw %}RAW_CONTENT{% endraw %}';
-        $out = $this->templator->templates($template);
-        $this->assertSame('RAW_CONTENT', $out);
-    }
-
-    /**
-     * Test it handles multiple raw blocks and variables together.
-     *
-     * @return void
-     * @throws Exception
-     */
-    public function testItHandlesMultipleRawAndVariables(): void
-    {
-        $template = '{% raw %}BLOCK1{% endraw %} {{ $var }} {% raw %}BLOCK2{% endraw %}';
-        $out = $this->templator->templates($template);
-        $expected = 'BLOCK1 <?php echo htmlspecialchars($var); ?> BLOCK2';
-        $this->assertSame($expected, $out);
-    }
-}
+it('handles multiple raw and variables', function (): void {
+    $template = '{% raw %}BLOCK1{% endraw %} {{ $var }} {% raw %}BLOCK2{% endraw %}';
+    $out = $this->templator->templates($template);
+    $expected = 'BLOCK1 <?php echo htmlspecialchars($var); ?> BLOCK2';
+    expect($out)->toEqual($expected);
+});

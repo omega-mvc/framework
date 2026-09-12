@@ -1,17 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\View Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
-/** @noinspection PhpExpressionResultUnusedInspection */
-
 declare(strict_types=1);
 
 namespace Tests\View\Templator;
@@ -21,8 +9,6 @@ use Omega\View\Exceptions\YeldSectionNotFoundException;
 use Omega\View\Templator;
 use Omega\View\Templator\ComponentTemplator;
 use Omega\View\TemplatorFinder;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -31,222 +17,116 @@ use Throwable;
 
 use function trim;
 
-/**
- * Test suite for the ComponentTemplator.
- *
- * Verifies that components are correctly parsed, rendered, and that
- * dependencies and nested components behave as expected. Also tests
- * error handling when templates or yield sections are missing.
- *
- * @category   Tests
- * @package    View
- * @subpackage Templator
- * @link       https://omega-mvc.github.io
- * @author     Adriano Giovannini <agisoftt@gmail.com>
- * @copyright  Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version    2.0.0
- */
-#[CoversClass(ComponentTemplator::class)]
-#[CoversClass(Templator::class)]
-#[CoversClass(TemplatorFinder::class)]
-#[CoversClass(YeldSectionNotFoundException::class)]
-final class ComponentTest extends TestCase
-{
-    use FixturesPathTrait;
+uses(FixturesPathTrait::class);
 
-    /**
-     * Instance of the Templator class used to render template strings
-     * for testing purposes. It wraps a TemplatorFinder that manages
-     * template paths and extensions.
-     *
-     * @var Templator
-     */
-    private Templator $templator;
+covers(ComponentTemplator::class);
+covers(Templator::class);
+covers(TemplatorFinder::class);
+covers(YeldSectionNotFoundException::class);
 
-    /**
-     * Sets up the environment before each test method.
-     *
-     * This method is called automatically by PHPUnit before each test runs.
-     * It is responsible for initializing the application instance, setting up
-     * dependencies, and preparing any state required by the test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+beforeEach(function (): void {
+    $this->templator = new Templator(
+        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
+        $this->setFixturePath('/fixtures/view/templator/')
+    );
+});
 
-        $this->templator = new Templator(
-            new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-            $this->setFixturePath('/fixtures/view/templator/')
+it('can render component scope', function (): void {
+    $out = $this->templator->templates(
+        '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}'
+    );
+    expect(trim($out))->toEqual('<html><head></head><body><main>core component</main></body></html>');
+});
+
+it('can render nested component scope', function (): void {
+    $out = $this->templator->templates(
+        '{% component(\'componentnested.template\') %}card with nest{% endcomponent %}'
+    );
+    expect(trim($out))->toEqual(
+        '<html><head></head><body><div class="card">card with nest</div>'
+        . PHP_EOL
+        . '</body></html>'
+    );
+});
+
+it('can render component scope multiple', function (): void {
+    $out = $this->templator->templates(
+        '{% component(\'componentcard.template\') %}oke{% endcomponent %} '
+        . '{% component(\'componentcard.template\') %}oke 2 {% endcomponent %}'
+    );
+    expect(trim($out))->toEqual(
+        '<div class="card">oke</div>'
+        . PHP_EOL
+        . ' <div class="card">oke 2 </div>'
+    );
+});
+
+it('throw when extend not found', function (): void {
+    try {
+        $this->templator->templates(
+            '{% component(\'notexits.template\') %}<main>core component</main>{% endcomponent %}'
+        );
+    } catch (Throwable $th) {
+        expect($th->getMessage())->toEqual(
+            'View file not found: `notexits.template`'
         );
     }
+});
 
-    /**
-     * Test it can render component scope.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanRenderComponentScope(): void
-    {
-        $out = $this->templator->templates(
-            '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}'
+it('throw when extend not found yield', function (): void {
+    try {
+        $this->templator->templates(
+            '{% component(\'componentyield.template\') %}<main>core component</main>{% endcomponent %}'
         );
-        $this->assertEquals('<html><head></head><body><main>core component</main></body></html>', trim($out));
+    } catch (Throwable $th) {
+        expect($th->getMessage())->toEqual('Yield section not found: `component2.template`');
     }
+});
 
-    /**
-     * Test it can render nested component scope.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanRenderNestedComponentScope(): void
-    {
-        $out = $this->templator->templates(
-            '{% component(\'componentnested.template\') %}card with nest{% endcomponent %}'
-        );
-        $this->assertEquals(
-            '<html><head></head><body><div class="card">card with nest</div>'
-            . PHP_EOL
-            . '</body></html>',
-            trim($out)
-        );
-    }
+it('can render component using named parameter', function (): void {
+    $out = $this->templator->templates(
+        '{% component(\'componentnamed.template\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
+    );
+    expect(trim($out))->toEqual('<p class="bg-red md">inner text</p>');
+});
 
-    /**
-     * Test it can render component scope multiple.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanRenderComponentScopeMultiple(): void
-    {
-        $out = $this->templator->templates(
-            '{% component(\'componentcard.template\') %}oke{% endcomponent %} '
-            . '{% component(\'componentcard.template\') %}oke 2 {% endcomponent %}'
-        );
-        $this->assertEquals(
-            '<div class="card">oke</div>'
-            . PHP_EOL
-            . ' <div class="card">oke 2 </div>',
-            trim($out)
-        );
-    }
+it('can render component opp a process', function (): void {
+    $templator = $this->templator;
+    $templator->setComponentNamespace('Tests\\View\\Templator\\');
+    $out = $templator->templates(
+        '{% component(\'TestClassComponent\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
+    );
+    expect(trim($out))->toEqual('<p class="bg-red md">inner text</p>');
+});
 
-    /**
-     * Test it throw when extend not found.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItThrowWhenExtendNotFound(): void
-    {
-        try {
-            $this->templator->templates(
-                '{% component(\'notexits.template\') %}<main>core component</main>{% endcomponent %}'
-            );
-        } catch (Throwable $th) {
-            $this->assertEquals(
-                'View file not found: `notexits.template`',
-                $th->getMessage()
-            );
-        }
-    }
+it('can get dependency view', function (): void {
+    $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
+    $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+    $templator->templates(
+        '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
+        'test'
+    );
+    expect($templator->getDependency('test'))->toEqual([
+        $finder->find('component.template') => 1,
+    ]);
+});
 
-    /**
-     * Test it throw when extend not found yield.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     * @throws Throwable If the templator fails to process the template.
-     */
-    public function testItThrowWhenExtendNotFoundYield(): void
-    {
-        try {
-            $this->templator->templates(
-                '{% component(\'componentyield.template\') %}<main>core component</main>{% endcomponent %}'
-            );
-        } catch (Throwable $th) {
-            $this->assertEquals('Yield section not found: `component2.template`', $th->getMessage());
-        }
-    }
+it('extract component and params with positional param', function (): void {
+    $reflection = new ReflectionClass($this->templator);
+    $property   = $reflection->getProperty('finder');
+    $property->setAccessible(true);
+    /** @var TemplatorFinder $finder */
+    $finder     = $property->getValue($this->templator);
 
-    /**
-     * Test it can render component using named parameter.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanRenderComponentUsingNamedParameter(): void
-    {
-        $out = $this->templator->templates(
-            '{% component(\'componentnamed.template\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
-        );
-        $this->assertEquals('<p class="bg-red md">inner text</p>', trim($out));
-    }
+    $componentTemplator = new ComponentTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
 
-    /**
-     * Test it can render component opp a process.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanRenderComponentOppAProcess(): void
-    {
-        $templator = $this->templator;
-        $templator->setComponentNamespace('Tests\\View\\Templator\\');
-        $out = $templator->templates(
-            '{% component(\'TestClassComponent\', bg:\'bg-red\', size:"md") %}inner text{% endcomponent %}'
-        );
-        $this->assertEquals('<p class="bg-red md">inner text</p>', trim($out));
-    }
+    $method = new ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
+    $method->setAccessible(true);
 
-    /**
-     * Test it can get dependency view.
-     *
-     * @return void
-     * @throws Exception If a templator fails to process the template.
-     */
-    public function testItCanGetDependencyView(): void
-    {
-        $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
-        $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator/'));
-        $templator->templates(
-            '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
-            'test'
-        );
-        $this->assertEquals([
-            $finder->find('component.template') => 1,
-        ], $templator->getDependency('test'));
-    }
+    /** @var array{string, array<int, mixed>} $result */
+    $result = $method->invoke($componentTemplator, "'MyComp', 'simple'");
+    [$name, $params] = $result;
 
-    /**
-     * Test extract component and arams with positional param.
-     *
-     * @throws ReflectionException
-     */
-    public function testExtractComponentAndParamsWithPositionalParam(): void
-    {
-        $reflection = new ReflectionClass($this->templator);
-        $property   = $reflection->getProperty('finder');
-        $property->setAccessible(true);
-        /** @var TemplatorFinder $finder */
-        $finder     = $property->getValue($this->templator);
-
-        $componentTemplator = new ComponentTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
-
-        $method = new ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
-        $method->setAccessible(true);
-
-        /** @var array{string, array<int, mixed>} $result */
-        $result = $method->invoke($componentTemplator, "'MyComp', 'simple'");
-        [$name, $params] = $result;
-
-        $this->assertEquals('MyComp', $name);
-        $this->assertEquals(['simple'], $params);
-    }
-}
+    expect($name)->toEqual('MyComp');
+    expect($params)->toEqual(['simple']);
+});
