@@ -37,6 +37,9 @@ use Throwable;
 use function array_merge;
 use function array_reduce;
 use function is_array;
+use function is_bool;
+use function is_int;
+use function is_object;
 use function is_string;
 use function method_exists;
 
@@ -59,6 +62,13 @@ use function method_exists;
  * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
  * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
  * @version   2.0.0
+ *
+ * @phpstan-type DispatcherCallable array{object|string, string}|callable|object|string
+ * @phpstan-type DispatcherConfig array{
+ *     callable: DispatcherCallable,
+ *     parameters: array<string, mixed>,
+ *     middleware: array<int, class-string|string>
+ * }
  */
 class Http
 {
@@ -68,7 +78,7 @@ class Http
      * Used to resolve dependencies, call handlers and middleware,
      * and manage the application lifecycle.
      *
-     * @var Application
+     * @var ApplicationInterface
      */
     protected ApplicationInterface $app;
 
@@ -77,13 +87,13 @@ class Http
      *
      * These middleware are executed for every incoming request.
      *
-     * @var array<int, class-string|string>
+     * @var array<int, class-string>
      */
     protected array $middleware = [
         MaintenanceMiddleware::class,
     ];
 
-    /** @var array<int, class-string|string> List of middleware already registered or executed. */
+    /** @var array<int, class-string> List of middleware already registered or executed. */
     protected array $middlewareUsed = [];
 
     /**
@@ -92,7 +102,7 @@ class Http
      * These classes are executed in order during application
      * bootstrapping to prepare the runtime environment.
      *
-     * @var array<int, class-string|string>
+     * @var array<int, class-string>
      */
     protected array $bootstrappers = [
         ConfigBootstrapper::class,
@@ -138,13 +148,24 @@ class Http
             $this->bootstrap();
 
             $dispatcher = $this->dispatcher($request);
-            $request->with($dispatcher['parameters']);
+
+            $parameters = [];
+            foreach ($dispatcher['parameters'] as $key => $value) {
+                if (is_string($value) || is_int($value) || is_bool($value)) {
+                    $parameters[$key] = $value;
+                }
+            }
+            $request->with($parameters);
 
             $middleware = array_merge($this->middleware, $dispatcher['middleware']);
             $pipeline   = $this->middlewarePipeline($middleware, $dispatcher);
             $response   = $pipeline($request);
         } catch (Throwable $th) {
             $handler = $this->app->get(ExceptionHandler::class);
+
+            if (!$handler instanceof ExceptionHandler) {
+                throw new Exception('The exception handler must be an instance of ' . ExceptionHandler::class);
+            }
 
             $handler->report($th);
             $response = $handler->render($request, $th);
@@ -218,7 +239,7 @@ class Http
     {
         $this->middlewareUsed = [];
 
-        if (method_exists($this->app, 'resolved') && $this->app->resolved(DatabaseManager::class)) {
+        if ($this->app->resolved(DatabaseManager::class)) {
             $manager = $this->app->get(DatabaseManager::class);
             if ($manager instanceof DatabaseManager) {
                 $manager->resetConnectionsForRequest();
@@ -236,13 +257,13 @@ class Http
      * The callable result may return a Response instance, a string,
      * or an array. Any other return type is considered invalid.
      *
-     * @param callable|array|string $callable   Callable or handler to execute.
-     * @param array                 $parameters Parameters passed to the callable.
+     * @param array{object|string, string}|callable|object|string             $callable   Callable or handler to execute.
+     * @param array<string, mixed>                                            $parameters Parameters passed to the callable.
      * @return Response Normalized HTTP response.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception If the returned content type is invalid.
      */
-    private function responseType(callable|array|string $callable, array $parameters): Response
+    private function responseType(array|callable|object|string $callable, array $parameters): Response
     {
         $content = $this->app->call($callable, $parameters);
         if ($content instanceof Response) {
@@ -267,7 +288,7 @@ class Http
      * and middleware stack for the request.
      *
      * @param Request $request Incoming HTTP request.
-     * @return array<string, mixed> Dispatcher configuration.
+     * @return DispatcherConfig Dispatcher configuration.
      */
     protected function dispatcher(Request $request): array
     {
@@ -283,7 +304,13 @@ class Http
      */
     protected function dispatcherMiddleware(Request $request): ?array
     {
-        return Router::getCurrent()['middleware'] ?? [];
+        $current = Router::getCurrent();
+
+        if ($current === null) {
+            return null;
+        }
+
+        return $current->route()['middleware'] ?? null;
     }
 
     /**
@@ -293,7 +320,7 @@ class Http
      * request handler into a single callable pipeline.
      *
      * @param array<int, class-string|string|object> $middleware Middleware stack.
-     * @param array{callable: callable, parameters: array<string, mixed>} $dispatcher Dispatcher configuration.
+     * @param DispatcherConfig                        $dispatcher Dispatcher configuration.
      * @return Closure(Request): Response Executable middleware pipeline.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception If middleware execution fails.
@@ -319,24 +346,30 @@ class Http
      * The middleware must expose a `handle` method accepting
      * the request and a next callback.
      *
-     * @param class-string|string $middleware Middleware class or identifier.
-     * @param Request             $request    Incoming HTTP request.
-     * @param callable            $next       Next middleware callback.
+     * @param class-string|string|object $middleware Middleware class or identifier.
+     * @param Request                   $request    Incoming HTTP request.
+     * @param callable                  $next       Next middleware callback.
      * @return Response HTTP response.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws EntryNotFoundException Thrown when no entry exists for the identifier.
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
-    protected function executeMiddleware(string $middleware, Request $request, callable $next): Response
+    protected function executeMiddleware(string|object $middleware, Request $request, callable $next): Response
     {
         if (false === method_exists($middleware, 'handle')) {
             throw new InvalidArgumentException('Middleware must be a class with handle method');
         }
 
-        return $this->app->call(
+        $response = $this->app->call(
             [$middleware, 'handle'],
             ['request' => $request, 'next' => $next]
         );
+
+        if ($response instanceof Response) {
+            return $response;
+        }
+
+        throw new Exception('Middleware must return a ' . Response::class . ' instance');
     }
 }

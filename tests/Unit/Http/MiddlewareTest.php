@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
+use Closure;
 use Exception;
 use InvalidArgumentException;
 use Omega\Application\Application;
@@ -30,6 +31,7 @@ use Tests\Http\Support\ClassB;
 use Tests\Http\Support\ClassC;
 use Tests\Http\Support\ClassD;
 
+use function is_string;
 use function ob_get_clean;
 use function ob_start;
 
@@ -83,7 +85,7 @@ final class MiddlewareTest extends TestCase
         $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: $this->app->get('path.base'),
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));
@@ -123,6 +125,10 @@ final class MiddlewareTest extends TestCase
 
         $dispatcher = [
             'callable' => function ($param) {
+                if (!is_string($param)) {
+                    throw new Exception('Invalid middleware dispatcher parameter.');
+                }
+
                 echo $param;
 
                 return new Response('');
@@ -130,10 +136,12 @@ final class MiddlewareTest extends TestCase
             'parameters' => [
                 'param' => 'final response/',
             ],
+            'middleware' => [],
         ];
 
         ob_start();
-        $pipe = (fn () => $this->{'middlewarePipeline'}($middleware, $dispatcher))->call($this->app[Http::class]);
+        $http = $this->http;
+        $pipe = (fn (): Closure => $this->middlewarePipeline($middleware, $dispatcher))->call($http);
         $pipe(new Request('/'));
         $out = ob_get_clean();
 
@@ -155,6 +163,10 @@ final class MiddlewareTest extends TestCase
         $middleware = [ClassD::class];
         $dispatcher = [
             'callable' => function ($param) {
+                if (!is_string($param)) {
+                    throw new Exception('Invalid middleware dispatcher parameter.');
+                }
+
                 echo $param;
 
                 return new Response($param);
@@ -162,12 +174,14 @@ final class MiddlewareTest extends TestCase
             'parameters' => [
                 'param' => 'final response/',
             ],
+            'middleware' => [],
         ];
 
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessageIsOrContains('Middleware must be a class with handle method');
 
-        $pipe = (fn () => $this->{'middlewarePipeline'}($middleware, $dispatcher))->call($this->app[Http::class]);
+        $http = $this->http;
+        $pipe = (fn (): Closure => $this->middlewarePipeline($middleware, $dispatcher))->call($http);
         $pipe(new Request('/'));
     }
 }

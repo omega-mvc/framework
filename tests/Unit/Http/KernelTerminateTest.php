@@ -103,9 +103,9 @@ final class KernelTerminateTest extends TestCase
              * Returns the middleware dispatcher for the request.
              *
              * @param Request $request The HTTP request for which to return middleware.
-             * @return array|null An array of middleware class names to execute, or null if none.
+             * @return array<int, class-string|string> An array of middleware class names to execute.
              */
-            protected function dispatcherMiddleware(Request $request): ?array
+            protected function dispatcherMiddleware(Request $request): array
             {
                 return [TestKernelTerminate::class];
             }
@@ -139,8 +139,13 @@ final class KernelTerminateTest extends TestCase
      */
     public function testItCanTerminate(): void
     {
-        $http        = $this->app->make(Http::class);
-        $response    = $http->handle(
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
+        $response = $http->handle(
             $request = new Request('/test')
         );
 

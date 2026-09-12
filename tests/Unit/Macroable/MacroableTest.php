@@ -78,11 +78,13 @@ it('throws when macro is not registered', function (): void {
 })->throws(MacroNotFoundException::class);
 
 it('binds instance macro to this', function (): void {
-    $this->mockClass->macro('whoAmI', function () {
+    $fixture = $this->mockClass;
+
+    $fixture->macro('whoAmI', function () {
         return $this;
     });
 
-    expect($this->mockClass->whoAmI())->toBe($this->mockClass);
+    expect($fixture->whoAmI())->toBe($fixture);
 });
 
 it('binds static macro to class', function (): void {

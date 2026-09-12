@@ -35,6 +35,7 @@ use function func_num_args;
 use function get_debug_type;
 use function in_array;
 use function is_array;
+use function is_scalar;
 use function json_decode;
 use function sprintf;
 use function strcasecmp;
@@ -68,7 +69,7 @@ use const JSON_THROW_ON_ERROR;
  * @version   2.0.0
  *
  * @method Validator  validate(?Closure $rule = null, ?Closure $filter = null)
- * @method UploadFile upload(array|string $fileName)
+ * @method UploadFile upload(array<int, string>|string $fileName)
  *
  * @implements ArrayAccess<string, string>
  * @implements IteratorAggregate<string, string>
@@ -94,7 +95,7 @@ class Request implements ArrayAccess, IteratorAggregate
     /** @var Collection<string, string> POST parameters ($_POST). */
     private Collection $post;
 
-    /** @var array<string, array<int, string>|string> Uploaded files ($_FILES). */
+    /** @var array<string, array<string, string|int|array<int, string>|array<int, int>>> Uploaded files ($_FILES). */
     private array $files;
 
     /** @var array<string, string> Cookies ($_COOKIE). */
@@ -135,7 +136,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>                          $post          POST parameters ($_POST).
      * @param array<string, string>                          $attributes    Custom attributes.
      * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
-     * @param array<string, string|array<string,int|string>> $files         Uploaded files ($_FILES)
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files ($_FILES)
      * @param array<string, string>                          $headers       HTTP headers.
      * @param string                                         $method        HTTP method, default 'GET'.
      * @param string                                         $remoteAddress Client IP address, default '::1'.
@@ -178,7 +179,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>                          $post          POST parameters ($_POST).
      * @param array<string, string>                          $attributes    Custom attributes.
      * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
-     * @param array<string, string|array<string,int|string>> $files         Uploaded files ($_FILES)
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files ($_FILES)
      * @param array<string, string>                          $headers       HTTP headers.
      * @param string                                         $method        HTTP method, default 'GET'.
      * @param string                                         $remoteAddress Client IP address, default '::1'.
@@ -219,7 +220,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>|null $post Optional POST parameters to override.
      * @param array<string, string>|null $attributes Optional custom attributes to override.
      * @param array<string, string>|null $cookies Optional cookies to override.
-     * @param array<string, string>|null $files Optional uploaded files to override.
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>>|null $files Optional uploaded files to override.
      * @param array<string, string>|null $headers Optional headers to override.
      * @return self Returns a cloned request instance with optional overrides.
      */
@@ -309,7 +310,9 @@ class Request implements ArrayAccess, IteratorAggregate
             return $this->query->all();
         }
 
-        return $this->query->get($key);
+        $value = $this->query->get($key);
+
+        return is_string($value) ? $value : '';
     }
 
     /**
@@ -337,7 +340,9 @@ class Request implements ArrayAccess, IteratorAggregate
             return $this->post->all();
         }
 
-        return $this->post->get($key);
+        $value = $this->post->get($key);
+
+        return is_string($value) ? $value : '';
     }
 
     /**
@@ -347,10 +352,10 @@ class Request implements ArrayAccess, IteratorAggregate
      * If no key is provided, returns all uploaded files as an array.
      *
      * @param string|null $key Optional key of the file input to retrieve.
-     * @return array<string, array<int, string>|string>|array<int, string>|string
-     *         Returns the requested file, an array of files, or all files.
+     * @return array<string, array<string, string|int|array<int, string>|array<int, int>>>|array<string, string|int|array<int, string>|array<int, int>>
+     *         Returns the requested file or all uploaded files.
      */
-    public function getFile(?string $key = null): array|string
+    public function getFile(?string $key = null): array
     {
         if (func_num_args() === 0) {
             return $this->files;
@@ -457,6 +462,10 @@ class Request implements ArrayAccess, IteratorAggregate
     {
         $content_type = $this->getHeaders('content-type');
 
+        if (!is_string($content_type)) {
+            return null;
+        }
+
         return $this->getFormat($content_type);
     }
 
@@ -503,7 +512,13 @@ class Request implements ArrayAccess, IteratorAggregate
             return strcasecmp((string) $this->attributes['scheme'], 'https') === 0;
         }
 
-        return !empty($_SERVER['HTTPS']) && strcasecmp($_SERVER['HTTPS'], 'off');  // http;
+        if (empty($_SERVER['HTTPS'])) {
+            return false;
+        }
+
+        $https = $_SERVER['HTTPS'];
+
+        return is_string($https) && strcasecmp($https, 'off') !== 0;
     }
 
     /**
@@ -529,12 +544,12 @@ class Request implements ArrayAccess, IteratorAggregate
     /**
      * Get the JSON body of the request decoded as an array.
      *
-     * @return array Returns the request body as an associative array.
+     * @return array<mixed, mixed> Returns the request body as an associative array.
      * @throws Exception Throws if the body is empty, cannot be decoded, or does not decode to an array.
      */
     public function getJsonBody(): array
     {
-        if ('' === $content = $this->rawBody) {
+        if ($this->rawBody === null || $this->rawBody === '') {
             throw new Exception(
                 'Request body is empty.'
             );
@@ -542,7 +557,7 @@ class Request implements ArrayAccess, IteratorAggregate
 
         try {
             $content = json_decode(
-                $content,
+                $this->rawBody,
                 true,
                 512,
                 JSON_BIGINT_AS_STRING | JSON_THROW_ON_ERROR
@@ -662,7 +677,9 @@ class Request implements ArrayAccess, IteratorAggregate
         if (false === isset($this->json)) {
             $jsonBody = [];
             foreach ($this->getJsonBody() as $key => $value) {
-                $jsonBody[(string) $key] = (string) $value;
+                if (is_scalar($value)) {
+                    $jsonBody[(string) $key] = (string) $value;
+                }
             }
             $this->json = new Collection($jsonBody);
         }
@@ -677,7 +694,9 @@ class Request implements ArrayAccess, IteratorAggregate
      */
     public function getAuthorization(): ?string
     {
-        return $this->getHeaders('Authorization');
+        $header = $this->getHeaders('Authorization');
+
+        return is_string($header) ? $header : null;
     }
 
     /**
@@ -703,22 +722,23 @@ class Request implements ArrayAccess, IteratorAggregate
     /**
      * Get request input, optionally by key.
      *
-     * @template TGetDefault
      * @param string|null $key The input key to retrieve. If null, returns all input.
-     * @param TGetDefault $default Default value to return if the input key is not found.
-     * @return Collection<string, string>|string|TGetDefault Returns the input as a Collection, a single string value,
+     * @param string|null $default Default value to return if the input key is not found.
+     * @return Collection<string, string>|string Returns the input as a Collection, a single string value,
      *         or the default value.
      * @throws Exception Throws if an error occurs while retrieving input.
      * @noinspection PhpMissingParamTypeInspection
      */
-    public function input(?string $key = null, mixed $default = null): Collection|string
+    public function input(?string $key = null, ?string $default = null): Collection|string
     {
         $input = $this->source()->add($this->query->all());
         if (null === $key) {
             return $input;
         }
 
-        return $input->get($key, $default);
+        $value = $input->get($key, $default);
+
+        return $value ?? '';
     }
 
     /**
@@ -796,13 +816,15 @@ class Request implements ArrayAccess, IteratorAggregate
      */
     public function __get(string $key): ?string
     {
-        return $this->all()[$key] ?? null;
+        $value = $this->all()[$key] ?? null;
+
+        return is_string($value) ? $value : null;
     }
 
     /**
      * Get an iterator for the input source.
      *
-     * @return Traversable Returns an iterator for all input data.
+     * @return Traversable<string, string> Returns an iterator for all input data.
      * @throws Exception Throws if an error occurs while retrieving input.
      */
     public function getIterator(): Traversable

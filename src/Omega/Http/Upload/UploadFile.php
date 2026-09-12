@@ -21,8 +21,9 @@ use Omega\Http\Exceptions\MultiFileUploadDetectException;
 
 use function explode;
 use function file_get_contents;
-use function is_array;
 use function is_dir;
+use function is_int;
+use function is_string;
 use function strtolower;
 use function urlencode;
 
@@ -54,7 +55,7 @@ final class UploadFile extends AbstractUpload
      * If a multi-file upload structure is detected, a
      * {@see MultiFileUploadDetectException} is thrown.
      *
-     * @param array<string, string|int> $files Single-file entry from $_FILES.
+     * @param array<string, string|int|array<int, string>|array<int, int>> $files Single-file entry from $_FILES.
      * @return void
      * @throws MultiFileUploadDetectException When multiple files are detected.
      */
@@ -62,18 +63,29 @@ final class UploadFile extends AbstractUpload
     {
         parent::__construct($files);
 
-        if (is_array($files['name'])) {
+        $name    = $files['name'];
+        $type    = $files['type'];
+        $tmpName = $files['tmp_name'];
+        $error   = $files['error'];
+        $size    = $files['size'];
+
+        if (
+            !is_string($name)
+            || !is_string($type)
+            || !is_string($tmpName)
+            || !is_int($error)
+            || !is_int($size)
+        ) {
             throw new MultiFileUploadDetectException();
         }
 
-        /** @noinspection DuplicatedCode */
-        $this->fileName[]  = $files['name'];
-        $this->fileType[]  = $files['type'];
-        $this->fileTmp[]   = $files['tmp_name'];
-        $this->fileError[] = $files['error'];
-        $this->fileSize[]  = $files['size'];
+        $this->fileName[]  = $name;
+        $this->fileType[]  = $type;
+        $this->fileTmp[]   = $tmpName;
+        $this->fileError[] = $error;
+        $this->fileSize[]  = $size;
         // parse files extension
-        $extension             = explode('.', $files['name']);
+        $extension             = explode('.', $name);
         $this->fileExtension[] = strtolower(end($extension));
     }
 

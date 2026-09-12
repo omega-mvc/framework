@@ -61,6 +61,8 @@ final class JsonResponseTest extends TestCase
         $response->send();
         $json = ob_get_clean();
 
+        $this->assertIsString($json);
+
         $this->assertJson($json);
         $data = json_decode($json, true);
         $this->assertEquals('{"language":"php","ver":80}', $response->getContent());

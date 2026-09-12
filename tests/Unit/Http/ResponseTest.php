@@ -115,6 +115,8 @@ final class ResponseTest extends TestCase
         $this->jsonResponse->json()->send();
         $json = ob_get_clean();
 
+        $this->assertIsString($json);
+
         $this->assertJson($json);
         $this->assertEquals(
             [

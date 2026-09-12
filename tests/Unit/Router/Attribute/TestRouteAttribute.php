@@ -20,6 +20,7 @@ use Omega\Router\Attribute\Prefix;
 use Omega\Router\Attribute\Route\Get;
 use Omega\Router\Attribute\Where;
 use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\Router\Support\TestMiddleware;
 
 /**
  * Class TestRouteAttribute
@@ -36,12 +37,12 @@ use PHPUnit\Framework\Attributes\CoversClass;
  *
  * The class-level attributes apply globally to all routes defined within this class:
  *   - Name('test.') → prepends 'test.' to all route names
- *   - Middleware(['testmiddeleware_class']) → applied to all routes in the class
+ *   - Middleware([TestMiddleware::class]) → applied to all routes in the class
  *   - Prefix('/test') → prepends '/test' to all route URIs
  *
  * The method-level attributes override or extend class-level configuration:
  *   - Name('test') → sets the specific route name
- *   - Middleware(['testmiddeleware_method']) → adds method-specific middleware
+ *   - Middleware([TestMiddleware::class]) → adds method-specific middleware
  *   - Where(['{id}' => '(\d+)']) → enforces that the {id} parameter must be numeric
  *   - Get('/{id}/test') → defines the route URI pattern for GET requests
  *
@@ -63,7 +64,7 @@ use PHPUnit\Framework\Attributes\CoversClass;
 #[CoversClass(Get::class)]
 #[CoversClass(Where::class)]
 #[Name('test.')]
-#[Middleware(['testmiddeleware_class'])]
+#[Middleware([TestMiddleware::class])]
 #[Prefix('/test')]
 final class TestRouteAttribute
 {
@@ -74,7 +75,7 @@ final class TestRouteAttribute
      */
     #[Get('/{id}/test')]
     #[Name('test')]
-    #[Middleware(['testmiddeleware_method'])]
+    #[Middleware([TestMiddleware::class])]
     #[Where(['{id}' => '(\d+)'])]
     public function index(): void
     {

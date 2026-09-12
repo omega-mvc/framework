@@ -28,7 +28,7 @@ use PHPUnit\Framework\TestCase;
  * This class validates the URL generation functionality, ensuring that:
  *   - Standard and named route parameters are correctly replaced in the URL.
  *   - Mixed usage of indexed and named parameters works as expected.
- *   - Base paths can be prepended to generated URLs.
+ *   - Nested named parameters in a prefixed URI are handled properly.
  *   - All supported pattern types (num, text, slug, any, etc.) are handled properly.
  *   - Custom patterns defined per route are respected.
  *   - Edge cases, such as zero and empty string values, are correctly processed.
@@ -86,6 +86,22 @@ final class UrlBuilderTest extends TestCase
     }
 
     /**
+     * Returns the initialized URL builder.
+     *
+     * @return RouteUrlBuilder The URL builder instance.
+     */
+    private function urlBuilder(): RouteUrlBuilder
+    {
+        $builder = $this->builder;
+
+        if (!$builder instanceof RouteUrlBuilder) {
+            $this->fail('RouteUrlBuilder was not initialized in setUp().');
+        }
+
+        return $builder;
+    }
+
+    /**
      * Test it can generate simple standard pattern.
      *
      * @return void
@@ -94,7 +110,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/user/123',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/user/(:id)',
                 ]),
@@ -112,7 +128,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/user/123/profile/john-doe',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/user/(:id)/profile/(:slug)',
                 ]),
@@ -130,7 +146,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/absensi/456/today',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/absensi/(identitas:id)/(tanggal:text)',
                 ]),
@@ -151,7 +167,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/user/123/absensi/456/hari-ini',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/user/(:id)/absensi/(identitas:id)/hari-ini',
                 ]),
@@ -164,24 +180,22 @@ final class UrlBuilderTest extends TestCase
     }
 
     /**
-     * Test it can generate with base path.
+     * Test it can generate with nested named parameters.
      *
      * @return void
      */
     public function testItCanGenerateWithBasePath(): void
     {
-        /** @noinspection PhpMethodParametersCountMismatchInspection */
         $this->assertSame(
             '/admin/users/999/edit',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/admin/(section:text)/(userId:id)/edit',
                 ]),
                 [
                     'section' => 'users',
                     'userId'  => 999,
-                ],
-                '/backend'
+                ]
             )
         );
     }
@@ -195,7 +209,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/api/1/query_123/page/5/active-users',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/api/(:id)/(search:any)/page/(:num)/(filter:slug)',
                 ]),
@@ -218,7 +232,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/color/ff00ff',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri'      => '/color/(:hex)',
                     'patterns' => ['(:hex)' => '([0-9a-fA-F]+)'],
@@ -237,7 +251,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/user/0/profile/',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/user/(:id)/profile/(:text)',
                 ]),
@@ -255,7 +269,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/company/1/employee/456/profile/john-doe/large',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/company/(:id)/employee/(empId:num)/profile/(:slug)/(avatar:text)',
                 ]),
@@ -278,7 +292,7 @@ final class UrlBuilderTest extends TestCase
     {
         $this->assertSame(
             '/tags/php/related/laravel',
-            $this->builder->buildUrl(
+            $this->urlBuilder()->buildUrl(
                 new Route([
                     'uri' => '/tags/(:slug)/related/(:slug)',
                 ]),

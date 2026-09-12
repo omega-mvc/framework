@@ -33,6 +33,7 @@ use ReflectionException;
 use Tests\FixturesPathTrait;
 use Throwable;
 
+use function is_string;
 use function restore_error_handler;
 use function restore_exception_handler;
 
@@ -91,7 +92,7 @@ final class KernelHandleExceptionTest extends TestCase
         HandleExceptions::resetHandlersState();
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: $this->app->get('path.base'),
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));
@@ -117,7 +118,7 @@ final class KernelHandleExceptionTest extends TestCase
              * Dispatches a request and triggers an exception.
              *
              * @param Request $request The HTTP request object to dispatch.
-             * @return array The dispatcher structure with callable, parameters, and middleware.
+             * @return never Always throws a test HttpException with status 500.
              * @throws HttpException Always throws a test HttpException with status 500.
              */
             protected function dispatcher(Request $request): array
@@ -177,7 +178,12 @@ final class KernelHandleExceptionTest extends TestCase
      */
     public function testItCanRenderException(): void
     {
-        $http     = $this->app->make(Http::class);
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
         $response = $http->handle(new Request('/test'));
 
         $this->assertEquals('Test Exception', $response->getContent());

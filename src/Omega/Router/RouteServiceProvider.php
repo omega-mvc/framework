@@ -56,7 +56,7 @@ class RouteServiceProvider extends AbstractServiceProvider
         if (false === self::$scheduleLoaded) {
             $schedule = get_path('path.base', 'routes/schedule.php');
 
-            if (is_file($schedule)) {
+            if (is_string($schedule) && is_file($schedule)) {
                 require $schedule;
             }
 
@@ -95,7 +95,7 @@ class RouteServiceProvider extends AbstractServiceProvider
 
         $webRoutes = get_path('path.base', 'routes/web.php');
 
-        if (!is_file($webRoutes)) {
+        if (!is_string($webRoutes) || !is_file($webRoutes)) {
             return;
         }
 
@@ -139,6 +139,10 @@ class RouteServiceProvider extends AbstractServiceProvider
 
         if (is_array($method)) {
             foreach ($method as $m) {
+                if (!is_string($m)) {
+                    continue;
+                }
+
                 Router::addRoutes([
                     'expression' => $expression,
                     'function'   => $callable,

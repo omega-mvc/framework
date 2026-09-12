@@ -27,6 +27,8 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Tests\FixturesPathTrait;
 
+use function is_string;
+
 /**
  * KernelTest class.
  *
@@ -72,7 +74,7 @@ final class KernelTest extends TestCase
         $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: $this->app->get('path.base'),
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));
@@ -113,7 +115,13 @@ final class KernelTest extends TestCase
     public function testItCanBootstrap(): void
     {
         $this->assertFalse($this->app->bootstrapped);
-        $this->app->make(Http::class)->bootstrap();
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
+        $http->bootstrap();
         $this->assertTrue($this->app->bootstrapped);
     }
 }

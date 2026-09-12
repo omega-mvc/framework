@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Omega\Http;
 
 use Closure;
+use InvalidArgumentException;
 use Omega\Container\AbstractServiceProvider;
 use Omega\Http\Upload\UploadFile;
 use Omega\Validator\Validator;
+
+use function is_array;
+use function sprintf;
 
 class MacroServiceProvider extends AbstractServiceProvider
 {
@@ -19,19 +23,33 @@ class MacroServiceProvider extends AbstractServiceProvider
     {
         Request::macro(
             'validate',
-            fn (?Closure $rule = null, ?Closure $filter = null) => Validator::make(
-                $this->{'all'}(),
-                $rule,
-                $filter
-            )
+            function (?Closure $rule = null, ?Closure $filter = null) {
+                return Validator::make(
+                    $this->all(),
+                    $rule,
+                    $filter
+                );
+            }
         );
 
         Request::macro(
             'upload',
             function (string $fileName) {
-                $files = $this->{'getFile'}();
+                $files = $this->getFile();
 
-                return new UploadFile($files[$fileName]);
+                $file = $files[$fileName] ?? null;
+
+                if (!is_array($file)) {
+                    throw new InvalidArgumentException(sprintf('No uploaded file was found for the name [%s]', $fileName));
+                }
+
+                return new UploadFile([
+                    'name'     => $file['name'],
+                    'type'     => $file['type'],
+                    'tmp_name' => $file['tmp_name'],
+                    'error'    => $file['error'],
+                    'size'     => $file['size'],
+                ]);
             }
         );
     }

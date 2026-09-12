@@ -13,6 +13,7 @@ use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
 
 use function class_exists;
+use function is_array;
 use function ltrim;
 use function Omega\Application\slash;
 
@@ -48,7 +49,7 @@ beforeEach(function (): void {
                 'size'      => 0,
             ],
         ],
-        ['header_1'  => 'header', 'header_2' => 123, 'foo' => 'bar'],
+        ['header_1'  => 'header', 'header_2' => '123', 'foo' => 'bar'],
         'GET',
         '127:0:0:1',
         '{"response":"ok"}'
@@ -76,7 +77,7 @@ beforeEach(function (): void {
                 'size'      => 1,
             ],
         ],
-        ['header_1'  => 'header', 'header_2' => 123, 'foo' => 'bar'],
+        ['header_1'  => 'header', 'header_2' => '123', 'foo' => 'bar'],
         'POST',
         '127:0:0:1',
         '{"response":"ok"}'
@@ -289,13 +290,27 @@ it('can use validate macro', function (): void {
 });
 
 it('can use upload macro', function (): void {
-    Request::macro('upload', function ($file_name) {
-        $files = $this->{'getFile'}();
+    $postRequest = $this->postRequest;
 
-        return new UploadFile($files[$file_name])->markTest(true);
+    Request::macro('upload', function (string $file_name) use ($postRequest) {
+        $files = $postRequest->getFile();
+
+        $file = $files[$file_name] ?? null;
+
+        if (!is_array($file)) {
+            throw new Exception('No uploaded file was found for the name [' . $file_name . '].');
+        }
+
+        return new UploadFile([
+            'name'     => $file['name'],
+            'type'     => $file['type'],
+            'tmp_name' => $file['tmp_name'],
+            'error'    => $file['error'],
+            'size'     => $file['size'],
+        ])->markTest(true);
     });
 
-    $upload = $this->postRequest->upload('file_2');
+    $upload = $postRequest->upload('file_2');
     $upload
         ->setFileName('success')
         ->setFileTypes(['txt', 'md'])

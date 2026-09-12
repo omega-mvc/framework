@@ -18,9 +18,14 @@ use Omega\Http\Exceptions\FileNotExistsException;
 use Omega\Http\Exceptions\FileNotUploadedException;
 use Omega\Http\Exceptions\FolderNotExistsException;
 
+use function array_filter;
+use function array_values;
 use function explode;
 use function file_get_contents;
+use function is_array;
 use function is_dir;
+use function is_int;
+use function is_string;
 use function strtolower;
 use function urlencode;
 
@@ -52,34 +57,56 @@ final class UploadMultiFile extends AbstractUpload
      * Accepts both single-file and multi-file `$_FILES`-like arrays
      * and normalizes them internally as a multi-file upload.
      *
-     * @param array<string, string|int|array> $files Entry from $_FILES.
+     * @param array<string, string|int|array<int, string>|array<int, int>> $files Entry from $_FILES.
      * @return void
      */
     public function __construct(array $files)
     {
         parent::__construct($files);
 
-        if (is_array($files['name'])) {
-            $this->fileName  = $files['name'];
-            $this->fileType  = $files['type'];
-            $this->fileTmp   = $files['tmp_name'];
-            $this->fileError = $files['error'];
-            $this->fileSize  = $files['size'];
+        $name    = $files['name'];
+        $type    = $files['type'];
+        $tmpName = $files['tmp_name'];
+        $error   = $files['error'];
+        $size    = $files['size'];
+
+        if (is_array($name) && is_array($type) && is_array($tmpName) && is_array($error) && is_array($size)) {
+            $this->fileName  = array_values(array_filter($name, 'is_string'));
+            $this->fileType  = array_values(array_filter($type, 'is_string'));
+            $this->fileTmp   = array_values(array_filter($tmpName, 'is_string'));
+            $this->fileError = array_values(array_filter($error, 'is_int'));
+            $this->fileSize  = array_values(array_filter($size, 'is_int'));
             // parse file extension
-            foreach ($files['name'] as $name) {
-                $extension             = explode('.', $name);
+            foreach ($name as $nameValue) {
+                if (!is_string($nameValue)) {
+                    continue;
+                }
+
+                $extension             = explode('.', $nameValue);
                 $this->fileExtension[] = strtolower(end($extension));
             }
-        } else {
-            /** @noinspection DuplicatedCode */
-            $this->fileName[]  = $files['name'];
-            $this->fileType[]  = $files['type'];
-            $this->fileTmp[]   = $files['tmp_name'];
-            $this->fileError[] = $files['error'];
-            $this->fileSize[]  = $files['size'];
+        } elseif (
+            is_string($name)
+            && is_string($type)
+            && is_string($tmpName)
+            && is_int($error)
+            && is_int($size)
+        ) {
+            $this->fileName[]  = $name;
+            $this->fileType[]  = $type;
+            $this->fileTmp[]   = $tmpName;
+            $this->fileError[] = $error;
+            $this->fileSize[]  = $size;
             // parse files extension
-            $extension             = explode('.', $files['name']);
+            $extension             = explode('.', $name);
             $this->fileExtension[] = strtolower(end($extension));
+        } else {
+            $this->fileName       = [];
+            $this->fileType       = [];
+            $this->fileTmp        = [];
+            $this->fileError      = [];
+            $this->fileSize       = [];
+            $this->fileExtension  = [];
         }
 
         $this->isMulti = true;

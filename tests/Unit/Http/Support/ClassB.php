@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\Http\Support;
 
 use Closure;
+use Exception;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -48,7 +49,12 @@ final class ClassB
     {
         echo 'middleware.B.before/';
 
-        // skip reversible middleware
-        return $next($request);
+        $response = $next($request);
+
+        if (!$response instanceof Response) {
+            throw new Exception('Middleware did not return a Response.');
+        }
+
+        return $response;
     }
 }

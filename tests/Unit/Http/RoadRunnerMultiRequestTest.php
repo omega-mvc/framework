@@ -32,6 +32,7 @@ use ReflectionException;
 use Tests\FixturesPathTrait;
 
 use function count;
+use function is_string;
 
 /**
  * RoadRunnerMultiRequestTest class.
@@ -73,7 +74,7 @@ final class RoadRunnerMultiRequestTest extends TestCase
         $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
 
         $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-            basePath: $this->app->get('path.base'),
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
             applicationCachePath: $this->app->getApplicationCachePath(),
             vendorPath: '/package/'
         ));

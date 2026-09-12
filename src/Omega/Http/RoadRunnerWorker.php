@@ -110,13 +110,12 @@ class RoadRunnerWorker
     /**
      * Run the persistent request/response loop.
      *
-     * The responder MUST expose `waitRequest()` and `respond(...)` methods.
-     * The canonical implementation is `Spiral\RoadRunner\Http\PSR7Worker`.
+     * The canonical responder implementation is `Spiral\RoadRunner\Http\PSR7Worker`.
      *
-     * @param object $responder RoadRunner PSR-7 worker (waitRequest/respond).
+     * @param RoadRunnerResponderInterface $responder The RoadRunner PSR-7 worker.
      * @return void
      */
-    public function run(object $responder): void
+    public function run(RoadRunnerResponderInterface $responder): void
     {
         while (($request = $responder->waitRequest()) !== null) {
             if ($request === false) {
@@ -159,13 +158,7 @@ class RoadRunnerWorker
      */
     protected function errorResponse(Throwable $th): ResponseInterface
     {
-        try {
-            $content = $th->getMessage();
-        } catch (Throwable) {
-            $content = 'Internal Server Error';
-        }
-
-        return $this->toPsr7(new Response($content, 500));
+        return $this->toPsr7(new Response($th->getMessage(), 500));
     }
 
     /**

@@ -94,8 +94,8 @@ class Response
         405 => 'Method Not Allowed',
     ];
 
-    /** @var string|array Http body content. */
-    private string|array $content;
+    /** @var array<array-key, mixed>|string Http body content. */
+    private array|string $content;
 
     /** @var int Http response code. */
     private int $responseCode;
@@ -121,9 +121,9 @@ class Response
     /**
      * Response constructor.
      *
-     * @param string|array         $content      Content to send to the client.
-     * @param int                  $responseCode HTTP response code.
-     * @param array<string, string> $headers     Headers to send with the response.
+     * @param array<array-key, mixed>|string $content      Content to send to the client.
+     * @param int                            $responseCode HTTP response code.
+     * @param array<string, string>          $headers      Headers to send with the response.
      */
     public function __construct(array|string $content = '', int $responseCode = Response::HTTP_OK, array $headers = [])
     {
@@ -216,11 +216,24 @@ class Response
         $level  = count($status);
         $flags  = PHP_OUTPUT_HANDLER_REMOVABLE | ($flush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
 
-        while (
-            $level-- > $targetLevel
-            && ($s = $status[$level])
-            && (!isset($s['del']) ? !isset($s['flags']) || ($s['flags'] & $flags) === $flags : $s['del'])
-        ) {
+        while ($level-- > $targetLevel) {
+            $s = $status[$level] ?? null;
+
+            if (!is_array($s)) {
+                break;
+            }
+
+            $del   = $s['del'] ?? null;
+            $sflags = $s['flags'] ?? null;
+
+            $matches = $del !== null
+                ? $del === true
+                : $sflags === null || (is_int($sflags) && ($sflags & $flags) === $flags);
+
+            if (!$matches) {
+                break;
+            }
+
             if ($flush) {
                 ob_end_flush();
             } else {
@@ -266,7 +279,7 @@ class Response
     /**
      * Set response content type to JSON and optionally override content.
      *
-     * @param string|array|null $content Optional content to send as JSON.
+     * @param array<array-key, mixed>|string|null $content Optional content to send as JSON.
      * @return self
      */
     public function json(string|array|null $content = null): self
@@ -352,7 +365,7 @@ class Response
     /**
      * Set response content.
      *
-     * @param string|array $content Content to send.
+     * @param array<array-key, mixed>|string $content Content to send.
      * @return self
      */
     public function setContent(string|array $content): self
@@ -524,7 +537,7 @@ class Response
     /**
      * Get the current response content.
      *
-     * @return string|array The content of the response.
+     * @return array<array-key, mixed>|string The content of the response.
      */
     public function getContent(): string|array
     {

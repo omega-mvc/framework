@@ -21,7 +21,10 @@ use PHPUnit\Framework\Attributes\CoversClass;
 
 use function call_user_func;
 use function call_user_func_array;
+use function class_exists;
 use function is_array;
+use function is_callable;
+use function is_string;
 use function ob_get_clean;
 use function ob_start;
 
@@ -73,9 +76,21 @@ trait DispatcherTrait
             function ($callable, $param) {
                 if (is_array($callable)) {
                     [$class, $method] = $callable;
-                    return call_user_func_array([new $class(), $method], $param);
+
+                    if (is_string($class) && class_exists($class) && is_string($method)) {
+                        $callback = [new $class(), $method];
+
+                        if (is_callable($callback)) {
+                            return call_user_func_array($callback, is_array($param) ? $param : []);
+                        }
+                    }
                 }
-                return call_user_func($callable, $param);
+
+                if (is_callable($callable)) {
+                    return call_user_func($callable, $param);
+                }
+
+                return null;
             },
             // not found
             function ($path) {

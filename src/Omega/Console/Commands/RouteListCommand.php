@@ -40,7 +40,7 @@ final class RouteListCommand extends AbstractCommand
             return [
                 'method' => $this->formatMethods($methods),
                 'uri'    => $route['uri'] ?? $route['expression'] ?? '',
-                'name'   => $route['name'] ?? ''
+                'name'   => $route['name']
             ];
         }, $routes);
 

@@ -18,6 +18,7 @@ use ArrayObject;
 use Exception;
 use InvalidArgumentException;
 
+use function is_array;
 use function json_decode;
 use function json_encode;
 
@@ -68,7 +69,7 @@ class JsonResponse extends Response
      * The payload is automatically encoded and prepared
      * as the response body.
      *
-     * @param array|null            $data       Data to be JSON-encoded.
+     * @param array<array-key, mixed>|null $data Data to be JSON-encoded.
      * @param int                   $statusCode HTTP status code.
      * @param array<string, string> $headers    Additional HTTP headers.
      * @return void
@@ -151,11 +152,13 @@ class JsonResponse extends Response
     /**
      * Get the decoded JSON response data.
      *
-     * @return array Decoded JSON data as an associative array.
+     * @return array<mixed, mixed> Decoded JSON data as an associative array.
      */
     public function getData(): array
     {
-        return json_decode($this->data, true);
+        $data = json_decode($this->data, true);
+
+        return is_array($data) ? $data : [];
     }
 
     /**

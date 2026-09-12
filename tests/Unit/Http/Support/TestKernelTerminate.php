@@ -18,6 +18,8 @@ use Omega\Http\Request;
 use Omega\Http\Response;
 use PHPUnit\Framework\Attributes\CoversNothing;
 
+use function is_string;
+
 /**
  * TestKernelTerminate class.
  *
@@ -54,6 +56,11 @@ class TestKernelTerminate
     public function terminate(Request $request, Response $response): void
     {
         echo $request->getUrl();
-        echo $response->getContent();
+
+        $content = $response->getContent();
+
+        if (is_string($content)) {
+            echo $content;
+        }
     }
 }

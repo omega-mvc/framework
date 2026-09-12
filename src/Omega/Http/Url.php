@@ -14,9 +14,14 @@ declare(strict_types=1);
 
 namespace Omega\Http;
 
-use function array_key_exists;
+use InvalidArgumentException;
+
+use function is_array;
+use function is_int;
+use function is_string;
 use function parse_str;
 use function parse_url;
+use function sprintf;
 
 /**
  * Class Url
@@ -65,17 +70,44 @@ class Url
      */
     public function __construct(array $parseUrl)
     {
-        $this->schema    = $parseUrl['scheme'] ?? null;
-        $this->host      = $parseUrl['host'] ?? null;
-        $this->port      = $parseUrl['port'] ?? null;
-        $this->user      = $parseUrl['user'] ?? null;
-        $this->password  = $parseUrl['pass'] ?? null;
-        $this->path      = $parseUrl['path'] ?? null;
-        $this->fragment  = $parseUrl['fragment'] ?? null;
+        $this->schema    = self::stringPart($parseUrl, 'scheme');
+        $this->host      = self::stringPart($parseUrl, 'host');
+        $this->port      = self::intPart($parseUrl, 'port');
+        $this->user      = self::stringPart($parseUrl, 'user');
+        $this->password  = self::stringPart($parseUrl, 'pass');
+        $this->path      = self::stringPart($parseUrl, 'path');
+        $this->fragment  = self::stringPart($parseUrl, 'fragment');
 
-        if (array_key_exists('query', $parseUrl)) {
-            $this->query = $this->parseQuery($parseUrl['query']);
-        }
+        $query = $parseUrl['query'] ?? null;
+        $this->query     = is_string($query) ? $this->parseQuery($query) : null;
+    }
+
+    /**
+     * Extract a string component from a parsed URL array.
+     *
+     * @param array<string, string|int|array<int|string, string>|null> $parseUrl The array returned by parse_url().
+     * @param string $key The component key to extract.
+     * @return string|null The component value, or null when missing or not a string.
+     */
+    private static function stringPart(array $parseUrl, string $key): ?string
+    {
+        $value = $parseUrl[$key] ?? null;
+
+        return is_string($value) ? $value : null;
+    }
+
+    /**
+     * Extract an integer component from a parsed URL array.
+     *
+     * @param array<string, string|int|array<int|string, string>|null> $parseUrl The array returned by parse_url().
+     * @param string $key The component key to extract.
+     * @return int|null The component value, or null when missing or not an integer.
+     */
+    private static function intPart(array $parseUrl, string $key): ?int
+    {
+        $value = $parseUrl[$key] ?? null;
+
+        return is_int($value) ? $value : null;
     }
 
     /**
@@ -86,10 +118,16 @@ class Url
      */
     private function parseQuery(string $query): array
     {
-        $result = [];
         parse_str($query, $result);
 
-        return $result;
+        $parsed = [];
+        foreach ($result as $key => $value) {
+            if (is_string($value)) {
+                $parsed[$key] = $value;
+            }
+        }
+
+        return $parsed;
     }
 
     /**
@@ -97,10 +135,17 @@ class Url
      *
      * @param string $url The URL to parse.
      * @return self Returns a new Url instance.
+     * @throws InvalidArgumentException When the URL cannot be parsed.
      */
     public static function parse(string $url): self
     {
-        return new self(parse_url($url));
+        $parts = parse_url($url);
+
+        if (!is_array($parts)) {
+            throw new InvalidArgumentException(sprintf('Unable to parse the given URL "%s".', $url));
+        }
+
+        return new self($parts);
     }
 
     /**
@@ -108,18 +153,25 @@ class Url
      *
      * @param Request $from The Request instance to extract the URL from.
      * @return self Returns a new Url instance.
+     * @throws InvalidArgumentException When the URL cannot be parsed.
      */
     public static function fromRequest(Request $from): self
     {
-        return new self(parse_url($from->getUrl()));
+        $parts = parse_url($from->getUrl());
+
+        if (!is_array($parts)) {
+            throw new InvalidArgumentException(sprintf('Unable to parse the URL "%s".', $from->getUrl()));
+        }
+
+        return new self($parts);
     }
 
     /**
      * Get the URL scheme.
      *
-     * @return string|int|array|null Returns the scheme or null if not set.
+     * @return string|null Returns the scheme or null if not set.
      */
-    public function schema(): array|int|string|null
+    public function schema(): ?string
     {
         return $this->schema;
     }
@@ -127,9 +179,9 @@ class Url
     /**
      * Get the host component.
      *
-     * @return string|int|array|null Returns the host or null if not set.
+     * @return string|null Returns the host or null if not set.
      */
-    public function host(): array|int|string|null
+    public function host(): ?string
     {
         return $this->host;
     }
@@ -137,9 +189,9 @@ class Url
     /**
      * Get the port number.
      *
-     * @return string|int|array|null Returns the port or null if not set.
+     * @return int|null Returns the port or null if not set.
      */
-    public function port(): array|int|string|null
+    public function port(): ?int
     {
         return $this->port;
     }
@@ -147,9 +199,9 @@ class Url
     /**
      * Get the username for authentication.
      *
-     * @return string|int|array|null Returns the user or null if not set.
+     * @return string|null Returns the user or null if not set.
      */
-    public function user(): array|int|string|null
+    public function user(): ?string
     {
         return $this->user;
     }
@@ -157,9 +209,9 @@ class Url
     /**
      * Get the password for authentication.
      *
-     * @return string|int|array|null Returns the password or null if not set.
+     * @return string|null Returns the password or null if not set.
      */
-    public function password(): array|int|string|null
+    public function password(): ?string
     {
         return $this->password;
     }
@@ -167,9 +219,9 @@ class Url
     /**
      * Get the path component of the URL.
      *
-     * @return string|int|array|null Returns the path or null if not set.
+     * @return string|null Returns the path or null if not set.
      */
-    public function path(): array|int|string|null
+    public function path(): ?string
     {
         return $this->path;
     }
@@ -187,9 +239,9 @@ class Url
     /**
      * Get the fragment component of the URL.
      *
-     * @return string|int|array|null Returns the fragment or null if not set.
+     * @return string|null Returns the fragment or null if not set.
      */
-    public function fragment(): array|int|string|null
+    public function fragment(): ?string
     {
         return $this->fragment;
     }

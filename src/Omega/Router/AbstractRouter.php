@@ -258,7 +258,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function any(string $expression, mixed $function): Route
+    public static function any(string $expression, array|callable|string $function): Route
     {
         return self::match(['get', 'head', 'post', 'put', 'patch', 'delete', 'options'], $expression, $function);
     }
@@ -266,7 +266,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function get(string $expression, mixed $function): Route
+    public static function get(string $expression, array|callable|string $function): Route
     {
         return self::match(['get', 'head'], $expression, $function);
     }
@@ -274,7 +274,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function post(string $expression, mixed $function): Route
+    public static function post(string $expression, array|callable|string $function): Route
     {
         return self::match('post', $expression, $function);
     }
@@ -282,7 +282,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function put(string $expression, mixed $function): Route
+    public static function put(string $expression, array|callable|string $function): Route
     {
         return self::match('put', $expression, $function);
     }
@@ -290,7 +290,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function patch(string $expression, mixed $function): Route
+    public static function patch(string $expression, array|callable|string $function): Route
     {
         return self::match('patch', $expression, $function);
     }
@@ -298,7 +298,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function delete(string $expression, mixed $function): Route
+    public static function delete(string $expression, array|callable|string $function): Route
     {
         return self::match('delete', $expression, $function);
     }
@@ -306,7 +306,7 @@ abstract class AbstractRouter implements RouterInterface
     /**
      * {@inheritdoc}
      */
-    public static function options(string $expression, mixed $function): Route
+    public static function options(string $expression, array|callable|string $function): Route
     {
         return self::match('options', $expression, $function);
     }

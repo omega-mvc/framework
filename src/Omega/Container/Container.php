@@ -367,7 +367,7 @@ class Container implements ArrayAccess, ContainerInterface
      * @param string $name The binding identifier to mark as request-scoped.
      * @return $this Returns the container instance for method chaining.
      */
-    public function setRequestScoped(string $name): self
+    public function setRequestScoped(string $name): static
     {
         $this->requestScoped[$this->getAlias($name)] = true;
 

@@ -66,19 +66,19 @@ final class BasicRouteTest extends TestCase
             echo 'render success';
         })->name('route.test');
 
-        Router::get('/test/number/(:id)', function ($id) {
+        Router::get('/test/number/(:id)', function (string $id) {
             echo 'render success, with id is - ' . $id;
         })->name('route.test.number');
 
-        Router::get('/test/text/(:text)', function ($id) {
+        Router::get('/test/text/(:text)', function (string $id) {
             echo 'render success, with id is - ' . $id;
         })->name('route.test.text');
 
-        Router::get('/test/any/(:any)', function ($id) {
+        Router::get('/test/any/(:any)', function (string $id) {
             echo 'render success, with id is - ' . $id;
         })->name('route.test.any');
 
-        Router::get('/test/any/(:all)', function ($id) {
+        Router::get('/test/any/(:all)', function (string $id) {
             echo 'render success, with id is - ' . $id;
         });
     }
@@ -429,7 +429,7 @@ final class BasicRouteTest extends TestCase
      */
     public function testItCanUseCustomPattern(): void
     {
-        Router::get('/test/custom/{custom}', function ($custom) {
+        Router::get('/test/custom/{custom}', function (string $custom) {
             echo 'render success, with custom is - ' . $custom;
         })
             ->name('route.test.custom')

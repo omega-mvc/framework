@@ -125,6 +125,19 @@ interface ApplicationInterface extends ContainerInterface
     public function terminate(): void;
 
     /**
+     * Marks the given binding as request-scoped.
+     *
+     * Request-scoped bindings are resolved once per request and their resolved
+     * instances are discarded at the start of the next request, allowing a fresh
+     * instance to be created. This is essential for RoadRunner-style persistent
+     * workers where the container lives across many requests.
+     *
+     * @param string $name The binding identifier to mark as request-scoped.
+     * @return $this Returns the application instance for method chaining.
+     */
+    public function setRequestScoped(string $name): static;
+
+    /**
      * Get the list of core providers.
      *
      * @return array<int, class-string<AbstractServiceProvider>> Registered core service provider class names.

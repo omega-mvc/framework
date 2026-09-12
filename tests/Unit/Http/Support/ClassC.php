@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\Http\Support;
 
 use Closure;
+use Exception;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use PHPUnit\Framework\Attributes\CoversNothing;
@@ -48,6 +49,11 @@ final class ClassC
     {
         echo 'middleware.C.before/';
         $response = $next($request);
+
+        if (!$response instanceof Response) {
+            throw new Exception('Middleware did not return a Response.');
+        }
+
         echo 'middleware.C.after/';
 
         return $response;

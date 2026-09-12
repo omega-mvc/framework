@@ -210,9 +210,18 @@ class HeaderCollection extends Collection
             return [];
         }
 
-        $header       = $this->get($key);
+        $header = $this->get($key);
+
+        if (!is_string($header)) {
+            return [];
+        }
+
         $pattern      = '/,\s*(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/';
         $headerItem   = preg_split($pattern, $header);
+
+        if (false === $headerItem) {
+            return [];
+        }
 
         $result = [];
         foreach ($headerItem as $item) {
@@ -247,14 +256,15 @@ class HeaderCollection extends Collection
         $encodedString = '';
 
         foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $value = '"' . implode(', ', $value) . '"';
+            }
+
             if (is_int($key)) {
                 $encodedString .= $value . ', ';
                 continue;
             }
 
-            if (is_array($value)) {
-                $value = '"' . implode(', ', $value) . '"';
-            }
             $encodedString .= $key . '=' . $value . ', ';
         }
 

@@ -69,7 +69,7 @@ final class NamedParameterRouteTest extends TestCase
             echo 'render success';
         })->name('route.test');
 
-        Router::get('/test/number/(someId:id)', function ($someId) {
+        Router::get('/test/number/(someId:id)', function (string $someId) {
             echo 'render success, with id is - ' . $someId;
         })->name('route.test.number');
     }
@@ -140,15 +140,15 @@ final class NamedParameterRouteTest extends TestCase
      */
     private function registerRouterWithMultipleParams(): void
     {
-        Router::get('/users/(userId:num)/(type:text)', function ($userId, $type) {
+        Router::get('/users/(userId:num)/(type:text)', function (string $userId, string $type) {
             echo "User {$userId} is of type {$type}";
         })->name('users.type');
 
-        Router::get('/blog/(year:num)/(month:num)/(slug:any)', function ($year, $month, $slug) {
+        Router::get('/blog/(year:num)/(month:num)/(slug:any)', function (string $year, string $month, string $slug) {
             echo "Blog post from {$month}/{$year}: {$slug}";
         })->name('blog.post');
 
-        Router::post('/api/users/(id:num)/posts/(postId:num)', function ($id, $postId) {
+        Router::post('/api/users/(id:num)/posts/(postId:num)', function (string $id, string $postId) {
             echo "Post {$postId} for user {$id}";
         })->name('api.user.post');
     }
@@ -167,7 +167,7 @@ final class NamedParameterRouteTest extends TestCase
      */
     private function registerRouterWithRefreshableParams(): void
     {
-        Router::get('/users/(userId:num)/(type:text)', function ($type, $userId) {
+        Router::get('/users/(userId:num)/(type:text)', function (string $type, string $userId) {
             echo "User {$userId} is of type {$type}";
         })->name('users.type');
     }
@@ -246,7 +246,7 @@ final class NamedParameterRouteTest extends TestCase
      */
     public function testItRespectsParameterTypes(): void
     {
-        Router::get('/test/(age:num)/(name:text)', function ($age, $name) {
+        Router::get('/test/(age:num)/(name:text)', function (string $age, string $name) {
             echo "Name: {$name}, Age: {$age}";
         });
 
@@ -279,7 +279,7 @@ final class NamedParameterRouteTest extends TestCase
      */
     public function testItHandlesMethodNotAllowedWithNamedParams(): void
     {
-        Router::post('/api/users/(id:num)', function ($id) {
+        Router::post('/api/users/(id:num)', function (string $id) {
             echo "Create user {$id}";
         });
 
@@ -302,11 +302,11 @@ final class NamedParameterRouteTest extends TestCase
             echo 'All products';
         });
 
-        Router::get('/products/(category:text)', function ($category) {
+        Router::get('/products/(category:text)', function (string $category) {
             echo "Category: {$category}";
         });
 
-        Router::get('/products/(category:text)/(id:num)', function ($category, $id) {
+        Router::get('/products/(category:text)/(id:num)', function (string $category, string $id) {
             echo "Product {$id} in {$category}";
         });
 
@@ -339,7 +339,7 @@ final class NamedParameterRouteTest extends TestCase
      */
     public function testItHandlesSpecialCharactersInParameters(): void
     {
-        Router::get('/search/(query:all)', function ($query) {
+        Router::get('/search/(query:all)', function (string $query) {
             echo "Searching for: {$query}";
         });
 
@@ -360,9 +360,9 @@ final class NamedParameterRouteTest extends TestCase
     {
         $route = [
             'name'    => 'test.route',
-            'path'    => '/test',
+            'uri'     => '/test',
             'method'  => 'get',
-            'handler' => function () {
+            'function' => function () {
                 echo 'Test Route';
             },
         ];
@@ -388,12 +388,12 @@ final class NamedParameterRouteTest extends TestCase
     public function testItMakeSureRouterNameIsNotOverwrittenWithPrefixGiven(): void
     {
         $backup        = Router::$group;
-        Router::$group = ['as' => 'prefix.'];
+        Router::$group = ['prefix' => '', 'middleware' => [], 'as' => 'prefix.'];
         $route         = [
             'name'    => 'test.route',
-            'path'    => '/test',
+            'uri'     => '/test',
             'method'  => 'get',
-            'handler' => function () {
+            'function' => function () {
                 echo 'Test Route';
             },
         ];

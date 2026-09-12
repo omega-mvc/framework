@@ -51,8 +51,15 @@ final class UploadFileTest extends TestCase
 {
     use FixturesPathTrait;
 
-    /** @var array<string, mixed> Mocked $_FILES-like structure used in tests */
-    private array $files = [];
+    /**
+     * Mocked $_FILES-like structure used in tests.
+     *
+     * @var array{
+     *     file_1: array{name: string, type: string, tmp_name: string, error: int, size: int},
+     *     file_2: array{name: array<int, string>, type: array<int, string>, tmp_name: array<int, string>, error: array<int, int>, size: array<int, int>}
+     * }
+     */
+    private array $files;
 
     /** Handles single file upload configuration and execution */
     private UploadFile $upload;
@@ -74,8 +81,11 @@ final class UploadFileTest extends TestCase
 
         $this->files = $this->getFiles();
 
-        $this->files['file_1']['size'] = filesize($this->files['file_1']['tmp_name']);
-        $this->files['file_1']['type'] = filetype($this->files['file_1']['tmp_name']);
+        $size = filesize($this->files['file_1']['tmp_name']);
+        $type = filetype($this->files['file_1']['tmp_name']);
+
+        $this->files['file_1']['size'] = $size === false ? 0 : $size;
+        $this->files['file_1']['type'] = $type === false ? 'file' : $type;
 
         $this->upload = new UploadFile($this->files['file_1']);
         $this->upload
@@ -108,7 +118,10 @@ final class UploadFileTest extends TestCase
     /**
      * Returns the array of files with correct dynamic paths.
      *
-     * @return array<string, mixed> The files data array mimicking $_FILES structure
+     * @return array{
+     *     file_1: array{name: string, type: string, tmp_name: string, error: int, size: int},
+     *     file_2: array{name: array<int, string>, type: array<int, string>, tmp_name: array<int, string>, error: array<int, int>, size: array<int, int>}
+     * } The files data array mimicking $_FILES structure
      */
     private function getFiles(): array
     {
@@ -165,7 +178,7 @@ final class UploadFileTest extends TestCase
     }
 
     /** @test */
-    public function testItCanUploadFileInvalidFileFolder()
+    public function testItCanUploadFileInvalidFileFolder(): void
     {
         $this->expectException(FolderNotExistsException::class);
 

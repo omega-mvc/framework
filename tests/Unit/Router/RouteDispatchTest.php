@@ -96,12 +96,14 @@ final class RouteDispatchTest extends TestCase
 
         /** @noinspection PhpUnusedLocalVariableInspection */
         $dispatch = $dispatcher->run(
-            fn ($callable, $params) => call_user_func_array($callable, $params),
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
             fn ($path)              => 'not found - ',
             fn ($path, $method)     => 'method not allowed - - ',
         );
 
         $current = $dispatcher->current();
+        $this->assertInstanceOf(Route::class, $current);
+
         $realRoute = $this->routes()[0];
         $realRoute['expression'] = '^/$';
 
@@ -109,8 +111,12 @@ final class RouteDispatchTest extends TestCase
         $this->assertEquals($realRoute['expression'], $current['expression']);
         $this->assertEquals($realRoute['name'], $current['name']);
 
-        $this->assertIsCallable($current['function']);
-        $this->assertEquals(call_user_func($realRoute['function']), call_user_func($current['function']));
+        $realFunction    = $realRoute['function'];
+        $currentFunction = $current['function'];
+        $this->assertIsCallable($realFunction);
+        $this->assertIsCallable($currentFunction);
+
+        $this->assertEquals(call_user_func($realFunction), call_user_func($currentFunction));
     }
 
     /**
@@ -123,7 +129,7 @@ final class RouteDispatchTest extends TestCase
         $dispatcher = RouteDispatcher::dispatchFrom('/', 'GET', $this->routes());
 
         $dispatch = $dispatcher->run(
-            fn ($callable, $params) => call_user_func_array($callable, $params),
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
             fn ($path)              => 'not found - ',
             fn ($path, $method)     => 'method not allowed - - ',
         );

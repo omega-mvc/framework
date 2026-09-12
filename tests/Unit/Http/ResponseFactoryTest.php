@@ -135,6 +135,7 @@ final class ResponseFactoryTest extends TestCase
             public function createResponse(int $code = 200, string $reasonPhrase = ''): ResponseInterface
             {
                 return new class ($code, $reasonPhrase) implements ResponseInterface {
+                    /** @var array<string, array<int, string>> */
                     private array $headers = [];
                     private string $body = '';
                     private string $protocolVersion = '1.1';
@@ -175,6 +176,9 @@ final class ResponseFactoryTest extends TestCase
                         return $clone;
                     }
 
+                    /**
+                     * @return array<string, array<int, string>>
+                     */
                     public function getHeaders(): array
                     {
                         return $this->headers;
@@ -185,6 +189,9 @@ final class ResponseFactoryTest extends TestCase
                         return isset($this->headers[strtolower($name)]);
                     }
 
+                    /**
+                     * @return array<int, string>
+                     */
                     public function getHeader(string $name): array
                     {
                         $name = strtolower($name);
@@ -197,6 +204,9 @@ final class ResponseFactoryTest extends TestCase
                         return implode(', ', $this->getHeader($name));
                     }
 
+                    /**
+                     * @param string|array<int, string> $value
+                     */
                     public function withHeader(string $name, $value): ResponseInterface
                     {
                         $clone = clone $this;
@@ -205,6 +215,9 @@ final class ResponseFactoryTest extends TestCase
                         return $clone;
                     }
 
+                    /**
+                     * @param string|array<int, string> $value
+                     */
                     public function withAddedHeader(string $name, $value): ResponseInterface
                     {
                         $clone = clone $this;
@@ -243,7 +256,7 @@ final class ResponseFactoryTest extends TestCase
                                 return null;
                             }
 
-                            public function getSize(): ?int
+                            public function getSize(): int
                             {
                                 return strlen($this->content);
                             }
@@ -346,7 +359,7 @@ final class ResponseFactoryTest extends TestCase
                         return null;
                     }
 
-                    public function getSize(): ?int
+                    public function getSize(): int
                     {
                         return strlen($this->content);
                     }

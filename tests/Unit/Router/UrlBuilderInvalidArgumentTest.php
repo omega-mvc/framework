@@ -52,7 +52,7 @@ final class UrlBuilderInvalidArgumentTest extends TestCase
      *       - Can be associative (named parameters) or indexed (positional parameters).
      *  3. 'message' - The expected exception message when the builder fails.
      *
-     * @return array<string, array{0: array{uri: string, patterns: array}, 1: array, 2: string}>
+     * @return array<string, array{0: array{uri: string, patterns: array<string, string>}, 1: array<int|string, int|string>, 2: string}>
      *         Returns an associative array of test cases keyed by a descriptive name.
      */
     public static function invalidArgumentCases(): array
@@ -156,8 +156,8 @@ final class UrlBuilderInvalidArgumentTest extends TestCase
      * This method uses the DataProvider 'invalidArgumentCases' to run multiple
      * scenarios where URL building should fail due to invalid or missing parameters.
      *
-     * @param array  $route           The route definition, including URI and custom patterns.
-     * @param array  $parameters      The parameters provided for building the URL.
+     * @param array{uri: string, patterns: array<string, string>} $route    The route definition, including URI and custom patterns.
+     * @param array<int|string, int|string> $parameters The parameters provided for building the URL.
      *                              - Associative arrays match named placeholders in the route.
      *                              - Indexed arrays match positional placeholders.
      * @param string $expectedMessage The expected exception message thrown by RouteUrlBuilder.

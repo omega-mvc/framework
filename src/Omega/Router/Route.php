@@ -37,6 +37,15 @@ use ReturnTypeWillChange;
  *
  * @implements ArrayAccess<string, mixed>
  *
+ * @phpstan-type RouteDefinition array{
+ *     method?: string|array<int, string>,
+ *     uri?: string,
+ *     expression?: string,
+ *     function?: mixed,
+ *     patterns?: array<string, string>,
+ *     middleware?: array<int, class-string>,
+ *     name?: string
+ * }
  * @phpstan-type RouteData array{
  *     method: string|array<int, string>,
  *     uri?: string,
@@ -44,7 +53,7 @@ use ReturnTypeWillChange;
  *     function: mixed,
  *     patterns?: array<string, string>,
  *     middleware?: array<int, class-string>,
- *     name?: string
+ *     name: string
  * }
  *
  * @method RouteData route()
@@ -84,7 +93,7 @@ class Route implements ArrayAccess
      * Given any route definition array, applies any active group name
      * prefix from Router::$group['as'].
      *
-     * @param RouteData $route Initial route definition
+     * @param RouteDefinition $route Initial route definition
      * @return void
      */
     public function __construct(array $route)

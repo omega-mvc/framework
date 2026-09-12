@@ -120,7 +120,7 @@ class TestCase extends PhpUnitTestCase
      * @param array<string, string> $post POST parameters.
      * @param array<string, string> $attributes Attributes to pass to the request.
      * @param array<string, string> $cookies Cookies to include in the request.
-     * @param array<string, string> $files Files to include in the request.
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Files to include in the request.
      * @param array<string, string> $headers HTTP headers to include.
      * @param string $method HTTP method to use (GET, POST, PUT, DELETE, etc.).
      * @param string $remoteAddress Remote IP address for the request.
@@ -188,7 +188,7 @@ class TestCase extends PhpUnitTestCase
      *
      * @param string $url The URL to request.
      * @param array<string, string> $post POST data.
-     * @param array<string, string> $files Optional files to upload.
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Optional files to upload.
      * @return TestResponse The response wrapped in a TestResponse instance.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.
@@ -206,7 +206,7 @@ class TestCase extends PhpUnitTestCase
      *
      * @param string $url The URL to request.
      * @param array<string, string> $put PUT data (sent as attributes).
-     * @param array<string, string> $files Optional files to upload.
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Optional files to upload.
      * @return TestResponse The response wrapped in a TestResponse instance.
      * @throws BindingResolutionException Thrown when resolving a binding fails.
      * @throws CircularAliasException Thrown when alias resolution loops recursively.

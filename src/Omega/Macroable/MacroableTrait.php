@@ -43,6 +43,11 @@ trait MacroableTrait
      *
      * @param string   $macroName The name of the macro (method name).
      * @param callable $callBack  The callable implementation of the macro.
+     *
+     * When an instance macro is invoked, the closure is bound to the object it
+     * was called on, so `$this` inside the closure refers to that object.
+     *
+     * @param-closure-this static $callBack The object the macro closure is bound to.
      * @return void
      */
     public static function macro(string $macroName, callable $callBack): void
