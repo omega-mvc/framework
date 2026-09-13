@@ -4,117 +4,96 @@ declare(strict_types=1);
 
 namespace Tests\Database\Query;
 
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Query;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\TestDatabaseQuery;
+use Omega\Database\Schema\SchemaConnection;
 
-#[CoversClass(Query::class)]
-final class LimitTest extends TestDatabaseQuery
-{
-    /** @test */
-    public function testItCorrectSelectQueryWithLimitOrder(): void
-    {
-        $select = Query::from('test', $this->pdo)
-            ->select()
-            ->between('column_1', 1, 100)
-            ->limit(1, 10)
-            ->order('column_1', Query::ORDER_ASC);
+covers(Query::class);
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
-            . 'ORDER BY test.column_1 ASC LIMIT 1, 10',
-            $select->__toString(),
-            'select with where statment is between'
-        );
+beforeEach(function (): void {
+    $this->pdo       = $this->createStub(ConnectionInterface::class);
+    $this->pdoSchema = $this->createStub(SchemaConnection::class);
+});
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 1, 10',
-            $select->queryBind(),
-            'select with where statment is between'
-        );
-    }
+test('it correct select query with limit order', function (): void {
+    $select = Query::from('test', $this->pdo)
+        ->select()
+        ->between('column_1', 1, 100)
+        ->limit(1, 10)
+        ->order('column_1', Query::ORDER_ASC);
 
-    /** @test */
-    public function testItCorrectSelectQueryWithLimitEndOrderWIthLimitEndLessThatZero(): void
-    {
-        $select = Query::from('test', $this->pdo)
-            ->select()
-            ->between('column_1', 1, 100)
-            ->limit(2, -1)
-            ->order('column_1', Query::ORDER_ASC);
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+        . 'ORDER BY test.column_1 ASC LIMIT 1, 10'
+    );
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
-            . 'ORDER BY test.column_1 ASC LIMIT 2, 0',
-            $select->__toString(),
-            'select with where statment is between'
-        );
+    expect($select->queryBind())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 1, 10'
+    );
+});
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 2, 0',
-            $select->queryBind(),
-            'select with where statment is between'
-        );
-    }
+test('it correct select query with limit end order with limit end less that zero', function (): void {
+    $select = Query::from('test', $this->pdo)
+        ->select()
+        ->between('column_1', 1, 100)
+        ->limit(2, -1)
+        ->order('column_1', Query::ORDER_ASC);
 
-    /** @test */
-    public function testItCorrectSelectQueryWithLimitStartLessThatZero(): void
-    {
-        $select = Query::from('test', $this->pdo)
-            ->select()
-            ->between('column_1', 1, 100)
-            ->limit(-1, 2)
-            ->order('column_1', Query::ORDER_ASC);
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+        . 'ORDER BY test.column_1 ASC LIMIT 2, 0'
+    );
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC LIMIT 2',
-            $select->__toString()
-        );
+    expect($select->queryBind())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 2, 0'
+    );
+});
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 2',
-            $select->queryBind()
-        );
-    }
+test('it correct select query with limit start less that zero', function (): void {
+    $select = Query::from('test', $this->pdo)
+        ->select()
+        ->between('column_1', 1, 100)
+        ->limit(-1, 2)
+        ->order('column_1', Query::ORDER_ASC);
 
-    /** @test */
-    public function testItCorrectSelectQueryWithLimitAndOffet(): void
-    {
-        $select = Query::from('test', $this->pdo)
-            ->select()
-            ->between('column_1', 1, 100)
-            ->limitStart(1)
-            ->offset(10)
-            ->order('column_1', Query::ORDER_ASC);
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC LIMIT 2'
+    );
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
-            . 'ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10',
-            $select->__toString()
-        );
+    expect($select->queryBind())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 2'
+    );
+});
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10',
-            $select->queryBind()
-        );
-    }
+test('it correct select query with limit and offet', function (): void {
+    $select = Query::from('test', $this->pdo)
+        ->select()
+        ->between('column_1', 1, 100)
+        ->limitStart(1)
+        ->offset(10)
+        ->order('column_1', Query::ORDER_ASC);
 
-    /** @test */
-    public function testItCorrectSelectQueryWithLimitStartAndLimitEndtLessThatZero(): void
-    {
-        $select = Query::from('test', $this->pdo)
-            ->select()
-            ->between('column_1', 1, 100)
-            ->limit(-1, -1)
-            ->order('column_1', Query::ORDER_ASC);
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) '
+        . 'ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10'
+    );
 
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC',
-            $select->__toString()
-        );
-        $this->assertEquals(
-            'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC',
-            $select->__toString()
-        );
-    }
-}
+    expect($select->queryBind())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN 1 AND 100) ORDER BY test.column_1 ASC LIMIT 1 OFFSET 10'
+    );
+});
+
+test('it correct select query with limit start and limit endt less that zero', function (): void {
+    $select = Query::from('test', $this->pdo)
+        ->select()
+        ->between('column_1', 1, 100)
+        ->limit(-1, -1)
+        ->order('column_1', Query::ORDER_ASC);
+
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC'
+    );
+    expect($select->__toString())->toEqual(
+        'SELECT * FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end) ORDER BY test.column_1 ASC'
+    );
+});

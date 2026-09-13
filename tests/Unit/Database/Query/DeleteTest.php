@@ -4,148 +4,119 @@ declare(strict_types=1);
 
 namespace Tests\Database\Query;
 
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Query;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\TestDatabaseQuery;
+use Omega\Database\Schema\SchemaConnection;
 
-#[CoversClass(Query::class)]
-final class DeleteTest extends TestDatabaseQuery
-{
-    /** @test */
-    public function testItCanDeleteBetween(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->between('column_1', 1, 100)
-        ;
+covers(Query::class);
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end)',
-            $delete->__toString()
-        );
+beforeEach(function (): void {
+    $this->pdo       = $this->createStub(ConnectionInterface::class);
+    $this->pdoSchema = $this->createStub(SchemaConnection::class);
+});
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE (test.column_1 BETWEEN 1 AND 100)',
-            $delete->queryBind()
-        );
-    }
+test('it can delete between', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->between('column_1', 1, 100)
+    ;
 
-    /** @test */
-    public function testItCanDeleteCompare(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->compare('column_1', '=', 100)
-        ;
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE (test.column_1 BETWEEN :b_start AND :b_end)'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 = :column_1) )',
-            $delete->__toString()
-        );
+    expect($delete->queryBind())->toEqual(
+        'DELETE FROM test WHERE (test.column_1 BETWEEN 1 AND 100)'
+    );
+});
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 = 100) )',
-            $delete->queryBind()
-        );
-    }
+test('it can delete compare', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->compare('column_1', '=', 100)
+    ;
 
-    /** @test */
-    public function testItCanDeleteEqual(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->equal('column_1', 100)
-        ;
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 = :column_1) )'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 = :column_1) )',
-            $delete->__toString()
-        );
+    expect($delete->queryBind())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 = 100) )'
+    );
+});
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 = 100) )',
-            $delete->queryBind()
-        );
-    }
+test('it can delete equal', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->equal('column_1', 100)
+    ;
 
-    /** @test */
-    public function testItCanDeleteIn(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->in('column_1', [1, 2])
-        ;
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 = :column_1) )'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE (test.column_1 IN (:in_0, :in_1))',
-            $delete->__toString()
-        );
+    expect($delete->queryBind())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 = 100) )'
+    );
+});
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE (test.column_1 IN (1, 2))',
-            $delete->queryBind()
-        );
-    }
+test('it can delete in', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->in('column_1', [1, 2])
+    ;
 
-    /** @test */
-    public function testItCanDeleteLike(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->like('column_1', 'test')
-        ;
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE (test.column_1 IN (:in_0, :in_1))'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 LIKE :column_1) )',
-            $delete->__toString()
-        );
+    expect($delete->queryBind())->toEqual(
+        'DELETE FROM test WHERE (test.column_1 IN (1, 2))'
+    );
+});
 
-        $this->assertEquals(
-            "DELETE FROM test WHERE ( (test.column_1 LIKE 'test') )",
-            $delete->queryBind()
-        );
-    }
+test('it can delete like', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->like('column_1', 'test')
+    ;
 
-    /** @test */
-    public function testItCanDeleteWhere(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->where('a < :a OR b > :b', [[':a', 1], [':b', 2]])
-        ;
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 LIKE :column_1) )'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE a < :a OR b > :b',
-            $delete->__toString(),
-            'update with where statment is like'
-        );
+    expect($delete->queryBind())->toEqual(
+        "DELETE FROM test WHERE ( (test.column_1 LIKE 'test') )"
+    );
+});
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE a < 1 OR b > 2',
-            $delete->queryBind(),
-            'update with where statment is like'
-        );
-    }
+test('it can delete where', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->where('a < :a OR b > :b', [[':a', 1], [':b', 2]])
+    ;
 
-    /** @test */
-    public function testItCorrectDeleteWithStrictOff(): void
-    {
-        $delete = Query::from('test', $this->pdo)
-            ->delete()
-            ->equal('column_1', 123)
-            ->equal('column_2', 'abc')
-            ->strictMode(false);
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE a < :a OR b > :b'
+    );
 
-        $this->assertEquals(
-            'DELETE FROM test WHERE ( (test.column_1 = :column_1) OR (test.column_2 = :column_2) )',
-            $delete->__toString(),
-            'update statment must have using or statment'
-        );
+    expect($delete->queryBind())->toEqual(
+        'DELETE FROM test WHERE a < 1 OR b > 2'
+    );
+});
 
-        $this->assertEquals(
-            "DELETE FROM test WHERE ( (test.column_1 = 123) OR (test.column_2 = 'abc') )",
-            $delete->queryBind(),
-            'update statment must have using or statment'
-        );
-    }
-}
+test('it correct delete with strict off', function (): void {
+    $delete = Query::from('test', $this->pdo)
+        ->delete()
+        ->equal('column_1', 123)
+        ->equal('column_2', 'abc')
+        ->strictMode(false);
+
+    expect($delete->__toString())->toEqual(
+        'DELETE FROM test WHERE ( (test.column_1 = :column_1) OR (test.column_2 = :column_2) )'
+    );
+
+    expect($delete->queryBind())->toEqual(
+        "DELETE FROM test WHERE ( (test.column_1 = 123) OR (test.column_2 = 'abc') )"
+    );
+});

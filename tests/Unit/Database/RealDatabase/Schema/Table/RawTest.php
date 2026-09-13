@@ -5,34 +5,25 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Raw;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 
-#[CoversClass(Raw::class)]
-final class RawTest extends AbstractTestDatabase
-{
-    protected function setUp(): void
-    {
-        $this->createConnection();
-    }
+uses(ManagesDatabase::class);
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
-    }
+covers(Raw::class);
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGenerateCreateDatabase(): void
-    {
-        $schema = new Raw(
-            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
-            $this->pdoSchema
-        );
+afterEach(function (): void {
+    $this->dropConnection();
+});
 
-        $this->assertTrue($schema->execute());
-    }
-}
+test('it can generate create database', function (string $engine): void {
+    $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'database-qualified raw SQL');
+
+    $this->createConnection($engine);
+
+    $schema = new Raw(
+        'CREATE TABLE ' . $this->pdoSchema->getDatabase() . '.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+        $this->pdoSchema
+    );
+
+    expect($schema->execute())->toBeTrue();
+})->with(ManagesDatabase::engineProvider());

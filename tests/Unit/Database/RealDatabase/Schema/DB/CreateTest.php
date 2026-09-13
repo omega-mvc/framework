@@ -5,33 +5,25 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\DB;
 
 use Omega\Database\Schema\DB\Create;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 
-#[CoversClass(Create::class)]
-final class CreateTest extends AbstractTestDatabase
-{
-    protected function setUp(): void
-    {
-        $this->createConnection();
-    }
+uses(ManagesDatabase::class);
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
-    }
+covers(Create::class);
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGenerateCreateDatabase(): void
-    {
-        // need clean up
-        $this->tearDown();
-        $schema = new Create($this->env['database'], $this->pdoSchema);
+afterEach(function (): void {
+    $this->dropConnection();
+});
 
-        $this->assertTrue($schema->execute());
-    }
-}
+test('it can generate create database', function (string $engine): void {
+    $this->requiresOneOf($engine, ['mysql', 'mariadb', 'pgsql'], 'CREATE DATABASE statement');
+
+    $this->createConnection($engine);
+
+    // clean up so the database can be created from scratch
+    $this->dropConnection();
+
+    $schema = new Create($this->pdoSchema->getDatabase(), $this->pdoSchema);
+
+    expect($schema->execute())->toBeTrue();
+})->with(ManagesDatabase::engineProvider());

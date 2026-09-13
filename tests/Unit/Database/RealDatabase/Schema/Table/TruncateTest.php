@@ -5,42 +5,25 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Truncate;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\Asserts\UserTrait;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 
-#[CoversClass(Truncate::class)]
-final class TruncateTest extends AbstractTestDatabase
-{
-    use UserTrait;
+uses(ManagesDatabase::class);
+uses(UserTrait::class);
 
-    protected function setUp(): void
-    {
-        $this->createConnection();
-        $this->createUserSchema();
-        $this->createUser([
-            [
-                'user'     => 'taylor',
-                'password' => 'secret',
-                'stat'     => 99,
-            ],
-        ]);
-    }
+covers(Truncate::class);
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
-    }
+afterEach(function (): void {
+    $this->dropConnection();
+});
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGenerateTruncateDatabase(): void
-    {
-        $schema = new Truncate($this->env['database'], 'users', $this->pdoSchema);
+test('it can generate truncate database', function (string $engine): void {
+    $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'TRUNCATE TABLE statement');
 
-        $this->assertTrue($schema->execute());
-    }
-}
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+
+    $schema = new Truncate($this->pdoSchema->getDatabase(), 'users', $this->pdoSchema);
+
+    expect($schema->execute())->toBeTrue();
+})->with(ManagesDatabase::engineProvider());

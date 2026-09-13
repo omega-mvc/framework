@@ -6,16 +6,20 @@ namespace Tests\Database\Model;
 
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Insert;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 use Tests\Database\Support\Profile;
 
-#[CoversClass(Query::class)]
-#[CoversClass(Insert::class)]
-final class CustomModelTest extends AbstractTestDatabase
-{
-    /** @var array<string, array<string, string|int>> */
-    private array $profiles = [
+uses(ManagesDatabase::class);
+
+covers(Query::class);
+covers(Insert::class);
+
+afterEach(function (): void {
+    $this->dropConnection();
+});
+
+test('it can filter model', function (string $engine): void {
+    $profiles = [
         'taylor' => [
             'user'   => 'taylor',
             'name'   => 'taylor otwell',
@@ -42,129 +46,220 @@ final class CustomModelTest extends AbstractTestDatabase
         ],
     ];
 
-    protected function setUp(): void
-    {
-        $this->createConnection();
-        $this->createProfileSchema();
-        $this->createProfiles(array_values($this->profiles));
+    $this->createConnection($engine);
+    $this->pdo->query('CREATE TABLE profiles (
+        user      varchar(32)  NOT NULL,
+        name      varchar(100) NOT NULL,
+        gender    varchar(10) NOT NULL,
+        age       int(3) NOT NULL,
+        PRIMARY KEY (user)
+    )')->execute();
+    (new Insert('profiles', $this->pdo))
+        ->rows(array_values($profiles))
+        ->execute();
+
+    $profiles = new Profile($this->pdo, []);
+    $profiles->filterGender('male');
+    $profiles->read();
+
+    foreach ($profiles->get() as $profile) {
+        expect($profile->getter('gender'))->toEqual('male');
     }
+})->with(ManagesDatabase::engineProvider());
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
-    }
-
-    private function createProfileSchema(): bool
-    {
-        return $this
-           ->pdo
-           ->query('CREATE TABLE profiles (
-                user      varchar(32)  NOT NULL,
-                name      varchar(100) NOT NULL,
-                gender    varchar(10) NOT NULL,
-                age       int(3) NOT NULL,
-                PRIMARY KEY (user)
-            )')
-           ->execute();
-    }
-
-    /**
-     * @param array<int, array<string, bool|int|string|null>> $profiles
-     */
-    private function createProfiles(array $profiles): bool
-    {
-        return (new Insert('profiles', $this->pdo))
-            ->rows($profiles)
-            ->execute();
-    }
-
-    private function profiles(): Profile
-    {
-        return new Profile($this->pdo, []);
-    }
-
-    /**
-     * This test check for get collecion with some filter (single).
-     *
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanFilterModel(): void
-    {
-        $profiles = $this->profiles();
-        $profiles->filterGender('male');
-        $profiles->read();
-
-        foreach ($profiles->get() as $profile) {
-            $this->assertEquals('male', $profile->getter('gender'));
-        }
-    }
-
-    /**
-     * This test check for get collecion with some filter (multy).
-     *
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanFilterModelChain(): void
-    {
-        $profiles = $this->profiles();
-        $profiles->filterGender('male');
-        $profiles->filterAge(30);
-        $profiles->read();
-
-        foreach ($profiles->get() as $profile) {
-            $this->assertEquals('male', $profile->getter('gender'));
-            $this->assertGreaterThan(30, $profile->getter('gender'));
-        }
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanlimitOrder(): void
-    {
-        $profiles = $this->profiles();
-        $profiles->limitEnd(2);
-        $profiles->read();
-
-        $this->assertEquals(2, $profiles->get()->count());
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanlimitOffset(): void
-    {
-        $profiles = $this->profiles();
-        $profiles->limitOffset(1, 2);
-        $profiles->read();
-
-        $this->assertEquals(1, $profiles->get()->count());
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanShortOrder(): void
-    {
-        $profiles = $this->profiles();
-
-        $profiles->order('user', Query::ORDER_ASC);
-        $profiles->read();
-        $this->assertEquals([
+test('it can filter model chain', function (string $engine): void {
+    $profiles = [
+        'taylor' => [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+            'age'    => 45,
+        ],
+        'nuno' => [
+            'user'   => 'nuno',
+            'name'   => 'nuno maduro',
+            'gender' => 'male',
+            'age'    => 40,
+        ],
+        'jesica' => [
             'user'   => 'jesica',
             'name'   => 'jesica w',
             'gender' => 'female',
             'age'    => 38,
-        ], $profiles->first());
+        ],
+        'pradana' => [
+            'user'   => 'pradana',
+            'name'   => 'sony pradana',
+            'gender' => 'male',
+            'age'    => 29,
+        ],
+    ];
+
+    $this->createConnection($engine);
+    $this->pdo->query('CREATE TABLE profiles (
+        user      varchar(32)  NOT NULL,
+        name      varchar(100) NOT NULL,
+        gender    varchar(10) NOT NULL,
+        age       int(3) NOT NULL,
+        PRIMARY KEY (user)
+    )')->execute();
+    (new Insert('profiles', $this->pdo))
+        ->rows(array_values($profiles))
+        ->execute();
+
+    $profiles = new Profile($this->pdo, []);
+    $profiles->filterGender('male');
+    $profiles->filterAge(30);
+    $profiles->read();
+
+    foreach ($profiles->get() as $profile) {
+        expect($profile->getter('gender'))->toEqual('male');
+        expect($profile->getter('gender'))->toBeGreaterThan(30);
     }
-}
+})->with(ManagesDatabase::engineProvider());
+
+test('it can limit order', function (string $engine): void {
+    $profiles = [
+        'taylor' => [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+            'age'    => 45,
+        ],
+        'nuno' => [
+            'user'   => 'nuno',
+            'name'   => 'nuno maduro',
+            'gender' => 'male',
+            'age'    => 40,
+        ],
+        'jesica' => [
+            'user'   => 'jesica',
+            'name'   => 'jesica w',
+            'gender' => 'female',
+            'age'    => 38,
+        ],
+        'pradana' => [
+            'user'   => 'pradana',
+            'name'   => 'sony pradana',
+            'gender' => 'male',
+            'age'    => 29,
+        ],
+    ];
+
+    $this->createConnection($engine);
+    $this->pdo->query('CREATE TABLE profiles (
+        user      varchar(32)  NOT NULL,
+        name      varchar(100) NOT NULL,
+        gender    varchar(10) NOT NULL,
+        age       int(3) NOT NULL,
+        PRIMARY KEY (user)
+    )')->execute();
+    (new Insert('profiles', $this->pdo))
+        ->rows(array_values($profiles))
+        ->execute();
+
+    $profiles = new Profile($this->pdo, []);
+    $profiles->limitEnd(2);
+    $profiles->read();
+
+    expect($profiles->get()->count())->toEqual(2);
+})->with(ManagesDatabase::engineProvider());
+
+test('it can limit offset', function (string $engine): void {
+    $profiles = [
+        'taylor' => [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+            'age'    => 45,
+        ],
+        'nuno' => [
+            'user'   => 'nuno',
+            'name'   => 'nuno maduro',
+            'gender' => 'male',
+            'age'    => 40,
+        ],
+        'jesica' => [
+            'user'   => 'jesica',
+            'name'   => 'jesica w',
+            'gender' => 'female',
+            'age'    => 38,
+        ],
+        'pradana' => [
+            'user'   => 'pradana',
+            'name'   => 'sony pradana',
+            'gender' => 'male',
+            'age'    => 29,
+        ],
+    ];
+
+    $this->createConnection($engine);
+    $this->pdo->query('CREATE TABLE profiles (
+        user      varchar(32)  NOT NULL,
+        name      varchar(100) NOT NULL,
+        gender    varchar(10) NOT NULL,
+        age       int(3) NOT NULL,
+        PRIMARY KEY (user)
+    )')->execute();
+    (new Insert('profiles', $this->pdo))
+        ->rows(array_values($profiles))
+        ->execute();
+
+    $profiles = new Profile($this->pdo, []);
+    $profiles->limitOffset(1, 2);
+    $profiles->read();
+
+    expect($profiles->get()->count())->toEqual(1);
+})->with(ManagesDatabase::engineProvider());
+
+test('it can short order', function (string $engine): void {
+    $profiles = [
+        'taylor' => [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+            'age'    => 45,
+        ],
+        'nuno' => [
+            'user'   => 'nuno',
+            'name'   => 'nuno maduro',
+            'gender' => 'male',
+            'age'    => 40,
+        ],
+        'jesica' => [
+            'user'   => 'jesica',
+            'name'   => 'jesica w',
+            'gender' => 'female',
+            'age'    => 38,
+        ],
+        'pradana' => [
+            'user'   => 'pradana',
+            'name'   => 'sony pradana',
+            'gender' => 'male',
+            'age'    => 29,
+        ],
+    ];
+
+    $this->createConnection($engine);
+    $this->pdo->query('CREATE TABLE profiles (
+        user      varchar(32)  NOT NULL,
+        name      varchar(100) NOT NULL,
+        gender    varchar(10) NOT NULL,
+        age       int(3) NOT NULL,
+        PRIMARY KEY (user)
+    )')->execute();
+    (new Insert('profiles', $this->pdo))
+        ->rows(array_values($profiles))
+        ->execute();
+
+    $profiles = new Profile($this->pdo, []);
+
+    $profiles->order('user', Query::ORDER_ASC);
+    $profiles->read();
+    expect($profiles->first())->toEqual([
+        'user'   => 'jesica',
+        'name'   => 'jesica w',
+        'gender' => 'female',
+        'age'    => 38,
+    ]);
+})->with(ManagesDatabase::engineProvider());

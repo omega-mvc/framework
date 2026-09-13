@@ -5,170 +5,130 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\Query;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Database\Asserts\UserTrait;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 
-#[CoversClass(Query::class)]
-final class UpdateTest extends AbstractTestDatabase
-{
-    use UserTrait;
+uses(ManagesDatabase::class);
+uses(UserTrait::class);
 
-    protected function setUp(): void
-    {
-        $this->createConnection();
-        $this->createUserSchema();
-        $this->createUser([
-            [
-                'user'     => 'taylor',
-                'password' => 'secret',
-                'stat'     => 99,
-            ],
-        ]);
-    }
+covers(Query::class);
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
-    }
+afterEach(function (): void {
+    $this->dropConnection();
+});
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdate(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->execute()
-        ;
+test('it can update', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-        $this->assertUserStat('taylor', 0);
-    }
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->execute()
+    ;
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithBetween(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->between('stat', 0, 100)
-            ->execute()
-        ;
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
 
-        $this->assertUserStat('taylor', 0);
-    }
+test('it can update with between', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithCompare(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->compare('user', '=', 'taylor')
-            ->execute()
-        ;
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->between('stat', 0, 100)
+        ->execute()
+    ;
 
-        $this->assertUserStat('taylor', 0);
-    }
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithEqual(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->equal('user', 'taylor')
-            ->execute()
-        ;
+test('it can update with compare', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-        $this->assertUserStat('taylor', 0);
-    }
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->compare('user', '=', 'taylor')
+        ->execute()
+    ;
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithIn(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->in('user', ['taylor'])
-            ->execute()
-        ;
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
 
-        $this->assertUserStat('taylor', 0);
-    }
+test('it can update with equal', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithLike(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->like('user', 'tay%')
-            ->execute()
-        ;
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->equal('user', 'taylor')
+        ->execute()
+    ;
 
-        $this->assertUserStat('taylor', 0);
-    }
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithWhere(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->where('user = :user', [
-                [':user', 'taylor'],
-            ])
-            ->execute()
-        ;
+test('it can update with in', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-        $this->assertUserStat('taylor', 0);
-    }
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->in('user', ['taylor'])
+        ->execute()
+    ;
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateWithMultyCondition(): void
-    {
-        Query::from('users', $this->pdo)
-            ->update()
-            ->value('stat', 0)
-            ->compare('stat', '>', 1)
-            ->where('user = :user', [
-                [':user', 'taylor'],
-            ])
-            ->execute()
-        ;
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
 
-        $this->assertUserStat('taylor', 0);
-    }
-}
+test('it can update with like', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->like('user', 'tay%')
+        ->execute()
+    ;
+
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
+
+test('it can update with where', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->where('user = :user', [
+            [':user', 'taylor'],
+        ])
+        ->execute()
+    ;
+
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());
+
+test('it can update with multy condition', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+
+    Query::from('users', $this->pdo)
+        ->update()
+        ->value('stat', 0)
+        ->compare('stat', '>', 1)
+        ->where('user = :user', [
+            [':user', 'taylor'],
+        ])
+        ->execute()
+    ;
+
+    $this->assertUserStat('taylor', 0);
+})->with(ManagesDatabase::engineProvider());

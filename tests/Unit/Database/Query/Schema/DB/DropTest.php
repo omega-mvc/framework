@@ -4,65 +4,53 @@ declare(strict_types=1);
 
 namespace Tests\Database\Query\Schema\DB;
 
+use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\DB\Drop;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\TestDatabaseQuery;
+use Omega\Database\Schema\SchemaConnection;
 
-#[CoversClass(Drop::class)]
-final class DropTest extends TestDatabaseQuery
-{
-    /** @test */
-    public function testItCanGenerateCreateDatabase(): void
-    {
-        $schema = new Drop('test', $this->pdoSchema);
+covers(Drop::class);
 
-        $this->assertEquals(
-            'DROP DATABASE test;',
-            $schema->__toString()
-        );
-    }
+beforeEach(function (): void {
+    $this->pdo       = $this->createStub(ConnectionInterface::class);
+    $this->pdoSchema = $this->createStub(SchemaConnection::class);
+});
 
-    /** @test */
-    public function testItCanGenerateCreateDatabaseIfExists(): void
-    {
-        $schema = new Drop('test', $this->pdoSchema);
+test('it can generate create database', function (): void {
+    $schema = new Drop('test', $this->pdoSchema);
 
-        $this->assertEquals(
-            'DROP DATABASE IF EXISTS test;',
-            $schema->ifExists(true)->__toString()
-        );
-    }
+    expect($schema->__toString())->toEqual(
+        'DROP DATABASE test;'
+    );
+});
 
-    /** @test */
-    public function testItCanGenerateCreateDatabaseIfExistsFalse(): void
-    {
-        $schema = new Drop('test', $this->pdoSchema);
+test('it can generate create database if exists', function (): void {
+    $schema = new Drop('test', $this->pdoSchema);
 
-        $this->assertEquals(
-            'DROP DATABASE IF NOT EXISTS test;',
-            $schema->ifExists(false)->__toString()
-        );
-    }
+    expect($schema->ifExists(true)->__toString())->toEqual(
+        'DROP DATABASE IF EXISTS test;'
+    );
+});
 
-    /** @test */
-    public function testItCanGenerateCreateDatabaseIfNotExists(): void
-    {
-        $schema = new Drop('test', $this->pdoSchema);
+test('it can generate create database if exists false', function (): void {
+    $schema = new Drop('test', $this->pdoSchema);
 
-        $this->assertEquals(
-            'DROP DATABASE IF NOT EXISTS test;',
-            $schema->ifNotExists(true)->__toString()
-        );
-    }
+    expect($schema->ifExists(false)->__toString())->toEqual(
+        'DROP DATABASE IF NOT EXISTS test;'
+    );
+});
 
-    /** @test */
-    public function testItCanGenerateCreateDatabaseIfNotExistsFalse(): void
-    {
-        $schema = new Drop('test', $this->pdoSchema);
+test('it can generate create database if not exists', function (): void {
+    $schema = new Drop('test', $this->pdoSchema);
 
-        $this->assertEquals(
-            'DROP DATABASE IF EXISTS test;',
-            $schema->ifNotExists(false)->__toString()
-        );
-    }
-}
+    expect($schema->ifNotExists(true)->__toString())->toEqual(
+        'DROP DATABASE IF NOT EXISTS test;'
+    );
+});
+
+test('it can generate create database if not exists false', function (): void {
+    $schema = new Drop('test', $this->pdoSchema);
+
+    expect($schema->ifNotExists(false)->__toString())->toEqual(
+        'DROP DATABASE IF EXISTS test;'
+    );
+});

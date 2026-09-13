@@ -4,75 +4,66 @@ declare(strict_types=1);
 
 namespace Tests\Database\Query\Schema\Table;
 
+use Omega\Database\ConnectionInterface;
+use Omega\Database\Schema\SchemaConnection;
 use Omega\Database\Schema\Table\Create;
-use PHPUnit\Framework\Attributes\CoversClass;
-use Tests\Database\TestDatabaseQuery;
 
-#[CoversClass(Create::class)]
-final class DataTypesTest extends TestDatabaseQuery
-{
-    /**
-     * @test
-     */
-    public function testItCanGenerateNumericDataTypes(): void
-    {
-        $schema = new Create('testing_db', 'test_numeric', $this->pdoSchema);
+covers(Create::class);
 
-        $schema('col_int')->int();
-        $schema('col_int_len')->int(11);
-        $schema('col_tiny')->tinyint(1);
-        $schema('col_small')->smallint();
-        $schema('col_big')->bigint(20);
-        $schema('col_float')->float();
-        $schema('col_dec')->decimal(8, 2);
-        $schema('col_double')->double(10, 3);
-        $schema('col_bool')->boolean();
+beforeEach(function (): void {
+    $this->pdo       = $this->createStub(ConnectionInterface::class);
+    $this->pdoSchema = $this->createStub(SchemaConnection::class);
+});
 
-        $expected = 'CREATE TABLE testing_db.test_numeric ( col_int int, col_int_len int(11), col_tiny tinyint(1), '
-            . 'col_small smallint, col_big bigint(20), col_float float, col_dec decimal(8, 2), '
-            . 'col_double double(10, 3), col_bool boolean )';
-        $this->assertEquals($expected, $schema->__toString());
-    }
+test('it can generate numeric data types', function (): void {
+    $schema = new Create('testing_db', 'test_numeric', $this->pdoSchema);
 
-    /**
-     * @test
-     */
-    public function testItCanGenerateStringDataTypes(): void
-    {
-        $schema = new Create('testing_db', 'test_string', $this->pdoSchema);
+    $schema('col_int')->int();
+    $schema('col_int_len')->int(11);
+    $schema('col_tiny')->tinyint(1);
+    $schema('col_small')->smallint();
+    $schema('col_big')->bigint(20);
+    $schema('col_float')->float();
+    $schema('col_dec')->decimal(8, 2);
+    $schema('col_double')->double(10, 3);
+    $schema('col_bool')->boolean();
 
-        $schema('col_char')->char();
-        $schema('col_char_len')->char(10);
-        $schema('col_varchar')->varchar(100);
-        $schema('col_text')->text();
-        $schema('col_blob')->blob();
-        $schema('col_json')->json();
-        $schema('col_enum')->enum(['a', 'b', 'c']);
+    $expected = 'CREATE TABLE testing_db.test_numeric ( col_int int, col_int_len int(11), col_tiny tinyint(1), '
+        . 'col_small smallint, col_big bigint(20), col_float float, col_dec decimal(8, 2), '
+        . 'col_double double(10, 3), col_bool boolean )';
+    expect($schema->__toString())->toEqual($expected);
+});
 
-        $expected = "CREATE TABLE testing_db.test_string ( col_char char(255), col_char_len char(10), "
-            . "col_varchar varchar(100), col_text text, col_blob blob, col_json json, "
-            . "col_enum ENUM ('a', 'b', 'c') )";
-        $this->assertEquals($expected, $schema->__toString());
-    }
+test('it can generate string data types', function (): void {
+    $schema = new Create('testing_db', 'test_string', $this->pdoSchema);
 
-    /**
-     * @test
-     */
-    public function testItCanGenerateDateTimeDataTypes(): void
-    {
-        $schema = new Create('testing_db', 'test_datetime', $this->pdoSchema);
+    $schema('col_char')->char();
+    $schema('col_char_len')->char(10);
+    $schema('col_varchar')->varchar(100);
+    $schema('col_text')->text();
+    $schema('col_blob')->blob();
+    $schema('col_json')->json();
+    $schema('col_enum')->enum(['a', 'b', 'c']);
 
-        $schema('col_time')->time();
-        $schema('col_time_len')->time(4);
-        $schema('col_timestamp')->timestamp()->default('CURRENT_TIMESTAMP', false);
-        $schema('col_timestamp_len')->timestamp(6)->default('CURRENT_TIMESTAMP(6)', false);
-        $schema('col_date')->date();
-        $schema('col_datetime')->datetime();
-        $schema('col_year')->year();
+    $expected = "CREATE TABLE testing_db.test_string ( col_char char(255), col_char_len char(10), "
+        . "col_varchar varchar(100), col_text text, col_blob blob, col_json json, "
+        . "col_enum ENUM ('a', 'b', 'c') )";
+    expect($schema->__toString())->toEqual($expected);
+});
 
-        $expected = 'CREATE TABLE testing_db.test_datetime ( col_time time, col_time_len time(4), '
-            . 'col_timestamp timestamp DEFAULT CURRENT_TIMESTAMP, col_timestamp_len timestamp(6) '
-            . 'DEFAULT CURRENT_TIMESTAMP(6), col_date date, col_datetime datetime, col_year year )';
-        $this->assertEquals($expected, $schema->__toString());
-    }
-}
+test('it can generate date time data types', function (): void {
+    $schema = new Create('testing_db', 'test_datetime', $this->pdoSchema);
+
+    $schema('col_time')->time();
+    $schema('col_time_len')->time(4);
+    $schema('col_timestamp')->timestamp()->default('CURRENT_TIMESTAMP', false);
+    $schema('col_timestamp_len')->timestamp(6)->default('CURRENT_TIMESTAMP(6)', false);
+    $schema('col_date')->date();
+    $schema('col_datetime')->datetime();
+    $schema('col_year')->year();
+
+    $expected = 'CREATE TABLE testing_db.test_datetime ( col_time time, col_time_len time(4), '
+        . 'col_timestamp timestamp DEFAULT CURRENT_TIMESTAMP, col_timestamp_len timestamp(6) '
+        . 'DEFAULT CURRENT_TIMESTAMP(6), col_date date, col_datetime datetime, col_year year )';
+    expect($schema->__toString())->toEqual($expected);
+});

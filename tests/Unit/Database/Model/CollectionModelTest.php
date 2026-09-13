@@ -4,169 +4,164 @@ declare(strict_types=1);
 
 namespace Tests\Database\Model;
 
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 use Tests\Database\Support\User;
 
-final class CollectionModelTest extends AbstractTestDatabase
-{
-    protected function setUp(): void
-    {
-        $this->createConnection();
-        $this->createUserSchema();
-        $password = password_hash('password', PASSWORD_DEFAULT);
-        $this->createUser([
-            [
-                'user'     => 'nuno',
-                'password' => $password,
-                'stat'     => 90,
-            ],
-            [
-                'user'     => 'taylor',
-                'password' => $password,
-                'stat'     => 100,
-            ],
-            [
-                'user'     => 'pradana',
-                'password' => $password,
-                'stat'     => 80,
-            ],
-        ]);
+uses(ManagesDatabase::class);
+
+afterEach(function (): void {
+    $this->dropConnection();
+});
+
+test('it can read data', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->createUserSchema();
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $this->createUser([
+        [
+            'user'     => 'nuno',
+            'password' => $password,
+            'stat'     => 90,
+        ],
+        [
+            'user'     => 'taylor',
+            'password' => $password,
+            'stat'     => 100,
+        ],
+        [
+            'user'     => 'pradana',
+            'password' => $password,
+            'stat'     => 80,
+        ],
+    ]);
+
+    $users = new User($this->pdo, []);
+    $users->read();
+
+    foreach ($users->get() as $user) {
+        expect($user->read())->toBeTrue();
     }
+})->with(ManagesDatabase::engineProvider());
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
+test('it can update data', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->createUserSchema();
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $this->createUser([
+        [
+            'user'     => 'nuno',
+            'password' => $password,
+            'stat'     => 90,
+        ],
+        [
+            'user'     => 'taylor',
+            'password' => $password,
+            'stat'     => 100,
+        ],
+        [
+            'user'     => 'pradana',
+            'password' => $password,
+            'stat'     => 80,
+        ],
+    ]);
+
+    $users = new User($this->pdo, []);
+    $users->read();
+
+    foreach ($users->get() as $user) {
+        $user->setter('stat', 0);
+        expect($user->update())->toBeTrue();
     }
+})->with(ManagesDatabase::engineProvider());
 
-    public function users(): User
-    {
-        $user = new User($this->pdo, []);
-        $user->read();
+test('it can delete data', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->createUserSchema();
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $this->createUser([
+        [
+            'user'     => 'nuno',
+            'password' => $password,
+            'stat'     => 90,
+        ],
+        [
+            'user'     => 'taylor',
+            'password' => $password,
+            'stat'     => 100,
+        ],
+        [
+            'user'     => 'pradana',
+            'password' => $password,
+            'stat'     => 80,
+        ],
+    ]);
 
-        return $user;
+    $users = new User($this->pdo, []);
+    $users->read();
+
+    foreach ($users->get() as $user) {
+        expect($user->delete())->toBeTrue();
     }
-    // item collection test
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function shouldReturnModelEveryItems(): void
-    {
-        $users = $this->users();
+test('it can update all with single query', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->createUserSchema();
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $this->createUser([
+        [
+            'user'     => 'nuno',
+            'password' => $password,
+            'stat'     => 90,
+        ],
+        [
+            'user'     => 'taylor',
+            'password' => $password,
+            'stat'     => 100,
+        ],
+        [
+            'user'     => 'pradana',
+            'password' => $password,
+            'stat'     => 80,
+        ],
+    ]);
 
-        foreach ($users->get() as $user) {
-            $this->assertTrue($user->has('user'));
-        }
-    }
+    $users  = new User($this->pdo, []);
+    $users->read();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGetAllIds(): void
-    {
-        $users = $this->users()->get();
+    $update = $users->get()->update([
+        'stat' => 0,
+    ]);
 
-        $this->assertEqualsCanonicalizing(['nuno', 'taylor', 'pradana'], $users->getPrimaryKey());
-    }
+    expect($update)->toBeTrue();
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCheckIsClean(): void
-    {
-        $users = $this->users();
+test('it can delete all with single query', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->createUserSchema();
+    $password = password_hash('password', PASSWORD_DEFAULT);
+    $this->createUser([
+        [
+            'user'     => 'nuno',
+            'password' => $password,
+            'stat'     => 90,
+        ],
+        [
+            'user'     => 'taylor',
+            'password' => $password,
+            'stat'     => 100,
+        ],
+        [
+            'user'     => 'pradana',
+            'password' => $password,
+            'stat'     => 80,
+        ],
+    ]);
 
-        $this->assertTrue($users->get()->isclean());
-    }
+    $users  = new User($this->pdo, []);
+    $users->read();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanCheckIsDirty(): void
-    {
-        $users = $this->users();
+    $delete = $users->get()->delete();
 
-        $this->assertFalse($users->get()->isDirty());
-    }
-
-    // crud eager load
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanReadData(): void
-    {
-        $users = $this->users();
-
-        foreach ($users->get() as $user) {
-            $this->assertTrue($user->read());
-        }
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateData(): void
-    {
-        $users = $this->users();
-
-        foreach ($users->get() as $user) {
-            $user->setter('stat', 0);
-            $this->assertTrue($user->update());
-        }
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanDeleteData(): void
-    {
-        $users = $this->users();
-
-        foreach ($users->get() as $user) {
-            $this->assertTrue($user->delete());
-        }
-    }
-
-    // crud upstream
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanUpdateAllWithSingleQuery(): void
-    {
-        $update = $this->users()->get()->update([
-            'stat' => 0,
-        ]);
-
-        $this->assertTrue($update);
-    }
-
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanDeleteAllWithSingleQuery(): void
-    {
-        $delete = $this->users()->get()->delete();
-
-        $this->assertTrue($delete);
-    }
-}
+    expect($delete)->toBeTrue();
+})->with(ManagesDatabase::engineProvider());

@@ -5,109 +5,76 @@ declare(strict_types=1);
 namespace Tests\Database\Pdo;
 
 use Tests\Database\Asserts\UserTrait;
-use Tests\Database\AbstractTestDatabase;
+use Tests\Database\ManagesDatabase;
 
-final class LogsTest extends AbstractTestDatabase
-{
-    use UserTrait;
+uses(ManagesDatabase::class);
+uses(UserTrait::class);
 
-    protected function setUp(): void
-    {
-        $this->createConnection();
-        $this->createUserSchema();
-        $this->createUser([
-            [
-                'user'     => 'taylor',
-                'password' => 'secret',
-                'stat'     => 99,
-            ],
-        ]);
+afterEach(function (): void {
+    $this->dropConnection();
+});
+
+test('it can get log excution connention', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+    $this->pdo->flushLogs();
+    $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->resultset();
+    $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->single();
+    $this->pdo->query('delete from users where user = :user')->bind('user', 'taylor')->execute();
+
+    $logs = [
+        'select * from users where user = :user',
+        'select * from users where user = :user',
+        'delete from users where user = :user',
+    ];
+
+    // after calculate
+    foreach ($this->pdo->getLogs() as $key => $log) {
+        expect($logs[$key])->toEqual($log['query']);
+        expect($log['duration'])->not->toBeNull();
     }
+})->with(ManagesDatabase::engineProvider());
 
-    protected function tearDown(): void
-    {
-        $this->dropConnection();
+test('it can select query', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+
+    expect($this->pdo->getLogs())->not->toBeEmpty();
+    foreach ($this->pdo->getLogs() as $key => $log) {
+        expect($log)->toHaveKey('query');
+        expect($log)->toHaveKey('started');
+        expect($log)->toHaveKey('ended');
+        expect($log)->toHaveKey('duration');
     }
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGetLogExcutionConnention(): void
-    {
-        $this->pdo->flushLogs();
-        $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->resultset();
-        $this->pdo->query('select * from users where user = :user')->bind('user', 'taylor')->single();
-        $this->pdo->query('delete from users where user = :user')->bind('user', 'taylor')->execute();
+test('it can flush', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
 
-        $logs = [
-            'select * from users where user = :user',
-            'select * from users where user = :user',
-            'delete from users where user = :user',
-        ];
+    expect($this->pdo->getLogs())->not->toBeEmpty();
+    $this->pdo->flushLogs();
+    expect($this->pdo->getLogs())->toBeEmpty();
+})->with(ManagesDatabase::engineProvider());
 
-        // after calculate
-        foreach ($this->pdo->getLogs() as $key => $log) {
-            $this->assertEquals($log['query'], $logs[$key]);
-            $this->assertNotNull($log['duration']);
-        }
-    }
+test('it can empty logs get logs', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+    $this->pdo->flushLogs();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanSelectQuery(): void
-    {
-        $this->assertNotEmpty($this->pdo->getLogs());
-        foreach ($this->pdo->getLogs() as $key => $log) {
-            $this->assertArrayHasKey('query', $log);
-            $this->assertArrayHasKey('started', $log);
-            $this->assertArrayHasKey('ended', $log);
-            $this->assertArrayHasKey('duration', $log);
-        }
-    }
+    expect($this->pdo->getLogs())->toBeEmpty(); // Should not throw error
+})->with(ManagesDatabase::engineProvider());
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanFlush(): void
-    {
-        $this->assertNotEmpty($this->pdo->getLogs());
-        $this->pdo->flushLogs();
-        $this->assertEmpty($this->pdo->getLogs());
-    }
+test('it can get multiple get logs calls', function (string $engine): void {
+    $this->createConnection($engine);
+    $this->seedDefaultUser();
+    $this->pdo->flushLogs();
+    $this->pdo->query('SELECT 1')->execute();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanEmptyLogsGetLogs(): void
-    {
-        $this->pdo->flushLogs();
-        $this->assertEmpty($this->pdo->getLogs()); // Should not throw error
-    }
+    $firstCall  = $this->pdo->getLogs();
+    $secondCall = $this->pdo->getLogs();
+    $thirdCall  = $this->pdo->getLogs();
 
-    /**
-     * @test
-     *
-     * @group database
-     */
-    public function testItCanGetMultipleGetLogsCalls(): void
-    {
-        $this->pdo->flushLogs();
-        $this->pdo->query('SELECT 1')->execute();
-
-        $firstCall  = $this->pdo->getLogs();
-        $secondCall = $this->pdo->getLogs();
-        $thirdCall  = $this->pdo->getLogs();
-
-        $this->assertEquals($firstCall, $secondCall);
-        $this->assertEquals($secondCall, $thirdCall);
-    }
-}
+    expect($secondCall)->toEqual($firstCall);
+    expect($thirdCall)->toEqual($secondCall);
+})->with(ManagesDatabase::engineProvider());
