@@ -526,7 +526,7 @@ class Model implements ArrayAccess, IteratorAggregate
         $query = new Select($this->tableName, [$this->primaryKey], $this->pdo);
         $query->whereRef($this->where);
 
-        return $this->execute($query);
+        return $query->get()->count() > 0;
     }
 
     /**

@@ -11,7 +11,6 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use RuntimeException;
-use Tests\FixturesPathTrait;
 
 use function file_exists;
 use function file_put_contents;
@@ -26,11 +25,10 @@ covers(CircularAliasException::class);
 covers(ConfigBootstrapper::class);
 covers(EntryNotFoundException::class);
 
-uses(FixturesPathTrait::class);
 
 it('can load config from file', function (): void {
-    $app = new Application($this->setFixtureBasePath());
-    $app->set('path.config', $this->setFixturePath('/fixtures/application-read/config/'));
+    $app = new Application(__DIR__ . '/../fixtures/');
+    $app->set('path.config', __DIR__ . '/../fixtures/application-read/config/');
 
     new ConfigBootstrapper()->bootstrap($app);
     $config = $app->get('config');
@@ -42,7 +40,7 @@ it('can load config from file', function (): void {
 });
 
 it('can load config from cache', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app = new Application(__DIR__ . '/../fixtures/application-read/');
 
     new ConfigBootstrapper()->bootstrap($app);
     $config = $app->get('config');
@@ -54,9 +52,9 @@ it('can load config from cache', function (): void {
 });
 
 it('throws exception on invalid config file', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+    $app = new Application(__DIR__ . '/../fixtures/application-write/');
 
-    $tempConfigDir = $this->setFixturePath('/fixtures/application-write/config_test/');
+    $tempConfigDir = __DIR__ . '/../fixtures/application-write/config_test/';
 
     if (!is_dir($tempConfigDir)) {
         mkdir($tempConfigDir, 0777, true);
@@ -80,11 +78,17 @@ it('throws exception on invalid config file', function (): void {
 })->throws(RuntimeException::class, 'Invalid config file');
 
 it('throws if cache is not array', function (): void {
-    $basePath = $this->setFixturePath('/fixtures/');
+    $basePath = __DIR__ . '/../fixtures/bootstrap-invalid/';
+
+    $cacheDir = $basePath . 'bootstrap/cache/';
+
+    if (!is_dir($cacheDir)) {
+        mkdir($cacheDir, 0777, true);
+    }
 
     $app = new Application($basePath);
 
-    $cacheFile = $app->getApplicationCachePath() . 'config.php';
+    $cacheFile = $cacheDir . 'config.php';
 
     file_put_contents($cacheFile, "<?php return 'not-an-array';");
 
@@ -92,13 +96,16 @@ it('throws if cache is not array', function (): void {
         new ConfigBootstrapper()->bootstrap($app);
     } finally {
         unlink($cacheFile);
+        rmdir($cacheDir);
+        rmdir($basePath . 'bootstrap/');
+        rmdir($basePath);
 
         $app->flush();
     }
 })->throws(RuntimeException::class, 'Invalid config cache file');
 
 it('loads valid cache', function (): void {
-    $basePath = $this->setFixturePath('/fixtures/bootstrap1/');
+    $basePath = __DIR__ . '/../fixtures/bootstrap1/';
 
     $app = new Application($basePath);
 
@@ -117,9 +124,9 @@ it('loads valid cache', function (): void {
 });
 
 it('returns empty array when no config files found', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-write/'));
+    $app = new Application(__DIR__ . '/../fixtures/application-write/');
 
-    $emptyDir = $this->setFixturePath('/fixtures/application-write/empty_config_test/');
+    $emptyDir = __DIR__ . '/../fixtures/application-write/empty_config_test/';
 
     if (!is_dir($emptyDir)) {
         mkdir($emptyDir, 0777, true);

@@ -29,5 +29,11 @@ it('computes md5 checksum from a file', function (): void {
 });
 
 it('throws RuntimeException for non-existent file', function (): void {
-    Checksum::fromFile('/nonexistent/path/file.txt');
+    set_error_handler(static fn (): bool => true);
+
+    try {
+        Checksum::fromFile('/nonexistent/path/file.txt');
+    } finally {
+        restore_error_handler();
+    }
 })->throws(RuntimeException::class);

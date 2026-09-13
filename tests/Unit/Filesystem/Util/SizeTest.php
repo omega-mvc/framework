@@ -29,7 +29,13 @@ it('computes size from a file', function (): void {
 });
 
 it('throws InvalidArgumentException for non-existent file', function (): void {
-    Size::fromFile('/nonexistent/path/file.txt');
+    set_error_handler(static fn (): bool => true);
+
+    try {
+        Size::fromFile('/nonexistent/path/file.txt');
+    } finally {
+        restore_error_handler();
+    }
 })->throws(InvalidArgumentException::class);
 
 it('computes size from a resource', function (): void {

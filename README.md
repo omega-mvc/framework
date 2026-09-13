@@ -300,4 +300,13 @@ available regex
 - `ip4_6`
 - `url`
 
+## Testing
+
+```bash
+composer run test        # pest
+composer run check       # lint + test
+```
+
+The suite runs clean. Two known warnings are intentionally suppressed: `Filesystem/Util/SizeTest` and `Filesystem/Util/ChecksumTest` both assert the exception thrown when `filesize()` / `md5_file()` receives a non-existent path, and each installs a temporary error handler so the expected `E_WARNING` does not surface as a PHPUnit warning.
+
 [🔝 Back to contents](#Feature)
