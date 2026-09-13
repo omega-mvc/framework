@@ -13,7 +13,7 @@
     <file>src</file>
     <file>tests</file>
 
-    <exclude-pattern>./tests/Unit/fixtures</exclude-pattern>
+    <exclude-pattern>tests/Unit/[^/]+/(?-i:fixtures)/</exclude-pattern>
 
     <rule ref="PSR12">
         <exclude name="PSR1.Methods.CamelCapsMethodName.NotCamelCaps" />

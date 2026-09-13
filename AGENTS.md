@@ -21,14 +21,14 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first.
 - **PSR-12** with 120-char line limit (comments included, no hard absolute limit)
 - camelCase (PSR1.Methods.CamelCapsMethodName excluded in phpcs.xml.dist)
 - 4-space indent, UTF-8, LF line endings
-- Fixtures directory excluded from linting: `tests/Unit/fixtures`
+- Fixtures directories excluded from linting: `tests/Unit/*/fixtures`
 - `declare(strict_types=1);` and a GPL-3.0 "Part of Omega" attribution docblock header in every source/test file
 
 ## Structure
 
 - `src/Omega/` — 28 subpackages (Application, Archive, Cache, Collection, Config, Console, Container, Cron, Database, DocBlockGenerator, Environment, Event, Exceptions, Facade, Filesystem, Http, Logging, Macroable, Middleware, RateLimiter, Redis, Router, Security, Testing, Text, Time, Validator, View)
 - `tests/Unit/` — mirrors src subpackage names, with an intentional plural: src `Facade` holds only `AbstractFacade`, while tests/Unit `Facades` covers all facades. src `Event` has no test mirror. `tests/Feature/` holds the non-mirrored suites (currently Validator). Pest top-level files in `tests/` (`Pest.php`, `TestCase.php`)
-- `tests/Unit/fixtures/` — shared fixtures; `FixturesPathTrait` in `tests/Unit/FixturesPathTrait.php`
+- `tests/Unit/*/fixtures/` — per-subpackage shared fixtures (e.g. `tests/Unit/Http/fixtures/`)
 - Global helper files autoloaded via Composer `files`: `Application/helper.php`, `Collection/helper.php`, `Environment/helper.php`, `Http/helper.php`, `Text/helper.php`, `Time/helper.php`, `Validator/helper.php`, `View/helper.php`
 - `docs/` — per-subpackage markdown docs (Application.md, Archive.md, ...)
 - `cache/` — runtime cache (phpcs, phpstan, phpunit, coverage); gitignored

@@ -7,8 +7,19 @@ parameters:
         - tests
     tmpDir: cache/phpstan
     excludePaths:
-        - tests/Unit/fixtures
+        - tests/Unit/*/fixtures/*
         - src/Omega/Console/stubs
+    ignoreErrors:
+        # These traits are consumed only via Pest's uses(), which the
+        # trait.unused rule cannot detect.
+        -
+            message: '#^Trait Tests\\Database\\ManagesDatabase is used zero times and is not analysed\.$#'
+            path: tests/Unit/Database/ManagesDatabase.php
+            reportUnmatched: false
+        -
+            message: '#^Trait Tests\\Database\\Asserts\\UserTrait is used zero times and is not analysed\.$#'
+            path: tests/Unit/Database/Asserts/UserTrait.php
+            reportUnmatched: false
     bootstrapFiles:
         - vendor/autoload.php
 

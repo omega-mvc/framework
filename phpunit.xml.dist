@@ -13,6 +13,7 @@
     <testsuites>
         <testsuite name="Omega Framework Test Suite">
             <directory>./tests</directory>
+            <exclude>./tests/Unit/*/fixtures/*</exclude>
         </testsuite>
     </testsuites>
     <source>
