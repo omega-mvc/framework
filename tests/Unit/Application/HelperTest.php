@@ -7,7 +7,6 @@ namespace Tests\Application;
 use InvalidArgumentException;
 use Omega\Application\Application;
 use Omega\Exceptions\ApplicationNotAvailableException;
-use Tests\FixturesPathTrait;
 
 use function Omega\Application\app;
 use function Omega\Application\get_path;
@@ -30,7 +29,6 @@ covers(
     'Omega\Application\slash'
 );
 
-uses(FixturesPathTrait::class);
 
 it('throws an error after flushing the application', function (): void {
     $app = new Application('/');
@@ -48,7 +46,7 @@ it('loads the application', function (): void {
 });
 
 it('resolves environment helpers', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     $app->set('environment', 'prod');
     expect(is_dev())->toBeFalse();

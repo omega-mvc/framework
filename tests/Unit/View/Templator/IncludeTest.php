@@ -10,9 +10,7 @@ use Omega\View\Templator;
 use Omega\View\Templator\IncludeTemplator;
 use Omega\View\TemplatorFinder;
 use ReflectionClass;
-use Tests\FixturesPathTrait;
 
-uses(FixturesPathTrait::class);
 
 covers(IncludeTemplator::class);
 covers(Templator::class);
@@ -21,8 +19,8 @@ covers(ViewFileNotFoundException::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 
@@ -34,8 +32,8 @@ it('can render include', function (): void {
 });
 
 it('can fetch dependency view', function (): void {
-    $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator')], ['']);
-    $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
+    $finder    = new TemplatorFinder([__DIR__ . '/../fixtures/view/templator'], ['']);
+    $templator = new Templator($finder, __DIR__ . '/../fixtures/view/templator');
     $templator->templates('<html><head></head><body>{% include(\'view/component.php\') %}</body></html>', 'test');
     expect($templator->getDependency('test'))->toEqual([
         $finder->find('view/component.php') => 1,
@@ -58,7 +56,7 @@ it('returns included template when depth zero', function (): void {
     /** @var TemplatorFinder $finder */
     $finder = $property->getValue($this->templator);
 
-    $includeTemplator = new IncludeTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+    $includeTemplator = new IncludeTemplator($finder, __DIR__ . '/../fixtures/view/templator/');
     $includeTemplator->maksDept(0);
 
     $template = "{% include('view/component.php') %}";

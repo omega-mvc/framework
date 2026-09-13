@@ -18,14 +18,12 @@ use Omega\Http\Request;
 use Omega\Http\Response;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\FixturesPathTrait;
 use Throwable;
 
 use function is_string;
 use function restore_error_handler;
 use function restore_exception_handler;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers(BindingResolutionException::class);
@@ -39,7 +37,7 @@ covers(Response::class);
 covers(ApplicationManifest::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
     HandleExceptions::resetHandlersState();
 

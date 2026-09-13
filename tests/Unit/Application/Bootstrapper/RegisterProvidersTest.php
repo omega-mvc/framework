@@ -16,7 +16,6 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use ReflectionClass;
 use Tests\Application\Bootstrapper\Fixtures\TestRegisterServiceProvider;
-use Tests\FixturesPathTrait;
 
 use function in_array;
 
@@ -28,10 +27,9 @@ covers(CircularAliasException::class);
 covers(EntryNotFoundException::class);
 covers(RegisterProviders::class);
 
-uses(FixturesPathTrait::class);
 
 it('bootstraps the application with default and runtime providers', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
     $app->register(TestRegisterServiceProvider::class);
     $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
 
@@ -45,7 +43,7 @@ it('bootstraps the application with default and runtime providers', function ():
 });
 
 it('boots the continue line in the boot provider', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
     $provider = TestRegisterServiceProvider::class;
 
     $app->register($provider);
@@ -61,7 +59,7 @@ it('boots the continue line in the boot provider', function (): void {
 });
 
 it('registers providers from the config via bootstrap', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
 
     $app->loadConfig(new ConfigRepository([
         'providers' => [TestRegisterServiceProvider::class],
@@ -76,7 +74,7 @@ it('registers providers from the config via bootstrap', function (): void {
 });
 
 it('resolves core providers when the config has no binding', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
 
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
@@ -89,7 +87,7 @@ it('resolves core providers when the config has no binding', function (): void {
 });
 
 it('ignores a config binding that is not a ConfigRepository', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
     $app->set('config', static fn () => ['providers' => [TestRegisterServiceProvider::class]]);
 
     $bootstrapper = new RegisterProviders();
@@ -100,7 +98,7 @@ it('ignores a config binding that is not a ConfigRepository', function (): void 
 });
 
 it('ignores a providers config entry that is not an array', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
     $app->loadConfig(new ConfigRepository([
         'providers' => 'not-an-array',
     ]));
@@ -113,7 +111,7 @@ it('ignores a providers config entry that is not an array', function (): void {
 });
 
 it('ignores a package provider list that is not an array', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/support/'));
+    $app = new Application(__DIR__ . '/../fixtures/support/');
     $app->set(ApplicationManifest::class, static fn () => new class {
         public function providers(): mixed
         {

@@ -13,11 +13,9 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Http;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\FixturesPathTrait;
 
 use function is_string;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers(BindingResolutionException::class);
@@ -27,7 +25,7 @@ covers(Http::class);
 covers(ApplicationManifest::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
     $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
         basePath: is_string($path = $this->app->get('path.base')) ? $path : '',

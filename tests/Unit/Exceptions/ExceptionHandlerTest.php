@@ -24,13 +24,11 @@ use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use ReflectionMethod;
 use Tests\Exceptions\Support\LogStore;
-use Tests\FixturesPathTrait;
 use Throwable;
 
 use function file;
 use function str_contains;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers(BindingResolutionException::class);
@@ -49,7 +47,7 @@ covers(TemplatorFinder::class);
 beforeEach(function (): void {
     LogStore::reset();
 
-    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
     $this->app->set('environment', 'testing');
 
@@ -200,12 +198,12 @@ it('can render an exception as json for debug', function (): void {
 
 it('can render an http exception through a view', function (): void {
     $app         = $this->app;
-    $fixturePath = $this->setFixturePath('/fixtures/exceptions');
+    $fixturePath = __DIR__ . '/fixtures/exceptions';
 
-    $app->set('path.view', $this->setFixturePath('/fixtures/exceptions/'));
+    $app->set('path.view', __DIR__ . '/fixtures/exceptions/');
     $app->set('paths.view', [
-        $this->setFixturePath('/fixtures/exceptions/'),
-        $this->setFixturePath('/fixtures/exceptions/pages/'),
+        __DIR__ . '/fixtures/exceptions/',
+        __DIR__ . '/fixtures/exceptions/pages/',
     ]);
     $app->set(
         TemplatorFinder::class,

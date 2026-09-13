@@ -14,13 +14,11 @@ use Omega\Http\Request;
 use Omega\Http\Response;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\FixturesPathTrait;
 use Tests\Http\Support\TestKernelTerminate;
 
 use function ob_get_clean;
 use function ob_start;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers(BindingResolutionException::class);
@@ -31,7 +29,7 @@ covers(Request::class);
 covers(Response::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixtureBasePath());
+    $this->app = new Application(__DIR__);
 
     $this->app->set(
         Http::class,

@@ -7,7 +7,6 @@ namespace Tests\Http\Upload;
 use Omega\Http\Exceptions\FolderNotExistsException;
 use Omega\Http\Upload\UploadFile;
 use Omega\Http\Upload\UploadMultiFile;
-use Tests\FixturesPathTrait;
 
 use function file_exists;
 use function filesize;
@@ -16,7 +15,6 @@ use function ini_get;
 use function trim;
 use function unlink;
 
-uses(FixturesPathTrait::class);
 
 covers(FolderNotExistsException::class);
 covers(UploadFile::class);
@@ -31,9 +29,7 @@ beforeEach(function (): void {
         'file_1' => [
             'name'     => 'test123.txt',
             'type'     => 'file',
-            'tmp_name' => $this->setFixturePath(
-                '/fixtures/application-read/upload/test123.tmp'
-            ),
+            'tmp_name' => __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
             'error'    => 0,
             'size'     => 1,
         ],
@@ -41,8 +37,8 @@ beforeEach(function (): void {
             'name'     => ['test123.txt', 'test234.txt'],
             'type'     => ['file', 'file'],
             'tmp_name' => [
-                $this->setFixturePath('/fixtures/application-read/upload/test123.tmp'),
-                $this->setFixturePath('/fixtures/application-read/upload/test234.tmp'),
+                __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
+                __DIR__ . '/../fixtures/application-read/upload/test234.tmp',
             ],
             'error'    => [0, 0],
             'size'     => [1, 1],
@@ -60,13 +56,13 @@ beforeEach(function (): void {
         ->markTest(true)
         ->setFileName('success')
         ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
+        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
         ->setMaxFileSize(91)
         ->setMimeTypes(['file']);
 });
 
 afterEach(function (): void {
-    $file = $this->setFixturePath('/fixtures/application-read/upload/success.txt');
+    $file = __DIR__ . '/../fixtures/application-read/upload/success.txt';
     if (file_exists($file)) {
         unlink($file);
     }
@@ -114,7 +110,7 @@ it('can upload file invalid no file upload', function (): void {
         ->markTest(true)
         ->setFileName('success')
         ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
+        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
         ->setMaxFileSize(91)
         ->setMimeTypes(['file']);
 
@@ -130,15 +126,15 @@ it('can multi upload file but single file', function (): void {
         ->markTest(true)
         ->setFileName('multi_file_')
         ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation($this->setFixturePath('/fixtures/application-read/upload/'))
+        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
         ->setMaxFileSize(91)
         ->setMimeTypes(['file'])
         ->uploads();
 
     expect($upload->success())->toBeTrue();
-    expect($this->setFixturePath('/fixtures/application-read/upload/multi_file_0.txt'))->toBeReadableFile();
-    expect($this->setFixturePath('/fixtures/application-read/upload/multi_file_1.txt'))->toBeReadableFile();
+    expect(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt')->toBeReadableFile();
+    expect(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt')->toBeReadableFile();
 
-    unlink($this->setFixturePath('/fixtures/application-read/upload/multi_file_0.txt'));
-    unlink($this->setFixturePath('/fixtures/application-read/upload/multi_file_1.txt'));
+    unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt');
+    unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt');
 });

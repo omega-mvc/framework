@@ -62,7 +62,7 @@ it('throws an exception for a static call without an application', function (): 
 
 function makeApp(string $tempDir): Application
 {
-    $app = new Application(slash(__DIR__ . '/../../fixtures/support/'));
+    $app = new Application(slash(__DIR__ . '/../fixtures/support/'));
     $app->set('config', static fn () => new ConfigRepository([
         'logging' => [
             'default' => 'stream',

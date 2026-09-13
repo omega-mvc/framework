@@ -13,7 +13,6 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Tests\FixturesPathTrait;
 use Tests\Http\Support\ClassA;
 use Tests\Http\Support\ClassB;
 use Tests\Http\Support\ClassC;
@@ -23,7 +22,6 @@ use function is_string;
 use function ob_get_clean;
 use function ob_start;
 
-uses(FixturesPathTrait::class);
 
 covers(CircularAliasException::class);
 covers(Request::class);
@@ -33,7 +31,7 @@ covers(Http::class);
 covers(ApplicationManifest::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
     $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
         basePath: is_string($path = $this->app->get('path.base')) ? $path : '',

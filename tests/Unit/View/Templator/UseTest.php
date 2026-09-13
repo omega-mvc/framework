@@ -9,9 +9,7 @@ use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use Omega\View\Templator\UseTemplator;
 use Omega\Text\Str;
-use Tests\FixturesPathTrait;
 
-uses(FixturesPathTrait::class);
 
 covers(UseTemplator::class);
 covers(Str::class);
@@ -20,8 +18,8 @@ covers(TemplatorFinder::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 
@@ -40,8 +38,8 @@ it('can render use multi time', function (): void {
 
 it('returns template if no use directive', function (): void {
     $templator = new UseTemplator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 
     $template = "<html><body>No use here</body></html>";

@@ -16,7 +16,6 @@ namespace Tests\Archive;
 
 use Omega\Archive\Bz2Adapter;
 use RuntimeException;
-use Tests\FixturesPathTrait;
 
 use function bzcompress;
 use function chmod;
@@ -41,7 +40,6 @@ use function unlink;
 
 covers(Bz2Adapter::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
     $this->tempDir = sys_get_temp_dir() . '/omega-archive-bz2-' . uniqid();
@@ -83,21 +81,21 @@ it('throws when the file is not readable on open', function (): void {
 it('accepts an existing readable file on open', function (): void {
     $adapter = new Bz2Adapter($this->tempDir . '/other.bz2');
 
-    $adapter->open($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter->open(__DIR__ . '/fixtures/archive/sample.bz2');
 
-    expect(readProperty($adapter))->toBe($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    expect(readProperty($adapter))->toBe(__DIR__ . '/fixtures/archive/sample.bz2');
 });
 
 it('close is a no-op for the bz2 adapter', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     $adapter->close();
 
-    expect(file_exists($this->setFixturePath('/fixtures/archive/sample.bz2')))->toBeTrue();
+    expect(file_exists(__DIR__ . '/fixtures/archive/sample.bz2'))->toBeTrue();
 });
 
 it('returns the decompressed content on read', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->read(''))->toBe('hello bz2 payload');
 });
@@ -128,32 +126,32 @@ it('compresses the content and returns the compressed length on write', function
 });
 
 it('delete is not supported and returns false', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->delete(''))->toBeFalse();
 });
 
 it('exists reflects whether the bz2 file exists on disk', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->exists(''))->toBeTrue();
     expect((new Bz2Adapter($this->tempDir . '/missing.bz2'))->exists(''))->toBeFalse();
 });
 
 it('keys is not supported and returns an empty array', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->keys())->toBe([]);
 });
 
 it('isDirectory is not supported and returns false', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->isDirectory(''))->toBeFalse();
 });
 
 it('returns an integer timestamp on mtime', function (): void {
-    $adapter = new Bz2Adapter($this->setFixturePath('/fixtures/archive/sample.bz2'));
+    $adapter = new Bz2Adapter(__DIR__ . '/fixtures/archive/sample.bz2');
 
     expect($adapter->mtime(''))->toBeInt();
 });

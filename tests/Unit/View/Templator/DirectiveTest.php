@@ -10,9 +10,7 @@ use Omega\View\Exceptions\DirectiveNotRegisterException;
 use Omega\View\Templator;
 use Omega\View\Templator\DirectiveTemplator;
 use Omega\View\TemplatorFinder;
-use Tests\FixturesPathTrait;
 
-uses(FixturesPathTrait::class);
 
 covers(DirectiveCanNotBeRegisterException::class);
 covers(DirectiveNotRegisterException::class);
@@ -22,8 +20,8 @@ covers(TemplatorFinder::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 

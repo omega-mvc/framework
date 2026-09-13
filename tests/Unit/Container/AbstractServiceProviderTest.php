@@ -6,7 +6,6 @@ namespace Tests\Container;
 
 use Exception;
 use Omega\Container\AbstractServiceProvider;
-use Tests\FixturesPathTrait;
 
 use function chmod;
 use function copy;
@@ -20,15 +19,14 @@ use function unlink;
 
 covers(AbstractServiceProvider::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
-    $this->basePath = $this->setFixtureBasePath();
+    $this->basePath = __DIR__ . '/fixtures';
 });
 
 it('creates the destination directory when importing a file', function (): void {
-    $source = $this->basePath . '/fixtures/application-write/copy/from/file.txt';
-    $target = $this->basePath . '/fixtures/application-write/tmp/newdir/file.txt';
+    $source = $this->basePath . '/copy/from/file.txt';
+    $target = $this->basePath . '/tmp/newdir/file.txt';
 
     $dir = dirname($target);
 
@@ -51,8 +49,8 @@ it('creates the destination directory when importing a file', function (): void 
 });
 
 it('overwrites an existing file when allowed', function (): void {
-    $source = $this->basePath . '/fixtures/application-write/copy/from/file.txt';
-    $target = $this->basePath . '/fixtures/application-write/tmp/existing/file.txt';
+    $source = $this->basePath . '/copy/from/file.txt';
+    $target = $this->basePath . '/tmp/existing/file.txt';
 
     $dir = dirname($target);
 
@@ -73,7 +71,7 @@ it('overwrites an existing file when allowed', function (): void {
 
 it('returns false when the file copy fails', function (): void {
     $source = $this->basePath . '/non_existent_file.txt';
-    $target = $this->basePath . '/fixtures/application-write/tmp/target.txt';
+    $target = $this->basePath . '/tmp/target.txt';
 
     $result = @AbstractServiceProvider::importFile($source, $target, true);
 
@@ -82,7 +80,7 @@ it('returns false when the file copy fails', function (): void {
 
 it('returns false when the source directory does not exist', function (): void {
     $nonExistentDir = $this->basePath . '/directory_that_never_exists';
-    $targetDir      = $this->basePath . '/fixtures/application-write/tmp/target';
+    $targetDir      = $this->basePath . '/tmp/target';
 
     $result = @AbstractServiceProvider::importDir($nonExistentDir, $targetDir);
 
@@ -90,7 +88,7 @@ it('returns false when the source directory does not exist', function (): void {
 });
 
 it('handles recursion when importing a directory', function (): void {
-    $sourceDir  = $this->basePath . '/fixtures/application-write/recursive_test';
+    $sourceDir  = $this->basePath . '/recursive_test';
     $subDir     = $sourceDir . '/subdir';
     $sourceFile = $subDir . '/test.txt';
 
@@ -100,7 +98,7 @@ it('handles recursion when importing a directory', function (): void {
 
     file_put_contents($sourceFile, 'omega content');
 
-    $targetDir = $this->basePath . '/fixtures/application-write/recursive_target';
+    $targetDir = $this->basePath . '/recursive_target';
 
     $result = AbstractServiceProvider::importDir($sourceDir, $targetDir, true);
 
@@ -113,7 +111,7 @@ it('handles recursion when importing a directory', function (): void {
 });
 
 it('returns false when scandir fails on a readable dir', function (): void {
-    $protectedDir = $this->basePath . '/fixtures/application-write/inaccessible_dir';
+    $protectedDir = $this->basePath . '/inaccessible_dir';
     mkdir($protectedDir, 0755, true);
 
     chmod($protectedDir, 0333);
@@ -127,11 +125,11 @@ it('returns false when scandir fails on a readable dir', function (): void {
 });
 
 it('imports a file into an existing directory', function (): void {
-    $targetDir = $this->basePath . '/fixtures/application-write/tmp/exists';
+    $targetDir = $this->basePath . '/tmp/exists';
 
     mkdir($targetDir, 0755, true);
 
-    $source = $this->basePath . '/fixtures/application-write/copy/from/file.txt';
+    $source = $this->basePath . '/copy/from/file.txt';
     $target = $targetDir . '/newfile.txt';
 
     $result = AbstractServiceProvider::importFile($source, $target, true);
@@ -143,8 +141,8 @@ it('imports a file into an existing directory', function (): void {
 });
 
 it('throws when the file exists and overwrite is not allowed', function (): void {
-    $source = $this->basePath . '/fixtures/application-write/copy/from/file.txt';
-    $target = $this->basePath . '/fixtures/application-write/copy/to/existing-file.txt';
+    $source = $this->basePath . '/copy/from/file.txt';
+    $target = $this->basePath . '/copy/to/existing-file.txt';
 
     if (!file_exists(dirname($target))) {
         mkdir(dirname($target), 0755, true);

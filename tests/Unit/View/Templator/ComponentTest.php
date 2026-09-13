@@ -12,12 +12,10 @@ use Omega\View\TemplatorFinder;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
-use Tests\FixturesPathTrait;
 use Throwable;
 
 use function trim;
 
-uses(FixturesPathTrait::class);
 
 covers(ComponentTemplator::class);
 covers(Templator::class);
@@ -26,8 +24,8 @@ covers(YeldSectionNotFoundException::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 
@@ -100,8 +98,8 @@ it('can render component opp a process', function (): void {
 });
 
 it('can get dependency view', function (): void {
-    $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
-    $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+    $finder    = new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']);
+    $templator = new Templator($finder, __DIR__ . '/../fixtures/view/templator/');
     $templator->templates(
         '{% component(\'component.template\') %}<main>core component</main>{% endcomponent %}',
         'test'
@@ -118,7 +116,7 @@ it('extract component and params with positional param', function (): void {
     /** @var TemplatorFinder $finder */
     $finder     = $property->getValue($this->templator);
 
-    $componentTemplator = new ComponentTemplator($finder, $this->setFixturePath('/fixtures/view/templator/'));
+    $componentTemplator = new ComponentTemplator($finder, __DIR__ . '/../fixtures/view/templator/');
 
     $method = new ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
     $method->setAccessible(true);

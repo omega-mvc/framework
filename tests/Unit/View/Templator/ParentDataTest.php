@@ -7,17 +7,15 @@ namespace Tests\View\Templator;
 use Exception;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
-use Tests\FixturesPathTrait;
 
-uses(FixturesPathTrait::class);
 
 covers(Templator::class);
 covers(TemplatorFinder::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 

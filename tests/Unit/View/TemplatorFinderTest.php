@@ -6,25 +6,23 @@ namespace Tests\View;
 
 use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\TemplatorFinder;
-use Tests\FixturesPathTrait;
 
-uses(FixturesPathTrait::class);
 
 covers(ViewFileNotFoundException::class);
 covers(TemplatorFinder::class);
 
 it('can find templator file location', function (): void {
-    $base = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $base = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([$base], ['.php']);
 
     expect($view->find('php'))->toEqual(
-        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+        __DIR__ . '/fixtures/view/sample/Templators/php.php'
     );
 });
 
 it('can find templator file location will throw', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $loader = __DIR__ . '/fixtures/view/sampleTemplators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -33,18 +31,18 @@ it('can find templator file location will throw', function (): void {
 });
 
 it('can find in path', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 
     $this->assertEquals(
-        $this->setFixturePath('/fixtures/view/sample/Templators/php.php'),
+        __DIR__ . '/fixtures/view/sample/Templators/php.php',
         (fn () => $this->{'findInPath'}('php', [$loader]))->call($view)
     );
 });
 
 it('can find in path will throw exception', function (): void {
-    $loader = $this->setFixturePath('Templators');
+    $loader = __DIR__ . '/fixtures/view/Templators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -61,7 +59,7 @@ it('find in path with empty paths throws', function (): void {
 });
 
 it('find in path with no extensions throws', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([$loader], []);
 
@@ -71,18 +69,18 @@ it('find in path with no extensions throws', function (): void {
 });
 
 it('can add path', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([], ['.php']);
     $view->addPath($loader);
 
     expect($view->find('php'))->toEqual(
-        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+        __DIR__ . '/fixtures/view/sample/Templators/php.php'
     );
 });
 
 it('can set path', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $loader = __DIR__ . '/fixtures/view/sampleTemplators';
 
     $view  = new TemplatorFinder([], ['.php']);
     $paths = (fn () => $this->{'paths'})->call($view);
@@ -103,7 +101,7 @@ it('set paths covers foreach with empty element', function (): void {
 });
 
 it('can not add multi path', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $loader = __DIR__ . '/fixtures/view/sampleTemplators';
 
     $view = new TemplatorFinder([], ['.php']);
     $view->addPath($loader);
@@ -114,18 +112,18 @@ it('can not add multi path', function (): void {
 });
 
 it('can add extension', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([$loader]);
     $view->addExtension('.php');
 
     expect($view->find('php'))->toEqual(
-        $this->setFixturePath('/fixtures/view/sample/Templators/php.php')
+        __DIR__ . '/fixtures/view/sample/Templators/php.php'
     );
 });
 
 it('can flush', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -140,7 +138,7 @@ it('can flush', function (): void {
 });
 
 it('can get paths registered', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $loader = __DIR__ . '/fixtures/view/sampleTemplators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 
@@ -148,7 +146,7 @@ it('can get paths registered', function (): void {
 });
 
 it('can get extensions registered', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sampleTemplators');
+    $loader = __DIR__ . '/fixtures/view/sampleTemplators';
 
     $view = new TemplatorFinder([$loader], ['.php']);
 

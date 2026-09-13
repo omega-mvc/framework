@@ -9,13 +9,11 @@ use Omega\View\Vite;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
-use Tests\FixturesPathTrait;
 
 use function file_put_contents;
 use function mkdir;
 use function unlink;
 
-uses(FixturesPathTrait::class);
 
 covers(Vite::class);
 
@@ -102,7 +100,7 @@ it('create preload tag', function (): void {
 });
 
 it('get tags', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $tag = $vite->getTags(['resources/js/app.js', 'resources/css/app.css']);
     expect($tag)->toEqual(
@@ -112,7 +110,7 @@ it('get tags', function (): void {
 });
 
 it('get tags attributes', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $tag = $vite->getTags(
         entryPoints: [
@@ -131,7 +129,7 @@ it('get tags attributes', function (): void {
 });
 
 it('get tags attributes with exception', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $tag = $vite->getCustomTags(
         entryPoints: [
@@ -151,7 +149,7 @@ it('get tags attributes with exception', function (): void {
 });
 
 it('get preload tags', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'preload/');
 
     $tag = $vite->getPreloadTags(['resources/js/app.js']);
     expect($tag)->toEqual(
@@ -163,7 +161,7 @@ it('get preload tags', function (): void {
 });
 
 it('can render head html tag', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $headTag = $vite(
         'resources/css/app.css',
@@ -177,7 +175,7 @@ it('can render head html tag', function (): void {
 });
 
 it('can render head html tag in hrm mode', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     $headTags = $vite(
         'resources/css/app.css',
@@ -192,7 +190,7 @@ it('can render head html tag in hrm mode', function (): void {
 });
 
 it('can render head html tag with preload', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'preload/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'preload/');
 
     $headTag = $vite('resources/js/app.js');
 
@@ -206,7 +204,7 @@ it('can render head html tag with preload', function (): void {
 });
 
 it('get custom tags with hmr', function (): void {
-    $tmpDir = $this->setFixturePath('/fixtures/application-write/manifest1/public');
+    $tmpDir = __DIR__ . '/fixtures/application-write/manifest1/public';
     if (!is_dir($tmpDir)) {
         @mkdir($tmpDir, 0777, true);
     }

@@ -12,11 +12,9 @@ use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\View\Templator;
 use stdClass;
 use Tests\Application\Fixtures\TestBootstrapProvider;
-use Tests\FixturesPathTrait;
 
 covers(AbstractApplication::class);
 
-uses(FixturesPathTrait::class);
 
 it('returns an empty string when no name is bound', function (): void {
     $app = new Application('/');
@@ -216,7 +214,7 @@ it('throws a logic exception when setBaseBinding receives a non-Application inst
 })->throws(LogicException::class);
 
 it('is a no-op when the application is already booted', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app = new Application(__DIR__ . '/fixtures/application-read/');
 
     new ConfigBootstrapper()->bootstrap($app);
 

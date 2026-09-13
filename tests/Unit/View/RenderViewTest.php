@@ -8,21 +8,19 @@ use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Portal;
 use Omega\View\View;
 use ReflectionClass;
-use Tests\FixturesPathTrait;
 
 use function ob_get_clean;
 use function ob_start;
 use function str_replace;
 
-uses(FixturesPathTrait::class);
 
 covers(Portal::class);
 covers(ViewFileNotFoundException::class);
 covers(View::class);
 
 it('can render using view classes', function (): void {
-    $testHtml  = $this->setFixturePath('/fixtures/view/sample/sample.html');
-    $testPhp   = $this->setFixturePath('/fixtures/view/sample/sample.php');
+    $testHtml  = __DIR__ . '/fixtures/view/sample/sample.html';
+    $testPhp   = __DIR__ . '/fixtures/view/sample/sample.php';
 
     ob_start();
     View::render($testHtml)->send();
@@ -53,7 +51,7 @@ it('portal has method', function (): void {
         'contents' => ['say' => 'hello'],
     ];
 
-    $viewPath = $this->setFixturePath('/fixtures/view/sample/sample.php');
+    $viewPath = __DIR__ . '/fixtures/view/sample/sample.php';
 
     $response = View::render($viewPath, $data);
 

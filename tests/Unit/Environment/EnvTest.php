@@ -6,16 +6,14 @@ namespace Tests\Environment;
 
 use Omega\Environment\Env;
 use ReflectionClass;
-use Tests\FixturesPathTrait;
 
 use function putenv;
 
 covers(Env::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
-    $this->fixturePath = $this->setFixturePath('/fixtures/support/');
+    $this->fixturePath = __DIR__ . '/fixtures/support/';
 });
 
 afterEach(function (): void {

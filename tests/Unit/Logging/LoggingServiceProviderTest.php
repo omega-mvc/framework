@@ -119,7 +119,7 @@ function driverConfig(string $tempDir): array
  */
 function makeApp(string $tempDir, array $config): Application
 {
-    $app = new Application(slash(__DIR__ . '/../fixtures/support/'));
+    $app = new Application(slash(__DIR__ . '/fixtures/support/'));
     $app->set('config', static fn () => new ConfigRepository($config));
 
     (new LoggingServiceProvider($app))->boot();

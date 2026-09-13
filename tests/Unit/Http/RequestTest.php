@@ -22,7 +22,7 @@ covers(UploadFile::class);
 
 function fixturePath(string $path = ''): string
 {
-    return slash(dirname(__DIR__) . ($path !== '' ? '/' . ltrim($path, '/') : ''));
+    return slash(__DIR__ . ($path !== '' ? '/' . ltrim($path, '/') : ''));
 }
 
 beforeEach(function (): void {

@@ -15,7 +15,6 @@ use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
 use Tests\Application\Fixtures\TestBootstrapProvider;
 use Tests\Application\Fixtures\TestServiceProvider;
-use Tests\FixturesPathTrait;
 
 covers(Application::class);
 covers(AbstractApplication::class);
@@ -25,7 +24,6 @@ covers(EntryNotFoundException::class);
 covers(HttpException::class);
 covers(Request::class);
 
-uses(FixturesPathTrait::class);
 
 it('loads config from default', function (): void {
     $app = new Application(__DIR__);
@@ -46,7 +44,7 @@ it('loads config from default', function (): void {
 });
 
 it('loads environment', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     $app->set('environment', 'prod');
     expect($app->isDev())->toBeFalse();
@@ -62,7 +60,7 @@ it('loads environment', function (): void {
 });
 
 it('returns the version from configuration', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app = new Application(__DIR__ . '/fixtures/application-read/');
 
     new ConfigBootstrapper()->bootstrap($app);
 
@@ -104,7 +102,7 @@ it('bootstraps providers with bootstrapWith', function (): void {
 });
 
 it('adds callbacks before and after boot', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app = new Application(__DIR__ . '/fixtures/application-read/');
 
     new ConfigBootstrapper()->bootstrap($app);
 
@@ -130,7 +128,7 @@ it('adds callbacks before and after boot', function (): void {
 });
 
 it('adds a callback immediately if the application is already booted', function (): void {
-    $app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $app = new Application(__DIR__ . '/fixtures/application-read/');
 
     new ConfigBootstrapper()->bootstrap($app);
 
@@ -171,8 +169,8 @@ it('returns default down data', function (): void {
 });
 
 it('returns down data from storage', function (): void {
-    $app = new Application($this->setFixtureBasePath());
-    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
+    $app = new Application(__DIR__);
+    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage3/');
 
     expect($app->getDownData())->toBe([
         'redirect' => null,
@@ -183,11 +181,11 @@ it('returns down data from storage', function (): void {
 });
 
 it('detects maintenance mode', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     expect($app->isDownMaintenanceMode())->toBeFalse();
 
-    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
+    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage/');
 
     expect($app->isDownMaintenanceMode())->toBeTrue();
 });

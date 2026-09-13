@@ -15,14 +15,12 @@ declare(strict_types=1);
 namespace Tests\Cache\Storage;
 
 use Omega\Cache\Storage\FileStorage;
-use Tests\FixturesPathTrait;
 
 covers(FileStorage::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
-    $this->storage = new FileStorage(['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]);
+    $this->storage = new FileStorage(['ttl' => 3600, 'path' => __DIR__ . '/../fixtures/cache']);
 });
 
 it('sets and gets a value', function (): void {
@@ -36,7 +34,7 @@ it('gets the default value when the key is not found', function (): void {
 
 it('sets a value with a ttl and expires it', function (): void {
     $storage = $this->getMockBuilder(FileStorage::class)
-        ->setConstructorArgs([['ttl' => 3600, 'path' => $this->setFixturePath('/fixtures/cache')]])
+        ->setConstructorArgs([['ttl' => 3600, 'path' => __DIR__ . '/../fixtures/cache']])
         ->onlyMethods(['calculateExpirationTimestamp'])
         ->getMock();
 

@@ -34,7 +34,7 @@ covers(NewProperty::class);
 
 function basicTemplateGetExpected(string $expected): string
 {
-    $fileName = __DIR__ . '/../fixtures/template/' . $expected;
+    $fileName = __DIR__ . '/fixtures/template/' . $expected;
     $content  = file_get_contents($fileName);
     if (false === $content) {
         throw new \RuntimeException(sprintf('Fixture file "%s" is not readable.', $fileName));

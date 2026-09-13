@@ -16,12 +16,10 @@ use Omega\View\TemplatorFinder;
 use Omega\View\Vite;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\FixturesPathTrait;
 
 use function Omega\View\view;
 use function Omega\View\vite;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers('Omega\View\view');
@@ -48,16 +46,16 @@ it('vite helper handles single and multiple entry points', function (): void {
 });
 
 it('can get response from container', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     $app->set(
         TemplatorFinder::class,
-        fn () => new TemplatorFinder([$this->setFixturePath('/fixtures/support/view')], ['.php'])
+        fn () => new TemplatorFinder([__DIR__ . '/fixtures/support/view'], ['.php'])
     );
 
     $app->set(
         'view.instance',
-        fn (TemplatorFinder $finder) => new Templator($finder, $this->setFixturePath('/fixtures/support/cache'))
+        fn (TemplatorFinder $finder) => new Templator($finder, __DIR__ . '/fixtures/support/cache')
     );
 
     $app->set(

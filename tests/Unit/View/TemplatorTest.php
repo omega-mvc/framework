@@ -10,7 +10,6 @@ use Omega\View\Exceptions\ViewFileNotFoundException;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use RuntimeException;
-use Tests\FixturesPathTrait;
 use Throwable;
 
 use function chmod;
@@ -21,7 +20,6 @@ use function substr_count;
 use function trim;
 use function unlink;
 
-uses(FixturesPathTrait::class);
 
 covers(Str::class);
 covers(Templator::class);
@@ -39,7 +37,7 @@ function assertBlind(string $text, string $find): void
 }
 
 afterEach(function (): void {
-    $files = glob($this->setFixturePath('/fixtures/view/caches/*.php'));
+    $files = glob(__DIR__ . '/fixtures/view/caches/*.php');
     if ($files === false) {
         return;
     }
@@ -51,8 +49,8 @@ afterEach(function (): void {
 });
 
 it('can set new finder', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $finder     = new TemplatorFinder([$loader]);
     $templator  = new Templator(new TemplatorFinder([$loader], ['.php']), $cache);
@@ -65,8 +63,8 @@ it('can set new finder', function (): void {
 });
 
 it('can compile template file', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches/');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches/';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->compile('include.php');
@@ -76,8 +74,8 @@ it('can compile template file', function (): void {
 });
 
 it('can compile set template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->compile('set.php');
@@ -88,8 +86,8 @@ it('can compile set template', function (): void {
 });
 
 it('can render php template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('php.php', []);
@@ -101,8 +99,8 @@ it('can render php template', function (): void {
 });
 
 it('can render include template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('include.php', []);
@@ -114,8 +112,8 @@ it('can render include template', function (): void {
 });
 
 it('can render include nesting template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('nesting.include.php', []);
@@ -127,8 +125,8 @@ it('can render include nesting template', function (): void {
 });
 
 it('can render name template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('naming.php', ['name' => 'taylor', 'age' => 17]);
@@ -140,8 +138,8 @@ it('can render name template', function (): void {
 });
 
 it('can render name template with ternary', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('naming-ternary.php', ['age' => false]);
@@ -153,8 +151,8 @@ it('can render name template with ternary', function (): void {
 });
 
 it('can render name template in sub folder', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('Groups/nesting.php', ['name' => 'taylor', 'age' => 17]);
@@ -163,8 +161,8 @@ it('can render name template in sub folder', function (): void {
 });
 
 it('can render if template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('if.php', ['true' => true]);
@@ -177,8 +175,8 @@ it('can render if template', function (): void {
 });
 
 it('can render else if template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('else.php', ['true' => false]);
@@ -191,8 +189,8 @@ it('can render else if template', function (): void {
 });
 
 it('can render each template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('each.php', ['numbers' => [1, 2, 3]]);
@@ -205,8 +203,8 @@ it('can render each template', function (): void {
 });
 
 it('can render section template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('slot.php', [
@@ -221,8 +219,8 @@ it('can render section template', function (): void {
 });
 
 it('can throw error section template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -238,8 +236,8 @@ it('can throw error section template', function (): void {
 });
 
 it('can render template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $view->suffix = '.php';
@@ -255,8 +253,8 @@ it('can render template', function (): void {
 });
 
 it('can render comment template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('comment.php', []);
@@ -269,8 +267,8 @@ it('can render comment template', function (): void {
 });
 
 it('can render repeat template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('repeat.include.php', []);
@@ -283,8 +281,8 @@ it('can render repeat template', function (): void {
 });
 
 it('can render name template with raw', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('namingskip.php', ['render' => 'oke']);
@@ -295,8 +293,8 @@ it('can render name template with raw', function (): void {
 });
 
 it('can render each break template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('eachbreak.php', ['numbers' => [1, 2, 3]]);
@@ -305,8 +303,8 @@ it('can render each break template', function (): void {
 });
 
 it('can render each continue template', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('eachcontinue.php', ['numbers' => [1, 2, 3]]);
@@ -315,8 +313,8 @@ it('can render each continue template', function (): void {
 });
 
 it('can get raw parameter data', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
     $out  = $view->render('parent-data.php', ['full.name' => 'taylor otwell']);
@@ -327,8 +325,8 @@ it('can get raw parameter data', function (): void {
 });
 
 it('can check template file exist', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -337,8 +335,8 @@ it('can check template file exist', function (): void {
 });
 
 it('can make templator using string', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $template = new Templator($loader, $cache);
     $this->assertInstanceOf(Templator::class, $template);
@@ -349,8 +347,8 @@ it('can make templator using string', function (): void {
 });
 
 it('prepend dependency with existing child', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -366,8 +364,8 @@ it('prepend dependency with existing child', function (): void {
 });
 
 it('get view cleans buffer on throwable', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -385,8 +383,8 @@ it('get view cleans buffer on throwable', function (): void {
 });
 
 it('render cache logic branches', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cacheDir = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cacheDir = __DIR__ . '/fixtures/view/caches';
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cacheDir);
     $template = 'php.php';
     $templatePath = $loader . '/' . $template;
@@ -414,8 +412,8 @@ it('render cache logic branches', function (): void {
 });
 
 it('can clear dependencies', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -429,8 +427,8 @@ it('can clear dependencies', function (): void {
 });
 
 it('render returns empty string when template unreadable', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 
@@ -451,8 +449,8 @@ it('render returns empty string when template unreadable', function (): void {
 });
 
 it('compile returns empty string when template unreadable', function (): void {
-    $loader = $this->setFixturePath('/fixtures/view/sample/Templators');
-    $cache  = $this->setFixturePath('/fixtures/view/caches');
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
 
     $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
 

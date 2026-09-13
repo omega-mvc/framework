@@ -6,7 +6,6 @@ namespace Tests\Application;
 
 use Omega\Application\ApplicationManifest;
 use ReflectionProperty;
-use Tests\FixturesPathTrait;
 
 use function chmod;
 use function dirname;
@@ -26,12 +25,11 @@ use function Omega\Application\slash;
 
 covers(ApplicationManifest::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
-    $this->basePath             = $this->setFixturePath('/fixtures/application-read/');
-    $this->applicationCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/');
-    $this->applicationManifest  = $this->setFixturePath('/fixtures/application-write/bootstrap/cache/packages.php');
+    $this->basePath             = __DIR__ . '/fixtures/application-read/';
+    $this->applicationCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache/';
+    $this->applicationManifest  = __DIR__ . '/fixtures/application-write/bootstrap/cache/packages.php';
 });
 
 afterEach(function (): void {
@@ -171,8 +169,8 @@ it('uses the default vendor path', function (): void {
 });
 
 it('builds when the installed.json is not a packages array', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-malformed/');
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/malformed-base/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-malformed/';
+    $tempBase      = __DIR__ . '/fixtures/application-write/malformed-base/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -196,8 +194,8 @@ it('builds when the installed.json is not a packages array', function (): void {
 });
 
 it('builds when installed.json decodes without a packages array', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-malformed-2/');
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/malformed-base-2/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-malformed-2/';
+    $tempBase      = __DIR__ . '/fixtures/application-write/malformed-base-2/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -221,8 +219,8 @@ it('builds when installed.json decodes without a packages array', function (): v
 });
 
 it('builds while filtering out packages failing each validation guard', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-filters/');
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/filters-base/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-filters/';
+    $tempBase      = __DIR__ . '/fixtures/application-write/filters-base/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -261,8 +259,8 @@ it('builds while filtering out packages failing each validation guard', function
 });
 
 it('builds when the decoded packages key is not an array', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-not-array/');
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/not-array-base/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-not-array/';
+    $tempBase      = __DIR__ . '/fixtures/application-write/not-array-base/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -289,8 +287,8 @@ it('builds when the decoded packages key is not an array', function (): void {
 });
 
 it('builds when the installed.json file cannot be read', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-unreadable/');
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/unreadable-base/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-unreadable/';
+    $tempBase      = __DIR__ . '/fixtures/application-write/unreadable-base/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -325,7 +323,7 @@ it('builds when the installed.json file cannot be read', function (): void {
 });
 
 it('gets an empty application manifest when the cache file is missing', function (): void {
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/bootstrap/cache-missing/');
+    $tempCachePath = __DIR__ . '/fixtures/application-write/bootstrap/cache-missing/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -360,8 +358,8 @@ it('gets the application manifest when the cache file exists', function (): void
 });
 
 it('collects only valid external packages in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-valid/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-valid-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-valid/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-valid-cache/';
 
     writeExternalComposer(
         'ext/valid',
@@ -379,8 +377,8 @@ it('collects only valid external packages in findExternalProvider', function ():
 });
 
 it('continues past invalid packages and collects valid ones in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-mixed/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-mixed-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-mixed/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-mixed-cache/';
 
     if (!is_dir($tempCachePath)) {
         mkdir($tempCachePath, 0777, true);
@@ -406,8 +404,8 @@ it('continues past invalid packages and collects valid ones in findExternalProvi
 });
 
 it('ignores a composer.json that cannot be read in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-unreadable/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-unreadable-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-unreadable/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-unreadable-cache/';
 
     $file = $tempBase . '/vendor/omega-mvc/unreadable/composer.json';
 
@@ -436,8 +434,8 @@ it('ignores a composer.json that cannot be read in findExternalProvider', functi
 });
 
 it('ignores invalid JSON composer files in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-invalid-json/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-invalid-json-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-invalid-json/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-invalid-json-cache/';
 
     $file = $tempBase . '/vendor/omega-mvc/invalid/composer.json';
 
@@ -456,8 +454,8 @@ it('ignores invalid JSON composer files in findExternalProvider', function (): v
 });
 
 it('ignores packages without a string name in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-name/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-name-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-no-name/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-no-name-cache/';
 
     writeExternalComposer(
         null,
@@ -476,8 +474,8 @@ it('ignores packages without a string name in findExternalProvider', function ()
 });
 
 it('ignores packages without an extra array in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-extra/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-extra-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-no-extra/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-no-extra-cache/';
 
     writeExternalComposer('ext/noextra', null, $tempBase, $tempCachePath);
 
@@ -490,8 +488,8 @@ it('ignores packages without an extra array in findExternalProvider', function (
 });
 
 it('ignores packages lacking the omega-mvc extra key in findExternalProvider', function (): void {
-    $tempBase      = $this->setFixturePath('/fixtures/application-write/external-no-omega/');
-    $tempCachePath = $this->setFixturePath('/fixtures/application-write/external-no-omega-cache/');
+    $tempBase      = __DIR__ . '/fixtures/application-write/external-no-omega/';
+    $tempCachePath = __DIR__ . '/fixtures/application-write/external-no-omega-cache/';
 
     writeExternalComposer('ext/noomega', ['other' => 1], $tempBase, $tempCachePath);
 

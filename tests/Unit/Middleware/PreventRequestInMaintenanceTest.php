@@ -13,7 +13,6 @@ use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Middleware\MaintenanceMiddleware;
-use Tests\FixturesPathTrait;
 
 use function expect;
 
@@ -27,14 +26,13 @@ covers(MaintenanceMiddleware::class);
 covers(Request::class);
 covers(Response::class);
 
-uses(FixturesPathTrait::class);
 
 it('can prevent request during maintenance', function (): void {
-    $app    = new Application($this->setFixtureBasePath());
+    $app    = new Application(__DIR__);
     $config = [
         'APP_ENV'      => 'test',
         'APP_DEBUG'    => 'false',
-        'STORAGE_PATH' => $this->setFixturePath('/fixtures/storage/'),
+        'STORAGE_PATH' => __DIR__ . '/fixtures/storage/',
     ];
     $app->loadConfig(new ConfigRepository($config));
     $middleware = new MaintenanceMiddleware($app);
@@ -45,8 +43,8 @@ it('can prevent request during maintenance', function (): void {
 });
 
 it('can redirect request during maintenance', function (): void {
-    $app = new Application($this->setFixtureBasePath());
-    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage/'));
+    $app = new Application(__DIR__);
+    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage/');
 
     $middleware = new MaintenanceMiddleware($app);
 
@@ -57,8 +55,8 @@ it('can redirect request during maintenance', function (): void {
 });
 
 it('can render and retry request during maintenance', function (): void {
-    $app = new Application($this->setFixtureBasePath());
-    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage2/'));
+    $app = new Application(__DIR__);
+    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage2/');
 
     $middleware = new MaintenanceMiddleware($app);
     $response   = new Response('test');
@@ -70,8 +68,8 @@ it('can render and retry request during maintenance', function (): void {
 });
 
 it('can throw request during maintenance', function (): void {
-    $app = new Application($this->setFixtureBasePath());
-    $app->set('path.storage', $this->setFixturePath('/fixtures/application-read/storage3/'));
+    $app = new Application(__DIR__);
+    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage3/');
 
     $middleware = new MaintenanceMiddleware($app);
     $response   = new Response('test');

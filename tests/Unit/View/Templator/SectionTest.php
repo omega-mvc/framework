@@ -8,14 +8,12 @@ use Exception;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use Omega\View\Templator\SectionTemplator;
-use Tests\FixturesPathTrait;
 use Throwable;
 
 use function trim;
 
 use const PHP_EOL;
 
-uses(FixturesPathTrait::class);
 
 covers(SectionTemplator::class);
 covers(Templator::class);
@@ -23,8 +21,8 @@ covers(TemplatorFinder::class);
 
 beforeEach(function (): void {
     $this->templator = new Templator(
-        new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']),
-        $this->setFixturePath('/fixtures/view/templator/')
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
     );
 });
 
@@ -69,8 +67,8 @@ it('can render multi section', function (): void {
 });
 
 it('can get dependency view', function (): void {
-    $finder    = new TemplatorFinder([$this->setFixturePath('/fixtures/view/templator/view/')], ['']);
-    $templator = new Templator($finder, $this->setFixturePath('/fixtures/view/templator'));
+    $finder    = new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']);
+    $templator = new Templator($finder, __DIR__ . '/../fixtures/view/templator');
     $templator->templates(
         '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}',
         'test'
@@ -122,7 +120,7 @@ it('throws when required yield section missing', function (): void {
 });
 
 it('returns empty string when yield not defined', function (): void {
-    $layoutPath = $this->setFixturePath('/fixtures/view/templator/view/sectionempty.template');
+    $layoutPath = __DIR__ . '/../fixtures/view/templator/view/sectionempty.template';
 
     file_put_contents($layoutPath, '{% yield %}');
 

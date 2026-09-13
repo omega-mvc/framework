@@ -9,15 +9,13 @@ use Omega\Config\ConfigSource as ConfigSourceService;
 use Omega\Config\Facade\ConfigSource;
 use Omega\Facade\AbstractFacade;
 use Omega\Facade\Exceptions\FacadeObjectNotSetException;
-use Tests\FixturesPathTrait;
 
 covers(ConfigSource::class);
 covers(ConfigSourceService::class);
 
-uses(FixturesPathTrait::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixturePath('/fixtures/support/'));
+    $this->app = new Application(__DIR__ . '/../fixtures/support/');
     ConfigSourceService::resetMacro();
 });
 

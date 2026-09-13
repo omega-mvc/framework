@@ -17,19 +17,17 @@ use Omega\Http\Response;
 use Omega\Router\Router;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
-use Tests\FixturesPathTrait;
 
 use function count;
 use function is_string;
 
-uses(FixturesPathTrait::class);
 
 covers(Application::class);
 covers(Http::class);
 covers(Router::class);
 
 beforeEach(function (): void {
-    $this->app = new Application($this->setFixturePath('/fixtures/application-read/'));
+    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
     $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
         basePath: is_string($path = $this->app->get('path.base')) ? $path : '',

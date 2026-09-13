@@ -27,7 +27,6 @@ use ReflectionProperty;
 use Tests\Facades\Sample\FacadesTestClass;
 use Tests\Facades\Support\NullFacade;
 use Tests\Facades\Support\TestAbstractFacade;
-use Tests\FixturesPathTrait;
 
 use function expect;
 
@@ -50,7 +49,6 @@ covers(Table::class);
 covers(View::class);
 covers(Vite::class);
 
-uses(FixturesPathTrait::class);
 
 afterEach(function (): void {
     AbstractFacade::setFacadeBase(null);
@@ -58,7 +56,7 @@ afterEach(function (): void {
 });
 
 it('can call static', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
     $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
     AbstractFacade::setFacadeBase($app);
@@ -76,7 +74,7 @@ it('throws when application is not set', function (): void {
 })->throws(FacadeObjectNotSetException::class, 'has not been set');
 
 it('constructor sets application', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     new TestAbstractFacade($app);
 
@@ -91,7 +89,7 @@ it('throws when app is not set', function (): void {
 })->throws(FacadeObjectNotSetException::class);
 
 it('uses cached instance', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
@@ -120,7 +118,7 @@ it('returns the correct accessor', function (): void {
 });
 
 it('table returns query builder', function (): void {
-    $app = new Application($this->setFixtureBasePath());
+    $app = new Application(__DIR__);
 
     $connection = $this->createStub(ConnectionInterface::class);
     $connection->method('getInstance')->willReturn($connection);

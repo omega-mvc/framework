@@ -6,7 +6,6 @@ namespace Tests\View;
 
 use Exception;
 use Omega\View\Vite;
-use Tests\FixturesPathTrait;
 
 use function chmod;
 use function dirname;
@@ -20,7 +19,6 @@ use function touch;
 use function uniqid;
 use function unlink;
 
-uses(FixturesPathTrait::class);
 
 covers(Vite::class);
 
@@ -29,7 +27,7 @@ afterEach(function (): void {
 });
 
 it('can get file resource name', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $file = $asset->get('resources/css/app.css');
 
@@ -37,7 +35,7 @@ it('can get file resource name', function (): void {
 });
 
 it('can get file resource names', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $files = $asset->gets([
         'resources/css/app.css',
@@ -51,19 +49,19 @@ it('can get file resource names', function (): void {
 });
 
 it('can check running hrm exist', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     expect($asset->isRunningHRM())->toBeTrue();
 });
 
 it('can check running hrm does exist', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     expect($asset->isRunningHRM())->toBeFalse();
 });
 
 it('can get hot file resource name', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     $file = $asset->get('resources/css/app.css');
 
@@ -71,7 +69,7 @@ it('can get hot file resource name', function (): void {
 });
 
 it('can get hot file resource names', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     $files = $asset->gets([
         'resources/css/app.css',
@@ -85,14 +83,14 @@ it('can get hot file resource names', function (): void {
 });
 
 it('can use cache', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
     $asset->get('resources/css/app.css');
 
     expect(Vite::$cache)->toHaveCount(1);
 });
 
 it('can get hot url', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     expect($asset->getHmrUrl())->toEqual(
         'http://[::1]:5173/'
@@ -100,7 +98,7 @@ it('can get hot url', function (): void {
 });
 
 it('can get hmr script', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     expect($asset->getHmrScript())->toEqual(
         '<script type="module" src="http://[::1]:5173/@vite/client"></script>'
@@ -116,7 +114,7 @@ it('invoke returns empty string when no entry points are provided', function ():
 });
 
 it('uses custom manifest name', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $vite->manifestName('custom-manifest.json');
 
@@ -138,7 +136,7 @@ it('throws exception if manifest file not found', function (): void {
 });
 
 it('manifest throws exception if file does not exist', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build');
     $vite->manifestName('nonexistent.json');
 
     $this->expectException(Exception::class);
@@ -148,10 +146,10 @@ it('manifest throws exception if file does not exist', function (): void {
 });
 
 it('loader throws exception if file cannot be read', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build');
     $vite->manifestName('unreadable.json');
 
-    $filePath = $this->setFixturePath('/fixtures/support/manifest/public/build/unreadable.json');
+    $filePath = __DIR__ . '/fixtures/support/manifest/public/build/unreadable.json';
     if (!is_dir(dirname($filePath))) {
         mkdir(dirname($filePath), 0777, true);
     }
@@ -170,10 +168,10 @@ it('loader throws exception if file cannot be read', function (): void {
 });
 
 it('loader throws exception on invalid json', function (): void {
-    $vite = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build');
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build');
     $vite->manifestName('invalid.json');
 
-    $filePath = $this->setFixturePath('/fixtures/support/manifest/public/build/invalid.json');
+    $filePath = __DIR__ . '/fixtures/support/manifest/public/build/invalid.json';
     if (!is_dir(dirname($filePath))) {
         mkdir(dirname($filePath), 0777, true);
     }
@@ -187,7 +185,7 @@ it('loader throws exception on invalid json', function (): void {
 });
 
 it('can get the manifest path for a specific resource', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $path = $asset->getManifest('resources/js/app.js');
 
@@ -195,7 +193,7 @@ it('can get the manifest path for a specific resource', function (): void {
 });
 
 it('throws exception if resource not found in manifest', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/manifest/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
 
     $this->expectException(Exception::class);
     $this->expectExceptionMessageIsOrContains('Resource file not found non-existent-file.js');
@@ -204,7 +202,7 @@ it('throws exception if resource not found in manifest', function (): void {
 });
 
 it('returns cached hot url on second call', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/support/hot/public'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
 
     $url1 = $asset->getHmrUrl();
     $url2 = $asset->getHmrUrl();
@@ -214,7 +212,7 @@ it('returns cached hot url on second call', function (): void {
 });
 
 it('throws exception if hot file is unreadable', function (): void {
-    $asset = new Vite($this->setFixturePath('/fixtures/application-write/public/'), 'build/');
+    $asset = new Vite(__DIR__ . '/fixtures/application-write/public/', 'build/');
 
     $this->expectException(Exception::class);
     $this->expectExceptionMessageIsOrContains('Failed to read hot file');
@@ -237,7 +235,7 @@ it('handles hot file with trailing slash', function (): void {
 });
 
 it('updates and returns cache time', function (): void {
-    $manifestDir = $this->setFixturePath('/fixtures/application-write/manifest/public/build');
+    $manifestDir = __DIR__ . '/fixtures/application-write/manifest/public/build';
 
     if (!is_dir($manifestDir)) {
         mkdir($manifestDir, 0777, true);
@@ -251,7 +249,7 @@ it('updates and returns cache time', function (): void {
     $expectedTime = time() - 3600;
     touch($manifestPath, $expectedTime);
 
-    $vite = new Vite($this->setFixturePath('/fixtures/application-write/manifest/public'), 'build');
+    $vite = new Vite(__DIR__ . '/fixtures/application-write/manifest/public', 'build');
 
     expect($vite->cacheTime())->toEqual(0);
 
@@ -265,7 +263,7 @@ it('updates and returns cache time', function (): void {
 });
 
 it('get preload tags returns empty string when hmr is running', function (): void {
-    $publicPath = $this->setFixturePath('/fixtures/application-write/manifest/public');
+    $publicPath = __DIR__ . '/fixtures/application-write/manifest/public';
     if (!is_dir($publicPath)) {
         @mkdir($publicPath, 0777, true);
     }
