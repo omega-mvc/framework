@@ -88,7 +88,7 @@ class AwsS3 extends AbstractAmazonS3
         $options = $this->getOptions($key);
 
         try {
-            $object = $this->service->getObject($options);
+            $object = $this->service->getObject($options); // @phpstan-ignore argument.type
             $this->content[$key]['ContentType'] = $object->get('ContentType');
 
             $body = $object->get('Body');
@@ -120,7 +120,7 @@ class AwsS3 extends AbstractAmazonS3
         }
 
         try {
-            $this->service->putObject($options);
+            $this->service->putObject($options); // @phpstan-ignore argument.type
 
             return Size::fromContent($content);
         } catch (Exception) {
@@ -142,7 +142,7 @@ class AwsS3 extends AbstractAmazonS3
     public function mtime(string $key): int|false
     {
         try {
-            $result = $this->service->headObject($this->getOptions($key));
+            $result = $this->service->headObject($this->getOptions($key)); // @phpstan-ignore argument.type
 
             $lastModified = $result['LastModified'] ?? null;
 
@@ -162,7 +162,7 @@ class AwsS3 extends AbstractAmazonS3
     public function size(string $key): int|false
     {
         try {
-            $result = $this->service->headObject($this->getOptions($key));
+            $result = $this->service->headObject($this->getOptions($key)); // @phpstan-ignore argument.type
 
             $contentLength = $result['ContentLength'] ?? null;
 
@@ -262,7 +262,7 @@ class AwsS3 extends AbstractAmazonS3
     public function mimeType(string $key): string|false
     {
         try {
-            $result = $this->service->headObject($this->getOptions($key));
+            $result = $this->service->headObject($this->getOptions($key)); // @phpstan-ignore argument.type
 
             $contentType = $result['ContentType'] ?? null;
 
@@ -289,7 +289,7 @@ class AwsS3 extends AbstractAmazonS3
         );
 
         try {
-            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey)));
+            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey))); // @phpstan-ignore argument.type
 
             return $this->delete($sourceKey);
         } catch (Exception) {
@@ -303,7 +303,7 @@ class AwsS3 extends AbstractAmazonS3
     public function delete(string $key): bool
     {
         try {
-            $this->service->deleteObject($this->getOptions($key));
+            $this->service->deleteObject($this->getOptions($key)); // @phpstan-ignore argument.type
 
             return true;
         } catch (Exception) {

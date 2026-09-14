@@ -276,7 +276,7 @@ final class Resolver
         }
 
         if (!$isUnion && !empty($classTypes)) {
-            return $this->container->make(array_values($classTypes)[0]->getName());
+            return $this->container->make($classTypes[array_key_first($classTypes)]->getName());
         }
 
         return $type->allowsNull() ? null : self::NOT_RESOLVED;

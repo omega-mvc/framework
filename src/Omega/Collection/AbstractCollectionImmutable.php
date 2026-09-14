@@ -168,12 +168,12 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      * Similar to {@see self::set()} but automatically assigns an incremental key.
      * Visibility is protected to allow controlled mutation in extending classes.
      *
-     * @param mixed $value The value to append.
+     * @param TValue $value The value to append.
      * @return $this
      */
     protected function push(mixed $value): self
     {
-        $this->collection[] = $value;
+        $this->set(count($this->collection), $value);
 
         return $this;
     }
@@ -534,7 +534,7 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     {
         $rand = array_rand($this->collection);
 
-        return $this->get($rand);
+        return $this->collection[$rand] ?? null;
     }
 
     /**
