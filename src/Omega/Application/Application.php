@@ -23,6 +23,7 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Cron\CronServiceProvider;
+use Omega\Csrf\CsrfServiceProvider;
 use Omega\Database\DatabaseServiceProvider;
 use Omega\Event\EventServiceProvider;
 use Omega\Exceptions\WhoopsServiceProvider;
@@ -34,6 +35,7 @@ use Omega\RateLimiter\RateLimiterServiceProvider;
 use Omega\Redis\RedisServiceProvider;
 use Omega\Router\RouteServiceProvider;
 use Omega\Security\HashServiceProvider;
+use Omega\Session\SessionServiceProvider;
 use Omega\View\Templator;
 use Omega\View\ViewServiceProvider;
 use Omega\View\Vite;
@@ -73,12 +75,14 @@ class Application extends AbstractApplication implements ApplicationInterface
         CronServiceProvider::class,
         HashServiceProvider::class,
         RouteServiceProvider::class,
+        SessionServiceProvider::class,
         DatabaseServiceProvider::class,
         ViewServiceProvider::class,
         CacheServiceProvider::class,
         RateLimiterServiceProvider::class,
         RedisServiceProvider::class,
         MacroServiceProvider::class,
+        CsrfServiceProvider::class,
     ];
 
     /**

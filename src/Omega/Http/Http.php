@@ -23,7 +23,9 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Exceptions\ExceptionHandler;
 use Omega\Database\DatabaseManager;
+use Omega\Middleware\CsrfMiddleware;
 use Omega\Middleware\MaintenanceMiddleware;
+use Omega\Middleware\StartSessionMiddleware;
 use Omega\Router\Router;
 use Omega\Application\Bootstrapper\BootProviders;
 use Omega\Config\Bootstrapper\ConfigBootstrapper;
@@ -91,6 +93,8 @@ class Http
      */
     protected array $middleware = [
         MaintenanceMiddleware::class,
+        StartSessionMiddleware::class,
+        CsrfMiddleware::class,
     ];
 
     /** @var array<int, class-string> List of middleware already registered or executed. */
