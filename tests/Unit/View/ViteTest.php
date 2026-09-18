@@ -9,15 +9,20 @@ use Omega\View\Vite;
 
 use function chmod;
 use function dirname;
+use function escapeshellarg;
+use function file_exists;
 use function file_put_contents;
 use function is_dir;
 use function json_encode;
 use function mkdir;
 use function rmdir;
+use function shell_exec;
+use function sprintf;
 use function sys_get_temp_dir;
 use function touch;
 use function uniqid;
 use function unlink;
+use function var_export;
 
 
 covers(Vite::class);
@@ -279,3 +284,243 @@ it('get preload tags returns empty string when hmr is running', function (): voi
     unlink("{$publicPath}/hot");
     rmdir($publicPath);
 });
+
+it('can get hot file resource names using cached hot url', function (): void {
+    $asset = new Vite(__DIR__ . '/fixtures/support/hot/public', 'build/');
+
+    $asset->getHmrUrl();
+
+    $files = $asset->gets([
+        'resources/css/app.css',
+    ]);
+
+    expect($files)->toEqual([
+        'resources/css/app.css' => 'http://[::1]:5173/resources/css/app.css',
+    ]);
+});
+
+it('gets skips the entries that are missing from the manifest', function (): void {
+    $public = __DIR__ . '/fixtures/application-write/missing-entry/public';
+    $build  = $public . '/build';
+
+    if (!is_dir($build)) {
+        mkdir($build, 0777, true);
+    }
+
+    file_put_contents("{$build}/manifest.json", json_encode([
+        'resources/css/app.css' => ['file' => 'fixtures/app-4ed993c7.css'],
+    ]));
+
+    $vite = new Vite($public, 'build');
+
+    try {
+        $files = $vite->gets(['resources/js/app.js']);
+
+        expect($files)->toBe([]);
+    } finally {
+        unlink("{$build}/manifest.json");
+        rmdir($build);
+        rmdir($public);
+    }
+});
+
+it('gets skips the manifest entries whose file is not a string', function (): void {
+    $public = __DIR__ . '/fixtures/application-write/non-string-file/public';
+    $build  = $public . '/build';
+
+    if (!is_dir($build)) {
+        mkdir($build, 0777, true);
+    }
+
+    file_put_contents("{$build}/manifest.json", json_encode([
+        'resources/js/app.js' => ['file' => 123],
+    ]));
+
+    $vite = new Vite($public, 'build');
+
+    try {
+        $files = $vite->gets(['resources/js/app.js']);
+
+        expect($files)->toBe([]);
+    } finally {
+        unlink("{$build}/manifest.json");
+        rmdir($build);
+        rmdir($public);
+    }
+});
+
+it('throws exception when the manifest entry file is not a string', function (): void {
+    $public = __DIR__ . '/fixtures/application-write/non-string-file/public';
+    $build  = $public . '/build';
+
+    if (!is_dir($build)) {
+        mkdir($build, 0777, true);
+    }
+
+    file_put_contents("{$build}/manifest.json", json_encode([
+        'main.js' => ['file' => 123],
+    ]));
+
+    $vite = new Vite($public, 'build');
+
+    try {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageIsOrContains('Invalid manifest entry for resource file main.js');
+
+        $vite->get('main.js');
+    } finally {
+        if (file_exists("{$build}/manifest.json")) {
+            unlink("{$build}/manifest.json");
+        }
+        rmdir($build);
+        rmdir($public);
+    }
+});
+
+it('gets returns an empty array when no resource names are provided', function (): void {
+    $vite = new Vite(__DIR__ . '/fixtures/support/manifest/public', 'build/');
+
+    expect($vite->gets([]))->toBe([]);
+});
+
+it('gets keeps the entries whose file key is missing using an empty relative path', function (): void {
+    $public = __DIR__ . '/fixtures/application-write/no-file-key/public';
+    $build  = $public . '/build';
+
+    if (!is_dir($build)) {
+        mkdir($build, 0777, true);
+    }
+
+    file_put_contents("{$build}/manifest.json", json_encode([
+        'resources/js/app.js' => [],
+    ]));
+
+    $vite = new Vite($public, 'build');
+
+    try {
+        $files = $vite->gets(['resources/js/app.js']);
+
+        expect($files)->toEqual(['resources/js/app.js' => 'build']);
+    } finally {
+        unlink("{$build}/manifest.json");
+        rmdir($build);
+        rmdir($public);
+    }
+});
+
+it('collect imports skips imports missing from the manifest', function (): void {
+    $public = __DIR__ . '/fixtures/application-write/dangling-import/public';
+    $build  = $public . '/build';
+
+    if (!is_dir($build)) {
+        mkdir($build, 0777, true);
+    }
+
+    file_put_contents("{$build}/manifest.json", json_encode([
+        'resources/js/app.js' => [
+            'file'    => 'fixtures/app.js',
+            'imports' => ['fixtures/missing.js'],
+        ],
+    ]));
+
+    $vite = new Vite($public, 'build');
+
+    try {
+        $preload = $vite->getManifestImports(['resources/js/app.js']);
+
+        expect($preload)->toEqual([
+            'imports' => ['fixtures/missing.js'],
+            'css'     => [],
+        ]);
+    } finally {
+        unlink("{$build}/manifest.json");
+        rmdir($build);
+        rmdir($public);
+    }
+});
+
+it('loader throws exception when manifest path cannot be opened', function (): void {
+    $public = sys_get_temp_dir() . '/vite_manifest_socket_' . uniqid();
+    $build  = $public . '/build';
+
+    mkdir($build, 0777, true);
+    createSocketFixture($build . '/manifest.json');
+
+    $this->assertTrue(file_exists($build . '/manifest.json'));
+
+    $vite = new Vite($public, 'build');
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageIsOrContains('Failed to read manifest file');
+
+        $vite->loader();
+    } finally {
+        restore_error_handler();
+        @unlink($build . '/manifest.json');
+        @rmdir($build);
+        @rmdir($public);
+    }
+});
+
+it('throws exception when hot file cannot be opened', function (): void {
+    $public = sys_get_temp_dir() . '/vite_hot_socket_' . uniqid();
+
+    mkdir($public, 0777, true);
+    createSocketFixture($public . '/hot');
+
+    $this->assertTrue(file_exists($public . '/hot'));
+
+    $vite = new Vite($public, 'build/');
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessageIsOrContains('Failed to read hot file');
+
+        $vite->getHmrUrl();
+    } finally {
+        restore_error_handler();
+        @unlink($public . '/hot');
+        @rmdir($public);
+    }
+});
+
+it('throws exception when the manifest modification time cannot be read', function (): void {
+    $vite = $this->getMockBuilder(Vite::class)
+        ->setConstructorArgs(['/tmp', 'build'])
+        ->onlyMethods(['manifest'])
+        ->getMock();
+    $vite->method('manifest')->willReturn(__DIR__ . '/fixtures/inexistent/manifest.json');
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Manifest file modification time cannot be read.');
+
+        $vite->manifestTime();
+    } finally {
+        restore_error_handler();
+    }
+});
+
+/**
+ * Create a unix socket file from a short-lived subprocess so that no socket
+ * syscall ever happens inside the test process. The socket inode remains
+ * after the child exits; reading such an inode fails cleanly (false), which
+ * is what the Vite "unable to read" branches rely on.
+ */
+function createSocketFixture(string $path): void
+{
+    $code = sprintf(
+        'error_reporting(0); if (is_dir(%s)) { rmdir(%s); } else { @unlink(%s); } '
+        . 'stream_socket_server(%s, $errno, $errstr);',
+        var_export($path, true),
+        var_export($path, true),
+        var_export($path, true),
+        var_export('unix://' . $path, true)
+    );
+
+    shell_exec(escapeshellarg(PHP_BINARY) . ' -d xdebug.mode=off -r ' . escapeshellarg($code) . ' 2>/dev/null');
+}

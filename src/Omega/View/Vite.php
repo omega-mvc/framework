@@ -477,21 +477,14 @@ class Vite
             ) ?: [];
         }
 
-        $asset = $this->loader();
+        $entries = array_intersect_key($this->loader(), array_flip($resourceNames));
 
-        $result = [];
-
-        foreach ($resourceNames as $name) {
-            if (isset($asset[$name])) {
-                $file = $asset[$name]['file'] ?? '';
-
-                if (is_string($file)) {
-                    $result[$name] = $this->buildPath . $file;
-                }
-            }
-        }
-
-        return $result;
+        return array_filter(array_map(
+            fn (array $entry): ?string => is_string(($file = $entry['file'] ?? ''))
+                ? $this->buildPath . $file
+                : null,
+            $entries
+        ));
     }
 
     /**

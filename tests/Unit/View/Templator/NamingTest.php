@@ -94,3 +94,8 @@ it('handles multiple raw and variables', function (): void {
     $expected = 'BLOCK1 <?php echo htmlspecialchars($var); ?> BLOCK2';
     expect($out)->toEqual($expected);
 });
+
+it('removes empty name expressions', function (): void {
+    $out = $this->templator->templates('Hello {{ }} World');
+    expect($out)->toEqual('Hello  World');
+});

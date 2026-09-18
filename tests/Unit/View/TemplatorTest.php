@@ -13,9 +13,11 @@ use RuntimeException;
 use Throwable;
 
 use function chmod;
+use function file_exists;
 use function glob;
 use function is_file;
 use function md5;
+use function ob_get_level;
 use function substr_count;
 use function trim;
 use function unlink;
@@ -363,6 +365,21 @@ it('prepend dependency with existing child', function (): void {
     expect($dependencies[$parent][$child])->toEqual(5);
 });
 
+it('prepend dependency does not override a deeper existing depth', function (): void {
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
+
+    $templator = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $parent = 'parent.php';
+    $child  = 'child.php';
+    $templator->addDependency($parent, $child, 10);
+
+    $templator->prependDependency($parent, [$child => 5]);
+
+    expect($templator->getDependency($parent))->toBe(['child.php' => 10]);
+});
+
 it('get view cleans buffer on throwable', function (): void {
     $loader = __DIR__ . '/fixtures/view/sample/Templators';
     $cache  = __DIR__ . '/fixtures/view/caches';
@@ -411,6 +428,59 @@ it('render cache logic branches', function (): void {
     assertSee($out, 'taylor');
 });
 
+it('render hits the cache when template and cache share the same modification time', function (): void {
+    $loader       = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache        = __DIR__ . '/fixtures/view/caches';
+    $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $template     = 'equal-mtime.php';
+    $templatePath = $loader . '/' . $template;
+    $cachePath    = $cache . '/' . md5($template) . '.php';
+
+    file_put_contents($templatePath, '<p>equal-mtime</p>');
+
+    try {
+        $view->render($template, [], true);
+
+        $now = time();
+        touch($templatePath, $now);
+        touch($cachePath, $now);
+
+        $out = $view->render($template, [], true);
+        assertSee($out, 'equal-mtime');
+    } finally {
+        if (file_exists($cachePath)) {
+            unlink($cachePath);
+        }
+        unlink($templatePath);
+    }
+});
+
+it('render keeps hitting the cache on consecutive calls', function (): void {
+    $loader       = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache        = __DIR__ . '/fixtures/view/caches';
+    $view         = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $template     = 'repeated-hit.php';
+    $templatePath = $loader . '/' . $template;
+    $cachePath    = $cache . '/' . md5($template) . '.php';
+
+    file_put_contents($templatePath, '<p>repeated-hit</p>');
+
+    try {
+        $view->render($template, [], true);
+
+        touch($templatePath, time() - 100);
+        touch($cachePath, time());
+
+        assertSee($view->render($template, [], true), 'repeated-hit');
+        assertSee($view->render($template, [], true), 'repeated-hit');
+    } finally {
+        if (file_exists($cachePath)) {
+            unlink($cachePath);
+        }
+        unlink($templatePath);
+    }
+});
+
 it('can clear dependencies', function (): void {
     $loader = __DIR__ . '/fixtures/view/sample/Templators';
     $cache  = __DIR__ . '/fixtures/view/caches';
@@ -446,6 +516,109 @@ it('render returns empty string when template unreadable', function (): void {
     }
 
     expect($out)->toBe('');
+});
+
+it('render empty string when template unreadable with cache disabled', function (): void {
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/unreadable_no_cache.php';
+    file_put_contents($badTemplate, 'anything');
+    chmod($badTemplate, 0000);
+
+    set_error_handler(static fn (): bool => true);
+    try {
+        $out = $view->render('unreadable_no_cache.php', [], false);
+    } finally {
+        restore_error_handler();
+        chmod($badTemplate, 0644);
+        unlink($badTemplate);
+    }
+
+    expect($out)->toBe('');
+});
+
+it('render compiles a fresh template when cache is disabled and no cache exists', function (): void {
+    $loader     = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache      = __DIR__ . '/fixtures/view/caches';
+    $view       = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+    $template   = 'no-cache-fresh.php';
+    $templatePath = $loader . '/' . $template;
+    $cachePath    = $cache . '/' . md5($template) . '.php';
+
+    file_put_contents($templatePath, '<p>fresh-no-cache</p>');
+
+    try {
+        $out = $view->render($template, [], false);
+        assertSee($out, 'fresh-no-cache');
+    } finally {
+        if (file_exists($cachePath)) {
+            unlink($cachePath);
+        }
+        unlink($templatePath);
+    }
+});
+
+it('get view strips output when the buffer has been closed by the template', function (): void {
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/closed_buffer.php';
+    file_put_contents($badTemplate, '<?php ob_end_clean();');
+
+    try {
+        $out = $view->render('closed_buffer.php', []);
+    } finally {
+        unlink($badTemplate);
+    }
+
+    expect($out)->toBe('');
+});
+
+it('get view cleans nested buffers started by the template on throwable', function (): void {
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/nested_buffer.php';
+    file_put_contents($badTemplate, '<?php ob_start(); echo "nested"; throw new RuntimeException("nested boom");');
+
+    try {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageIsOrContains('nested boom');
+
+        $view->render('nested_buffer.php', []);
+    } finally {
+        unlink($badTemplate);
+    }
+});
+
+it('get view leaves no stray buffer when the template closed it before throwing', function (): void {
+    $loader = __DIR__ . '/fixtures/view/sample/Templators';
+    $cache  = __DIR__ . '/fixtures/view/caches';
+
+    $view = new Templator(new TemplatorFinder([$loader], ['']), $cache);
+
+    $badTemplate = $loader . '/closed_then_throw.php';
+    file_put_contents($badTemplate, '<?php ob_end_clean(); throw new RuntimeException("closed boom");');
+
+    $level = ob_get_level();
+
+    try {
+        $view->render('closed_then_throw.php', []);
+        $this->fail('expected the template throwable to propagate');
+    } catch (RuntimeException $e) {
+        expect($e->getMessage())->toBe('closed boom');
+    } finally {
+        unlink($badTemplate);
+    }
+
+    expect(ob_get_level())->toBe($level);
 });
 
 it('compile returns empty string when template unreadable', function (): void {

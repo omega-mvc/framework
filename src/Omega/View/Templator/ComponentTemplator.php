@@ -161,11 +161,13 @@ class ComponentTemplator extends AbstractTemplatorParse implements DependencyTem
         $componentName = trim($parts[0], "'\"");
 
         $paramsString = $parts[1] ?? '';
-        $paramsArray  = array_filter(array_map('trim', explode(',', $paramsString)));
+        $paramsArray  = array_values(array_filter(array_map('trim', explode(',', $paramsString))));
 
         $params = [];
 
-        foreach ($paramsArray as $param) {
+        for ($i = 0, $n = count($paramsArray); $i < $n; $i++) {
+            $param = $paramsArray[$i];
+
             if (str_contains($param, ':')) {
                 [$key, $value] = explode(':', $param, 2);
                 $params[$key] = trim($value, "'\" ");

@@ -10,6 +10,8 @@ use Omega\View\Exceptions\DirectiveNotRegisterException;
 use Omega\View\Templator;
 use Omega\View\Templator\DirectiveTemplator;
 use Omega\View\TemplatorFinder;
+use RuntimeException;
+use Stringable;
 
 
 covers(DirectiveCanNotBeRegisterException::class);
@@ -58,4 +60,48 @@ it('skips reserved directive in parse', function (): void {
     $out = $directive->parse($template);
 
     expect($out)->toEqual('{% include("file") %}');
+});
+
+it('can reset registered directives', function (): void {
+    DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
+
+    DirectiveTemplator::reset();
+    DirectiveTemplator::call('sum', 1, 1);
+})->throws(DirectiveNotRegisterException::class);
+
+it('call returns string result directly', function (): void {
+    DirectiveTemplator::register('stringify', fn (): string => 'converted');
+
+    expect(DirectiveTemplator::call('stringify'))->toBe('converted');
+});
+
+it('call throws when directive returns a non scalar value', function (): void {
+    DirectiveTemplator::register('arrayify', fn (): array => []);
+
+    DirectiveTemplator::call('arrayify');
+})->throws(RuntimeException::class, 'must return a string or scalar value');
+
+it('call casts a float result to string', function (): void {
+    DirectiveTemplator::register('floatify', fn (): float => 1.5);
+
+    expect(DirectiveTemplator::call('floatify'))->toBe('1.5');
+});
+
+it('call casts a boolean result to string', function (): void {
+    DirectiveTemplator::register('boolify', fn (): bool => true);
+
+    expect(DirectiveTemplator::call('boolify'))->toBe('1');
+});
+
+it('call casts a stringable result to string', function (): void {
+    $stringable = new class () implements Stringable {
+        public function __toString(): string
+        {
+            return 'stringable';
+        }
+    };
+
+    DirectiveTemplator::register('stringableify', fn (): Stringable => $stringable);
+
+    expect(DirectiveTemplator::call('stringableify'))->toBe('stringable');
 });

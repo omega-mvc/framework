@@ -128,3 +128,21 @@ it('extract component and params with positional param', function (): void {
     expect($name)->toEqual('MyComp');
     expect($params)->toEqual(['simple']);
 });
+
+it('falls back to template lookup when class exists but is not a component', function (): void {
+    $templator = new Templator(
+        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+        __DIR__ . '/../fixtures/view/templator/'
+    );
+    $templator->setComponentNamespace('Omega\\View\\Exceptions\\');
+
+    try {
+        $templator->templates(
+            '{% component(\'YeldSectionNotFoundException\') %}<main>core component</main>{% endcomponent %}'
+        );
+    } catch (Throwable $th) {
+        expect($th->getMessage())->toEqual(
+            'View file not found: `YeldSectionNotFoundException`'
+        );
+    }
+});

@@ -199,10 +199,32 @@ class Templator
         $templatePath  = $this->finder->find($templateName);
         $cachePath     = $this->cacheDir . '/' . md5($templateName) . '.php';
 
-        if ($cache && file_exists($cachePath) && filemtime($cachePath) >= filemtime($templatePath)) {
-            return $this->getView($cachePath, $data);
+        if (! $cache) {
+            return $this->compileAndRender($templatePath, $cachePath, $data);
         }
 
+        if (! file_exists($cachePath)) {
+            return $this->compileAndRender($templatePath, $cachePath, $data);
+        }
+
+        if (filemtime($cachePath) < filemtime($templatePath)) {
+            return $this->compileAndRender($templatePath, $cachePath, $data);
+        }
+
+        return $this->getView($cachePath, $data);
+    }
+
+    /**
+     * Compile a template into the cache and render it.
+     *
+     * @param string               $templatePath Source template file path.
+     * @param string               $cachePath    Destination compiled cache path.
+     * @param array<string, mixed> $data         Associative array of template variables.
+     * @return string Rendered template output.
+     * @throws Throwable If an error occurs during execution of the template.
+     */
+    private function compileAndRender(string $templatePath, string $cachePath, array $data): string
+    {
         $template = file_get_contents($templatePath);
         $template = $this->templates($template === false ? '' : $template, $templatePath);
 

@@ -132,7 +132,19 @@ class DirectiveTemplator extends AbstractTemplatorParse
             return $result;
         }
 
-        if (is_int($result) || is_float($result) || is_bool($result) || $result instanceof \Stringable) {
+        if (is_int($result)) {
+            return (string) $result;
+        }
+
+        if (is_float($result)) {
+            return (string) $result;
+        }
+
+        if (is_bool($result)) {
+            return (string) $result;
+        }
+
+        if ($result instanceof \Stringable) {
             return (string) $result;
         }
 
