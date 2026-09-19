@@ -168,3 +168,63 @@ it('unsets an offset', function (): void {
 
     expect(isset($response['status']))->toBeFalse();
 });
+
+it('returns false when the offset is not a string or int', function (): void {
+    $response = new TestJsonResponse(new Response([
+        'status' => 'ok',
+        'data' => [],
+    ]));
+
+    expect($response->offsetExists(1.5))->toBeFalse();
+});
+
+it('returns null when the offset is not a string or int', function (): void {
+    $response = new TestJsonResponse(new Response([
+        'status' => 'ok',
+        'data' => [],
+    ]));
+
+    expect($response->offsetGet(1.5))->toBeNull();
+});
+
+it('does not set the value when the offset is not a string or int', function (): void {
+    $response = new TestJsonResponse(new Response([
+        'status' => 'ok',
+        'data' => [],
+    ]));
+
+    $response->offsetSet(1.5, 'ignored');
+
+    expect($response->offsetExists('status'))->toBeTrue();
+    expect($response->offsetExists('ignored'))->toBeFalse();
+});
+
+it('does not unset the value when the offset is not a string or int', function (): void {
+    $response = new TestJsonResponse(new Response([
+        'status' => 'ok',
+        'data' => [],
+    ]));
+
+    $response->offsetUnset(1.5);
+
+    expect($response->offsetExists('status'))->toBeTrue();
+});
+
+it('supports integer offsets', function (): void {
+    $response = new TestJsonResponse(new Response([
+        0     => 'zero',
+        'var' => 'ok',
+    ]));
+
+    expect($response->offsetExists(0))->toBeTrue();
+
+    expect($response->offsetGet(0))->toBe('zero');
+
+    $response->offsetSet(0, 'changed');
+
+    expect($response->offsetGet(0))->toBe('changed');
+
+    $response->offsetUnset(0);
+
+    expect($response->offsetExists(0))->toBeFalse();
+});

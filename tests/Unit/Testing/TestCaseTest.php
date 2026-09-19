@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Testing;
 
+use Exception;
 use Omega\Application\Application;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
@@ -192,4 +193,52 @@ it('json method handles responses with and without code and headers', function (
     expect($resp2->getStatusCode())->toBe(201);
     expect($resp2->getHeaders())->toHaveKey('X-Test');
     expect($resp2->getHeaders()['X-Test'])->toBe('value');
+});
+
+it('json method throws an exception when the response body is not an array', function (): void {
+    $this->json(fn () => 'not-an-array');
+})->throws(Exception::class);
+
+it('json method ignores non-numeric code and non-array headers', function (): void {
+    $data = [
+        'status'  => 'ok',
+        'code'    => 'not-a-number',
+        'headers' => 'not-an-array',
+    ];
+
+    $response = $this->json(fn () => $data);
+
+    $internalResponse = new ReflectionClass($response)->getProperty('response');
+    $internalResponse->setAccessible(true);
+    $resp = $internalResponse->getValue($response);
+
+    if (!$resp instanceof Response) {
+        throw new Exception('Expected a Response instance.');
+    }
+
+    expect($resp->getStatusCode())->toBe(200);
+    expect($resp->getHeaders())->toBeEmpty();
+});
+
+it('json method filters non-string headers', function (): void {
+    $data = [
+        'status'  => 'ok',
+        'headers' => [
+            'X-Valid' => 'keep',
+            'X-Int'   => 123,
+            42        => 'numeric-key',
+        ],
+    ];
+
+    $response = $this->json(fn () => $data);
+
+    $internalResponse = new ReflectionClass($response)->getProperty('response');
+    $internalResponse->setAccessible(true);
+    $resp = $internalResponse->getValue($response);
+
+    if (!$resp instanceof Response) {
+        throw new Exception('Expected a Response instance.');
+    }
+
+    expect($resp->getHeaders())->toBe(['X-Valid' => 'keep']);
 });
