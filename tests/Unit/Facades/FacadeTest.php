@@ -21,8 +21,12 @@ use Omega\Facade\AbstractFacade;
 use Omega\Facade\Exceptions\FacadeObjectNotSetException;
 use Omega\Security\Facade\Hash;
 use Omega\Security\Hashing\HashManager;
+use Omega\Session\Facade\Session;
+use Omega\Session\SessionManager;
+use Omega\Session\Storage\ArrayStorage;
 use Omega\View\Facades\View;
 use Omega\View\Facades\Vite;
+use ReflectionMethod;
 use ReflectionProperty;
 use Tests\Facades\Sample\FacadesTestClass;
 use Tests\Facades\Support\NullFacade;
@@ -45,6 +49,9 @@ covers(HashManager::class);
 covers(PDO::class);
 covers(Schedule::class);
 covers(Schema::class);
+covers(Session::class);
+covers(SessionManager::class);
+covers(ArrayStorage::class);
 covers(Table::class);
 covers(View::class);
 covers(Vite::class);
@@ -88,6 +95,18 @@ it('throws when app is not set', function (): void {
     NullFacade::has('php');
 })->throws(FacadeObjectNotSetException::class);
 
+it('throws from getFacadeBase when the application is not set', function (): void {
+    AbstractFacade::flushInstance();
+    AbstractFacade::setFacadeBase(null);
+
+    $method = new ReflectionMethod(AbstractFacade::class, 'getFacadeBase');
+    $method->setAccessible(true);
+
+    expect(
+        fn () => $method->invoke(null, 'missing.service'),
+    )->toThrow(FacadeObjectNotSetException::class);
+});
+
 it('uses cached instance', function (): void {
     $app = new Application(__DIR__);
 
@@ -108,6 +127,7 @@ it('returns the correct accessor', function (): void {
         PDO::class       => 'database',
         Schedule::class  => 'schedule',
         Schema::class    => 'Schema',
+        Session::class   => 'session',
         View::class      => 'view.instance',
         Vite::class      => 'vite.gets',
     ];
@@ -115,6 +135,18 @@ it('returns the correct accessor', function (): void {
     foreach ($cases as $facade => $accessor) {
         expect($facade::getFacadeAccessor())->toBe($accessor);
     }
+});
+
+it('forwards static calls to the session manager', function (): void {
+    $app = new Application(__DIR__);
+    $app->set('session', fn () => new SessionManager('array', new ArrayStorage()));
+
+    AbstractFacade::setFacadeBase($app);
+
+    expect(Session::start())->toBeTrue();
+
+    $app->flush();
+    AbstractFacade::flushInstance();
 });
 
 it('table returns query builder', function (): void {

@@ -19,14 +19,12 @@ use Omega\Session\StorageInterface;
 use function is_string;
 use function bin2hex;
 use function random_bytes;
-use function session_create_id;
 use function session_destroy;
 use function session_id;
 use function session_name;
 use function session_start;
 use function session_status;
 use function session_write_close;
-use function uniqid;
 
 use const PHP_SESSION_ACTIVE;
 
@@ -74,7 +72,15 @@ class NativeStorage implements StorageInterface
 
         $data = $_SESSION[$this->key] ?? null;
 
-        return is_string($data) && $data !== '' ? $data : false;
+        if (!is_string($data)) {
+            return false;
+        }
+
+        if ($data === '') {
+            return false;
+        }
+
+        return $data;
     }
 
     public function write(string $id, string $data): bool
@@ -110,13 +116,6 @@ class NativeStorage implements StorageInterface
 
     public function createId(): string
     {
-        $prefix = $this->options['prefix'] ?? '';
-        $id     = session_create_id($prefix);
-
-        if (is_string($id) && $id !== '') {
-            return $id;
-        }
-
         return bin2hex(random_bytes(16));
     }
 

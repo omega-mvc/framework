@@ -35,6 +35,12 @@ it('returns false when reading a missing session', function (): void {
     expect($this->storage->read('missing-id'))->toBeFalse();
 });
 
+it('returns false when the cached value is not a string', function (): void {
+    $this->cache->set('session_nonstring', ['data' => 'not-a-string'], 3600);
+
+    expect($this->storage->read('nonstring'))->toBeFalse();
+});
+
 it('destroys a session entry and removes it from the cache', function (): void {
     $this->storage->write('abc', '{"foo":"bar"}');
 

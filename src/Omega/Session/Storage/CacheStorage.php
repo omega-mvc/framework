@@ -48,7 +48,11 @@ class CacheStorage implements StorageInterface
     {
         $data = $this->cache->get($this->prefix . $id, '');
 
-        if (!is_string($data) || $data === '') {
+        if (!is_string($data)) {
+            return false;
+        }
+
+        if ($data === '') {
             return false;
         }
 

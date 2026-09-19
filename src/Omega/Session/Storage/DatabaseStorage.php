@@ -67,7 +67,15 @@ class DatabaseStorage implements StorageInterface
 
         $data = $result['data'] ?? null;
 
-        return is_string($data) && $data !== '' ? $data : false;
+        if (!is_string($data)) {
+            return false;
+        }
+
+        if ($data === '') {
+            return false;
+        }
+
+        return $data;
     }
 
     public function write(string $id, string $data): bool

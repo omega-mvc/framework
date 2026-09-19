@@ -26,18 +26,19 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first.
 
 ## Structure
 
-- `src/Omega/` — 28 subpackages (Application, Archive, Cache, Collection, Config, Console, Container, Cron, Database, DocBlockGenerator, Environment, Event, Exceptions, Facade, Filesystem, Http, Logging, Macroable, Middleware, RateLimiter, Redis, Router, Security, Testing, Text, Time, Validator, View)
-- `tests/Unit/` — mirrors src subpackage names, with an intentional plural: src `Facade` holds only `AbstractFacade`, while tests/Unit `Facades` covers all facades. src `Event` has no test mirror. `tests/Feature/` holds the non-mirrored suites (currently Validator). Pest top-level files in `tests/` (`Pest.php`, `TestCase.php`)
+- `src/Omega/` — 31 subpackages (Application, Archive, Cache, Collection, Config, Console, Container, Cron, Csrf, Database, DocBlockGenerator, Environment, Event, Exceptions, Facade, Filesystem, Http, Logging, Macroable, Middleware, Queue, RateLimiter, Redis, Router, Security, Session, Testing, Text, Time, Validator, View)
+- `tests/Unit/` — mirrors src subpackage names, with an intentional plural: src `Facade` holds only `AbstractFacade`, while tests/Unit `Facades` covers all facades. Every subpackage is mirrored (including `Event`). `tests/Feature/` holds the feature-level integration suites (currently only `Validator`); unit-level Validator tests live in `tests/Unit/Validator`. Pest top-level files in `tests/` (`Pest.php`, `TestCase.php`)
 - `tests/Unit/*/fixtures/` — per-subpackage shared fixtures (e.g. `tests/Unit/Http/fixtures/`)
 - Global helper files autoloaded via Composer `files`: `Application/helper.php`, `Collection/helper.php`, `Environment/helper.php`, `Http/helper.php`, `Text/helper.php`, `Time/helper.php`, `Validator/helper.php`, `View/helper.php`
-- `docs/` — per-subpackage markdown docs (Application.md, Archive.md, ...)
 - `cache/` — runtime cache (phpcs, phpstan, phpunit, coverage); gitignored
+- `phpstan/` — custom PHPStan extensions in the `Omega\PHPStan\` autoload-dev namespace, registered in `phpstan.neon.dist` (PHPStan itself is NOT part of the dev workflow; see Commands)
 
 ## Testing
 
 - **Pest 5** on top of PHPUnit. Tests are PHPUnit-style classes with `#[CoversClass]` attributes
 - `composer run test` — no coverage by default (80% minimum via `pest.php` `coverage()->minimum(80)` only when `--coverage` is passed)
 - Test env: `APP_ENV=testing`, `OMEGA_TEST_MODE=light` (phpunit.xml.dist)
+- phpunit.xml.dist sets `failOnWarning=true`, `failOnRisky=true`, `beStrictAboutOutputDuringTests=true`, `executionOrder="depends,defects"` — stray warnings, risky tests, or echoed output fail the suite. `Filesystem/Util/SizeTest` and `ChecksumTest` deliberately install a temporary error handler so an expected `E_WARNING` doesn't surface (don't remove it)
 - `pest.php` references `tests/bootstrap.php` but that file does not exist — bootstrapping happens via `vendor/autoload.php` in phpunit.xml.dist; don't create one
 - Coverage HTML: `cache/coverage-report/`; no external services required
 - Archive Phar testing quirk: real `Phar` writes are impossible when `phar.readonly=1` (the default; PHP_INI_SYSTEM, not overridable at runtime). `PharAdapter` depends on an injectable `PharEngineInterface` (default `NativePharEngine`); write/delete/rename success+failure paths are tested against in-memory fakes (`FakePharEngine`, `FailingPharEngine`, `UnreadablePharEngine`) with no skip, giving `PharAdapter` 100% lines/branches/paths. `NativePharEngine` tests use `PharData`, which is writable even with `phar.readonly=1`

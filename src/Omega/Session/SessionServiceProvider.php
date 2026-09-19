@@ -30,7 +30,7 @@ use Omega\Session\Storage\NativeStorage;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 
-use function array_keys;
+use function array_walk;
 
 /**
  * Registers session drivers and the SessionManager into the container.
@@ -65,12 +65,12 @@ class SessionServiceProvider extends AbstractServiceProvider
         $default = $config['session']['default'] ?? 'native';
         $drivers = $config['session']['drivers'] ?? [];
 
-        foreach ($drivers as $name => $options) {
+        array_walk($drivers, function (array $options, string $name): void {
             $this->app->set(
                 "session.storage.$name",
                 fn (): StorageInterface => $this->createDriver($name, $options),
             );
-        }
+        });
 
         $this->app->set('session', function () use ($default, $drivers): SessionManager {
             $manager = new SessionManager(
@@ -78,14 +78,14 @@ class SessionServiceProvider extends AbstractServiceProvider
                 $this->createDriver($default, $drivers[$default] ?? []),
             );
 
-            foreach (array_keys($drivers) as $driver) {
+            array_walk($drivers, function (array $options, string $driver) use ($default, $manager): void {
                 if ($driver !== $default) {
                     $manager->setDriver(
                         $driver,
-                        fn (): StorageInterface => $this->createDriver($driver, $drivers[$driver]),
+                        fn (): StorageInterface => $this->createDriver($driver, $options),
                     );
                 }
-            }
+            });
 
             return $manager;
         });

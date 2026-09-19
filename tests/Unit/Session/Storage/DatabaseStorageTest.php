@@ -35,6 +35,20 @@ it('returns false when no session row matches', function (): void {
     expect($storage->read('abc123'))->toBeFalse();
 });
 
+it('returns false when the stored payload is not a string', function (): void {
+    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => 123]]);
+    $storage = new DatabaseStorage($pdo);
+
+    expect($storage->read('abc123'))->toBeFalse();
+});
+
+it('returns false when the stored payload is empty', function (): void {
+    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => '']]);
+    $storage = new DatabaseStorage($pdo);
+
+    expect($storage->read('abc123'))->toBeFalse();
+});
+
 it('writes session data by replacing the row', function (): void {
     $pdo     = new ScriptedConnection();
     $storage = new DatabaseStorage($pdo);

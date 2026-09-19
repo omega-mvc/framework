@@ -181,9 +181,7 @@ class SessionManager
      */
     public function clearFlash(): void
     {
-        foreach ([...$this->flashNew, ...$this->flashOld] as $key) {
-            unset($this->data[$key]);
-        }
+        $this->data = array_diff_key($this->data, array_fill_keys([...$this->flashNew, ...$this->flashOld], true));
 
         $this->flashNew = [];
         $this->flashOld = [];
@@ -206,15 +204,7 @@ class SessionManager
         $this->data[$key] = $value;
         $this->flashOld[] = $key;
 
-        $filtered = [];
-
-        foreach ($this->flashNew as $flashKey) {
-            if ($flashKey !== $key) {
-                $filtered[] = $flashKey;
-            }
-        }
-
-        $this->flashNew = $filtered;
+        $this->flashNew = array_values(array_diff($this->flashNew, [$key]));
     }
 
     public function bag(string $name): SessionBag
@@ -226,12 +216,7 @@ class SessionManager
                 $data = [];
             }
 
-            $bagData = [];
-            foreach ($data as $key => $value) {
-                if (is_string($key)) {
-                    $bagData[$key] = $value;
-                }
-            }
+            $bagData = array_filter($data, 'is_string', ARRAY_FILTER_USE_KEY);
 
             $this->data[$name] = $bagData;
             $this->bags[$name] = new SessionBag($name, $this->data[$name]);
@@ -262,7 +247,11 @@ class SessionManager
 
     public function destroy(): bool
     {
-        if (!$this->started || $this->id === null) {
+        if (!$this->started) {
+            return false;
+        }
+
+        if ($this->id === null) {
             return false;
         }
 
@@ -279,7 +268,11 @@ class SessionManager
 
     public function save(): void
     {
-        if (!$this->started || $this->id === null) {
+        if (!$this->started) {
+            return;
+        }
+
+        if ($this->id === null) {
             return;
         }
 
@@ -310,22 +303,19 @@ class SessionManager
      */
     private function stringList(array $values): array
     {
-        $list = [];
-
-        foreach ($values as $value) {
-            if (is_string($value)) {
-                $list[] = $value;
-            }
-        }
-
-        return $list;
+        return array_values(array_filter($values, 'is_string'));
     }
 
     private function loadSessionData(): void
     {
         $raw = $this->getDriver()->read($this->id ?? '');
 
-        if ($raw === false || $raw === '') {
+        if ($raw === false) {
+            $this->data = [];
+            return;
+        }
+
+        if ($raw === '') {
             $this->data = [];
             return;
         }
@@ -337,15 +327,7 @@ class SessionManager
             return;
         }
 
-        $data = [];
-
-        foreach ($decoded as $key => $value) {
-            if (is_string($key)) {
-                $data[$key] = $value;
-            }
-        }
-
-        $this->data = $data;
+        $this->data = array_filter($decoded, 'is_string', ARRAY_FILTER_USE_KEY);
 
         if (is_array($decoded['_flash'] ?? null)) {
             $this->restoreFlashSlice($decoded['_flash']);
@@ -364,9 +346,7 @@ class SessionManager
 
     private function expireFlashData(): void
     {
-        foreach ($this->flashOld as $key) {
-            unset($this->data[$key]);
-        }
+        $this->data = array_diff_key($this->data, array_fill_keys($this->flashOld, true));
 
         $this->flashOld = $this->flashNew;
         $this->flashNew = [];
