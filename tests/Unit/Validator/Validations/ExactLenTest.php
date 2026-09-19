@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render exact_len validation')
     ->expect(vr()->exact_len(240))
     ->toEqual('exact_len,240')

@@ -32,33 +32,36 @@ final class Filter
     /**
      * @return string Rule of Filter
      */
-    public function get_filter(): string
+    public function getFilter(): string
     {
-        $is_block_if     = false;
-        $filters_rule    = [];
+        $filters_rule = ['rules' => [], 'is_block_if' => false];
 
         foreach ($this->filter_rule as $rule) {
-            // detect if condition
+            $is_block_if = $filters_rule['is_block_if'];
+
             if ($rule === 'if_false') {
-                $is_block_if = true;
+                $filters_rule['is_block_if'] = true;
+
                 continue;
             }
-            if ($rule === 'if_true' || $rule === 'end_if') {
-                // break if statement
-                $is_block_if = false;
+            if ($rule === 'if_true') {
+                $filters_rule['is_block_if'] = false;
+
                 continue;
             }
-            // block rule if statement is false
+            if ($rule === 'end_if') {
+                $filters_rule['is_block_if'] = false;
+
+                continue;
+            }
             if ($is_block_if === true) {
                 continue;
             }
 
-            // add string rule and reset invert rule
-            $filters_rule[]    = $rule;
-            $is_invert         = false;
+            $filters_rule['rules'][] = $rule;
         }
 
-        return implode($this->delimiter, $filters_rule);
+        return implode($this->delimiter, $filters_rule['rules']);
     }
 
     /**
@@ -68,9 +71,7 @@ final class Filter
      */
     public function combine(Filter $filter): self
     {
-        foreach ($filter->filter_rule as $rule) {
-            $this->filter_rule[] = $rule;
-        }
+        $this->filter_rule = array_merge($this->filter_rule, $filter->filter_rule);
 
         return $this;
     }
@@ -80,7 +81,7 @@ final class Filter
      */
     public function __toString(): string
     {
-        return $this->get_filter();
+        return $this->getFilter();
     }
 
     /**
@@ -107,7 +108,7 @@ final class Filter
         }
 
         // prevent create new rule and give a string rule
-        return $this->get_filter();
+        return $this->getFilter();
     }
 
     /**

@@ -20,7 +20,7 @@ it('can add filter rule using method filters (param)', function () {
         $f->test2->trim(),
     ]);
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'test', 'test2' => 'test']
     );
 });
@@ -37,7 +37,7 @@ it('can add filter rule using method filters (return)', function () {
         return $f;
     });
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'test', 'test2' => 'test']
     );
 });
@@ -50,7 +50,7 @@ it('can add new filter with exist rule', function () {
     $valid->filter('test')->trim();
     $valid->filter('test')->upper_case();
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'TEST']
     );
 });
@@ -65,7 +65,7 @@ it('can add new filter with exist rule using method filters', function () {
         $filter('test')->upper_case(),
     ]);
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'TEST']
     );
 });
@@ -116,7 +116,7 @@ it('can add multy filter using method filter', function () {
     $valid->field('test', 'test2')->required();
     $valid->filter('test', 'test2')->trim();
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'test', 'test2' => 'test']
     );
 });
@@ -130,7 +130,7 @@ it('can add multy filter using method filter with filter exist', function () {
     $valid->filter('test2')->upper_case();
     $valid->filter('test', 'test2')->rmpunctuation();
 
-    expect($valid->filter_out())->toMatchArray(
+    expect($valid->filterOut())->toMatchArray(
         ['test' => 'TEST', 'test2' => 'TEST']
     );
 });

@@ -30,34 +30,30 @@ namespace Omega\Text;
  * @version   2.0.0
  */
 
-if (!function_exists('string')) {
-    /**
-     * Create a new Text instance from a plain string.
-     *
-     * This helper allows for a concise and fluent interface when working with
-     * the Text class.
-     *
-     * @param string $text The input string to wrap in a Text object.
-     * @return Text A new Text instance initialized with the provided string.
-     */
-    function string(string $text): Text
-    {
-        return new Text($text);
-    }
+/**
+ * Create a new Text instance from a plain string.
+ *
+ * This helper allows for a concise and fluent interface when working with
+ * the Text class.
+ *
+ * @param string $text The input string to wrap in a Text object.
+ * @return Text A new Text instance initialized with the provided string.
+ */
+function string(string $text): Text
+{
+    return new Text($text);
 }
 
-if (!function_exists('text')) {
-    /**
-     * Create a new Text instance from a plain string.
-     *
-     * This helper is an alias of `string()` for semantic flexibility and
-     * readability.
-     *
-     * @param string $text The input string to wrap in a Text object.
-     * @return Text A new Text instance initialized with the provided string.
-     */
-    function text(string $text): Text
-    {
-        return new Text($text);
-    }
+/**
+ * Create a new Text instance from a plain string.
+ *
+ * This helper is an alias of `string()` for semantic flexibility and
+ * readability.
+ *
+ * @param string $text The input string to wrap in a Text object.
+ * @return Text A new Text instance initialized with the provided string.
+ */
+function text(string $text): Text
+{
+    return new Text($text);
 }

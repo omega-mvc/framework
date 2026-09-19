@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render integer validation')
     ->expect(vr()->integer())
     ->toEqual('integer')

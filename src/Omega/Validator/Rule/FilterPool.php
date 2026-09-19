@@ -6,7 +6,7 @@ namespace Omega\Validator\Rule;
 
 final class FilterPool
 {
-    /** @var array<int, array{field: string, rule: string|Filter}> */
+    /** @var array<int, array{field: string, rule: Filter}> */
     private array $pool = [];
 
     /**
@@ -14,19 +14,16 @@ final class FilterPool
      *
      * @return Filter[] Filter rule
      */
-    public function get_pool(): array
+    public function getPool(): array
     {
-        $rules = [];
+        $pool = [];
+
         foreach ($this->pool as $ruler) {
-            $field = $ruler['field'];
-            $rule  = $ruler['rule'];
-            if ($rule instanceof Filter) {
-                $exist_rule    = $rules[$field] ?? new Filter();
-                $rules[$field] = $exist_rule->combine($rule);
-            }
+            $key = $ruler['field'];
+            $pool[$key] = ($pool[$key] ?? new Filter())->combine($ruler['rule']);
         }
 
-        return $rules;
+        return $pool;
     }
 
     /**
@@ -38,9 +35,7 @@ final class FilterPool
      */
     public function combine(FilterPool $filterPool): FilterPool
     {
-        foreach ($filterPool->pool as $valid_rule) {
-            $this->pool[] = $valid_rule;
-        }
+        $this->pool = array_merge($this->pool, $filterPool->pool);
 
         return $this;
     }
@@ -87,7 +82,7 @@ final class FilterPool
      */
     public function rule(string ...$field): Filter
     {
-        return $this->set_filter_rule(new Filter(), $field);
+        return $this->setFilterRule(new Filter(), $field);
     }
 
     /**
@@ -134,14 +129,20 @@ final class FilterPool
      *
      * @return Filter Rule filter base from param
      */
-    private function set_filter_rule(Filter $filter, array $fields): Filter
+    private function setFilterRule(Filter $filter, array $fields): Filter
     {
-        foreach ($fields as $field) {
-            $this->pool[] = [
-                'field' => $field,
-                'rule'  => $filter,
-            ];
-        }
+        $this->pool = array_merge(
+            $this->pool,
+            array_values(
+                array_map(
+                    static fn (string $field): array => [
+                        'field' => $field,
+                        'rule'  => $filter,
+                    ],
+                    $fields,
+                ),
+            ),
+        );
 
         return $filter;
     }

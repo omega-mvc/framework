@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render starts validation')
     ->expect(vr()->starts('Z'))
     ->toEqual('starts,Z')

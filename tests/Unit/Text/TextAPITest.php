@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Text;
 
-use Omega\Text\Regex;
+use Omega\Text\Exceptions\NoReturnException;
 use Omega\Text\Text;
 
 use function expect;
 
-covers(Regex::class);
 covers(Text::class);
 
 beforeEach(function (): void {
@@ -24,9 +23,26 @@ it('can return chart at', function (): void {
     expect((string) $this->text->charAt(3))->toBe('o');
 });
 
+it('executes with a non string value', function (): void {
+    $method = new \ReflectionMethod(Text::class, 'execute');
+    $method->setAccessible(true);
+
+    $method->invoke($this->text, ['foo'], 'test');
+
+    expect($this->text->logs())->toHaveCount(2);
+});
+
 it('can return slice', function (): void {
     expect((string) $this->text->slice(7))->toBe('symfony');
 });
+
+it('does not throw when slice is not empty and throwOnFailure is enabled', function (): void {
+    expect((string) $this->text->throwOnFailure(true)->slice(1))->toBe(' love symfony');
+});
+
+it('throws when slice returns empty and throwOnFailure is enabled', function (): void {
+    $this->text->throwOnFailure(true)->slice(0, 0);
+})->throws(NoReturnException::class, 'did not return anything');
 
 it('can return lower', function (): void {
     expect((string) $this->text->lower())->toBe('i love symfony');
@@ -69,7 +85,7 @@ it('can return is empty', function (): void {
 });
 
 it('can return is', function (): void {
-    expect($this->text->is(Regex::USER))->toBeFalse();
+    expect($this->text->is('/^[A-Za-z]{1}[A-Za-z0-9]{3,16}$/'))->toBeFalse();
 });
 
 it('can return contains', function (): void {
@@ -93,7 +109,19 @@ it('can return index of', function (): void {
 });
 
 it('can return last index of', function (): void {
-    expect($this->text->indexOf('o'))->toBe(3);
+    expect($this->text->lastIndexOf('y'))->toBe(13);
+});
+
+it('returns false when last index of is not found', function (): void {
+    expect($this->text->lastIndexOf('x'))->toBeFalse();
+});
+
+it('can return is match', function (): void {
+    expect($this->text->isMatch('/^i love/'))->toBeTrue();
+});
+
+it('returns false when is match does not match', function (): void {
+    expect($this->text->isMatch('/^z/'))->toBeFalse();
 });
 
 it('can return fill', function (): void {

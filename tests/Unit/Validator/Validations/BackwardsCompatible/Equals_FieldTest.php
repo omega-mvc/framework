@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render equals_field validation')
     ->expect(vr()->equals_field('other_field_name'))
     ->toEqual('equalsfield,other_field_name')

@@ -43,40 +43,43 @@ final class Valid
     /**
      * @return string Rule of validation
      */
-    public function get_validation(): string
+    public function getValidation(): string
     {
-        $is_invert       = false;
-        $is_block_if     = false;
-        $validation_rule = [];
+        $validation_rule = ['rules' => [], 'is_invert' => false, 'is_block_if' => false];
 
         foreach ($this->validation_rule as $rule) {
-            // detect if condition
+            $is_invert   = $validation_rule['is_invert'];
+            $is_block_if = $validation_rule['is_block_if'];
+
             if ($rule === 'if_false') {
-                $is_block_if = true;
+                $validation_rule['is_block_if'] = true;
+
                 continue;
             }
-            if ($rule === 'if_true' || $rule === 'end_if') {
-                // break if statment
-                $is_block_if = false;
+            if ($rule === 'if_true') {
+                $validation_rule['is_block_if'] = false;
+
                 continue;
             }
-            // block rule if statment is false
+            if ($rule === 'end_if') {
+                $validation_rule['is_block_if'] = false;
+
+                continue;
+            }
             if ($is_block_if === true) {
                 continue;
             }
-
-            // set next rule as invert rule
             if ($rule === 'invert') {
-                $is_invert = !$is_invert;
+                $validation_rule['is_invert'] = !$is_invert;
+
                 continue;
             }
 
-            // add string rule and reset invert rule
-            $validation_rule[] = $is_invert ? 'invert_' . $rule : $rule;
-            $is_invert         = false;
+            $validation_rule['rules'][] = $is_invert ? 'invert_' . $rule : $rule;
+            $validation_rule['is_invert'] = false;
         }
 
-        return implode($this->delimiter, $validation_rule);
+        return implode($this->delimiter, $validation_rule['rules']);
     }
 
     /**
@@ -86,9 +89,7 @@ final class Valid
      */
     public function combine(Valid $valid): self
     {
-        foreach ($valid->validation_rule as $rule) {
-            $this->validation_rule[] = $rule;
-        }
+        $this->validation_rule = array_merge($this->validation_rule, $valid->validation_rule);
 
         return $this;
     }
@@ -98,7 +99,7 @@ final class Valid
      */
     public function __toString(): string
     {
-        return $this->get_validation();
+        return $this->getValidation();
     }
 
     /**
@@ -168,7 +169,7 @@ final class Valid
         }
 
         // prevent create new rule and give a string rule
-        return $this->get_validation();
+        return $this->getValidation();
     }
 
     /**

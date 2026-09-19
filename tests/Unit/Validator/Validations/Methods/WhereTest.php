@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 use Omega\Validator\Validator;
 
 it('can render validation rule using method where (true)', function () {
@@ -45,10 +47,20 @@ it('can reset validation rule using method where (no boolean)', function () {
 })->throws('Condition closure not return boolean');
 
 it('can validate combine with submitted method', function () {
-    $val = new Validator();
+    $previous            = $_SERVER['REQUEST_METHOD'] ?? null;
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $val                 = new Validator();
 
-    // output: required
-    $val->field('test')->required()->where(fn () => $val->submitted());
+    try {
+        // output: required
+        $val->field('test')->required()->where(fn () => $val->submitted());
 
-    expect($val->isValid())->toBeFalse();
+        expect($val->isValid())->toBeFalse();
+    } finally {
+        if ($previous === null) {
+            unset($_SERVER['REQUEST_METHOD']);
+        } else {
+            $_SERVER['REQUEST_METHOD'] = $previous;
+        }
+    }
 });

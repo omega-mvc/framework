@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander sanitize_email', function () {
     expect(fr()->sanitize_email())
         ->toEqual('sanitize_email')
@@ -11,7 +13,7 @@ it('can filter sanitize_email', function () {
 
     $fr->filter('field')->sanitize_email();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'john.doe@example.com'])
     ;
 });

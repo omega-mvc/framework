@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render iban validation')
     ->expect(vr()->iban())
     ->toEqual('iban')

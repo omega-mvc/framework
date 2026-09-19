@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render required_file validation')
     ->expect(vr()->required_file())
     ->toEqual('required_file')

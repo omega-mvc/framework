@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render valid_url validation')
     ->expect(vr()->valid_url())
     ->toEqual('valid_url')

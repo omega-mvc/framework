@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render valid_ipv6 validation')
     ->expect(vr()->valid_ipv6())
     ->toEqual('valid_ipv6')

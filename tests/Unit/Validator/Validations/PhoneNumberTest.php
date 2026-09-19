@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render phone_number validation')
     ->expect(vr()->phone_number())
     ->toEqual('phone_number')

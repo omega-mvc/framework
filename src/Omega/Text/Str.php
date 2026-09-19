@@ -17,15 +17,19 @@ namespace Omega\Text;
 use Omega\Macroable\MacroableTrait;
 use Omega\Text\Exceptions\NoReturnException;
 
+use function array_map;
 use function array_pop;
+use function array_shift;
 use function explode;
 use function iconv;
 use function implode;
 use function is_string;
+use function max;
 use function mb_strpos;
 use function mb_strtolower;
 use function mb_strtoupper;
 use function mb_substr;
+use function min;
 use function preg_match;
 use function preg_replace;
 use function preg_split;
@@ -34,6 +38,7 @@ use function str_repeat;
 use function str_replace;
 use function strlen;
 use function strncmp;
+use function substr;
 use function substr_compare;
 use function trim;
 use function ucfirst;
@@ -336,22 +341,10 @@ final class Str
      */
     public static function toCamelCase(string $text): string
     {
-        $spaceCase  = str_replace(['-', '_', '+'], ' ', $text);
-        $arrText    = explode(' ', $spaceCase);
-        $result     = [];
-        $firstText  = true;
+        $arrText   = explode(' ', str_replace(['-', '_', '+'], ' ', $text));
+        $firstText = array_shift($arrText);
 
-        foreach ($arrText as $text) {
-            if ($firstText) {
-                $result[]   = mb_strtolower($text);
-                $firstText = false;
-                continue;
-            }
-
-            $result[] = ucfirst($text);
-        }
-
-        return implode('', $result);
+        return mb_strtolower($firstText) . implode('', array_map('ucfirst', $arrText));
     }
 
     /**
@@ -433,8 +426,10 @@ final class Str
         string $openDelimiter = '{',
         string $closeDelimiter = '}'
     ): string {
-        if ('{' === $openDelimiter && '}' === $closeDelimiter) {
-            $template = preg_replace(['/\\{\s+/', '/\s+\\}/'], ['{', '}'], $template) ?? $template;
+        if ('{' === $openDelimiter) {
+            if ('}' === $closeDelimiter) {
+                $template = preg_replace(['/\\{\s+/', '/\s+\\}/'], ['{', '}'], $template) ?? $template;
+            }
         }
 
         $keys = [];
@@ -488,15 +483,11 @@ final class Str
             $start = strlen($text) + $start;
         }
 
-        $end      = $start + $maskLength;
-        $start--;
-        $newText  = '';
+        $end   = $start + $maskLength;
+        $start = min(max($start, 0), strlen($text));
+        $end   = max(min($end, strlen($text)), $start);
 
-        for ($index = 0, $length = strlen($text); $index < $length; $index++) {
-            $newText .= $index > $start && $index < $end ? $mask : $text[$index];
-        }
-
-        return $newText;
+        return substr($text, 0, $start) . str_repeat($mask, $end - $start) . substr($text, $end);
     }
 
     /**
@@ -583,7 +574,11 @@ final class Str
      */
     public static function endsWith(string $text, string $startWith): bool
     {
-        if ('' === $startWith || $startWith === $text) {
+        if ('' === $startWith) {
+            return true;
+        }
+
+        if ($startWith === $text) {
             return true;
         }
 
@@ -593,7 +588,11 @@ final class Str
 
         $needleLength = strlen($startWith);
 
-        return $needleLength <= strlen($text) && 0 === substr_compare($text, $startWith, -$needleLength);
+        if ($needleLength > strlen($text)) {
+            return false;
+        }
+
+        return 0 === substr_compare($text, $startWith, -$needleLength);
     }
 
     /**

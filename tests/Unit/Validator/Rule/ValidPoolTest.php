@@ -8,7 +8,7 @@ it('can add valid using __get', function () {
     // rule
     $pool->test->required();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required',
     ]);
 });
@@ -20,7 +20,7 @@ it('can add valid using __get with exist rule', function () {
     $pool->test->required();
     $pool->test->alpha();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required|alpha',
     ]);
 });
@@ -31,7 +31,7 @@ it('can add valid using __set', function () {
     // rule
     $pool->test = 'required';
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required',
     ]);
 });
@@ -43,7 +43,7 @@ it('can add valid using __set with exist rule', function () {
     $pool->test = 'required';
     $pool->test = 'alpha';
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required|alpha',
     ]);
 });
@@ -54,7 +54,7 @@ it('can add valid using __invoke', function () {
     // rule
     $pool('test')->required();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required',
     ]);
 });
@@ -66,7 +66,7 @@ it('can add valid using __invoke with exist rule', function () {
     $pool('test')->required();
     $pool('test')->alpha();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required|alpha',
     ]);
 });
@@ -77,7 +77,7 @@ it('can add valid using __invoke (multy)', function () {
     // rule
     $pool('test', 'test2')->required();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test'  => 'required',
         'test2' => 'required',
     ]);
@@ -89,7 +89,7 @@ it('can add valid using rule', function () {
     // rule
     $pool->rule('test')->required();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required',
     ]);
 });
@@ -101,7 +101,7 @@ it('can add valid using rule with exist rule', function () {
     $pool->rule('test')->required();
     $pool->rule('test')->alpha();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test' => 'required|alpha',
     ]);
 });
@@ -112,7 +112,7 @@ it('can add valid using rule (multy)', function () {
     // rule
     $pool->rule('test', 'test2')->required();
 
-    expect($pool->get_pool())->toMatchArray([
+    expect($pool->getPool())->toMatchArray([
         'test'  => 'required',
         'test2' => 'required',
     ]);

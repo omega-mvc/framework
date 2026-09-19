@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander urlencode', function () {
     expect(fr()->urlencode())
         ->toEqual('urlencode')
@@ -11,7 +13,7 @@ it('can filter urlencode', function () {
 
     $fr->filter('field')->urlencode();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'test.com%2Ftrue%2Fright%3Fone%3D1%232'])
     ;
 });

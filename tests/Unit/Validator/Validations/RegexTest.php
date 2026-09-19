@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render regex validation')
     ->expect(vr()->regex('/test-[0-9]{3}/'))
     ->toEqual('regex,/test-[0-9]{3}/')

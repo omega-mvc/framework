@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander lower_case', function () {
     expect(fr()->lower_case())
         ->toEqual('lower_case')
@@ -11,7 +13,7 @@ it('can filter lower_case', function () {
 
     $fr->filter('field')->lower_case();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'test'])
     ;
 });

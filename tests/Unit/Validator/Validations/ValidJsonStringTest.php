@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render valid_json_string validation')
     ->expect(vr()->valid_json_string())
     ->toEqual('valid_json_string')

@@ -7,7 +7,7 @@ it('can execute method using if (true)', function () {
 
     $val->filter('test')->if(fn () => true)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'trim',
     ]);
 });
@@ -17,7 +17,7 @@ it('can execute method using if (false)', function () {
 
     $val->filter('test')->if(fn () => false)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
@@ -27,7 +27,7 @@ it('can execute method using if (true, true)', function () {
 
     $val->filter('test')->if(fn () => true)->trim()->if(fn () => true)->upper_case();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'TRIM',
     ]);
 });
@@ -37,7 +37,7 @@ it('can execute method using if (true, false)', function () {
 
     $val->filter('test')->if(fn () => true)->trim()->if(fn () => false)->upper_case();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'trim',
     ]);
 });
@@ -47,7 +47,7 @@ it('can execute method using if (false, true)', function () {
 
     $val->filter('test')->if(fn () => false)->trim()->if(fn () => true)->upper_case();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' TRIM ',
     ]);
 });
@@ -57,7 +57,7 @@ it('can execute method using if (false, false)', function () {
 
     $val->filter('test')->if(fn () => false)->trim()->if(fn () => false)->upper_case();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
@@ -67,7 +67,7 @@ it('can execute method using if-contiune (true, true)', function () {
 
     $val->filter('test')->if(fn () => true)->if(fn () => true)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'trim',
     ]);
 });
@@ -77,7 +77,7 @@ it('can execute method using if-contiune (true, false) x', function () {
 
     $val->filter('test')->if(fn () => true)->if(fn () => false)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
@@ -87,7 +87,7 @@ it('can execute method using if-contiune (false, false)', function () {
 
     $val->filter('test')->if(fn () => false)->if(fn () => false)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
@@ -97,7 +97,7 @@ it('can execute method using if-contiune (false, true)', function () {
 
     $val->filter('test')->if(fn () => false)->if(fn () => true)->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'trim',
     ]);
 });
@@ -107,7 +107,21 @@ it('can execute rule combine with submitted method', function () {
 
     $val->filter('test')->if(fn () => $val->submitted())->trim();
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
+
+it('can execute method using if (no return)', function () {
+    $val = new Validator(['test' => ' trim ']);
+
+    $val->filter('test')->if(function () {
+        // no return
+    })->trim();
+})->throws('Condition closure not return boolean');
+
+it('can execute method using if (no boolean)', function () {
+    $val = new Validator(['test' => ' trim ']);
+
+    $val->filter('test')->if(fn () => 'test')->trim();
+})->throws('Condition closure not return boolean');

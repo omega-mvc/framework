@@ -6,7 +6,7 @@ namespace Omega\Validator\Rule;
 
 final class ValidPool
 {
-    /** @var array<int, array<string, string|Valid>> */
+    /** @var array<int, array{field: string, rule: Valid}> */
     private array $pool = [];
 
     /**
@@ -14,21 +14,16 @@ final class ValidPool
      *
      * @return Valid[] Valid rule
      */
-    public function get_pool(): array
+    public function getPool(): array
     {
-        $rules = [];
+        $pool = [];
+
         foreach ($this->pool as $ruler) {
-            $field = $ruler['field'];
-            $rule  = $ruler['rule'];
-            if ($rule instanceof Valid) {
-                // @phpstan-ignore-next-line
-                $exist_rule    = $rules[$field] ?? new Valid();
-                // @phpstan-ignore-next-line
-                $rules[$field] = $exist_rule->combine($rule);
-            }
+            $key = $ruler['field'];
+            $pool[$key] = ($pool[$key] ?? new Valid())->combine($ruler['rule']);
         }
 
-        return $rules;
+        return $pool;
     }
 
     /**
@@ -72,9 +67,7 @@ final class ValidPool
      */
     public function combine(ValidPool $validPool): self
     {
-        foreach ($validPool->pool as $valid_rule) {
-            $this->pool[] = $valid_rule;
-        }
+        $this->pool = array_merge($this->pool, $validPool->pool);
 
         return $this;
     }
@@ -88,7 +81,7 @@ final class ValidPool
      */
     public function rule(string ...$field): Valid
     {
-        return $this->set_field_rule(new Valid(), $field);
+        return $this->setFieldRule(new Valid(), $field);
     }
 
     /**
@@ -136,14 +129,20 @@ final class ValidPool
      *
      * @return Valid Rule Validation base from param
      */
-    private function set_field_rule(Valid $valid, array $fields): Valid
+    private function setFieldRule(Valid $valid, array $fields): Valid
     {
-        foreach ($fields as $field) {
-            $this->pool[] = [
-                'field' => $field,
-                'rule'  => $valid,
-            ];
-        }
+        $this->pool = array_merge(
+            $this->pool,
+            array_values(
+                array_map(
+                    static fn (string $field): array => [
+                        'field' => $field,
+                        'rule'  => $valid,
+                    ],
+                    $fields,
+                ),
+            ),
+        );
 
         return $valid;
     }

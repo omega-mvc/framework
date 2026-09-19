@@ -92,11 +92,35 @@ it('can execute method using if-contiune (false, true)', function () {
     expect($val->isValid())->toBeTrue();
 });
 
+it('can throw exception using if (no return)', function () {
+    $val = new Validator(['test' => 'test']);
+
+    $val->field('test')->if(function () {
+        // no return
+    });
+})->throws('Condition closure not return boolean');
+
+it('can throw exception using if (no boolean)', function () {
+    $val = new Validator(['test' => 'test']);
+
+    $val->field('test')->if(fn () => 'test');
+})->throws('Condition closure not return boolean');
+
 it('can validate combine with submitted method', function () {
-    $val = new Validator();
+    $previous            = $_SERVER['REQUEST_METHOD'] ?? null;
+    $_SERVER['REQUEST_METHOD'] = 'POST';
+    $val                 = new Validator();
 
-    // output: required
-    $val->field('test')->if(fn () => $val->submitted())->required();
+    try {
+        // output: required
+        $val->field('test')->if(fn () => $val->submitted())->required();
 
-    expect($val->isValid())->toBeFalse();
+        expect($val->isValid())->toBeFalse();
+    } finally {
+        if ($previous === null) {
+            unset($_SERVER['REQUEST_METHOD']);
+        } else {
+            $_SERVER['REQUEST_METHOD'] = $previous;
+        }
+    }
 });

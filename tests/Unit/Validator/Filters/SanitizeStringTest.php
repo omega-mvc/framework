@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander sanitize_string', function () {
     expect(fr()->sanitize_string())
         ->toEqual('sanitize_string')
@@ -11,7 +13,7 @@ it('can filter sanitize_string', function () {
 
     $fr->filter('field')->sanitize_string();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'Hello World!'])
     ;
 });

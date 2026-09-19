@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander rmpunctuation', function () {
     expect(fr()->rmpunctuation())
         ->toEqual('rmpunctuation')
@@ -11,7 +13,7 @@ it('can filter rmpunctuation', function () {
 
     $fr->filter('field')->rmpunctuation();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'is true'])
     ;
 });

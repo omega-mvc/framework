@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render required validation', function () {
     expect(vr()->required())
         ->toEqual('required')

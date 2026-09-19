@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render alpha_numeric_space validation')
     ->expect(vr()->alpha_numeric_space())
     ->toEqual('alpha_numeric_space')

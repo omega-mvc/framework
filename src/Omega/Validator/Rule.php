@@ -40,13 +40,11 @@ final class Rule extends \GUMP
         $messages = parent::get_messages();
 
         // add inveret custom validate message
-        foreach ($messages as $rule => $message) {
-            $rule_key = 'invert_' . $rule;
-            if (!isset($messages[$rule_key])) {
-                $messages[$rule_key] = $message;
-            }
-        }
+        $invert_messages = array_combine(
+            array_map(static fn (string $rule): string => 'invert_' . $rule, array_keys($messages)),
+            array_values($messages),
+        );
 
-        return $messages;
+        return $messages + $invert_messages;
     }
 }

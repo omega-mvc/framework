@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render valid_name validation')
     ->expect(vr()->valid_name())
     ->toEqual('valid_name')

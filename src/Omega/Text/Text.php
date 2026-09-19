@@ -192,8 +192,10 @@ final class Text
     {
         $text = Str::slice($this->current, $start, $length);
 
-        if ($this->throwOnFailure && '' === $text) {
-            throw new NoReturnException(__FUNCTION__, $this->current);
+        if ($this->throwOnFailure) {
+            if ('' === $text) {
+                throw new NoReturnException(__FUNCTION__, $this->current);
+            }
         }
 
         $this->execute($text, __FUNCTION__);

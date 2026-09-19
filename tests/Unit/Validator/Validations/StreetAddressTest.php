@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render street_address validation')
     ->expect(vr()->street_address())
     ->toEqual('street_address')

@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander boolean', function () {
     expect(fr()->boolean())
         ->toEqual('boolean')
@@ -23,7 +25,7 @@ it('can filter boolean', function () {
     $fr->filter('field_4')->boolean();
     $fr->filter('field_5')->boolean();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(
             [
                 'field_1' => true,

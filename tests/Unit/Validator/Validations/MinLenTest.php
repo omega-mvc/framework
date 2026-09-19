@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render min_len validation')
     ->expect(vr()->min_len(240))
     ->toEqual('min_len,240')

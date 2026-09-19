@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander upper_case', function () {
     expect(fr()->upper_case())
         ->toEqual('upper_case')
@@ -11,7 +13,7 @@ it('can filter upper_case', function () {
 
     $fr->filter('field')->upper_case();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'TEST'])
     ;
 });

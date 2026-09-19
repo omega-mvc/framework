@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 use Omega\Validator\Validator;
 
 it('can render filer rule using method where (true)', function () {
@@ -15,7 +17,7 @@ it('can reset filter rule using method where (true)', function () {
 
     $val->filter('test')->trim()->where(fn () => true);
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => 'trim',
     ]);
 });
@@ -25,7 +27,7 @@ it('can reset filter rule using method where (false)', function () {
 
     $val->filter('test')->trim()->where(fn () => false);
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });
@@ -49,7 +51,7 @@ it('can execute rule combine with submitted method', function () {
 
     $val->filter('test')->trim()->where(fn () => $val->submitted());
 
-    expect($val->filter_out())->toMatchArray([
+    expect($val->filterOut())->toMatchArray([
         'test' => ' trim ',
     ]);
 });

@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render extension validation')
     ->expect(vr()->extension('png', 'jpg', 'gif'))
     ->toEqual('extension,png;jpg;gif')

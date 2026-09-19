@@ -1,5 +1,6 @@
 <?php
 
+use Omega\Validator\Rule;
 use Omega\Validator\Validator;
 
 // get error message
@@ -11,12 +12,12 @@ it('can get error message when valadation is fallen using method get_error', fun
     expect($valid->getError())->toHaveCount(1);
 });
 
-it('can get error message when valadation is fallen using method if_valid', function () {
+it('can get error message when valadation is fallen using method ifValid', function () {
     $valid = new Validator(['test' => 'test']);
 
     $valid->field('test')->min_len(5);
 
-    $valid->if_valid(function () {
+    $valid->ifValid(function () {
     })->else(function ($err) {
         expect($err)->toHaveCount(1);
     });
@@ -31,6 +32,8 @@ it('can get error message when valadation is fallen using method validOrError', 
 });
 
 it('can get error from method errors', function () {
+    Rule::set_error_message('required', '{field} can\'t be null');
+
     $v = new Validator(['test' => null, 'test2' => 'abc']);
 
     $v('test')->required();
@@ -43,6 +46,8 @@ it('can get error from method errors', function () {
 });
 
 it('can get error from property errors', function () {
+    Rule::set_error_message('required', '{field} can\'t be null');
+
     $v = new Validator(['test' => null, 'test2' => 'abc']);
 
     $v('test')->required();

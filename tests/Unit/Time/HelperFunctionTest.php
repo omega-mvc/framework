@@ -14,14 +14,48 @@ declare(strict_types=1);
 
 namespace Tests\Time;
 
+use DateInvalidTimeZoneException;
+use DateMalformedStringException;
 use Omega\Time\Now;
 
 use function Omega\Time\now;
+use function date_default_timezone_get;
+use function strtotime;
 
-covers(Now::class, 'Omega\Time\now');
+covers('Omega\Time\now');
 
-it('can use the global now helper function', function (): void {
-    $instance = now('2020-01-01', 'UTC');
+it('returns a Now instance with current time by default', function (): void {
+    $instance = now();
 
-    expect($instance->getYear())->toBe(2020);
+    expect($instance::class)->toBe(Now::class);
 });
+
+it('uses current date and default timezone', function (): void {
+    $instance = now('now');
+
+    expect($instance->getTimeZone())->toEqual(date_default_timezone_get());
+    expect($instance->getTimestamp())->toBeBetween((int) strtotime('-1 minute'), (int) strtotime('+1 minute'));
+});
+
+it('accepts a custom date', function (): void {
+    $instance = now('2023-01-29');
+
+    expect($instance->getYear())->toBe(2023);
+    expect($instance->getMonth())->toBe(1);
+    expect($instance->getDay())->toBe(29);
+});
+
+it('accepts a custom date and timezone', function (): void {
+    $instance = now('2023-01-29', 'Europe/Rome');
+
+    expect($instance->getYear())->toBe(2023);
+    expect($instance->getTimeZone())->toBe('Europe/Rome');
+});
+
+it('throws DateMalformedStringException with an invalid date', function (): void {
+    now('not-a-date');
+})->throws(DateMalformedStringException::class);
+
+it('throws DateInvalidTimeZoneException with an invalid timezone', function (): void {
+    now('2023-01-29', 'Not/AZone');
+})->throws(DateInvalidTimeZoneException::class);

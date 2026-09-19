@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render date validation')
     ->expect(vr()->date('d/m/Y'))
     ->toEqual('date,d/m/Y')

@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render max_numeric validation')
     ->expect(vr()->max_numeric(50))
     ->toEqual('max_numeric,50')

@@ -43,9 +43,7 @@ final class Message implements ArrayAccess, ValidationPropertyInterface
      */
     public function add(array $errorMessages): self
     {
-        foreach ($errorMessages as $rule => $message) {
-            $this->set($rule, $message);
-        }
+        $this->messages = array_merge($this->messages, $errorMessages);
 
         return $this;
     }

@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander slug', function () {
     expect(fr()->slug())
         ->toEqual('slug')
@@ -11,7 +13,7 @@ it('can filter slug', function () {
 
     $fr->filter('field')->slug();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'long-title-tobe-url'])
     ;
 });

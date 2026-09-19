@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render url_exists validation', function () {
     expect(vr()->url_exists())
         ->toEqual('url_exists')

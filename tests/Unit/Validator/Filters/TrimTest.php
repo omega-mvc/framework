@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander trim', function () {
     expect(fr()->trim())
         ->toEqual('trim')
@@ -11,7 +13,7 @@ it('can filter trim', function () {
 
     $fr->filter('field')->trim();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'nomore space'])
     ;
 });

@@ -20,3 +20,12 @@ it('can add message using method field', function () {
     $m->required    = 'test';
     expect($v->Messages()['test'])->toEqual($m);
 });
+
+it('can add message using method __set with a Message instance', function () {
+    $v                  = new MessagePool();
+    $m                  = new Message();
+    $m->required        = 'test';
+    $v->test            = $m;
+
+    expect($v->Messages()['test'])->toEqual($m);
+});

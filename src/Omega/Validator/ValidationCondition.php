@@ -12,7 +12,7 @@ final class ValidationCondition
     private array $error = [];
 
     /**
-     * Helper for catch error validation from if_valid condition.
+     * Helper for catch error validation from ifValid condition.
      *
      * @param false|array<int, string> $error Set error for else condition
      */

@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render max_len validation')
     ->expect(vr()->max_len(240))
     ->toEqual('max_len,240')

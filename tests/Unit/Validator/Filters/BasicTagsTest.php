@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander basic_tags', function () {
     expect(fr()->basic_tags())
         ->toEqual('basic_tags')
@@ -11,7 +13,7 @@ it('can filter basic_tags', function () {
 
     $fr->filter('field')->basic_tags();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => 'link'])
     ;
 });

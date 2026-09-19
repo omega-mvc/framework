@@ -32,7 +32,7 @@ it('run validation condtion with valid condition', function () {
     $val->field('user')->required()->min_len(5);
     $val('name')->required()->valid_name();
 
-    $val->if_valid(function () use ($val) {
+    $val->ifValid(function () use ($val) {
         expect($val->isValid())->toBeTrue();
     })->else(function ($err) {
         // its mean have no error
@@ -53,7 +53,7 @@ it('run validation condtion with valid failed condition', function () {
     $val->field('user')->required()->min_len(5);
     $val('name')->required()->valid_name();
 
-    $val->if_valid(function () {
+    $val->ifValid(function () {
         // skip, invalid validation
         throw new \LogicException('This branch should never run for invalid input.');
     })->else(function ($err) use ($val) {

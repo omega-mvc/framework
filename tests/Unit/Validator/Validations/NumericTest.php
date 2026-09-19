@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render numeric validation')
     ->expect(vr()->numeric())
     ->toEqual('numeric')

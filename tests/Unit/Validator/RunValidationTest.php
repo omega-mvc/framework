@@ -85,12 +85,20 @@ it('can run validation using method is_valid with closure (return)', function ()
     }))->toBeTrue();
 });
 
-it('can run validation using method if_valid', function () {
+it('can run validation using method is_valid with closure (param) but not valid', function () {
+    $valid = new Validator(['test' => '']);
+
+    expect($valid->isValid(fn (ValidPool $pool) => [
+        $pool('test')->required(),
+    ]))->toBeFalse();
+});
+
+it('can run validation using method ifValid', function () {
     $valid = new Validator(['test' => 'test']);
 
     $valid->test->required();
 
-    $valid->if_valid(function () use ($valid) {
+    $valid->ifValid(function () use ($valid) {
         expect($valid->getError())->toBe([]);
     })->else(function ($err) {
         expect($err)->toBe([]);
@@ -128,13 +136,13 @@ it('can run validation using method validOrError but not valid', function () {
     expect($valid->validOrError())->toBeArray();
 });
 
-test('method is_error() is invert as method isValid()', function () {
+test('method isError() is invert as method isValid()', function () {
     $valid = new Validator(['test' => 'test']);
 
     $valid->test->required();
 
-    expect($valid->is_error())->toBeFalse();
-    expect($valid->is_error())->not->toEqual($valid->isValid());
+    expect($valid->isError())->toBeFalse();
+    expect($valid->isError())->not->toEqual($valid->isValid());
 });
 
 test('method fails() is invert as method passed()', function () {

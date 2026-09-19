@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render alpha_dash validation')
     ->expect(vr()->alpha_dash())
     ->toEqual('alpha_dash')

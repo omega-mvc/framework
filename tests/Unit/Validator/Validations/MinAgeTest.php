@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render min_age validation')
     ->expect(vr()->min_age(18))
     ->toEqual('min_age,18')

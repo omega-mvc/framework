@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render boolean validation')
     ->expect(vr()->boolean(false))
     ->toEqual('boolean')

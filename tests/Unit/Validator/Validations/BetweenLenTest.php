@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render between_len validation')
     ->expect(vr()->between_len(3, 11))
     ->toEqual('between_len,3;11')

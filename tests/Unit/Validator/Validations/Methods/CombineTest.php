@@ -10,5 +10,5 @@ it('can combine valid class with other valid class', function () {
     $valid2->alpha();
     $valid2->combine($valid);
 
-    expect($valid2->get_validation())->toEqual('alpha|required');
+    expect($valid2->getValidation())->toEqual('alpha|required');
 });

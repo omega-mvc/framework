@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render guidv4 validation')
     ->expect(vr()->guidv4())
     ->toEqual('guidv4')

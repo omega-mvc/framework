@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render contains validation')
     ->expect(vr()->contains('one', 'two'))
     ->toEqual('contains,one;two')

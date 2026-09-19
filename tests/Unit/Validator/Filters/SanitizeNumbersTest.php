@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\fr;
+
 it('can rander sanitize_numbers', function () {
     expect(fr()->sanitize_numbers())
         ->toEqual('sanitize_numbers')
@@ -11,7 +13,7 @@ it('can filter sanitize_numbers', function () {
 
     $fr->filter('field')->sanitize_numbers();
 
-    expect($fr->filter_out())
+    expect($fr->filterOut())
         ->toEqual(['field' => '5-2+3'])
     ;
 });

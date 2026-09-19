@@ -1,5 +1,7 @@
 <?php
 
+use function Omega\Validator\vr;
+
 it('can render valid_array_size_equal validation')
     ->expect(vr()->valid_array_size_equal(1))
     ->toEqual('valid_array_size_equal,1')

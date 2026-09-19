@@ -47,6 +47,12 @@ it('can search text', function (): void {
     expect(Str::indexOf($text, 'rust'))->toBeFalse();
 });
 
+it('can search text with search method', function (): void {
+    $text = 'i love laravel';
+    expect(Str::search($text, 'laravel'))->toBe(7);
+    expect(Str::search($text, 'rust'))->toBeFalse();
+});
+
 it('can slice string', function (): void {
     $text = 'i love laravel';
     expect(Str::slice($text, 7))->toBe('laravel');
@@ -59,6 +65,10 @@ it('can split string', function (): void {
     $text = 'i love laravel';
     expect(Str::split($text, ' '))->toBe(['i', 'love', 'laravel']);
     expect(Str::split($text, ' ', 2))->toBe(['i', 'love laravel']);
+});
+
+it('can split string into characters with empty separator', function (): void {
+    expect(Str::split('abc'))->toBe(['a', 'b', 'c']);
 });
 
 it('can find and replace text', function (): void {
@@ -102,6 +112,14 @@ it('can kebab case', function (): void {
     expect(Str::toKebabCase('i+love_laravel'))->toBe('i-love-laravel');
 });
 
+it('can kebab case from all uppercase string', function (): void {
+    expect(Str::toKebabCase('I LOVE LARAVEL'))->toBe('i love laravel');
+});
+
+it('can kebab case from camelCase string', function (): void {
+    expect(Str::toKebabCase('iLoveLaravel'))->toBe('i-love-laravel');
+});
+
 it('can pascal case', function (): void {
     expect(Str::toPascalCase('i love laravel'))->toBe('ILoveLaravel');
     expect(Str::toPascalCase('i-love-laravel'))->toBe('ILoveLaravel');
@@ -118,10 +136,15 @@ it('can camel case', function (): void {
     expect(Str::toCamelCase('i+love_laravel'))->toBe('iLoveLaravel');
 });
 
+it('can camel case from single word', function (): void {
+    expect(Str::toCamelCase('laravel'))->toBe('laravel');
+});
+
 it('can detect text contain with', function (): void {
     $text = 'i love laravel';
     expect(Str::contains($text, 'laravel'))->toBeTrue();
     expect(Str::contains($text, 'symfony'))->toBeFalse();
+    expect(Str::contains($text, ''))->toBeTrue();
 });
 
 it('can detect text starts with', function (): void {
@@ -134,6 +157,30 @@ it('can detect text ends with', function (): void {
     $text = 'i love laravel';
     expect(Str::endsWith($text, 'laravel'))->toBeTrue();
     expect(Str::endsWith($text, 'love'))->toBeFalse();
+});
+
+it('can detect text ends with empty string', function (): void {
+    expect(Str::endsWith('i love laravel', ''))->toBeTrue();
+    expect(Str::endsWith('i love laravel', 'i love laravel'))->toBeTrue();
+    expect(Str::endsWith('i love laravel', 'laravel'))->toBeTrue();
+});
+
+it('can detect empty text ends with', function (): void {
+    expect(Str::endsWith('', 'laravel'))->toBeFalse();
+});
+
+it('can detect text ends with when needle is longer than text', function (): void {
+    expect(Str::endsWith('love', 'laravel'))->toBeFalse();
+});
+
+it('can detect text is match', function (): void {
+    expect(Str::isMatch('i love laravel', '/love/'))->toBeTrue();
+    expect(Str::isMatch('i love laravel', '/rust/'))->toBeFalse();
+});
+
+it('can detect text is equal to pattern', function (): void {
+    expect(Str::is('i love laravel', '/love/'))->toBeTrue();
+    expect(Str::is('i love laravel', '/rust/'))->toBeFalse();
 });
 
 it('can make slugify from text', function (): void {
@@ -149,6 +196,35 @@ it('can render template string', function (): void {
     $template = 'i love {lang}';
     $data     = ['lang' => 'laravel'];
     expect(Str::template($template, $data))->toBe('i love laravel');
+});
+
+it('can render template string with custom delimiters', function (): void {
+    $template = 'i love [[lang]]';
+    $data     = ['lang' => 'laravel'];
+    expect(Str::template($template, $data, '[[', ']]'))->toBe('i love laravel');
+});
+
+it('can render template string with multiple keys', function (): void {
+    $template = '{lang} is the best {framework}';
+    $data     = ['lang' => 'php', 'framework' => 'laravel'];
+    expect(Str::template($template, $data))->toBe('php is the best laravel');
+});
+
+it('can render template string with empty data', function (): void {
+    $template = 'i love laravel';
+    expect(Str::template($template, []))->toBe('i love laravel');
+});
+
+it('can render template string with custom open delimiter and default close', function (): void {
+    $template = 'i love [lang}';
+    $data     = ['lang' => 'laravel'];
+    expect(Str::template($template, $data, '[', '}'))->toBe('i love laravel');
+});
+
+it('can render template string with default open delimiter and custom close', function (): void {
+    $template = 'i love {lang]';
+    $data     = ['lang' => 'laravel'];
+    expect(Str::template($template, $data, '{', ']'))->toBe('i love laravel');
 });
 
 it('can count text', function (): void {
@@ -184,6 +260,39 @@ it('can make mask', function (): void {
     expect(Str::mask('laravel', '*', -3, 1))->toBe('lara*el');
     expect(Str::mask('laravel', '*', -3))->toBe('lara***');
 });
+
+it('can make mask from empty text with negative start', function (): void {
+    expect(Str::mask('', '*', -1))->toBe('');
+});
+
+it('can make mask from empty text with positive start', function (): void {
+    expect(Str::mask('', '*', 0))->toBe('');
+});
+
+it('can make mask from single char when index is masked', function (): void {
+    expect(Str::mask('a', '*', 0, 2))->toBe('*');
+});
+
+it('can make mask from single char when index is below start', function (): void {
+    expect(Str::mask('a', '*', -2, 2))->toBe('*');
+});
+
+it('can make mask from single char when index is beyond mask length', function (): void {
+    expect(Str::mask('a', '*', 0, 0))->toBe('a');
+});
+
+it('can make mask from single char when mask is below negative start', function (): void {
+    expect(Str::mask('a', '*', -2, 0))->toBe('a');
+});
+it('can make mask from single char when start covers the index', function (): void {
+
+        expect(Str::mask('a', '*', 1))->toBe('a');
+    });
+
+    it('can make mask and continue through multiple chars', function (): void {
+
+        expect(Str::mask('ab', '*', 0, 1))->toBe('*b');
+    });
 
 it('can make limit', function (): void {
     expect(Str::limit('laravel best framework', 12))->toBe('laravel best...');
