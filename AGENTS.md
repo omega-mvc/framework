@@ -8,6 +8,7 @@ PHP 8.4+ MVC framework library (`Omega\` namespace). Not an application — this
 composer run lint          # phpcs (PSR-12 + 120-col limit, src/ + tests/)
 composer run fix           # phpcbf auto-fix
 composer run test          # pest (PHPUnit-style Pest classes)
+vendor/bin/pest tests/Unit/Macroable   # run a single test file/dir
 composer run check         # lint + test
 composer run ci            # fix + check (what CI runs)
 
@@ -35,7 +36,7 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first.
 
 ## Testing
 
-- **Pest 5** on top of PHPUnit. Tests are PHPUnit-style classes with `#[CoversClass]` attributes
+- **Pest 5** on top of PHPUnit. Tests are PHPUnit-style classes that declare coverage via Pest's `covers()` calls (not `#[CoversClass]` attributes); `pest.php` appends `uses()->in('Tests')->group('unit')`
 - `composer run test` — no coverage by default (80% minimum via `pest.php` `coverage()->minimum(80)` only when `--coverage` is passed)
 - Test env: `APP_ENV=testing`, `OMEGA_TEST_MODE=light` (phpunit.xml.dist)
 - phpunit.xml.dist sets `failOnWarning=true`, `failOnRisky=true`, `beStrictAboutOutputDuringTests=true`, `executionOrder="depends,defects"` — stray warnings, risky tests, or echoed output fail the suite. `Filesystem/Util/SizeTest` and `ChecksumTest` deliberately install a temporary error handler so an expected `E_WARNING` doesn't surface (don't remove it)
@@ -48,7 +49,7 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first.
 
 - Facades use `AbstractFacade::flushInstance()` at request boundaries
 - Container has `setRequestScoped()` / `resetRequestScope()` for persistent-worker support
-- Database uses persistent PDO with automatic reconnect-on-lost-connection (`Database/AbstractConnection.php`)
+- Database connections are single long-lived PDO handles (`PDO::ATTR_PERSISTENT => false`); auto-reconnect on lost connection runs only at the `beginTransaction()` boundary (`reconnectIfLost()` in `Database/AbstractConnection.php`, built for RoadRunner-style workers). Don't add a `SELECT 1` ping inside `query()`/`execute()` — it collides with open subquery result sets (SQLSTATE[HY000] 2014)
 
 ## Notes
 

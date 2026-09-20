@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Security\Hashing;
 
 use Omega\Security\Hashing\BcryptHasher;
+use Omega\Security\Hashing\DefaultHasher;
 use Omega\Security\Hashing\HashManager;
 
 covers(BcryptHasher::class);
@@ -28,4 +29,30 @@ it('can use driver', function (): void {
     expect($hash)->not->toBe('password');
     expect($hasher->driver('bcrypt')->verify('password', $hash))->toBeTrue();
     expect($hasher->driver('bcrypt')->isValidAlgorithm($hash))->toBeTrue();
+});
+
+it('can delegate info to the default driver', function (): void {
+    $hasher = new HashManager();
+    $hash   = $hasher->make('password');
+
+    expect($hasher->info($hash)['algoName'])->toBe('bcrypt');
+});
+
+it('returns the default driver for an unknown driver name', function (): void {
+    $hasher = new HashManager();
+    $hasher->setDriver('bcrypt', new BcryptHasher());
+
+    expect($hasher->driver('unknown'))->toBeInstanceOf(DefaultHasher::class);
+});
+
+it('can set the default driver', function (): void {
+    $hasher = new HashManager();
+    $bcrypt = new BcryptHasher();
+
+    expect($hasher->setDefaultDriver($bcrypt))->toBe($hasher);
+
+    $hash = $hasher->make('password');
+
+    expect($hasher->driver())->toBe($bcrypt);
+    expect($hasher->info($hash)['algoName'])->toBe('bcrypt');
 });

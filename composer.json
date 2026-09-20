@@ -64,6 +64,7 @@
             "src/Omega/Collection/helper.php",
 	    "src/Omega/Environment/helper.php",
             "src/Omega/Http/helper.php",
+            "src/Omega/Security/helper.php",
             "src/Omega/Text/helper.php",
             "src/Omega/Time/helper.php",
             "src/Omega/Validator/helper.php",

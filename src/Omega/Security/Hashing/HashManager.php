@@ -81,7 +81,11 @@ class HashManager implements HashInterface
      */
     public function driver(?string $driver = null): HashInterface
     {
-        if ($driver !== null && array_key_exists($driver, $this->driver)) {
+        if (null === $driver) {
+            return $this->defaultDriver;
+        }
+
+        if (array_key_exists($driver, $this->driver)) {
             return $this->driver[$driver];
         }
 
