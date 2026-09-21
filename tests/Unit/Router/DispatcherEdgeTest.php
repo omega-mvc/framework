@@ -152,7 +152,7 @@ it('resolves named parameters during dispatch', function (): void {
     ]);
 
     $dispatch = $dispatcher->run(
-        function (callable $callable, array $params) use (&$captured): string {
+        function (callable $callable, array $params) use (&$captured) {
             $captured = $params;
 
             return call_user_func_array($callable, $params);
@@ -228,5 +228,5 @@ it('sets the current route expression from the original expression', function ()
     );
 
     expect($dispatcher->current())->toBeInstanceOf(Route::class);
-    expect($dispatcher->current()['expression'])->toBe('^/about$');
+    expect($dispatcher->current()['expression'] ?? null)->toBe('^/about$');
 });

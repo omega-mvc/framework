@@ -43,9 +43,9 @@ it('skips pattern map entries whose key or value is not a string', function (): 
     $builder = new RouteUrlBuilder(Router::$patterns);
 
     $route = new Route([
-        'uri'      => '/x',
-        'patterns' => [0 => 1],
+        'uri' => '/x',
     ]);
+    $route['patterns'] = [0 => 1];
 
     expect($builder->buildUrl($route, []))->toBe('/x');
 });

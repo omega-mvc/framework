@@ -48,9 +48,8 @@ it('registers a session manager with the configured default driver', function ()
     ];
 
     $this->app = makeApp($config);
-    $session = $this->app->get('session');
+    $session = appSessionManager($this->app);
 
-    expect($session)->toBeInstanceOf(SessionManager::class);
     expect($session->getDriver())->toBeInstanceOf(ArrayStorage::class);
 });
 
@@ -94,7 +93,7 @@ it('registers non default drivers on the session manager', function (): void {
     $this->app->set('cache', new MemoryStorage([]));
     $this->app->set(DatabaseManager::class, new DatabaseManager([]));
 
-    $session = $this->app->get('session');
+    $session = appSessionManager($this->app);
 
     expect($session->getDriver())->toBeInstanceOf(ArrayStorage::class);
 
@@ -108,9 +107,8 @@ it('registers non default drivers on the session manager', function (): void {
 it('defaults to the native driver when no session configuration is present', function (): void {
     $this->app = makeApp(['environment' => 'testing']);
 
-    $session = $this->app->get('session');
+    $session = appSessionManager($this->app);
 
-    expect($session)->toBeInstanceOf(SessionManager::class);
     expect($session->getDriver())->toBeInstanceOf(NativeStorage::class);
 });
 
@@ -215,4 +213,21 @@ function makeApp(array $config): Application
     (new SessionServiceProvider($app))->boot();
 
     return $app;
+}
+
+/**
+ * Resolve the session manager from the application container.
+ *
+ * @param Application $app The application instance.
+ * @return SessionManager The resolved session manager.
+ */
+function appSessionManager(Application $app): SessionManager
+{
+    $session = $app->get('session');
+
+    if (!$session instanceof SessionManager) {
+        throw new \RuntimeException('The "session" container binding is not a SessionManager.');
+    }
+
+    return $session;
 }

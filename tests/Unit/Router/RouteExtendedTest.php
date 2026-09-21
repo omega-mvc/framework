@@ -17,6 +17,7 @@ namespace Tests\Router;
 use Omega\Router\Exceptions\RouteNotRegisteredException;
 use Omega\Router\Route;
 use Omega\Router\Router;
+use Tests\Router\Support\TestMiddleware;
 
 covers(Route::class);
 
@@ -33,7 +34,7 @@ it('returns the whole definition through the route() magic method', function ():
 it('throws RouteNotRegisteredException for unknown dynamic methods', function (): void {
     $route = new Route(['uri' => '/x']);
 
-    expect(fn () => $route->unknownMagic())
+    expect(fn () => $route->__call('unknownMagic', []))
         ->toThrow(RouteNotRegisteredException::class, 'Route property or method [unknownMagic] is not registered.');
 });
 
@@ -59,24 +60,24 @@ it('prepends the router group as prefix to the route name', function (): void {
 });
 
 it('appends middleware to the existing middleware list', function (): void {
-    $route = new Route(['uri' => '/x', 'middleware' => ['Existing\\Middleware']]);
+    $route = new Route(['uri' => '/x', 'middleware' => [TestMiddleware::class]]);
 
-    $result = $route->middleware(['Added\\Middleware', 'Second\\Middleware']);
+    $result = $route->middleware([Route::class, TestMiddleware::class]);
 
     expect($result)->toBe($route);
     expect($route['middleware'])->toBe([
-        'Existing\\Middleware',
-        'Added\\Middleware',
-        'Second\\Middleware',
+        TestMiddleware::class,
+        Route::class,
+        TestMiddleware::class,
     ]);
 });
 
 it('creates the middleware list from scratch when no middleware is present', function (): void {
     $route = new Route(['uri' => '/x']);
 
-    $route->middleware(['Only\\Middleware']);
+    $route->middleware([TestMiddleware::class]);
 
-    expect($route['middleware'])->toBe(['Only\\Middleware']);
+    expect($route['middleware'])->toBe([TestMiddleware::class]);
 });
 
 it('stores custom patterns through where()', function (): void {

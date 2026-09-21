@@ -118,7 +118,7 @@ class Router extends AbstractRouter
     /**
      * Registers routes defined using PHP 8 attributes in a class or a set of classes.
      *
-     * @param class-string|class-string[] $className A class name or an array of class names to scan.
+     * @param string|array<int, string> $className A class name or an array of class names to scan.
      * @return void
      * @throws ReflectionException Thrown when the requested class or interface cannot be reflected.
      */
@@ -127,6 +127,10 @@ class Router extends AbstractRouter
         $classNames = is_string($className) ? [$className] : $className;
 
         array_walk($classNames, static function (string $class): void {
+            if (!class_exists($class) && !interface_exists($class)) {
+                throw new ReflectionException(sprintf('Class or interface "%s" does not exist.', $class));
+            }
+
             $reflection = new ReflectionClass($class);
 
             $routes = self::resolveRouteAttribute(

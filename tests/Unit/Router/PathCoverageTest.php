@@ -60,7 +60,7 @@ it('groups routes with an empty middleware list and no name key', function (): v
         Router::get('/empty-mw', fn () => 'e');
     });
 
-    expect(Router::getRoutes()[0]['middleware'])->toBe([]);
+    expect(Router::getRoutes()[0]['middleware'] ?? [])->toBe([]);
 });
 
 it('groups routes with several middleware entries and no setup keys', function (): void {
@@ -76,8 +76,8 @@ it('groups routes with several middleware entries and no setup keys', function (
 
     $routes = Router::getRoutes();
 
-    expect($routes[0]['uri'])->toBe('/plain-group');
-    expect($routes[1]['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class]);
+    expect($routes[0]['uri'] ?? null)->toBe('/plain-group');
+    expect($routes[1]['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
 });
 
 it('redirect scans an empty route table, a middle route and a last route', function (): void {
@@ -97,22 +97,23 @@ it('merges middleware into an existing list and accepts empty additions', functi
     $route->middleware([]);
     expect($route['middleware'])->toBe([TestMiddleware::class]);
 
-    $route->middleware([TestMiddleware::class, 'OtherMiddleware']);
-    expect($route['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class, 'OtherMiddleware']);
+    $route->middleware([TestMiddleware::class, Route::class]);
+    expect($route['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class, Route::class]);
 });
 
 it('builds urls with non array, mixed and multi pattern maps', function (): void {
     $builder = new RouteUrlBuilder(['(:id)' => '(\d+)']);
 
-    expect($builder->buildUrl(new Route(['uri' => '/u/(:id)', 'patterns' => 'nope']), [1]))->toBe('/u/1');
+    $nonArrayRoute = new Route(['uri' => '/u/(:id)']);
+    $nonArrayRoute['patterns'] = 'nope';
+
+    expect($builder->buildUrl($nonArrayRoute, [1]))->toBe('/u/1');
     expect($builder->buildUrl(new Route(['uri' => '/u/x']), []))->toBe('/u/x');
-    expect($builder->buildUrl(
-        new Route([
-            'uri'      => '/u/(:id)/(:id)',
-            'patterns' => [0 => 1, '(:id)' => '(\d+)'],
-        ]),
-        [1, 2]
-    ))->toBe('/u/1/2');
+
+    $mixedRoute = new Route(['uri' => '/u/(:id)/(:id)']);
+    $mixedRoute['patterns'] = [0 => 1, '(:id)' => '(\d+)'];
+
+    expect($builder->buildUrl($mixedRoute, [1, 2]))->toBe('/u/1/2');
     expect($builder->buildUrl(
         new Route(['uri' => '/u/(:id)']),
         ['other' => 'zz', 0 => 5]

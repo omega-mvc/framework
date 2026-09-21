@@ -44,13 +44,13 @@ it('registers a single class using attributes at class and method level', functi
 
     $route = $routes[0];
 
-    expect($route['uri'])->toBe('/test/{id}/test');
+    expect($route['uri'] ?? null)->toBe('/test/{id}/test');
     expect($route['name'])->toBe('test.test');
     expect($route['method'])->toBe(['GET']);
-    expect($route['patterns'])->toBe(['{id}' => '(\d+)']);
-    expect($route['expression'])->toBe('/test/{id}/test');
+    expect($route['patterns'] ?? [])->toBe(['{id}' => '(\d+)']);
+    expect($route['expression'] ?? null)->toBe('/test/{id}/test');
     expect($route['function'])->toBe([TestRouteAttribute::class, 'index']);
-    expect($route['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class]);
+    expect($route['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
 });
 
 it('registers a class whose methods carry plain http route attributes', function (): void {
@@ -110,35 +110,35 @@ it('registers classes whose class attributes combine in different orders', funct
     expect($routes[1]['method'])->toBe(['GET']);
     expect($routes[2]['method'])->toBe(['get']);
 
-    expect($routes[0]['uri'])->toBe('/combo/all');
+    expect($routes[0]['uri'] ?? null)->toBe('/combo/all');
     expect($routes[0]['name'])->toBe('combo.all');
-    expect($routes[0]['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class]);
-    expect($routes[0]['patterns'])->toBe(['{id}' => '(\d+)']);
+    expect($routes[0]['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
+    expect($routes[0]['patterns'] ?? [])->toBe(['{id}' => '(\d+)']);
 
-    expect($routes[1]['uri'])->toBe('/mp/ping');
+    expect($routes[1]['uri'] ?? null)->toBe('/mp/ping');
     expect($routes[1]['name'])->toBe('');
 
-    expect($routes[2]['uri'])->toBe('/np/item');
+    expect($routes[2]['uri'] ?? null)->toBe('/np/item');
     expect($routes[2]['name'])->toBe('np.');
 
-    expect($routes[3]['uri'])->toBe('/mw');
-    expect($routes[3]['middleware'])->toBe([TestMiddleware::class]);
+    expect($routes[3]['uri'] ?? null)->toBe('/mw');
+    expect($routes[3]['middleware'] ?? [])->toBe([TestMiddleware::class]);
     expect($routes[3]['name'])->toBe('');
 
-    expect($routes[4]['uri'])->toBe('/named');
-    expect($routes[4]['middleware'])->toBe([]);
+    expect($routes[4]['uri'] ?? null)->toBe('/named');
+    expect($routes[4]['middleware'] ?? [])->toBe([]);
     expect($routes[4]['name'])->toBe('n.');
 
-    expect($routes[5]['uri'])->toBe('/single/prefixed');
-    expect($routes[5]['middleware'])->toBe([]);
+    expect($routes[5]['uri'] ?? null)->toBe('/single/prefixed');
+    expect($routes[5]['middleware'] ?? [])->toBe([]);
     expect($routes[5]['name'])->toBe('');
 
-    expect($routes[6]['uri'])->toBe('/pair');
-    expect($routes[6]['middleware'])->toBe([TestMiddleware::class]);
+    expect($routes[6]['uri'] ?? null)->toBe('/pair');
+    expect($routes[6]['middleware'] ?? [])->toBe([TestMiddleware::class]);
     expect($routes[6]['name'])->toBe('mn.');
 
-    expect($routes[7]['uri'])->toBe('/full/index');
-    expect($routes[7]['middleware'])->toBe([TestMiddleware::class]);
+    expect($routes[7]['uri'] ?? null)->toBe('/full/index');
+    expect($routes[7]['middleware'] ?? [])->toBe([TestMiddleware::class]);
     expect($routes[7]['name'])->toBe('full.');
 
     Router::reset();

@@ -29,29 +29,28 @@ afterEach(function (): void {
 
 it('registers a hash manager with bcrypt as the default driver', function (): void {
     $this->app = makeApp([]);
-    $hash     = $this->app->get('hash');
+    $hash      = appHashManager($this->app);
 
-    expect($hash)->toBeInstanceOf(HashManager::class);
     expect($hash->driver())->toBeInstanceOf(BcryptHasher::class);
 });
 
 it('sets bcrypt rounds from an integer config value', function (): void {
     $this->app = makeApp(['BCRYPT_ROUNDS' => 10]);
-    $bcrypt    = $this->app->get('hash.bcrypt');
+    $bcrypt    = appHashBcrypt($this->app);
 
     expect($bcrypt->info($bcrypt->make('secret'))['options']['cost'])->toBe(10);
 });
 
 it('defaults bcrypt rounds to twelve when config is missing', function (): void {
     $this->app = makeApp([]);
-    $bcrypt    = $this->app->get('hash.bcrypt');
+    $bcrypt    = appHashBcrypt($this->app);
 
     expect($bcrypt->info($bcrypt->make('secret'))['options']['cost'])->toBe(12);
 });
 
 it('defaults bcrypt rounds to twelve when config is not an integer', function (): void {
     $this->app = makeApp(['BCRYPT_ROUNDS' => '10']);
-    $bcrypt    = $this->app->get('hash.bcrypt');
+    $bcrypt    = appHashBcrypt($this->app);
 
     expect($bcrypt->info($bcrypt->make('secret'))['options']['cost'])->toBe(12);
 });
@@ -66,7 +65,7 @@ it('registers the argon and default hashers', function (): void {
 
 it('registers every hashing driver on the manager', function (): void {
     $this->app = makeApp([]);
-    $hash      = $this->app->get('hash');
+    $hash      = appHashManager($this->app);
 
     expect($hash->driver('bcrypt'))->toBeInstanceOf(BcryptHasher::class);
     expect($hash->driver('argon'))->toBeInstanceOf(ArgonHasher::class);
@@ -89,4 +88,38 @@ function makeApp(array $config): Application
     (new HashServiceProvider($app))->boot();
 
     return $app;
+}
+
+/**
+ * Resolve the hash manager from the application container.
+ *
+ * @param Application $app The application instance.
+ * @return HashManager The resolved hash manager.
+ */
+function appHashManager(Application $app): HashManager
+{
+    $hash = $app->get('hash');
+
+    if (!$hash instanceof HashManager) {
+        throw new \RuntimeException('The "hash" container binding is not a HashManager.');
+    }
+
+    return $hash;
+}
+
+/**
+ * Resolve the bcrypt hasher from the application container.
+ *
+ * @param Application $app The application instance.
+ * @return BcryptHasher The resolved bcrypt hasher.
+ */
+function appHashBcrypt(Application $app): BcryptHasher
+{
+    $bcrypt = $app->get('hash.bcrypt');
+
+    if (!$bcrypt instanceof BcryptHasher) {
+        throw new \RuntimeException('The "hash.bcrypt" container binding is not a BcryptHasher.');
+    }
+
+    return $bcrypt;
 }

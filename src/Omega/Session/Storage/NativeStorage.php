@@ -47,16 +47,12 @@ use const PHP_SESSION_ACTIVE;
  */
 class NativeStorage implements StorageInterface
 {
-    /** @var array{prefix?: string, name?: string} */
-    private array $options;
-
     private string $key;
 
     /** @param array{prefix?: string, name?: string} $options */
     public function __construct(array $options = [])
     {
-        $this->options = $options;
-        $this->key     = ($options['prefix'] ?? 'omega') . '_session';
+        $this->key = ($options['prefix'] ?? 'omega') . '_session';
 
         if (isset($options['name'])) {
             session_name($options['name']);

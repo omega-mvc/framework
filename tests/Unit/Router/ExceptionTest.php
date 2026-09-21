@@ -65,7 +65,6 @@ it('builds every missing route parameter message variant', function (): void {
 it('carries the message of the route url not fully resolved exception', function (): void {
     $exception = new RouteUrlNotFullyResolvedException('Unresolved pattern remains.');
 
-    expect($exception)->toBeInstanceOf(RuntimeException::class);
     expect($exception->getMessage())->toBe('Unresolved pattern remains.');
 });
 

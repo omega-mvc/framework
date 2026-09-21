@@ -37,10 +37,10 @@ afterEach(function (): void {
 /**
  * Dispatch the given routes and return the triggered outcome label.
  *
- * @param Route[]              $routes  Route instances to dispatch against.
- * @param string               $uri     Request URI.
- * @param string               $method  Request HTTP method.
- * @param array<string, mixed> $options Dispatcher options (basePath, caseMatters, ...).
+ * @param Route[]                                                    $routes  Route instances to dispatch against.
+ * @param string                                                     $uri     Request URI.
+ * @param string                                                     $method  Request HTTP method.
+ * @param array{basePath?: string, caseMatters?: bool, trailingSlashMatters?: bool, multiMatch?: bool} $options Dispatcher options.
  * @return string One of: found, notFound, methodNotAllowed.
  */
 function dispatchOutcome(array $routes, string $uri, string $method, array $options = []): string
@@ -57,13 +57,20 @@ function dispatchOutcome(array $routes, string $uri, string $method, array $opti
         fn (string $path, string $method): string => 'methodNotAllowed',
     );
 
-    return call_user_func_array($dispatch['callable'], $dispatch['params']);
+    $outcome = call_user_func_array($dispatch['callable'], $dispatch['params']);
+
+    if (!is_string($outcome)) {
+        throw new \LogicException('Dispatcher callbacks must return a string outcome label.');
+    }
+
+    return $outcome;
 }
 
 /**
  * Build a route instance from a partial definition.
  *
- * @param array<string, mixed> $data Route definition.
+ * @param array{method?: string|array<int, string>, uri?: string, expression?: string, function?: mixed,
+ *   patterns?: array<string, string>, middleware?: array<int, class-string>, name?: string} $data Route definition.
  * @return Route
  */
 function dispatchRoute(array $data): Route
@@ -227,7 +234,7 @@ it('covers every fallback callback combination via reflection', function (): voi
         }
     }
 
-    expect(true)->toBeTrue();
+    expect(count($scenarios))->toBe(6);
 });
 
 it('matches only the last of several consecutive non-matching routes', function (): void {
@@ -255,7 +262,7 @@ it('matches a route whose expression key is missing and exposes middleware', fun
     $route = new Route([
         'method'     => 'get',
         'function'   => static fn (): string => 'x',
-        'middleware' => ['SomeMiddleware'],
+        'middleware' => [Support\TestMiddleware::class],
     ]);
 
     expect(dispatchOutcome([$route], '', 'GET'))->toBe('found');

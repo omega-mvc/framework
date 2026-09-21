@@ -38,7 +38,7 @@ it('decrypt helper returns when the padding survives the mismatched iv', functio
     $plain     = str_repeat('message', 8);
     $decrypted = decrypt(encrypt($plain, 'secret'), 'secret');
 
-    expect($decrypted)->toBeString()
+    expect($decrypted)->not->toBe('')
         ->and(strlen($decrypted))->toBe(strlen($plain))
         ->and(substr($decrypted, 16))->toBe(substr($plain, 16));
 });
