@@ -16,8 +16,9 @@ declare(strict_types=1);
 
 namespace Omega\Router;
 
+use InvalidArgumentException;
+
 use Omega\Router\Exceptions\MissingRouteParameterException;
-use Omega\Router\Exceptions\PatternMismatchException;
 use Omega\Router\Exceptions\RouteUrlNotFullyResolvedException;
 use Omega\Router\Exceptions\UnknownRoutePatternException;
 
@@ -282,7 +283,7 @@ class RouteUrlBuilder
      * @param string          $pattern    Pattern placeholder.
      * @param string          $regex      Regex to validate against.
      * @return void
-     * @throws PatternMismatchException
+     * @throws InvalidArgumentException
      */
     private function validateParameterAgainstPattern(
         string|int|bool $value,
@@ -295,10 +296,21 @@ class RouteUrlBuilder
 
         if (1 !== preg_match("/^{$regex}$/", $stringValue)) {
             if ($named) {
-                throw PatternMismatchException::forNamed((string) $identifier, $value, $pattern, $regex);
+                throw new InvalidArgumentException(sprintf(
+                    "Named parameter '%s' with value '%s' doesn't match pattern %s (%s)",
+                    (string) $identifier,
+                    (string) $value,
+                    $pattern,
+                    $regex
+                ));
             }
 
-            throw PatternMismatchException::forValue($value, $pattern, $regex);
+            throw new InvalidArgumentException(sprintf(
+                "Parameter '%s' doesn't match pattern %s (%s)",
+                (string) $value,
+                $pattern,
+                $regex
+            ));
         }
     }
 

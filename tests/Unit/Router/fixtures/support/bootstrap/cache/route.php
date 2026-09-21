@@ -54,6 +54,12 @@ return [
         'function'   => 'strlen',
         'method'     => 42,
     ],
+    // Non-string, non-callable value: rejected by the is_callable guard.
+    [
+        'expression' => '/object',
+        'function'   => 42,
+        'method'     => 'get',
+    ],
     // Non-array entry: skipped during registration.
     'not-an-array',
 ];

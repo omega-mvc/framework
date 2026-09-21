@@ -17,7 +17,6 @@ namespace Tests\Router;
 use JsonSerializable;
 use Omega\Router\Exceptions\InvalidRouteParameterException;
 use Omega\Router\Exceptions\MissingRouteParameterException;
-use Omega\Router\Exceptions\PatternMismatchException;
 use Omega\Router\Exceptions\RouteNotFoundException;
 use Omega\Router\Exceptions\RouteNotRegisteredException;
 use Omega\Router\Exceptions\RouteUrlNotFullyResolvedException;
@@ -30,7 +29,6 @@ use function fopen;
 
 covers(InvalidRouteParameterException::class);
 covers(MissingRouteParameterException::class);
-covers(PatternMismatchException::class);
 covers(RouteNotFoundException::class);
 covers(RouteNotRegisteredException::class);
 covers(RouteUrlNotFullyResolvedException::class);
@@ -62,13 +60,6 @@ it('builds every missing route parameter message variant', function (): void {
         ->toBe("Missing parameter for pattern {(:num)}. Provide either numeric index {3} or key '{num}'");
     expect(MissingRouteParameterException::patternIndexed(4, '(:any)')->getMessage())
         ->toBe('Missing parameter at index 4 for pattern (:any)');
-});
-
-it('builds the pattern mismatch messages for named and positional parameters', function (): void {
-    expect(PatternMismatchException::forNamed('id', 'abc', '(:num)', '\d+')->getMessage())
-        ->toBe("Named parameter 'id' with value 'abc' doesn't match pattern (:num) (\d+)");
-    expect(PatternMismatchException::forValue('abc', '(:num)', '\d+')->getMessage())
-        ->toBe("Parameter 'abc' doesn't match pattern (:num) (\d+)");
 });
 
 it('carries the message of the route url not fully resolved exception', function (): void {
@@ -115,23 +106,4 @@ it('stringifies scalar, stringable, serializable and nested values', function ()
         ->toBe('Invalid value [null] for route parameter [a].');
     expect((new InvalidRouteParameterException('a', [$resource]))->getMessage())
         ->toBe('Invalid value [null] for route parameter [a].');
-});
-
-it('stringifies values the same way in pattern mismatch exceptions', function (): void {
-    $stringable = new class implements Stringable {
-        public function __toString(): string
-        {
-            return 'named-value';
-        }
-    };
-
-    expect(PatternMismatchException::forNamed('id', $stringable, '(:id)', '\d+')->getMessage())
-        ->toBe("Named parameter 'id' with value 'named-value' doesn't match pattern (:id) (\d+)");
-
-    $resource = fopen('php://memory', 'r');
-
-    expect(PatternMismatchException::forValue(['nested' => true], '(:any)', '.*')->getMessage())
-        ->toBe("Parameter '{\"nested\":true}' doesn't match pattern (:any) (.*)");
-    expect(PatternMismatchException::forValue($resource, '(:any)', '.*')->getMessage())
-        ->toBe("Parameter 'null' doesn't match pattern (:any) (.*)");
 });

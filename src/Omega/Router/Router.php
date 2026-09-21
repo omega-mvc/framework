@@ -165,13 +165,9 @@ class Router extends AbstractRouter
             if ($instance instanceof Middleware) {
                 /** @var array<int, class-string> $rootMiddlewares */
                 $rootMiddlewares = $instance->middleware;
-            }
-
-            if ($instance instanceof Name) {
+            } elseif ($instance instanceof Name) {
                 $prefixName = $instance->name;
-            }
-
-            if ($instance instanceof Prefix) {
+            } elseif ($instance instanceof Prefix) {
                 $prefixUri = $instance->prefix;
             }
         });

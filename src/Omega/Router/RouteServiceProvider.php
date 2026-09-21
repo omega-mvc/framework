@@ -125,22 +125,14 @@ class RouteServiceProvider extends AbstractServiceProvider
      */
     private function registerRoute(array $route): void
     {
-        $callable = $route['function'] ?? null;
+        $callable = $this->resolveRouteCallable($route['function'] ?? null);
 
-        if (is_string($callable) && str_contains($callable, 'SerializableClosure')) {
-            $serialized = unserialize($callable);
-
-            if ($serialized instanceof UnsignedSerializableClosure) {
-                $callable = $serialized->getClosure();
-            }
+        if ($callable === null) {
+            return;
         }
 
         $expression = $route['expression'] ?? '';
         $method     = $route['method'] ?? '';
-
-        if (!is_callable($callable)) {
-            return;
-        }
 
         if (!is_string($expression)) {
             return;
@@ -165,5 +157,43 @@ class RouteServiceProvider extends AbstractServiceProvider
                 'method'     => $m,
             ]);
         });
+    }
+
+    /**
+     * Resolve the route callable from a cached route definition.
+     *
+     * Serializable-closure strings are unserialized back into their closure
+     * when they carry an unsigned signature; plain strings and raw closures
+     * must be callable or the route is skipped.
+     *
+     * @param mixed $callable The raw callable value from the route cache.
+     * @return callable|null The resolved callable, or null when the cached
+     *                       value cannot be used as a route callable.
+     */
+    private function resolveRouteCallable(mixed $callable): ?callable
+    {
+        if (!is_string($callable)) {
+            if (!is_callable($callable)) {
+                return null;
+            }
+
+            return $callable;
+        }
+
+        if (!str_contains($callable, 'SerializableClosure')) {
+            if (!is_callable($callable)) {
+                return null;
+            }
+
+            return $callable;
+        }
+
+        $serialized = unserialize($callable);
+
+        if (!$serialized instanceof UnsignedSerializableClosure) {
+            return null;
+        }
+
+        return $serialized->getClosure();
     }
 }

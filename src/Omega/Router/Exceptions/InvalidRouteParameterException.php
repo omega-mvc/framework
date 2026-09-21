@@ -31,7 +31,19 @@ class InvalidRouteParameterException extends InvalidArgumentException
 
     private static function valueToString(mixed $value): string
     {
-        if (is_string($value) || is_int($value) || is_float($value) || is_bool($value)) {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        if (is_int($value)) {
+            return (string) $value;
+        }
+
+        if (is_float($value)) {
+            return (string) $value;
+        }
+
+        if (is_bool($value)) {
             return (string) $value;
         }
 
@@ -39,13 +51,25 @@ class InvalidRouteParameterException extends InvalidArgumentException
             return (string) $value;
         }
 
-        if ($value instanceof JsonSerializable || is_array($value) || is_object($value)) {
-            $encoded = json_encode($value);
-            if (false !== $encoded) {
-                return $encoded;
-            }
+        if ($value instanceof JsonSerializable) {
+            return self::encode($value);
+        }
+
+        if (is_array($value)) {
+            return self::encode($value);
+        }
+
+        if (is_object($value)) {
+            return self::encode($value);
         }
 
         return 'null';
+    }
+
+    private static function encode(mixed $value): string
+    {
+        $encoded = json_encode($value);
+
+        return false === $encoded ? 'null' : $encoded;
     }
 }

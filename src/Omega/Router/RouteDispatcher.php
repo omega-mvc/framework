@@ -261,10 +261,10 @@ $basePath          = rtrim($basePath, '/');
         $routes            = $this->routes;
 
         array_walk($routes, function (Route $route) use ($basePath, $caseMatters, $method, $multiMatch, $path, &$pathMatchFound, &$routeMatchFound): void {
-            $alreadyResolved = $routeMatchFound && false === $multiMatch;
-
-            if ($alreadyResolved) {
-                return;
+            if ($routeMatchFound) {
+                if (false === $multiMatch) {
+                    return;
+                }
             }
 
             $data = $route->route();
@@ -273,10 +273,8 @@ $basePath          = rtrim($basePath, '/');
             $originalExpression = $expression;
             $expression         = $this->makeRoutePatterns($expression, (array) ($data['patterns'] ?? []));
 
-            // Add basepath to matching string
-            $hasBasePath = '' !== $basePath && '/' !== $basePath;
-
-            if ($hasBasePath) {
+            // Add basepath to matching string (never '/' here: dispatch() rtrims it)
+            if ('' !== $basePath) {
                 $expression = "({$basePath}){$expression}";
             }
 
@@ -309,20 +307,19 @@ $basePath          = rtrim($basePath, '/');
 
         // No matching route was found
         if (false === $routeMatchFound) {
-            $methodNotAllowed = $this->methodNotAllowed;
-            $notFound         = $this->notFound;
+            if (true === $pathMatchFound) {
+                $methodNotAllowed = $this->methodNotAllowed;
 
-            $methodAllowed = true === $pathMatchFound && null !== $methodNotAllowed;
-
-            if ($methodAllowed) {
-                $this->trigger($methodNotAllowed, [$path, $methodRaw]);
+                if (null !== $methodNotAllowed) {
+                    $this->trigger($methodNotAllowed, [$path, $methodRaw]);
+                }
 
                 return;
             }
 
-            $notFoundAllowed = false === $pathMatchFound && null !== $notFound;
+            $notFound = $this->notFound;
 
-            if ($notFoundAllowed) {
+            if (null !== $notFound) {
                 $this->trigger($notFound, [$path]);
             }
         }
