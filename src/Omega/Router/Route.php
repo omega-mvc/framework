@@ -154,11 +154,7 @@ class Route implements ArrayAccess
     {
         $existing = (array) ($this->route['middleware'] ?? []);
 
-        foreach ($middlewares as $middleware) {
-            $existing[] = $middleware;
-        }
-
-        $this->route['middleware'] = $existing;
+        $this->route['middleware'] = [...$existing, ...array_values($middlewares)];
 
         return $this;
     }

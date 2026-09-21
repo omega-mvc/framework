@@ -23,6 +23,9 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 
+use function array_filter;
+use function array_find_key;
+use function array_walk;
 use function call_user_func_array;
 
 /**
@@ -68,11 +71,10 @@ class Router extends AbstractRouter
      */
     public static function removeRoutes(string $routeName): void
     {
-        foreach (self::$routes as $name => $route) {
-            if ($route['name'] === $routeName) {
-                unset(self::$routes[$name]);
-            }
-        }
+        self::$routes = array_filter(
+            self::$routes,
+            static fn (Route $route): bool => $route['name'] !== $routeName
+        );
     }
 
     /**
@@ -84,11 +86,13 @@ class Router extends AbstractRouter
      */
     public static function changeRoutes(string $routeName, Route $newRoute): void
     {
-        foreach (self::$routes as $name => $route) {
-            if ($route['name'] === $routeName) {
-                self::$routes[$name] = $newRoute;
-                break;
-            }
+        $key = array_find_key(
+            self::$routes,
+            static fn (Route $route): bool => $route['name'] === $routeName
+        );
+
+        if (null !== $key) {
+            self::$routes[$key] = $newRoute;
         }
     }
 
@@ -106,9 +110,9 @@ class Router extends AbstractRouter
      */
     public static function mergeRoutes(array $arrayRoutes): void
     {
-        foreach ($arrayRoutes as $route) {
+        array_walk($arrayRoutes, static function (array $route): void {
             self::addRoutes($route);
-        }
+        });
     }
 
     /**
@@ -122,7 +126,7 @@ class Router extends AbstractRouter
     {
         $classNames = is_string($className) ? [$className] : $className;
 
-        foreach ($classNames as $class) {
+        array_walk($classNames, static function (string $class): void {
             $reflection = new ReflectionClass($class);
 
             $routes = self::resolveRouteAttribute(
@@ -131,10 +135,10 @@ class Router extends AbstractRouter
                 $reflection->getMethods()
             );
 
-            foreach ($routes as $route) {
+            array_walk($routes, static function (array $route): void {
                 self::$routes[] = new Route($route);
-            }
-        }
+            });
+        });
     }
 
     /**
@@ -154,10 +158,8 @@ class Router extends AbstractRouter
         $prefixUri       = '';
         $prefixName      = '';
         $rootMiddlewares = [];
-        /** @var list<RouteData> $classes */
-        $classes         = [];
 
-        foreach ($attributes as $classAttribute) {
+        array_walk($attributes, static function (ReflectionAttribute $classAttribute) use (&$rootMiddlewares, &$prefixName, &$prefixUri): void {
             $instance = $classAttribute->newInstance();
 
             if ($instance instanceof Middleware) {
@@ -172,58 +174,72 @@ class Router extends AbstractRouter
             if ($instance instanceof Prefix) {
                 $prefixUri = $instance->prefix;
             }
-        }
+        });
 
-        foreach ($attributesMethods as $method) {
-            $middlewares = $rootMiddlewares;
-            $name        = '';
-            /** @var array<string, string> $pattern */
-            $pattern     = [];
-            $uri         = '';
-            $httpMethod  = '';
-            $found       = false;
+        /** @var list<RouteData> $classes */
+        $classes = array_values(array_filter(array_map(
+            function (ReflectionMethod $method) use ($className, $prefixUri, $prefixName, $rootMiddlewares): ?array {
+                $middlewares = $rootMiddlewares;
+                $name        = '';
+                /** @var array<string, string> $pattern */
+                $pattern     = [];
+                $uri         = '';
+                $httpMethod  = '';
+                $found       = false;
 
-            foreach ($method->getAttributes() as $attribute) {
-                $instance = $attribute->newInstance();
+                $methodAttributes = $method->getAttributes();
+                array_walk($methodAttributes, static function (ReflectionAttribute $attribute) use (
+                    &$middlewares,
+                    &$name,
+                    &$pattern,
+                    &$uri,
+                    &$httpMethod,
+                    &$found
+                ): void {
+                    $instance = $attribute->newInstance();
 
-                if ($instance instanceof Middleware) {
-                    $middlewares = array_merge($middlewares, $instance->middleware);
-                    continue;
+                    if ($instance instanceof Middleware) {
+                        $middlewares = array_merge($middlewares, $instance->middleware);
+                        return;
+                    }
+
+                    if ($instance instanceof Name) {
+                        $name = $instance->name;
+                        return;
+                    }
+
+                    if ($instance instanceof Where) {
+                        $pattern = $instance->pattern;
+                        return;
+                    }
+
+                    if ($instance instanceof Attribute\Route\Route) {
+                        [
+                            'method'     => $httpMethod,
+                            'expression' => $uri,
+                        ] = $instance->route;
+                        $found = true;
+                    }
+                });
+
+                if (true === $found) {
+                    $methodValue = is_array($httpMethod) ? array_values($httpMethod) : $httpMethod;
+
+                    return [
+                        'method'     => $methodValue,
+                        'patterns'   => $pattern,
+                        'uri'        => $prefixUri . $uri,
+                        'expression' => self::mapPatterns($prefixUri . $uri, self::$patterns),
+                        'function'   => [$className, $method->getName()],
+                        'middleware' => array_values($middlewares),
+                        'name'       => $prefixName . $name,
+                    ];
                 }
 
-                if ($instance instanceof Name) {
-                    $name = $instance->name;
-                    continue;
-                }
-
-                if ($instance instanceof Where) {
-                    $pattern = $instance->pattern;
-                    continue;
-                }
-
-                if ($instance instanceof Attribute\Route\Route) {
-                    [
-                        'method'     => $httpMethod,
-                        'expression' => $uri,
-                    ] = $instance->route;
-                    $found = true;
-                }
-            }
-
-            if (true === $found) {
-                $methodValue = is_array($httpMethod) ? array_values($httpMethod) : $httpMethod;
-
-                $classes[] = [
-                    'method'     => $methodValue,
-                    'patterns'   => $pattern,
-                    'uri'        => $prefixUri . $uri,
-                    'expression' => self::mapPatterns($prefixUri . $uri, self::$patterns),
-                    'function'   => [$className, $method->getName()],
-                    'middleware' => array_values($middlewares),
-                    'name'       => $prefixName . $name,
-                ];
-            }
-        }
+                return null;
+            },
+            $attributesMethods
+        )));
 
         return $classes;
     }
@@ -290,9 +306,10 @@ class Router extends AbstractRouter
 
         // Execute middleware
         $middlewareUsed = [];
-        foreach ((array) $dispatch['middleware'] as $middleware) {
+        $middlewares    = (array) $dispatch['middleware'];
+        array_walk($middlewares, static function (string $middleware) use (&$middlewareUsed): void {
             if (in_array($middleware, $middlewareUsed)) {
-                continue;
+                return;
             }
 
             $middlewareUsed[] = $middleware;
@@ -301,7 +318,7 @@ class Router extends AbstractRouter
             if (method_exists($middlewareClass, 'handle')) {
                 $middlewareClass->handle();
             }
-        }
+        });
 
         return call_user_func_array($dispatch['callable'], $dispatch['params']);
     }

@@ -13,6 +13,8 @@ use Omega\Container\AbstractServiceProvider;
 use ReflectionException;
 use Omega\SerializableClosure\UnsignedSerializableClosure;
 
+use function array_filter;
+use function array_walk;
 use function file_exists;
 use function is_array;
 use function is_callable;
@@ -56,9 +58,11 @@ class RouteServiceProvider extends AbstractServiceProvider
         if (false === self::$scheduleLoaded) {
             $schedule = get_path('path.base', 'routes/schedule.php');
 
-            if (is_string($schedule) && is_file($schedule)) {
+            if (is_string($schedule)) {
+            if (is_file($schedule)) {
                 require $schedule;
             }
+        }
 
             self::$scheduleLoaded = true;
         }
@@ -84,18 +88,23 @@ class RouteServiceProvider extends AbstractServiceProvider
         if (file_exists($cache = $this->app->getApplicationCachePath() . 'route.php')) {
             $routes = require $cache;
 
-            foreach (is_array($routes) ? $routes : [] as $route) {
+            $routeDefinitions = is_array($routes) ? $routes : [];
+            array_walk($routeDefinitions, function (mixed $route): void {
                 if (is_array($route)) {
                     $this->registerRoute($route);
                 }
-            }
+            });
 
             return;
         }
 
         $webRoutes = get_path('path.base', 'routes/web.php');
 
-        if (!is_string($webRoutes) || !is_file($webRoutes)) {
+        if (!is_string($webRoutes)) {
+            return;
+        }
+
+        if (!is_file($webRoutes)) {
             return;
         }
 
@@ -129,32 +138,32 @@ class RouteServiceProvider extends AbstractServiceProvider
         $expression = $route['expression'] ?? '';
         $method     = $route['method'] ?? '';
 
-        if (
-            !is_callable($callable)
-            || !is_string($expression)
-            || (is_array($method) ? empty($method) : !is_string($method))
-        ) {
+        if (!is_callable($callable)) {
+            return;
+        }
+
+        if (!is_string($expression)) {
             return;
         }
 
         if (is_array($method)) {
-            foreach ($method as $m) {
-                if (!is_string($m)) {
-                    continue;
-                }
-
-                Router::addRoutes([
-                    'expression' => $expression,
-                    'function'   => $callable,
-                    'method'     => $m,
-                ]);
+            if (empty($method)) {
+                return;
             }
+
+            $methods = array_filter($method, 'is_string');
+        } elseif (!is_string($method)) {
+            return;
         } else {
+            $methods = [$method];
+        }
+
+        array_walk($methods, static function (string $m) use ($expression, $callable): void {
             Router::addRoutes([
                 'expression' => $expression,
                 'function'   => $callable,
-                'method'     => $method,
+                'method'     => $m,
             ]);
-        }
+        });
     }
 }

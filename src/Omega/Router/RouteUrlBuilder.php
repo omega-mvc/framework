@@ -21,14 +21,21 @@ use Omega\Router\Exceptions\PatternMismatchException;
 use Omega\Router\Exceptions\RouteUrlNotFullyResolvedException;
 use Omega\Router\Exceptions\UnknownRoutePatternException;
 
+use function array_any;
+use function array_filter;
+use function array_find_key;
 use function array_is_list;
 use function array_merge;
+use function array_walk;
 use function preg_match;
 use function preg_match_all;
 use function preg_quote;
 use function preg_replace;
 use function str_contains;
+use function substr_count;
 use function trim;
+
+use const ARRAY_FILTER_USE_BOTH;
 
 /**
  * Class RouteUrlBuilder
@@ -71,12 +78,13 @@ class RouteUrlBuilder
         $url = is_string($uri) ? $uri : '';
 
         $patternMap = $this->patterns;
-        $routePatterns = $route['patterns'] ?? [];
-        foreach (is_array($routePatterns) ? $routePatterns : [] as $patternKey => $patternValue) {
-            if (is_string($patternKey) && is_string($patternValue)) {
-                $patternMap[$patternKey] = $patternValue;
-            }
-        }
+        $routePatterns = is_array($route['patterns'] ?? null) ? $route['patterns'] : [];
+        $patternMap = array_merge($patternMap, array_filter(
+            $routePatterns,
+            static fn (mixed $patternKey, mixed $patternValue): bool => is_string($patternKey)
+                && is_string($patternValue),
+            ARRAY_FILTER_USE_BOTH
+        ));
 
         $isAssociative = !array_is_list($parameters);
 
@@ -167,8 +175,9 @@ class RouteUrlBuilder
     ): string {
         $paramIndex = $isAssociative ? 0 : $this->countProcessedParameters($url);
 
-        foreach ($patternMap as $pattern => $regex) {
-            while (str_contains($url, $pattern)) {
+        array_walk($patternMap, function (string $regex, string $pattern) use ($parameters, $isAssociative, &$url, &$paramIndex): void {
+            $occurrences = array_fill(0, substr_count($url, $pattern), null);
+            array_walk($occurrences, function () use ($parameters, $pattern, $regex, $isAssociative, &$url, &$paramIndex): void {
                 $value = $this->getNextParameterValue($parameters, $pattern, $paramIndex, $isAssociative);
 
                 $this->validateParameterAgainstPattern($value, $value, $pattern, $regex, false);
@@ -176,8 +185,8 @@ class RouteUrlBuilder
                 $replaced = preg_replace('/' . preg_quote($pattern, '/') . '/', (string) $value, $url, 1);
                 $url      = $replaced ?? $url;
                 $paramIndex++;
-            }
-        }
+            });
+        });
 
         return $url;
     }
@@ -322,12 +331,15 @@ class RouteUrlBuilder
             );
         }
 
-        foreach ($patternMap as $pattern => $regex) {
-            if (str_contains($url, $pattern)) {
-                throw new RouteUrlNotFullyResolvedException(
-                    sprintf('Unresolved pattern "%s" remains in the generated URL.', $pattern)
-                );
-            }
+        $unresolved = array_find_key(
+            $patternMap,
+            static fn (string $regex, string $pattern): bool => str_contains($url, $pattern)
+        );
+
+        if (null !== $unresolved) {
+            throw new RouteUrlNotFullyResolvedException(
+                sprintf('Unresolved pattern "%s" remains in the generated URL.', $unresolved)
+            );
         }
     }
 }

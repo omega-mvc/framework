@@ -8,7 +8,10 @@ use Closure;
 use Omega\Router\Exceptions\RouteNotFoundException;
 
 use function array_any;
+use function array_find;
 use function array_keys;
+use function array_map;
+use function array_merge;
 use function array_values;
 use function preg_replace_callback;
 use function str_replace;
@@ -90,12 +93,10 @@ abstract class AbstractRouter implements RouterInterface
      */
     public static function getRoutes(): array
     {
-        $routes = [];
-        foreach (self::$routes as $route) {
-            $routes[] = $route->route();
-        }
-
-        return $routes;
+        return array_values(array_map(
+            static fn (Route $route): array => $route->route(),
+            self::$routes
+        ));
     }
 
     /**
@@ -182,11 +183,7 @@ abstract class AbstractRouter implements RouterInterface
     {
         $prefix     = $setupGroup['prefix'] ?? self::$group['prefix'];
         $name       = $setupGroup['as'] ?? self::$group['as'] ?? null;
-        $middleware = self::$group['middleware'];
-
-        foreach ($setupGroup['middleware'] ?? [] as $entry) {
-            $middleware[] = $entry;
-        }
+        $middleware = array_merge(self::$group['middleware'], $setupGroup['middleware'] ?? []);
 
         $grouped = [
             'prefix'     => $prefix,
@@ -228,13 +225,12 @@ abstract class AbstractRouter implements RouterInterface
      */
     public static function redirect(string $to): Route
     {
-        foreach (self::$routes as $name => $route) {
-            if ($route['name'] === $to) {
-                return self::$routes[$name];
-            }
-        }
+        $route = array_find(
+            self::$routes,
+            static fn (Route $route): bool => $route['name'] === $to
+        );
 
-        throw new RouteNotFoundException($to);
+        return $route ?? throw new RouteNotFoundException($to);
     }
 
     /**

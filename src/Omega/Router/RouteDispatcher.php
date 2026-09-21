@@ -18,8 +18,10 @@ namespace Omega\Router;
 
 use Omega\Http\Request;
 
+use function array_any;
 use function array_filter;
 use function array_shift;
+use function array_walk;
 use function is_numeric;
 use function parse_url;
 use function preg_match;
@@ -249,14 +251,22 @@ final class RouteDispatcher
         bool $multiMatch = false
     ): void {
 
-        $basePath        = rtrim($basePath, '/');
-        $parsedUrl       = parse_url($this->request->getUrl());
-        $path            = $this->resolvePath($parsedUrl, $basePath, $trailingSlashMatters);
-        $method          = $this->request->getMethod();
-        $pathMatchFound  = false;
-        $routeMatchFound = false;
+$basePath          = rtrim($basePath, '/');
+        $parsedUrl         = parse_url($this->request->getUrl());
+        $path              = $this->resolvePath($parsedUrl, $basePath, $trailingSlashMatters);
+        $method            = strtolower($this->request->getMethod());
+        $methodRaw         = $this->request->getMethod();
+        $pathMatchFound    = false;
+        $routeMatchFound   = false;
+        $routes            = $this->routes;
 
-        foreach ($this->routes as $route) {
+        array_walk($routes, function (Route $route) use ($basePath, $caseMatters, $method, $multiMatch, $path, &$pathMatchFound, &$routeMatchFound): void {
+            $alreadyResolved = $routeMatchFound && false === $multiMatch;
+
+            if ($alreadyResolved) {
+                return;
+            }
+
             $data = $route->route();
 
             $expression         = (string) ($data['expression'] ?? '');
@@ -264,47 +274,56 @@ final class RouteDispatcher
             $expression         = $this->makeRoutePatterns($expression, (array) ($data['patterns'] ?? []));
 
             // Add basepath to matching string
-            if ($basePath !== '' && $basePath !== '/') {
+            $hasBasePath = '' !== $basePath && '/' !== $basePath;
+
+            if ($hasBasePath) {
                 $expression = "({$basePath}){$expression}";
             }
 
             // Check path match
-            if (preg_match("#^{$expression}$#" . ($caseMatters ? '' : 'i') . 'u', $path, $matches)) {
-                $pathMatchFound = true;
-
-                // Cast allowed method to array if it's not one already, then run through all methods
-                foreach ((array) $data['method'] as $allowedMethod) {
-                    // Check method match
-                    if (strtolower($method) !== strtolower((string) $allowedMethod)) {
-                        continue;
-                    }
-
-                    $parameters = $this->resolveNamedParameters($matches);
-
-                    $this->trigger(
-                        callable: $this->found,
-                        params: [$data['function'], $parameters],
-                        middleware: (array) ($data['middleware'] ?? [])
-                    );
-                    $this->current               = $route;
-                    $this->current['expression'] = "^{$originalExpression}$";
-                    $routeMatchFound             = true;
-                    break;
-                }
+            if (!preg_match("#^{$expression}$#" . ($caseMatters ? '' : 'i') . 'u', $path, $matches)) {
+                return;
             }
 
-            // Break the loop if the first found route is a match
-            if ($routeMatchFound && false === $multiMatch) {
-                    break;
+            $pathMatchFound = true;
+
+            // Cast allowed method to array if it's not one already, then run through all methods
+            if (!array_any(
+                (array) $data['method'],
+                static fn (mixed $allowedMethod): bool => $method === strtolower((string) $allowedMethod)
+            )) {
+                return;
             }
-        }
+
+            $parameters = $this->resolveNamedParameters($matches);
+
+            $this->trigger(
+                callable: $this->found,
+                params: [$data['function'], $parameters],
+                middleware: (array) ($data['middleware'] ?? [])
+            );
+            $this->current               = $route;
+            $this->current['expression'] = "^{$originalExpression}$";
+            $routeMatchFound             = true;
+        });
 
         // No matching route was found
         if (false === $routeMatchFound) {
-            if ($pathMatchFound && $this->methodNotAllowed) {
-                $this->trigger($this->methodNotAllowed, [$path, $method]);
-            } elseif (false === $pathMatchFound && $this->notFound) {
-                $this->trigger($this->notFound, [$path]);
+            $methodNotAllowed = $this->methodNotAllowed;
+            $notFound         = $this->notFound;
+
+            $methodAllowed = true === $pathMatchFound && null !== $methodNotAllowed;
+
+            if ($methodAllowed) {
+                $this->trigger($methodNotAllowed, [$path, $methodRaw]);
+
+                return;
+            }
+
+            $notFoundAllowed = false === $pathMatchFound && null !== $notFound;
+
+            if ($notFoundAllowed) {
+                $this->trigger($notFound, [$path]);
             }
         }
     }
@@ -320,15 +339,22 @@ final class RouteDispatcher
     private function resolvePath(array|false $parsedUrl, string $basePath, bool $trailingSlashMatters): string
     {
         $parsedPath = $parsedUrl['path'] ?? null;
-        $parsedPath = null === $parsedPath ? null : (string) $parsedPath;
 
-        /** @noinspection PhpDuplicateMatchArmBodyInspection */
-        return match (true) {
-            null === $parsedPath           => '/',
-            $trailingSlashMatters          => $parsedPath,
-            "{$basePath}/" !== $parsedPath => rtrim($parsedPath, '/'),
-            default                        => $parsedPath,
-        };
+        if (null === $parsedPath) {
+            return '/';
+        }
+
+        $parsedPath = (string) $parsedPath;
+
+        if ($trailingSlashMatters) {
+            return $parsedPath;
+        }
+
+        if ("{$basePath}/" !== $parsedPath) {
+            return rtrim($parsedPath, '/');
+        }
+
+        return $parsedPath;
     }
 
     /**
