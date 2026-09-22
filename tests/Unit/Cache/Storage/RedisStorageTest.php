@@ -6,6 +6,7 @@ namespace Tests\Cache\Storage;
 
 use DateInterval;
 use Exception;
+use InvalidArgumentException;
 use Omega\Cache\Storage\RedisStorage;
 use Omega\Redis\Redis;
 use stdClass;
@@ -194,6 +195,77 @@ it('handles expiration using a DateInterval', function (): void {
     sleep(2);
 
     expect($storage->get('expire_key'))->toBeNull();
+});
+
+it('returns the default when a stored value is not a string', function (): void {
+    $storage = new RedisStorage(['ttl' => 3600], new FakeRedisConnection(['key' => 42]));
+
+    expect($storage->get('key', 'default'))->toBe('default');
+});
+
+it('initializes a missing counter on increment', function (): void {
+    $redis   = new FakeRedisConnection();
+    $storage = new RedisStorage(['ttl' => 3600], $redis);
+
+    expect($storage->increment('counter', 3))->toBe(3);
+    expect($redis->calls)->toContain(['method' => 'set', 'arguments' => ['counter', 'i:3;', 3600]]);
+});
+
+it('applies a DateInterval default ttl when incrementing a missing key', function (): void {
+    $redis   = new FakeRedisConnection();
+    $storage = new RedisStorage(['ttl' => new DateInterval('PT1M')], $redis);
+
+    expect($storage->increment('counter', 1))->toBe(1);
+});
+
+it('throws when incrementing a non-integer value', function (): void {
+    $redis   = new FakeRedisConnection(['counter' => 's:3:"abc";']);
+    $storage = new RedisStorage(['ttl' => 3600], $redis);
+
+    $redis->existsResult = true;
+
+    expect(fn () => $storage->increment('counter', 1))
+        ->toThrow(InvalidArgumentException::class, 'Value to increment must be an integer.');
+});
+
+it('returns the cached value from remember without invoking the callback', function (): void {
+    $redis   = new FakeRedisConnection(['key' => 's:5:"hello";']);
+    $storage = new RedisStorage(['ttl' => 3600], $redis);
+
+    $called = false;
+
+    $result = $storage->remember('key', function () use (&$called): string {
+        $called = true;
+
+        return 'ignored';
+    }, 3600);
+
+    expect($result)->toBe('hello');
+    expect($called)->toBeFalse();
+});
+
+it('reports a partial set failure', function (): void {
+    $redis           = new FakeRedisConnection();
+    $redis->setResult = false;
+    $storage         = new RedisStorage(['ttl' => 3600], $redis);
+
+    expect($storage->setMultiple(['a' => 1, 'b' => 2]))->toBeFalse();
+});
+
+it('reports a partial delete failure', function (): void {
+    $redis           = new FakeRedisConnection();
+    $redis->delResult = 0;
+    $storage         = new RedisStorage(['ttl' => 3600], $redis);
+
+    expect($storage->deleteMultiple(['a', 'b']))->toBeFalse();
+});
+
+it('handles empty iterables for get, set and delete multiple', function (): void {
+    $storage = new RedisStorage(['ttl' => 3600], new FakeRedisConnection());
+
+    expect($storage->getMultiple([]))->toBe([]);
+    expect($storage->setMultiple([]))->toBeTrue();
+    expect($storage->deleteMultiple([]))->toBeTrue();
 });
 
 function cache_redis_storage(): ?RedisStorage

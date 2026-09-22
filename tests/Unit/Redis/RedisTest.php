@@ -6,6 +6,7 @@ namespace Tests\Redis;
 
 use Omega\Redis\Redis;
 use Omega\Redis\RedisConnector;
+use ReflectionProperty;
 
 use function expect;
 use function extension_loaded;
@@ -138,4 +139,20 @@ it('can connect to a specific database', function (): void {
     expect($redis->get('key_db1'))->toBeFalse();
 
     $redis->flushDb();
+});
+
+it('returns an empty array when redis does not report keys as an array', function (): void {
+    $mock = $this->createMock(\Redis::class);
+    $mock->method('keys')->willReturn(false);
+
+    $redis = new Redis([
+        'host'     => '127.0.0.1',
+        'port'     => 6379,
+        'database' => 1,
+    ]);
+
+    $property = new ReflectionProperty(Redis::class, 'redis');
+    $property->setValue($redis, $mock);
+
+    expect($redis->keys('*'))->toBe([]);
 });
