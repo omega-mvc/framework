@@ -313,7 +313,7 @@ final class Validator
         $rules_filter = array_merge(
             $this->fields,
             array_map(
-                static fn ($rule) => $rule->getFilter(),
+                static fn (Filter $rule) => $rule->getFilter(),
                 $this->closureToFilter($rule_filter)->getPool(),
             ),
         );

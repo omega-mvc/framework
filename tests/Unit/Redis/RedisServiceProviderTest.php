@@ -16,6 +16,7 @@ namespace Tests\Redis;
 
 use Exception;
 use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Redis\RedisInterface;
 use Omega\Redis\RedisManager;
 use Omega\Redis\RedisServiceProvider;
@@ -83,10 +84,10 @@ it('defers the connection when no redis configuration is registered', function (
 /**
  * Resolve the Redis connection from the application container.
  *
- * @param Application $app The application instance.
+ * @param ApplicationInterface $app The application instance.
  * @return RedisInterface The resolved Redis connection.
  */
-function resolveRedisInterface(Application $app): RedisInterface
+function resolveRedisInterface(ApplicationInterface $app): RedisInterface
 {
     $redis = $app->get(RedisInterface::class);
 
