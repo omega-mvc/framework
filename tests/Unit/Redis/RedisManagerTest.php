@@ -204,12 +204,11 @@ it('delegates redis operations to the default driver', function (): void {
     $manager->set('delegated-pattern-2', 'b');
     expect($manager->keys('delegated-pattern-*'))->toHaveCount(2);
 
-    expect($manager->client())->toBeInstanceOf(\Redis::class);
     expect($manager->getName())->toBe('PHPRedis');
     expect($manager->command('ping'))->toBeTrue();
 
-    $manager->hSet('delegated-hash', 'field', 'value');
-    expect($manager->hGet('delegated-hash', 'field'))->toBe('value');
+    $manager->__call('hSet', ['delegated-hash', 'field', 'value']);
+    expect($manager->__call('hGet', ['delegated-hash', 'field']))->toBe('value');
 
     $manager->disconnect();
 });

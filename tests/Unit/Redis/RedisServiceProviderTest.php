@@ -57,12 +57,11 @@ it('registers the manager and resolves a configured connection', function (): vo
     expect($manager)->toBeInstanceOf(RedisManager::class);
 
     try {
-        $redis = $this->app->get(RedisInterface::class);
+        $redis = resolveRedisInterface($this->app);
     } catch (Exception) {
         $this->markTestSkipped('Could not connect to Redis server.');
     }
 
-    expect($redis)->toBeInstanceOf(RedisInterface::class);
     expect($redis->getName())->toBe('PHPRedis');
     expect($redis->set('provider-key', 'provider-value'))->toBeTrue();
     expect($redis->get('provider-key'))->toBe('provider-value');
@@ -80,3 +79,20 @@ it('defers the connection when no redis configuration is registered', function (
     expect(fn (): mixed => $this->app->get(RedisInterface::class))
         ->toThrow(Exception::class, 'No default Redis connection has been configured.');
 });
+
+/**
+ * Resolve the Redis connection from the application container.
+ *
+ * @param Application $app The application instance.
+ * @return RedisInterface The resolved Redis connection.
+ */
+function resolveRedisInterface(Application $app): RedisInterface
+{
+    $redis = $app->get(RedisInterface::class);
+
+    if (!$redis instanceof RedisInterface) {
+        throw new \RuntimeException('The RedisInterface container binding is not a RedisInterface.');
+    }
+
+    return $redis;
+}

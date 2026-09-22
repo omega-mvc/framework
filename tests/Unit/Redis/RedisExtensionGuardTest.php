@@ -14,8 +14,55 @@ declare(strict_types=1);
 
 namespace Omega\Redis;
 
+use function array_filter;
 use function array_pop;
+use function array_values;
 use function in_array;
+use function is_array;
+use function is_string;
+
+/**
+ * Read the extensions currently toggled off through the guard global.
+ *
+ * Shielding the {@see $GLOBALS} toggle behind this typed accessor keeps the
+ * test shadow of {@see extension_loaded} and the guard tests free of raw
+ * (mixed) global access.
+ *
+ * @return list<string> The extensions disabled for the current test run.
+ */
+function omegaDisabledExtensions(): array
+{
+    $disabled = $GLOBALS['omega_test_disabled_extensions'] ?? [];
+
+    if (!is_array($disabled)) {
+        return [];
+    }
+
+    return array_values(array_filter($disabled, 'is_string'));
+}
+
+/**
+ * Toggle an extension off for the current test run.
+ */
+function omegaDisableExtension(string $extension): void
+{
+    $disabled   = omegaDisabledExtensions();
+    $disabled[] = $extension;
+
+    $GLOBALS['omega_test_disabled_extensions'] = $disabled;
+}
+
+/**
+ * Restore the most recently toggled-off extension.
+ */
+function omegaRestoreDisabledExtension(): void
+{
+    $disabled = omegaDisabledExtensions();
+
+    array_pop($disabled);
+
+    $GLOBALS['omega_test_disabled_extensions'] = $disabled;
+}
 
 /**
  * Shadows {@see extension_loaded} within the Omega\Redis namespace so the
@@ -23,29 +70,29 @@ use function in_array;
  * {@see RedisManager} can be exercised in-process.
  *
  * It delegates to the real function unless the given extension is present in
- * the {@see $GLOBALS} toggle list under the 'omega_test_disabled_extensions'
- * key, which the guard tests populate around a try/finally block.
+ * the toggle list under the 'omega_test_disabled_extensions' key, which the
+ * guard tests populate around a try/finally block.
  *
  * @param string $extension The extension name to check.
  * @return bool True when the extension is reported as loaded.
  */
 function extension_loaded(string $extension): bool
 {
-    if (in_array($extension, $GLOBALS['omega_test_disabled_extensions'] ?? [], true)) {
+    if (in_array($extension, omegaDisabledExtensions(), true)) {
         return false;
     }
 
     return \extension_loaded($extension);
 }
 
-$GLOBALS['omega_test_disabled_extensions'] = $GLOBALS['omega_test_disabled_extensions'] ?? [];
+$GLOBALS['omega_test_disabled_extensions'] = omegaDisabledExtensions();
 
 covers(Redis::class);
 covers(RedisConnector::class);
 covers(RedisManager::class);
 
 it('throws when the redis extension is not loaded', function (): void {
-    $GLOBALS['omega_test_disabled_extensions'][] = 'redis';
+    omegaDisableExtension('redis');
 
     try {
         expect(fn (): Redis => new Redis([]))
@@ -56,7 +103,7 @@ it('throws when the redis extension is not loaded', function (): void {
 
         expect(RedisManager::isSupported())->toBeFalse();
     } finally {
-        array_pop($GLOBALS['omega_test_disabled_extensions']);
+        omegaRestoreDisabledExtension();
     }
 });
 

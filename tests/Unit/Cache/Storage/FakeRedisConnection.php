@@ -16,6 +16,7 @@ namespace Tests\Cache\Storage;
 
 use Omega\Redis\RedisInterface;
 
+use function array_filter;
 use function array_values;
 
 /**
@@ -124,7 +125,7 @@ final class FakeRedisConnection implements RedisInterface
      */
     public function keys(string $pattern): array
     {
-        return array_values($this->storage);
+        return array_values(array_filter($this->storage, 'is_string'));
     }
 
     /**
@@ -140,7 +141,7 @@ final class FakeRedisConnection implements RedisInterface
     /**
      * {@inheritdoc}
      */
-    public function getName(): ?string
+    public function getName(): string
     {
         return 'fake';
     }
