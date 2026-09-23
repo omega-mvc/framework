@@ -20,17 +20,23 @@ beforeEach(function (): void {
         $this->markTestSkipped('Redis extension not loaded.');
     }
 
-    $this->redis = new Redis([
-        'host'     => '127.0.0.1',
-        'port'     => 6379,
-        'database' => 1,
-    ]);
-    $this->redis->flushDb();
+    try {
+        $this->redis = new Redis([
+            'host'     => '127.0.0.1',
+            'port'     => 6379,
+            'database' => 1,
+        ]);
+        $this->redis->flushDb();
+    } catch (\RedisException) {
+        $this->markTestSkipped('Could not connect to Redis server.');
+    }
 });
 
 afterEach(function (): void {
-    $this->redis->flushDb();
-    $this->redis = null;
+    if (isset($this->redis)) {
+        $this->redis->flushDb();
+        $this->redis = null;
+    }
 });
 
 it('can set and get values', function (): void {

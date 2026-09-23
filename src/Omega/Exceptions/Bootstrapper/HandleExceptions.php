@@ -31,6 +31,7 @@ use Throwable;
 
 use function error_get_last;
 use function error_reporting;
+use function getenv;
 use function in_array;
 use function ini_set;
 use function php_sapi_name;
@@ -116,14 +117,14 @@ class HandleExceptions
 
         self::$reserveMemory = str_repeat('x', 32_768);
 
-        if ('testing' !== $app->getEnvironment()) {
+        if ('testing' !== getenv('APP_ENV')) {
             set_error_handler([$this, 'handleError']);
             set_exception_handler([$this, 'handleException']);
         }
 
         register_shutdown_function([$this, 'handleShutdown']);
 
-        if ('testing' !== $app->getEnvironment()) {
+        if ('testing' !== getenv('APP_ENV')) {
             ini_set('display_errors', 'Off');
         }
 
