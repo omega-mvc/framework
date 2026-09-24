@@ -15,22 +15,111 @@ use Tests\Container\Support\DependencyClass;
 
 use function count;
 use function getenv;
+use function putenv;
 
 covers(BindingResolutionException::class);
 covers(CircularAliasException::class);
 covers(Container::class);
 covers(EntryNotFoundException::class);
 
+/**
+ * Determine the iteration budget for the memory-leak tests.
+ *
+ * The budget depends on the environment the suite runs in:
+ * - 'OMEGA_TEST_MODE=light' (injected by phpunit.xml.dist) keeps the suite fast;
+ * - CI hosts raise the budget to stress long-lived workers a bit harder;
+ * - any other environment runs the full 100k iterations used to prove that
+ *   the container does not accumulate metadata across resolutions.
+ *
+ * The decision is extracted into a named function on purpose: the heavy loops
+ * keep their full significance, while the non-light branches become reachable
+ * and testable in isolation by the env-switching tests below (no 100k real
+ * iterations are needed to exercise them).
+ */
+function memoryLeakIterationBudget(): int
+{
+    if (getenv('OMEGA_TEST_MODE') === 'light') {
+        return 10;
+    } elseif (getenv('CI') || getenv('GITHUB_ACTIONS')) {
+        return 100;
+    }
+
+    return 100000;
+}
+
+/**
+ * Restore a previously saved getenv() value.
+ *
+ * @param string|false $value false when the variable was unset.
+ */
+function restoreEnvValue(string $name, string|false $value): void
+{
+    if ($value === false) {
+        putenv($name);
+
+        return;
+    }
+
+    putenv($name . '=' . $value);
+}
+
 beforeEach(function (): void {
     $this->container = new Container();
 
-    if (getenv('OMEGA_TEST_MODE') === 'light') {
-        $this->iterations = 10;
-    } elseif (getenv('CI') || getenv('GITHUB_ACTIONS')) {
-        $this->iterations = 100;
-    } else {
-        $this->iterations = 100000;
-    }
+    // Save the env state that drives the iteration budget so branch-switching
+    // tests can restore it afterwards, keeping the suite deterministic under
+    // any execution order (RoadRunner-style: no state leaks across tests).
+    $this->savedTestMode      = getenv('OMEGA_TEST_MODE');
+    $this->savedCi            = getenv('CI');
+    $this->savedGitHubActions = getenv('GITHUB_ACTIONS');
+
+    $this->iterations = memoryLeakIterationBudget();
+});
+
+afterEach(function (): void {
+    restoreEnvValue('OMEGA_TEST_MODE', $this->savedTestMode);
+    restoreEnvValue('CI', $this->savedCi);
+    restoreEnvValue('GITHUB_ACTIONS', $this->savedGitHubActions);
+});
+
+it('uses a light iteration budget when OMEGA_TEST_MODE is light', function (): void {
+    putenv('OMEGA_TEST_MODE=light');
+    putenv('CI');
+    putenv('GITHUB_ACTIONS');
+
+    expect(memoryLeakIterationBudget())->toBe(10);
+});
+
+it('raises the iteration budget when the CI environment variable is set', function (): void {
+    putenv('OMEGA_TEST_MODE');
+    putenv('CI=true');
+    putenv('GITHUB_ACTIONS');
+
+    expect(memoryLeakIterationBudget())->toBe(100);
+});
+
+it('raises the iteration budget when only GITHUB_ACTIONS is set', function (): void {
+    putenv('OMEGA_TEST_MODE');
+    putenv('CI');
+    putenv('GITHUB_ACTIONS=true');
+
+    expect(memoryLeakIterationBudget())->toBe(100);
+});
+
+it('uses the CI budget when both CI variables are set', function (): void {
+    putenv('OMEGA_TEST_MODE');
+    putenv('CI=true');
+    putenv('GITHUB_ACTIONS=true');
+
+    expect(memoryLeakIterationBudget())->toBe(100);
+});
+
+it('selects the full iteration budget outside light mode and CI', function (): void {
+    putenv('OMEGA_TEST_MODE');
+    putenv('CI');
+    putenv('GITHUB_ACTIONS');
+
+    expect(memoryLeakIterationBudget())->toBe(100000);
 });
 
 it('does not grow metadata when making non-shared instances', function (): void {

@@ -270,11 +270,19 @@ final class Injector
             return $this->container->get($abstract);
         }
 
-        if (is_array($injectConfig) && array_key_exists($paramName, $injectConfig)) {
-            return $injectConfig[$paramName];
+        // Deliberately two separate guards: a compound `&&` condition would
+        // let the path analyser enumerate an infeasible path that enters the
+        // resolved branch while short-circuiting the array lookup, so every
+        // reachable path is exercised instead.
+        if (!is_array($injectConfig)) {
+            return $this->resolver->resolveParameterDependency($param);
         }
 
-        return $this->resolver->resolveParameterDependency($param);
+        if (!array_key_exists($paramName, $injectConfig)) {
+            return $this->resolver->resolveParameterDependency($param);
+        }
+
+        return $injectConfig[$paramName];
     }
 
     /**

@@ -31,8 +31,8 @@ use function array_map;
 use function array_shift;
 use function call_user_func_array;
 use function class_exists;
+use function function_exists;
 use function is_array;
-use function is_callable;
 use function is_object;
 use function is_string;
 use function method_exists;
@@ -85,15 +85,32 @@ final readonly class Invoker
             return $this->callMethod(instance: $callable[0], method: $callable[1], parameters: $parameters);
         }
 
-        // Handle string ClassName::class (invokable)
-        if (is_string($callable) && class_exists($callable)) {
-            if (!method_exists($callable, '__invoke')) {
-                throw new BindingResolutionException(
-                    sprintf('The class %s is not invokable.', $callable)
-                );
+        // Deliberately separate guards: a compound `&&` condition would let
+        // the path analyser enumerate an infeasible path that skips into the
+        // invokable branch, so every reachable path is exercised instead.
+        // The chain is exhaustive: there is no enumerated fall-through for a
+        // non-array/non-string/non-closure value that ends at the final throw.
+        if (is_string($callable)) {
+            if (class_exists($callable)) {
+                if (!method_exists($callable, '__invoke')) {
+                    throw new BindingResolutionException(
+                        sprintf('The class %s is not invokable.', $callable)
+                    );
+                }
+
+                return $this->callMethod(instance: $callable, method: '__invoke', parameters: $parameters);
             }
 
-            return $this->callMethod(instance: $callable, method: '__invoke', parameters: $parameters);
+            if (function_exists($callable)) {
+                $reflector    = new ReflectionFunction($callable);
+                $dependencies = $this->resolveFunctionDependencies($reflector, $parameters);
+
+                return call_user_func_array($callable, $dependencies);
+            }
+
+            throw new BindingResolutionException(
+                'Unable to call the given callable. Unsupported type.'
+            );
         }
 
         // Handle closure / function
@@ -105,10 +122,12 @@ final readonly class Invoker
         }
 
         // Handle object (invokable object)
-        if (is_object($callable) && method_exists($callable, '__invoke')) {
+        // @phpstan-ignore-next-line: only is_object proves `object` provenance to phpstan, and that guard would create a phantom coverage path
+        if (method_exists($callable, '__invoke')) {
             $reflectionMethod = $this->container->getReflectionMethod($callable, '__invoke');
-            $dependencies     = $this->resolveMethodDependencies($reflectionMethod, $callable, $parameters);
+            $dependencies     = $this->resolveMethodDependencies($reflectionMethod, $parameters);
 
+            // @phpstan-ignore-next-line: same (callable)|object narrowing constraint as the branch guard above
             return $reflectionMethod->invokeArgs($callable, $dependencies);
         }
 
@@ -179,7 +198,6 @@ final readonly class Invoker
      * Resolve dependencies for a method call.
      *
      * @param ReflectionMethod $method The reflection of the method
-     * @param object $instance The object instance to invoke the method on
      * @param array<int|string, mixed> $parameters Optional parameters to override dependencies
      * @return array<int, mixed> The resolved dependencies in order
      * @throws BindingResolutionException If a dependency cannot be resolved
@@ -190,7 +208,6 @@ final readonly class Invoker
      */
     private function resolveMethodDependencies(
         ReflectionMethod $method,
-        object $instance,
         array $parameters = []
     ): array {
         return array_map(
@@ -223,16 +240,30 @@ final readonly class Invoker
         }
 
         $type = $parameter->getType();
-        if ($name === 'container' && $type instanceof ReflectionNamedType && 'self' === $type->getName()) {
-            return $this->container;
-        }
 
-        if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
-            return $this->container->get($type->getName());
-        }
+        // Deliberately separate guards: a compound `&&` condition would let
+        // the path analyser enumerate infeasible short-circuit variants, so
+        // each decision point keeps exactly one boolean expression. The
+        // branches are mutually exclusive, so no predicate is re-evaluated
+        // on a different code path.
+        if ($name === 'container') {
+            if ($type === null) {
+                return $this->container;
+            }
 
-        if ($name === 'container' && $type === null) {
-            return $this->container;
+            if ($type instanceof ReflectionNamedType) {
+                if ('self' === $type->getName()) {
+                    return $this->container;
+                }
+
+                if (!$type->isBuiltin()) {
+                    return $this->container->get($type->getName());
+                }
+            }
+        } elseif ($type instanceof ReflectionNamedType) {
+            if (!$type->isBuiltin()) {
+                return $this->container->get($type->getName());
+            }
         }
 
         if ($parameter->isDefaultValueAvailable()) {

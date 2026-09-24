@@ -205,3 +205,128 @@ it('recognizes injectable types', function (): void {
     expect($method->invoke($injector, $params[1]))->toBeTrue();
     expect($method->invoke($injector, $params[2]))->toBeFalse();
 });
+
+it('skips constructors annotated with Inject', function (): void {
+    $instance = new class {
+        public bool $constructed = true;
+
+        #[Inject]
+        public function __construct()
+        {
+            $this->constructed = true;
+        }
+    };
+
+    $returnedInstance = $this->container->injectOn($instance);
+
+    expect($returnedInstance)->toBe($instance);
+    expect($instance->constructed)->toBeTrue();
+});
+
+it('resolves array-configured injections on parameters', function (): void {
+    $this->container->set('db.host', 'localhost');
+
+    $instance = new class {
+        public string $dependency = '';
+
+        #[Inject]
+        public function setDependency(#[Inject(['dependency' => 'db.host'])] string $dependency): void
+        {
+            $this->dependency = $dependency;
+        }
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBe('localhost');
+});
+
+it('falls back to the parameter name for array-configured injections', function (): void {
+    $this->container->set('dependency', 'fallback');
+
+    $instance = new class {
+        public string $dependency = '';
+
+        #[Inject]
+        public function setDependency(#[Inject(['other' => 'db.host'])] string $dependency): void
+        {
+            $this->dependency = $dependency;
+        }
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBe('fallback');
+});
+
+it('resolves a class-typed parameter when the method Inject name is a string', function (): void {
+    $this->container->set(DependencyClass::class, new DependencyClass());
+
+    $instance = new class {
+        public mixed $dependency = null;
+
+        /**
+         * A string method-level name is not an array mapping, so the string
+         * cannot configure the parameter explicitly and the container falls
+         * back to resolving the class-typed parameter.
+         */
+        #[Inject('unused.string')]
+        public function setDependency(DependencyClass $dependency): void
+        {
+            $this->dependency = $dependency;
+        }
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBeInstanceOf(DependencyClass::class);
+});
+
+it('prefers the parameter Inject attribute over a string method Inject name', function (): void {
+    $this->container->set('db.host', 'localhost');
+
+    $instance = new class {
+        public string $dependency = '';
+
+        /**
+         * The method-level name is a string, not an array mapping; the
+         * parameter-level attribute still wins and resolves the named entry.
+         */
+        #[Inject('method.config')]
+        public function setDependency(#[Inject('db.host')] string $dependency): void
+        {
+            $this->dependency = $dependency;
+        }
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBe('localhost');
+});
+
+it('skips array-configuration on property injection', function (): void {
+    $instance = new class {
+        #[Inject(['dependency' => 'db.host'])]
+        public string $dependency = 'initial';
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->dependency)->toBe('initial');
+});
+
+it('skips methods whose parameters use union types', function (): void {
+    $instance = new class {
+        public bool $called = false;
+
+        #[Inject]
+        public function setDependency(stdClass|DependencyClass $dependency): void
+        {
+            $this->called = true;
+        }
+    };
+
+    $this->container->injectOn($instance);
+
+    expect($instance->called)->toBeFalse();
+});

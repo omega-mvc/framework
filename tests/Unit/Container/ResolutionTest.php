@@ -14,6 +14,8 @@ use Tests\Container\Support\DeepA;
 use Tests\Container\Support\DeepB;
 use Tests\Container\Support\DeepC;
 use Tests\Container\Support\DependencyClass;
+use Tests\Container\Support\PrivateConstructorClass;
+use Tests\Container\Support\ScalarConstructorClass;
 use Tests\Container\Support\Service;
 use Tests\Container\Support\UnresolvableClass;
 
@@ -134,4 +136,62 @@ it('resolves recursive dependencies through make', function (): void {
 it('throws when a dependency cannot be resolved', function (): void {
     expect(fn () => $this->container->make(UnresolvableClass::class))
         ->toThrow(BindingResolutionException::class);
+});
+
+it('reports an unbound instantiable class through has', function (): void {
+    expect($this->container->has(stdClass::class))->toBeTrue();
+});
+
+it('reports a class without a public constructor as not instantiable', function (): void {
+    expect($this->container->has(PrivateConstructorClass::class))->toBeFalse();
+});
+
+it('reports a resolved shared abstract through resolved', function (): void {
+    $this->container->bind(DependencyClass::class, null, true);
+
+    expect($this->container->resolved(DependencyClass::class))->toBeFalse();
+
+    $this->container->get(DependencyClass::class);
+
+    expect($this->container->resolved(DependencyClass::class))->toBeTrue();
+});
+
+it('returns true from bound when only a cached instance exists', function (): void {
+    // get() caches the resolved object in the instances map without ever
+    // registering a binding entry, so bound() must pick it up from there.
+    $this->container->get(stdClass::class);
+
+    expect($this->container->bound(stdClass::class))->toBeTrue();
+});
+
+it('returns an empty array as the default parameter override', function (): void {
+    expect($this->container->getLastParameterOverride())->toBe([]);
+});
+
+it('applies the active parameter override when building inside a factory', function (): void {
+    $this->container->bind('service-factory', function (Container $container) {
+        return $container->build(Service::class);
+    });
+
+    $instance = $this->container->make('service-factory', ['value' => 'from-override']);
+
+    expect($instance)->toBeInstanceOf(Service::class);
+
+    if (!$instance instanceof Service) {
+        throw new \RuntimeException('Expected a Service instance.');
+    }
+
+    expect($instance->value)->toBe('from-override');
+});
+
+it('resolves positional constructor parameters', function (): void {
+    $instance = $this->container->make(ScalarConstructorClass::class, [0 => 'positional']);
+
+    expect($instance)->toBeInstanceOf(ScalarConstructorClass::class);
+
+    if (!$instance instanceof ScalarConstructorClass) {
+        throw new \RuntimeException('Expected a ScalarConstructorClass instance.');
+    }
+
+    expect($instance->getName())->toBe('positional');
 });

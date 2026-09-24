@@ -63,3 +63,29 @@ it('respects aliases through array access', function (): void {
 
     expect($this->container->offsetGet('dummy_alias'))->toBeInstanceOf(DummyClass::class);
 });
+
+it('removes aliases pointing to an unset entry', function (): void {
+    $this->container->bind('foo', fn () => 'foo-value');
+    $this->container->alias('foo', 'alias1');
+    $this->container->alias('foo', 'alias2');
+
+    unset($this->container['foo']);
+
+    expect(isset($this->container['foo']))->toBeFalse();
+    expect(isset($this->container['alias1']))->toBeFalse();
+    expect(isset($this->container['alias2']))->toBeFalse();
+});
+
+it('keeps unrelated aliases when unsetting through an alias', function (): void {
+    $this->container->bind('bar', fn () => new stdClass());
+    $this->container->alias('bar', 'b1');
+    $this->container->bind('qux', fn () => new stdClass());
+    $this->container->alias('qux', 'q1');
+
+    unset($this->container['b1']);
+
+    expect(isset($this->container['bar']))->toBeFalse();
+    expect(isset($this->container['b1']))->toBeFalse();
+    expect(isset($this->container['qux']))->toBeTrue();
+    expect(isset($this->container['q1']))->toBeTrue();
+});

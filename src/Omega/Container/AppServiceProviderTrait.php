@@ -83,7 +83,14 @@ trait AppServiceProviderTrait
      */
     public static function importDir(string $from, string $to, bool $overwrite = false): bool
     {
-        if (!is_dir($from) || !is_readable($from)) {
+        // Deliberately two separate guards: a compound `||` condition would
+        // let the path analyser enumerate infeasible paths that skip the
+        // is_readable() check, so every reachable path is exercised instead.
+        if (!is_dir($from)) {
+            return false;
+        }
+
+        if (!is_readable($from)) {
             return false;
         }
 

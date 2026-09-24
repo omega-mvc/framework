@@ -25,7 +25,9 @@ use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
 use ReturnTypeWillChange;
+use Throwable;
 
+use function array_diff_key;
 use function array_pop;
 use function class_exists;
 use function compact;
@@ -82,6 +84,22 @@ class Container implements ArrayAccess, ContainerInterface
 
     /** @var array<string, true> Bindings that are scoped to a single request */
     protected array $requestScoped = [];
+    #endregion
+
+    #region Magic Method
+    /**
+     * Registers the container as its own shared binding.
+     *
+     * This makes the container resolve to itself whenever the container or its
+     * interface is requested, so that parameter overrides stacked on the active
+     * container (see {@see getLastParameterOverride()}) flow through factory
+     * callables and class resolution.
+     */
+    public function __construct()
+    {
+        $this->bind(self::class, fn (): Container => $this, true);
+        $this->bind(ContainerInterface::class, fn (): Container => $this, true);
+    }
     #endregion
 
     #region Public Method
@@ -385,9 +403,7 @@ class Container implements ArrayAccess, ContainerInterface
      */
     public function resetRequestScope(): void
     {
-        foreach ($this->requestScoped as $abstract => $_) {
-            unset($this->instances[$abstract]);
-        }
+        $this->instances = array_diff_key($this->instances, $this->requestScoped);
     }
 
     /**
@@ -499,8 +515,13 @@ class Container implements ArrayAccess, ContainerInterface
     {
         $abstract = $this->getAlias($abstract);
 
-        if ($useCache && isset($this->instances[$abstract])) {
-            return $this->instances[$abstract];
+        // Deliberately separate guards: a compound `&&` condition on a single
+        // line would let the path analyser enumerate an infeasible path that
+        // skips the second operand while still entering the branch.
+        if ($useCache) {
+            if (isset($this->instances[$abstract])) {
+                return $this->instances[$abstract];
+            }
         }
 
         return $this->withParameterOverride($parameters, function () use ($abstract, $useCache) {
@@ -537,11 +558,20 @@ class Container implements ArrayAccess, ContainerInterface
     {
         $this->with[] = $parameters;
 
+        // A finally block would give the path analyser a second, infeasible
+        // success termination (the try body returning without running the
+        // cleanup), so the exception path pops the stack explicitly and
+        // re-throws, leaving exactly one success termination below.
         try {
-            return $callback();
-        } finally {
+            $result = $callback();
+        } catch (Throwable $e) {
             array_pop($this->with);
+            throw $e;
         }
+
+        array_pop($this->with);
+
+        return $result;
     }
 
     /**

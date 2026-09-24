@@ -161,3 +161,27 @@ it('empties bindings after flush', function (): void {
 
     expect($this->container->getBindings())->toBeEmpty();
 });
+
+it('stores a closure factory as a shared binding through set', function (): void {
+    $this->container->set('shared-factory', fn () => new stdClass());
+
+    expect($this->container->get('shared-factory'))
+        ->toBe($this->container->get('shared-factory'));
+
+    $bindings = $this->container->getBindings();
+
+    expect($bindings['shared-factory']['shared'])->toBeTrue();
+});
+
+it('stores plain values as resolved singletons through set', function (): void {
+    $this->container->set('plain.value', 'plain');
+
+    expect($this->container->get('plain.value'))->toBe('plain');
+});
+
+it('resolves set values against the canonical abstract through an alias', function (): void {
+    $this->container->alias('canonical', 'the-alias');
+    $this->container->set('the-alias', 'via-alias');
+
+    expect($this->container->get('canonical'))->toBe('via-alias');
+});

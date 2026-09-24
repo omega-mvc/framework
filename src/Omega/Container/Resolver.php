@@ -25,9 +25,11 @@ use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
+use Throwable;
 
 use function array_filter;
 use function array_key_exists;
+use function array_key_first;
 use function array_keys;
 use function array_reduce;
 use function array_values;
@@ -138,7 +140,7 @@ final class Resolver
             return $result;
         }
 
-        return $this->unresolvable($parameter);
+        return $this->unresolvable($parameter, $parameter->getType() instanceof ReflectionUnionType);
     }
 
     /**
@@ -180,11 +182,22 @@ final class Resolver
         }
 
         $this->buildStack[$concrete] = true;
+
+        // A finally block would give the path analyser a second, infeasible
+        // success termination (the try body returning without running the
+        // cleanup), so the exception path clears the stack explicitly and
+        // re-throws, leaving exactly one success termination below.
         try {
-            return $callback();
-        } finally {
+            $result = $callback();
+        } catch (Throwable $e) {
             unset($this->buildStack[$concrete]);
+
+            throw $e;
         }
+
+        unset($this->buildStack[$concrete]);
+
+        return $result;
     }
 
     /**
@@ -254,32 +267,69 @@ final class Resolver
         }
 
         $isUnion = $type instanceof ReflectionUnionType;
-        $types = $isUnion ? $type->getTypes() : [$type];
 
-        // Filtriamo solo le classi (non i tipi built-in)
+        // Building the flat type list through a helper keeps $isUnion a single
+        // decision point below: branching on it twice in this method would let
+        // the path analyser cross the two sites into an infeasible path.
+        /** @var list<ReflectionNamedType> $classTypes */
         $classTypes = array_filter(
-            $types,
+            $this->flattenTypeHints($type),
             fn (ReflectionType $t): bool => $t instanceof ReflectionNamedType && !$t->isBuiltin()
         );
 
         // Estrarre il primo match dal container (il primo che risulta bound)
+        // Splitting the bound ternary keeps a single decision per branch: a
+        // compact conditional inside the reducer would let the path analyser
+        // enumerate an infeasible short-circuit variant.
         $resolved = array_reduce($classTypes, function (mixed $carry, ReflectionNamedType $classType): mixed {
             if ($carry !== null) {
                 return $carry;
             }
+
             $name = $classType->getName();
-            return $this->container->bound($name) ? $this->container->get($name) : null;
+
+            if ($this->container->bound($name)) {
+                return $this->container->get($name);
+            }
+
+            return null;
         });
 
         if ($resolved !== null) {
             return $resolved;
         }
 
-        if (!$isUnion && !empty($classTypes)) {
+        // Union parameters are satisfied only from the container, so the
+        // autowire branch is exclusive with the union branch.
+        if ($isUnion) {
+            // no autowiring for unions
+        } elseif (!empty($classTypes)) {
             return $this->container->make($classTypes[array_key_first($classTypes)]->getName());
         }
 
-        return $type->allowsNull() ? null : self::NOT_RESOLVED;
+        if ($type->allowsNull()) {
+            return null;
+        }
+
+        return self::NOT_RESOLVED;
+    }
+
+    /**
+     * Flatten a parameter type into a list of member types.
+     *
+     * Union types expand to their members, every other type keeps itself as a
+     * single-element list.
+     *
+     * @param ReflectionType $type The type to flatten.
+     * @return array<int, ReflectionType> The flattened member list.
+     */
+    private function flattenTypeHints(ReflectionType $type): array
+    {
+        if ($type instanceof ReflectionUnionType) {
+            return array_values($type->getTypes());
+        }
+
+        return [$type];
     }
 
     private function tryResolveFromDefault(ReflectionParameter $parameter): mixed
