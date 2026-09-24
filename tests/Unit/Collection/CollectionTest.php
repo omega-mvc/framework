@@ -761,17 +761,17 @@ it('can stringify objects when comparing', function (): void {
         }
     };
 
-    $coll = new Collection([1, 2]);
+    $coll = new Collection([1, 2, $value]);
     $coll->diff([$value]);
 
     expect($coll->items())->toEqual([1, 2]);
 });
 
 it('ignores non stringifiable values in assoc diff', function (): void {
-    $coll = new Collection(['a' => 'keep']);
-    $coll->diffAssoc([[1, 2]]);
+    $coll = new Collection(['a' => 'keep', 'x' => [1, 2]]);
+    $coll->diffAssoc(['x' => [1, 2]]);
 
-    expect($coll->all())->toEqual(['a' => 'keep']);
+    expect($coll->all())->toEqual(['a' => 'keep', 'x' => [1, 2]]);
 });
 
 it('clears the collection for an unsupported where operator', function (): void {

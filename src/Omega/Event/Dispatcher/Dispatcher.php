@@ -119,7 +119,7 @@ class Dispatcher implements DispatcherInterface
     /**
      * Flattens the listener queues into an associative array of listener lists.
      *
-     * @param list<int|string> $eventNames The registered event names.
+     * @param list<string> $eventNames The registered event names.
      * @return array<string, list<callable(EventInterface): void>>
      */
     private function collectGroupedListeners(array $eventNames): array
@@ -152,6 +152,12 @@ class Dispatcher implements DispatcherInterface
         return $this->hasInQueues(array_keys($this->listeners), $callback);
     }
 
+    /**
+     * Searches a callback across all registered event queues.
+     *
+     * @param list<string> $eventNames The event names still to scan.
+     * @param callable(EventInterface): void $callback The listener to search for.
+     */
     private function hasInQueues(array $eventNames, callable $callback): bool
     {
         $eventName = array_shift($eventNames);
@@ -220,7 +226,7 @@ class Dispatcher implements DispatcherInterface
     /**
      * Registers or unregisters a flat list of subscriber subscriptions.
      *
-     * @param list<array{0: string, 1: array<int, mixed>|callable, 2: int}> $subscriptions The resolved subscriptions.
+     * @param list<array{0: string, 1: callable(EventInterface): void, 2: int}> $subscriptions The resolved subscriptions.
      * @param bool $register True to register, false to unregister.
      */
     private function registerSubscriptions(array $subscriptions, bool $register): void
@@ -245,7 +251,8 @@ class Dispatcher implements DispatcherInterface
      *
      * Entries whose listener is empty or not callable are skipped.
      *
-     * @return list<array{0: string, 1: array<int, mixed>|callable, 2: int}>
+     * @param array<string, string|array{0: string, 1?: int|Priority}> $events The subscribed events map.
+     * @return list<array{0: string, 1: callable(EventInterface): void, 2: int}>
      */
     private function collectSubscriptions(SubscriberInterface $subscriber, array $events): array
     {
@@ -269,7 +276,10 @@ class Dispatcher implements DispatcherInterface
     }
 
     /**
-     * @return array{0: callable, 1: int}|null
+     * Resolves a single subscribed event definition into listener and priority.
+     *
+     * @param array{0: string, 1?: int|Priority}|string $params The event definition.
+     * @return array{0: callable(EventInterface): void, 1: int}|null
      */
     private function resolveSubscription(SubscriberInterface $subscriber, array|string $params): ?array
     {

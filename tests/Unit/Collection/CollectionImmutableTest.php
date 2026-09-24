@@ -272,7 +272,7 @@ it('stops iterating when callback returns false', function (): void {
     $visited = [];
     $coll    = new CollectionImmutable(['one' => 1, 'two' => 2, 'three' => 3]);
 
-    $coll->each(function (int $item, string $key) use (&$visited): bool {
+    $coll->each(function (int $item, ?string $key = null) use (&$visited): bool {
         $visited[] = $key;
 
         return $item < 2;
@@ -329,10 +329,10 @@ it('returns zero when countIf runs over an empty collection', function (): void 
     expect((new CollectionImmutable([]))->countIf(static fn (int $item): bool => true))->toBe(0);
 });
 
-it('only counts condition results strictly equal to true', function (): void {
+it('passes the key to the countIf condition', function (): void {
     $coll = new CollectionImmutable([1, 2, 3]);
 
-    expect($coll->countIf(static fn (int $item): int => $item % 2))->toBe(0);
+    expect($coll->countIf(static fn (int $item, int $key = 0): bool => $key === 2))->toBe(1);
 });
 
 it('can count by integer values', function (): void {

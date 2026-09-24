@@ -91,6 +91,8 @@
         "phpcbf": "vendor/bin/phpcbf src/ tests/",
         "fix": "composer run phpcbf",
         "test": "vendor/bin/pest",
+        "type-coverage": "vendor/bin/pest --type-coverage",
+        "phpstan": "vendor/bin/phpstan analyze",
         "check": [
             "composer run lint",
             "composer run test"

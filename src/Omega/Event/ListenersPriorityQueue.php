@@ -97,6 +97,12 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
         return $this;
     }
 
+    /**
+     * Removes the callback across all priority buckets.
+     *
+     * @param list<int> $priorities The priority keys still to scan.
+     * @param callable(EventInterface): void $callback The listener to remove.
+     */
     private function removeInBuckets(array $priorities, callable $callback): void
     {
         $priority = array_shift($priorities);
@@ -127,6 +133,12 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
         return $this->hasInBuckets(array_keys($this->listeners), $callback);
     }
 
+    /**
+     * Checks the callback across all priority buckets.
+     *
+     * @param list<int> $priorities The priority keys still to scan.
+     * @param callable(EventInterface): void $callback The listener to check.
+     */
     private function hasInBuckets(array $priorities, callable $callback): bool
     {
         $priority = array_shift($priorities);
@@ -157,6 +169,14 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
         return $this->getPriorityInBuckets(array_keys($this->listeners), $callback, $default);
     }
 
+    /**
+     * Searches the callback priority across all priority buckets.
+     *
+     * @param list<int> $priorities The priority keys still to scan.
+     * @param callable(EventInterface): void $callback The listener to inspect.
+     * @param mixed $default Value returned if the listener is not found.
+     * @return mixed The priority level or the default value.
+     */
     private function getPriorityInBuckets(array $priorities, callable $callback, mixed $default): mixed
     {
         $priority = array_shift($priorities);

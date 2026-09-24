@@ -11,11 +11,11 @@ composer run test          # pest (PHPUnit-style Pest classes)
 vendor/bin/pest tests/Unit/Macroable   # run a single test file/dir
 composer run check         # lint + test
 composer run ci            # fix + check (what CI runs)
-
-# Do NOT run PHPStan (phpstan.neon.dist exists, level 10, but is not part of the workflow)
+vendor/bin/phpstan analyse # level 10, src/ + tests/ (phpstan.neon.dist)
 ```
 
-Run `lint` before `test`; fix lint errors with `composer run fix` first.
+Run `lint` before `test`; fix lint errors with `composer run fix` first. PHPStan
+(level 10) is part of the verification: fix root causes, do not suppress errors.
 
 ## Code Style
 
@@ -32,7 +32,7 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first.
 - `tests/Unit/*/fixtures/` — per-subpackage shared fixtures (e.g. `tests/Unit/Http/fixtures/`)
 - Global helper files autoloaded via Composer `files`: `Application/helper.php`, `Collection/helper.php`, `Environment/helper.php`, `Http/helper.php`, `Text/helper.php`, `Time/helper.php`, `Validator/helper.php`, `View/helper.php`
 - `cache/` — runtime cache (phpcs, phpstan, phpunit, coverage); gitignored
-- `phpstan/` — custom PHPStan extensions in the `Omega\PHPStan\` autoload-dev namespace, registered in `phpstan.neon.dist` (PHPStan itself is NOT part of the dev workflow; see Commands)
+- `phpstan/` — custom PHPStan extensions in the `Omega\PHPStan\` autoload-dev namespace, registered in `phpstan.neon.dist`
 
 ## Testing
 
