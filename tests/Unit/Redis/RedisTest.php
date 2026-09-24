@@ -21,15 +21,18 @@ beforeEach(function (): void {
     }
 
     try {
-        $this->redis = new Redis([
+        $redis = new Redis([
             'host'     => '127.0.0.1',
             'port'     => 6379,
             'database' => 1,
         ]);
-        $this->redis->flushDb();
+        $redis->flushDb();
     } catch (\RedisException) {
         $this->markTestSkipped('Could not connect to Redis server.');
     }
+
+    /** @var Redis $redis */
+    $this->redis = $redis;
 });
 
 afterEach(function (): void {
