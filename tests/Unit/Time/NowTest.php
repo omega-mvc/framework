@@ -25,7 +25,7 @@ use function date;
 use function date_default_timezone_set;
 use function strtotime;
 
-covers(Now::class, DateTimeFormatTrait::class, 'Omega\Time\now');
+covers(Now::class, DateTimeFormatTrait::class);
 
 it('is same with current time', function (): void {
     $tz = new DateTimeZone(date_default_timezone_get());

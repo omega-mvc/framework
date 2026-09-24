@@ -481,15 +481,27 @@ class Collection extends AbstractCollectionImmutable
             $item = $item instanceof Collection ? $item->all() : $item;
 
             if (!is_array($item)) {
-                $result[$key] = $item;
+                $values = [$key => $item];
+            } elseif ($depth === 1) {
+                $values = array_values($item);
             } else {
-                $values = $depth === 1
-                    ? array_values($item)
-                    : $this->flattenRecursing($item, $depth - 1);
+                $values = $this->flattenRecursing($item, $depth - 1);
+            }
 
-                foreach ($values as $keyDept => $value) {
-                    $result[$keyDept] = $value;
+            foreach ($values as $childKey => $value) {
+                if (is_string($childKey)) {
+                    $result[$childKey] = $value;
+
+                    continue;
                 }
+
+                if (array_key_exists($childKey, $result)) {
+                    $result[] = $value;
+
+                    continue;
+                }
+
+                $result[$childKey] = $value;
             }
         }
 

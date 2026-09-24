@@ -701,3 +701,191 @@ it('can dump without error', function (): void {
     $coll->dump();
     ob_get_clean();
 });
+
+it('throws when chunking with a non-positive length', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    expect(fn () => $coll->chunk(0))->toThrow(
+        \InvalidArgumentException::class,
+        'Chunk length must be greater than zero.'
+    );
+});
+
+it('can flatten a limited depth', function (): void {
+    $coll = new Collection([[1, 2], [3, [4, 5]]]);
+
+    expect($coll->flatten(1)->all())->toEqual([1, 2, 3, [4, 5]]);
+    expect($coll->flatten(2)->all())->toEqual([1, 2, 3, 4, 5]);
+});
+
+it('can flatten without dropping sibling arrays', function (): void {
+    $coll = new Collection([[1, 2], [3, 4]]);
+
+    expect($coll->flatten()->all())->toEqual([1, 2, 3, 4]);
+    expect((new Collection([1, [2, 3], [4, 5], 6]))->flatten()->all())->toEqual([1, 2, 3, 4, 5, 6]);
+});
+
+it('can flatten deeply nested collections', function (): void {
+    $coll = new Collection([1, [2, [3, [4]]]]);
+
+    expect($coll->flatten(2)->all())->toEqual([1, 2, 3, [4]]);
+    expect($coll->flatten()->all())->toEqual([1, 2, 3, 4]);
+});
+
+it('can flatten while preserving assoc leaf keys', function (): void {
+    $coll = new Collection([
+        'first' => ['x' => 1, 'y' => 2],
+        'last'  => ['z' => 3],
+    ]);
+
+    expect($coll->flatten()->all())->toEqual(['x' => 1, 'y' => 2, 'z' => 3]);
+});
+
+it('can flatten collections nested inside a collection', function (): void {
+    $coll = new Collection([new Collection([9]), [1, [2]]]);
+
+    expect($coll->flatten()->all())->toEqual([9, 1, 2]);
+});
+
+it('can flatten empty subarrays', function (): void {
+    $coll = new Collection([[], [1, 2]]);
+
+    expect($coll->flatten()->all())->toEqual([1, 2]);
+});
+
+it('can stringify objects when comparing', function (): void {
+    $value = new class {
+        public function __toString(): string
+        {
+            return 'x';
+        }
+    };
+
+    $coll = new Collection([1, 2]);
+    $coll->diff([$value]);
+
+    expect($coll->items())->toEqual([1, 2]);
+});
+
+it('ignores non stringifiable values in assoc diff', function (): void {
+    $coll = new Collection(['a' => 'keep']);
+    $coll->diffAssoc([[1, 2]]);
+
+    expect($coll->all())->toEqual(['a' => 'keep']);
+});
+
+it('clears the collection for an unsupported where operator', function (): void {
+    $coll = new Collection(['a', 'b']);
+
+    expect($coll->where('age', 'like', '1')->isEmpty())->toBeTrue();
+});
+
+it('can only keep every requested key', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3]);
+
+    expect($coll->only(['a', 'b', 'c'])->all())->toEqual(['a' => 1, 'b' => 2, 'c' => 3]);
+});
+
+it('can only keep keys that are all absent', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->only(['x', 'y'])->all())->toEqual([]);
+});
+
+it('can only keep keys from an empty selection', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->only([])->all())->toEqual([]);
+});
+
+it('can except nothing', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->except([])->all())->toEqual(['a' => 1, 'b' => 2]);
+});
+
+it('can except keys that are all absent', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->except(['x', 'y'])->all())->toEqual(['a' => 1, 'b' => 2]);
+});
+
+it('can except every key', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->except(['a', 'b'])->all())->toEqual([]);
+});
+
+it('can complement with an empty array', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    expect($coll->complement([])->items())->toEqual([]);
+});
+
+it('can complement when every item overlaps', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    expect($coll->complement([1, 2, 3])->items())->toEqual([]);
+});
+
+it('can complement when a single item overlaps', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    expect($coll->complement([3, 9])->items())->toEqual([9]);
+});
+
+it('can diff with an empty array', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    $coll->diff([]);
+
+    expect($coll->items())->toEqual([1, 2, 3]);
+});
+
+it('can diff when every item overlaps', function (): void {
+    $coll = new Collection([1, 2, 3]);
+
+    $coll->diff([1, 2, 3]);
+
+    expect($coll->items())->toEqual([]);
+});
+
+it('can diff keys with an empty selector', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    $coll->diffKeys([]);
+
+    expect($coll->all())->toEqual(['a' => 1, 'b' => 2]);
+});
+
+it('can complement keys with no overlap', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->complementKeys(['x' => 9])->all())->toEqual(['x' => 9]);
+});
+
+it('can diff assoc when keys and values are identical', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    $coll->diffAssoc(['a' => 1, 'b' => 2]);
+
+    expect($coll->all())->toEqual([]);
+});
+
+it('can complement assoc when keys and values are identical', function (): void {
+    $coll = new Collection(['a' => 1, 'b' => 2]);
+
+    expect($coll->complementAssoc(['a' => 1, 'b' => 2])->all())->toEqual([]);
+});
+
+it('can map over an empty collection', function (): void {
+    $coll = new Collection([]);
+
+    expect($coll->map(static fn (int $item): int => $item + 1)->all())->toEqual([]);
+});
+
+it('can map over a single item', function (): void {
+    $coll = new Collection([5]);
+
+    expect($coll->map(static fn (int $item): int => $item * 2)->all())->toEqual([10]);
+});

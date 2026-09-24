@@ -13,6 +13,7 @@ use Omega\Http\Response;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use Omega\View\View;
 use Omega\View\Vite;
 use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
@@ -22,8 +23,8 @@ use function Omega\View\vite;
 
 
 covers(Application::class);
-covers('Omega\View\view');
-covers('Omega\View\vite');
+covers(View::class);
+covers(Vite::class);
 
 it('vite helper handles single and multiple entry points', function (): void {
     $app = new Application(__DIR__);
@@ -43,7 +44,7 @@ it('vite helper handles single and multiple entry points', function (): void {
     $this->assertIsArray($resultArray);
     expect($resultArray)->toHaveCount(2);
     expect($resultArray['a.js'])->toBe('url_a');
-});
+})->coversFunction('Omega\View\vite');
 
 it('can get response from container', function (): void {
     $app = new Application(__DIR__);
@@ -79,4 +80,4 @@ it('can get response from container', function (): void {
     expect(Str::contains($content, 'omega'))->toBeTrue();
 
     $app->flush();
-});
+})->coversFunction('Omega\View\view');

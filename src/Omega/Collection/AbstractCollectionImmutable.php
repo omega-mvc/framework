@@ -680,19 +680,6 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     }
 
     /**
-     * Remove a value from the collection by key.
-     *
-     * Note: Typically disabled for immutable collections. Override to throw
-     * ImmutableCollectionException if immutability must be strictly enforced.
-     *
-     * @param TKey $offset
-     * @return void
-     */
-    public function offsetUnset($offset): void
-    {
-    }
-
-    /**
      * Retrieve an external iterator for the collection.
      *
      * @return Traversable<TKey, TValue>

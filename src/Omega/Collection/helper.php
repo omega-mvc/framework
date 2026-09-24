@@ -42,92 +42,86 @@ use function implode;
  * @version   2.0.0
  */
 
-if (!function_exists('collection')) {
-    /**
-     * Create a new mutable collection instance.
-     *
-     * @template TKey of array-key
-     * @template TValue
-     * @param array<TKey, TValue> $collection Initial items for the collection
-     * @return Collection<TKey, TValue> Returns a mutable Collection instance
-     */
-    function collection(array $collection = []): Collection
-    {
-        return new Collection($collection);
-    }
+/**
+ * Create a new mutable collection instance.
+ *
+ * @template TKey of array-key
+ * @template TValue
+ * @param array<TKey, TValue> $collection Initial items for the collection
+ * @return Collection<TKey, TValue> Returns a mutable Collection instance
+ */
+function collection(array $collection = []): Collection
+{
+    return new Collection($collection);
 }
 
-if (!function_exists('collection_immutable')) {
-    /**
-     * Create a new immutable collection instance.
-     *
-     * @template TKey of array-key
-     * @template TValue
-     * @param array<TKey, TValue> $collection Initial items for the collection
-     * @return CollectionImmutable<TKey, TValue> Returns an immutable Collection instance
-     */
-    function collection_immutable(array $collection = []): CollectionImmutable
-    {
-        return new CollectionImmutable($collection);
-    }
+/**
+ * Create a new immutable collection instance.
+ *
+ * @template TKey of array-key
+ * @template TValue
+ * @param array<TKey, TValue> $collection Initial items for the collection
+ * @return CollectionImmutable<TKey, TValue> Returns an immutable Collection instance
+ */
+function collection_immutable(array $collection = []): CollectionImmutable
+{
+    return new CollectionImmutable($collection);
 }
 
-if (!function_exists('data_get')) {
-    /**
-     * Retrieve a value from a nested array using "dot" notation.
-     *
-     * Supports wildcard segments (`*`) to return multiple values from arrays of arrays.
-     * If the key does not exist, the specified default value is returned.
-     *
-     * Example:
-     * ```php
-     * $array = [
-     *     'users' => [
-     *         ['name' => 'Alice'],
-     *         ['name' => 'Bob'],
-     *     ],
-     * ];
-     * data_get($array, 'users.*.name'); // ['Alice', 'Bob']
-     * data_get($array, 'users.0.name'); // 'Alice'
-     * data_get($array, 'users.2.name', 'Unknown'); // 'Unknown'
-     * ```
-     *
-     * @template TValue
-     * @template TGetDefault
-     * @param array<array-key, TValue> $array   The array to retrieve values from
-     * @param array-key                $key     The key string using dot notation
-     * @param TGetDefault              $default Default value if the key does not exist
-     * @return TValue|list<mixed>|TGetDefault|null Returns the value, multiple values, or the default
-     */
-    function data_get(array $array, int|string $key, mixed $default = null): mixed
-    {
-        $segments = explode('.', (string) $key);
-        $current  = $array;
+/**
+ * Retrieve a value from a nested array using "dot" notation.
+ *
+ * Supports wildcard segments (`*`) to return multiple values from arrays of arrays.
+ * If the key does not exist, the specified default value is returned.
+ *
+ * Example:
+ * ```php
+ * $array = [
+ *     'users' => [
+ *         ['name' => 'Alice'],
+ *         ['name' => 'Bob'],
+ *     ],
+ * ];
+ * data_get($array, 'users.*.name'); // ['Alice', 'Bob']
+ * data_get($array, 'users.0.name'); // 'Alice'
+ * data_get($array, 'users.2.name', 'Unknown'); // 'Unknown'
+ * ```
+ *
+ * @template TValue
+ * @template TGetDefault
+ * @param array<array-key, TValue> $array   The array to retrieve values from
+ * @param array-key                $key     The key string using dot notation
+ * @param TGetDefault              $default Default value if the key does not exist
+ * @return TValue|list<mixed>|TGetDefault|null Returns the value, multiple values, or the default
+ */
+function data_get(array $array, int|string $key, mixed $default = null): mixed
+{
+    $segments = explode('.', (string) $key);
+    $current  = $array;
 
-        foreach ($segments as $index => $segment) {
-            if (!is_array($current)) {
-                return $default;
-            }
-
-            if ('*' === $segment) {
-                $values = [];
-                foreach ($current as $item) {
-                    $value = data_get(is_array($item) ? $item : [], implode('.', array_slice($segments, $index + 1)));
-                    if (null !== $value) {
-                        $values[] = $value;
-                    }
-                }
-
-                return $values ?: $default;
-            }
-
-            if (!array_key_exists($segment, $current)) {
-                return $default;
-            }
-
-            $current = $current[$segment];
+    foreach ($segments as $index => $segment) {
+        if (!is_array($current)) {
+            return $default;
         }
 
-        return $current;
+        if ('*' === $segment) {
+            $values = [];
+            foreach ($current as $item) {
+                $value = data_get(is_array($item) ? $item : [], implode('.', array_slice($segments, $index + 1)));
+                if (null !== $value) {
+                    $values[] = $value;
+                }
+            }
+
+            return $values ?: $default;
+        }
+
+        if (!array_key_exists($segment, $current)) {
+            return $default;
+        }
+
+        $current = $current[$segment];
     }
+
+    return $current;
 }
