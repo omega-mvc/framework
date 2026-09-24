@@ -32,3 +32,9 @@ it('rejects removing an argument', function (): void {
         unset($event['uri']);
     })->toThrow(EventImmutableException::class);
 });
+
+it('rejects reconstruction of the immutable event', function (): void {
+    $event = new EventImmutable('route.before', ['uri' => '/home']);
+
+    expect(fn () => $event->__construct('route.after'))->toThrow(EventImmutableException::class);
+});

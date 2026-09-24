@@ -19,8 +19,12 @@ use Countable;
 use IteratorAggregate;
 use ReturnTypeWillChange;
 
+use function array_keys;
+use function array_map;
 use function array_merge;
 use function array_search;
+use function array_shift;
+use function array_sum;
 use function count;
 use function krsort;
 
@@ -88,13 +92,26 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      */
     public function remove(callable $callback): ListenersPriorityQueue
     {
-        foreach ($this->listeners as $priority => $listeners) {
-            if (($key = array_search($callback, $listeners, true)) !== false) {
-                unset($this->listeners[$priority][$key]);
-            }
-        }
+        $this->removeInBuckets(array_keys($this->listeners), $callback);
 
         return $this;
+    }
+
+    private function removeInBuckets(array $priorities, callable $callback): void
+    {
+        $priority = array_shift($priorities);
+
+        if ($priority === null) {
+            return;
+        }
+
+        $key = array_search($callback, $this->listeners[$priority], true);
+
+        if ($key !== false) {
+            unset($this->listeners[$priority][$key]);
+        }
+
+        $this->removeInBuckets($priorities, $callback);
     }
 
     /**
@@ -107,13 +124,22 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      */
     public function has(callable $callback): bool
     {
-        foreach ($this->listeners as $listeners) {
-            if (array_search($callback, $listeners, true) !== false) {
-                return true;
-            }
+        return $this->hasInBuckets(array_keys($this->listeners), $callback);
+    }
+
+    private function hasInBuckets(array $priorities, callable $callback): bool
+    {
+        $priority = array_shift($priorities);
+
+        if ($priority === null) {
+            return false;
         }
 
-        return false;
+        if (array_search($callback, $this->listeners[$priority], true) !== false) {
+            return true;
+        }
+
+        return $this->hasInBuckets($priorities, $callback);
     }
 
     /**
@@ -128,13 +154,22 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
      */
     public function getPriority(callable $callback, mixed $default = null): mixed
     {
-        foreach ($this->listeners as $priority => $listeners) {
-            if (array_search($callback, $listeners, true) !== false) {
-                return $priority;
-            }
+        return $this->getPriorityInBuckets(array_keys($this->listeners), $callback, $default);
+    }
+
+    private function getPriorityInBuckets(array $priorities, callable $callback, mixed $default): mixed
+    {
+        $priority = array_shift($priorities);
+
+        if ($priority === null) {
+            return $default;
         }
 
-        return $default;
+        if (array_search($callback, $this->listeners[$priority], true) !== false) {
+            return $priority;
+        }
+
+        return $this->getPriorityInBuckets($priorities, $callback, $default);
     }
 
     /**
@@ -176,12 +211,6 @@ final class ListenersPriorityQueue implements IteratorAggregate, Countable
     #[ReturnTypeWillChange]
     public function count(): int
     {
-        $count = 0;
-
-        foreach ($this->listeners as $priority) {
-            $count += count($priority);
-        }
-
-        return $count;
+        return array_sum(array_map('count', $this->listeners));
     }
 }

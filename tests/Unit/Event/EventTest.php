@@ -179,3 +179,32 @@ it('rejects a malformed serialized event', function (): void {
     expect(fn () => $event->unserialize(serialize(['name' => 5, 'arguments' => [], 'stopped' => false])))
         ->toThrow(\UnexpectedValueException::class);
 });
+
+it('rejects a non-string argument key during unserialization', function (): void {
+    $event = new Event('temporary');
+
+    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => [1 => 'value'], 'stopped' => false]))
+        ->toThrow(\UnexpectedValueException::class);
+});
+
+it('rejects non-array arguments during unserialization', function (): void {
+    $event = new Event('temporary');
+
+    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => 'invalid', 'stopped' => false]))
+        ->toThrow(\UnexpectedValueException::class);
+});
+
+it('rejects a non-boolean stopped flag during unserialization', function (): void {
+    $event = new Event('temporary');
+
+    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => [], 'stopped' => 1]))
+        ->toThrow(\UnexpectedValueException::class);
+});
+
+it('ignores non-string offsets when unsetting arguments', function (): void {
+    $event = new Event('temporary', ['a' => 1]);
+
+    unset($event[5]);
+
+    expect($event->hasArgument('a'))->toBeTrue();
+});

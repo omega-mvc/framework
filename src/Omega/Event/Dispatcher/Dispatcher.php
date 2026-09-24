@@ -19,6 +19,8 @@ use Omega\Event\ListenersPriorityQueue;
 use Omega\Event\Priority;
 use Omega\Event\SubscriberInterface;
 
+use function array_keys;
+use function array_shift;
 use function count;
 use function is_array;
 use function is_callable;
@@ -109,14 +111,29 @@ class Dispatcher implements DispatcherInterface
             return [];
         }
 
-        $dispatcherListeners = [];
-
-        /** @noinspection PhpLoopCanBeConvertedToArrayMapInspection */
-        foreach ($this->listeners as $registeredEvent => $listeners) {
-            $dispatcherListeners[$registeredEvent] = $listeners->getAll();
-        }
+        $dispatcherListeners = $this->collectGroupedListeners(array_keys($this->listeners));
 
         return $dispatcherListeners;
+    }
+
+    /**
+     * Flattens the listener queues into an associative array of listener lists.
+     *
+     * @param list<int|string> $eventNames The registered event names.
+     * @return array<string, list<callable(EventInterface): void>>
+     */
+    private function collectGroupedListeners(array $eventNames): array
+    {
+        $eventName = array_shift($eventNames);
+
+        if ($eventName === null) {
+            return [];
+        }
+
+        return [
+            $eventName => $this->listeners[$eventName]->getAll(),
+            ...$this->collectGroupedListeners($eventNames),
+        ];
     }
 
     /**
@@ -128,16 +145,26 @@ class Dispatcher implements DispatcherInterface
             if (isset($this->listeners[$eventName])) {
                 return $this->listeners[$eventName]->has($callback);
             }
-        } else {
-            /** @noinspection PhpLoopCanBeConvertedToArrayAnyInspection */
-            foreach ($this->listeners as $queue) {
-                if ($queue->has($callback)) {
-                    return true;
-                }
-            }
+
+            return false;
         }
 
-        return false;
+        return $this->hasInQueues(array_keys($this->listeners), $callback);
+    }
+
+    private function hasInQueues(array $eventNames, callable $callback): bool
+    {
+        $eventName = array_shift($eventNames);
+
+        if ($eventName === null) {
+            return false;
+        }
+
+        if ($this->listeners[$eventName]->has($callback)) {
+            return true;
+        }
+
+        return $this->hasInQueues($eventNames, $callback);
     }
 
     /**
@@ -179,30 +206,7 @@ class Dispatcher implements DispatcherInterface
      */
     public function addSubscriber(SubscriberInterface $subscriber): void
     {
-        foreach ($subscriber->getSubscribedEvents() as $eventName => $params) {
-            if (is_array($params)) {
-                $priority = $params[1] ?? Priority::NORMAL;
-                $listener = [$subscriber, $params[0]];
-
-                if ($params[0] !== '' && is_callable($listener)) {
-                    $this->addListener(
-                        $eventName,
-                        $listener,
-                        $priority instanceof Priority
-                            ? $priority->value
-                            : $priority
-                    );
-                }
-
-                continue;
-            }
-
-            $listener = [$subscriber, $params];
-
-            if ($params !== '' && is_callable($listener)) {
-                $this->addListener($eventName, $listener);
-            }
-        }
+        $this->registerSubscriptions($this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()), true);
     }
 
     /**
@@ -210,23 +214,92 @@ class Dispatcher implements DispatcherInterface
      */
     public function removeSubscriber(SubscriberInterface $subscriber): void
     {
-        foreach ($subscriber->getSubscribedEvents() as $eventName => $params) {
-            if (is_array($params)) {
-                $listener = [$subscriber, $params[0]];
+        $this->registerSubscriptions($this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()), false);
+    }
 
-                if ($params[0] !== '' && is_callable($listener)) {
-                    $this->removeListener($eventName, $listener);
-                }
+    /**
+     * Registers or unregisters a flat list of subscriber subscriptions.
+     *
+     * @param list<array{0: string, 1: array<int, mixed>|callable, 2: int}> $subscriptions The resolved subscriptions.
+     * @param bool $register True to register, false to unregister.
+     */
+    private function registerSubscriptions(array $subscriptions, bool $register): void
+    {
+        $subscription = array_shift($subscriptions);
 
-                continue;
-            }
-
-            $listener = [$subscriber, $params];
-
-            if ($params !== '' && is_callable($listener)) {
-                $this->removeListener($eventName, $listener);
-            }
+        if ($subscription === null) {
+            return;
         }
+
+        if ($register) {
+            $this->addListener($subscription[0], $subscription[1], $subscription[2]);
+        } else {
+            $this->removeListener($subscription[0], $subscription[1]);
+        }
+
+        $this->registerSubscriptions($subscriptions, $register);
+    }
+
+    /**
+     * Resolves the subscribed events of a subscriber into a flat list of registrations.
+     *
+     * Entries whose listener is empty or not callable are skipped.
+     *
+     * @return list<array{0: string, 1: array<int, mixed>|callable, 2: int}>
+     */
+    private function collectSubscriptions(SubscriberInterface $subscriber, array $events): array
+    {
+        $eventName = array_key_first($events);
+
+        if ($eventName === null) {
+            return [];
+        }
+
+        $params = $events[$eventName];
+
+        unset($events[$eventName]);
+
+        $subscription = $this->resolveSubscription($subscriber, $params);
+
+        if ($subscription === null) {
+            return $this->collectSubscriptions($subscriber, $events);
+        }
+
+        return [[$eventName, $subscription[0], $subscription[1]], ...$this->collectSubscriptions($subscriber, $events)];
+    }
+
+    /**
+     * @return array{0: callable, 1: int}|null
+     */
+    private function resolveSubscription(SubscriberInterface $subscriber, array|string $params): ?array
+    {
+        if (is_array($params)) {
+            $listener = [$subscriber, $params[0]];
+
+            if ($params[0] === '') {
+                return null;
+            }
+
+            if (!is_callable($listener)) {
+                return null;
+            }
+
+            $priority = $params[1] ?? Priority::NORMAL;
+
+            return [$listener, $priority instanceof Priority ? $priority->value : $priority];
+        }
+
+        $listener = [$subscriber, $params];
+
+        if ($params === '') {
+            return null;
+        }
+
+        if (!is_callable($listener)) {
+            return null;
+        }
+
+        return [$listener, 0];
     }
 
     /**
@@ -235,15 +308,33 @@ class Dispatcher implements DispatcherInterface
     public function dispatch(EventInterface $event): EventInterface
     {
         if (isset($this->listeners[$event->getName()])) {
-            foreach ($this->listeners[$event->getName()] as $listener) {
-                if ($event->isStopped()) {
-                    return $event;
-                }
-
-                $listener($event);
-            }
+            return $this->dispatchQueue($this->listeners[$event->getName()]->getAll(), $event);
         }
 
         return $event;
+    }
+
+    /**
+     * Executes the given listeners in order until the event is stopped.
+     *
+     * @param list<callable(EventInterface): void> $listeners The listeners to execute.
+     * @param EventInterface $event The event being dispatched.
+     * @return EventInterface The dispatched, possibly stopped, event.
+     */
+    private function dispatchQueue(array $listeners, EventInterface $event): EventInterface
+    {
+        if ([] === $listeners) {
+            return $event;
+        }
+
+        if ($event->isStopped()) {
+            return $event;
+        }
+
+        $listener = array_shift($listeners);
+
+        $listener($event);
+
+        return $this->dispatchQueue($listeners, $event);
     }
 }

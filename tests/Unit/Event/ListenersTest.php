@@ -83,6 +83,19 @@ it('logs caught exceptions', function (): void {
     expect($logger->getRecords()[0]['context'])->toHaveKey('line');
 });
 
+it('skips logging when the logged value is not a throwable', function (): void {
+    $logger   = new MemoryLogger();
+    $listener = new ExceptionHandlerListener();
+    $listener->setLogger($logger);
+
+    $event = new Event('exception.logged');
+    $event->setArgument('exception', 'plain-string');
+
+    $listener->onExceptionLogged($event);
+
+    expect($logger->getRecords())->toBe([]);
+});
+
 it('does not log exceptions without a logger', function (): void {
     $listener  = new ExceptionHandlerListener();
     $exception = new \RuntimeException('boom');
@@ -132,9 +145,54 @@ it('skips clearing when the event has no table', function (): void {
     expect($cache->has('model.other'))->toBeTrue();
 });
 
+it('skips clearing when the event table is not a string', function (): void {
+    $storage  = new MemoryStorage(['ttl' => 3600]);
+    $cache    = new CacheManager('memory', $storage);
+    $listener = new CacheClearListener();
+    $listener->setCacheManager($cache);
+
+    $cache->set('model.other', 'value');
+    $event = new Event('model.saved');
+    $event->setArgument('table', 123);
+    $listener->onModelSaved($event);
+
+    expect($cache->has('model.other'))->toBeTrue();
+});
+
 it('does nothing without a cache manager', function (): void {
     $listener = new CacheClearListener();
     $model    = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
     expect(fn () => $listener->onModelSaved(ModelEvent::saved($model)))->not->toThrow(\Throwable::class);
+});
+
+it('subscribes to model lifecycle events', function (): void {
+    expect(AuditTrailListener::getSubscribedEvents())->toEqual([
+        'model.created' => ['onModelCreated', 0],
+        'model.saved'   => ['onModelSaved', 0],
+        'model.deleted' => ['onModelDeleted', 0],
+    ]);
+    expect(CacheClearListener::getSubscribedEvents())->toEqual([
+        'model.saved'   => ['onModelSaved', 0],
+        'model.deleted' => ['onModelDeleted', 0],
+    ]);
+    expect(ExceptionHandlerListener::getSubscribedEvents())->toEqual([
+        'exception.logged' => ['onExceptionLogged', 10],
+    ]);
+});
+
+it('falls back to the unknown table name for a non-string table', function (): void {
+    $logger   = new MemoryLogger();
+    $listener = new AuditTrailListener();
+    $listener->setLogger($logger);
+    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+
+    $event = new Event('model.saved');
+    $event->setArgument('model', $model);
+    $event->setArgument('table', 123);
+
+    $listener->onModelSaved($event);
+
+    expect($logger->getRecords())->toHaveCount(1);
+    expect($logger->getRecords()[0]['message'])->toBe('Model updated in table `unknown`');
 });

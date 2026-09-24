@@ -99,6 +99,22 @@ it('removes a registered listener', function (): void {
     expect($queue->getAll())->toEqual([$second]);
 });
 
+it('removes a listener found in a lower priority bucket', function (): void {
+    $queue  = new ListenersPriorityQueue();
+    $first  = static function (EventInterface $event): void {
+    };
+    $second = static function (EventInterface $event): void {
+    };
+
+    $queue->add($first, 5);
+    $queue->add($second, 0);
+    $queue->remove($second);
+
+    expect($queue->has($second))->toBeFalse();
+    expect($queue->has($first))->toBeTrue();
+    expect($queue->getAll())->toEqual([$first]);
+});
+
 it('counts all registered listeners', function (): void {
     $queue = new ListenersPriorityQueue();
 

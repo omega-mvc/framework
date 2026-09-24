@@ -102,8 +102,14 @@ class CacheClearListener implements SubscriberInterface
 
         $table = $event->getArgument('table', '');
 
-        if (is_string($table) && $table !== '') {
-            $this->cache->delete("model.{$table}");
+        if (!is_string($table)) {
+            return;
         }
+
+        if ($table === '') {
+            return;
+        }
+
+        $this->cache->delete("model.{$table}");
     }
 }

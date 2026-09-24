@@ -20,6 +20,7 @@ use ReturnTypeWillChange;
 use Serializable;
 use UnexpectedValueException;
 
+use function array_key_first;
 use function count;
 use function is_array;
 use function is_bool;
@@ -197,7 +198,15 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
         $arguments = $data['arguments'] ?? null;
         $stopped = $data['stopped'] ?? null;
 
-        if (!is_string($name) || !is_array($arguments) || !is_bool($stopped)) {
+        if (!is_string($name)) {
+            throw new UnexpectedValueException('Invalid serialized event data.');
+        }
+
+        if (!is_array($arguments)) {
+            throw new UnexpectedValueException('Invalid serialized event data.');
+        }
+
+        if (!is_bool($stopped)) {
             throw new UnexpectedValueException('Invalid serialized event data.');
         }
 
@@ -215,17 +224,21 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
      */
     private function normalizeArguments(array $arguments): array
     {
-        $normalized = [];
+        $key = array_key_first($arguments);
 
-        foreach ($arguments as $key => $value) {
-            if (!is_string($key)) {
-                throw new UnexpectedValueException('Invalid serialized event data.');
-            }
-
-            $normalized[$key] = $value;
+        if ($key === null) {
+            return [];
         }
 
-        return $normalized;
+        if (!is_string($key)) {
+            throw new UnexpectedValueException('Invalid serialized event data.');
+        }
+
+        $value = $arguments[$key];
+
+        unset($arguments[$key]);
+
+        return [$key => $value] + $this->normalizeArguments($arguments);
     }
 
     /**
@@ -237,7 +250,11 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     #[ReturnTypeWillChange]
     public function offsetExists(mixed $offset): bool
     {
-        return is_string($offset) && $this->hasArgument($offset);
+        if (!is_string($offset)) {
+            return false;
+        }
+
+        return $this->hasArgument($offset);
     }
 
     /**

@@ -92,3 +92,13 @@ it('throws when the requested method is not callable on the instance', function 
     expect(fn () => $listener(new Event('launcher.fire')))
         ->toThrow(ServiceMethodNotFoundException::class);
 });
+
+it('throws when a non-object service exposes a method', function (): void {
+    $container = new Container();
+    $container->set('scalar', 'not-a-callable');
+
+    $listener = new LazyServiceEventListener($container, 'scalar', 'handle');
+
+    expect(fn () => $listener(new Event('launcher.fire')))
+        ->toThrow(InvalidServiceMethodException::class);
+});

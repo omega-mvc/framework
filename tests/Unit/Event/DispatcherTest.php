@@ -8,6 +8,7 @@ use Omega\Event\Dispatcher\Dispatcher;
 use Omega\Event\Event;
 use Omega\Event\EventInterface;
 use Omega\Event\Priority;
+use Tests\Event\Support\TestSkippingSubscriber;
 use Tests\Event\Support\TestSubscriber;
 
 covers(Dispatcher::class);
@@ -190,6 +191,33 @@ it('checks listener existence globally and per event', function (): void {
     expect($dispatcher->hasListener($listener, 'other.event'))->toBeFalse();
 });
 
+it('searches listener existence across multiple events', function (): void {
+    $dispatcher = new Dispatcher();
+    $first      = function (EventInterface $event): void {
+    };
+    $second     = function (EventInterface $event): void {
+    };
+
+    $dispatcher->addListener('order.created', $first);
+    $dispatcher->addListener('customer.created', $second);
+
+    expect($dispatcher->hasListener($second))->toBeTrue();
+    expect($dispatcher->hasListener(static function (EventInterface $event): void {
+    }))->toBeFalse();
+});
+
+it('skips empty and non-callable subscriber events', function (): void {
+    $dispatcher = new Dispatcher();
+    $subscriber = new TestSkippingSubscriber();
+
+    $dispatcher->addSubscriber($subscriber);
+
+    expect($dispatcher->countListeners('subscriber.empty'))->toBe(0);
+    expect($dispatcher->countListeners('subscriber.emptyArray'))->toBe(0);
+    expect($dispatcher->countListeners('subscriber.missing'))->toBe(0);
+    expect($dispatcher->countListeners('subscriber.missingString'))->toBe(0);
+});
+
 it('returns listeners filtered or grouped', function (): void {
     $dispatcher = new Dispatcher();
     $first  = function (EventInterface $event): void {
@@ -231,4 +259,42 @@ it('clears all listeners', function (): void {
 
     expect($dispatcher->countListeners('order.created'))->toBe(0);
     expect($dispatcher->countListeners('customer.created'))->toBe(0);
+});
+
+it('returns an empty list for an unregistered event', function (): void {
+    $dispatcher = new Dispatcher();
+
+    expect($dispatcher->getListeners('unregistered.event'))->toBe([]);
+});
+
+it('does not call listeners when the event is already stopped', function (): void {
+    $dispatcher = new Dispatcher();
+    $called     = false;
+
+    $dispatcher->addListener('order.created', function () use (&$called): void {
+        $called = true;
+    });
+
+    $event = new Event('order.created');
+    $event->stopPropagation();
+
+    $dispatcher->dispatch($event);
+
+    expect($called)->toBeFalse();
+});
+
+it('does nothing when removing an unregistered listener', function (): void {
+    $dispatcher = new Dispatcher();
+    $listener   = static function (): void {};
+
+    $dispatcher->removeListener('never.registered', $listener);
+
+    expect($dispatcher->countListeners('never.registered'))->toBe(0);
+});
+
+it('does nothing when clearing an unregistered event', function (): void {
+    $dispatcher = new Dispatcher();
+
+    expect($dispatcher->clearListeners('never.registered'))->toBe($dispatcher);
+    expect($dispatcher->countListeners('never.registered'))->toBe(0);
 });
