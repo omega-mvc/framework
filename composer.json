@@ -77,7 +77,16 @@
             "Omega\\PHPStan\\": "phpstan/"
         },
         "exclude-from-classmap": [
-            "tests/Unit/fixtures/"
+            "tests/Unit/fixtures/",
+            "tests/Unit/Application/fixtures/",
+            "tests/Unit/Config/fixtures/",
+            "tests/Unit/Exceptions/fixtures/",
+            "tests/Unit/Http/fixtures/",
+            "tests/Unit/Middleware/fixtures/",
+            "tests/Unit/View/fixtures/",
+            "tests/Unit/Console/Fixtures/",
+            "tests/Unit/Console/Commands/Fixtures/",
+            "tests/Unit/Macroable/MacroableTest.php"
         ]
     },
     "extra": {
