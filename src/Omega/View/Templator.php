@@ -300,7 +300,11 @@ class Templator
             throw $th;
         }
 
-        $out = ob_get_clean();
+        $out = '';
+
+        if (ob_get_level() > $level) {
+            $out = ob_get_clean();
+        }
 
         return $out === false ? '' : ltrim($out);
     }

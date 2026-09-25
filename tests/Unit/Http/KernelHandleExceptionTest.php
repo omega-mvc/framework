@@ -21,8 +21,6 @@ use ReflectionException;
 use Throwable;
 
 use function is_string;
-use function restore_error_handler;
-use function restore_exception_handler;
 
 
 covers(Application::class);
@@ -74,9 +72,6 @@ beforeEach(function (): void {
 
 afterEach(function (): void {
     $this->app->flush();
-
-    restore_error_handler();
-    restore_exception_handler();
 });
 
 it('can render exception', function (): void {
