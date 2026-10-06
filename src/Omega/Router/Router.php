@@ -55,7 +55,11 @@ class Router extends AbstractRouter
      * Adds a new route to the internal collection if it contains
      * the required fields: expression, function, and method.
      *
-     * @param array{expression:string, function:callable, method:string} $route  Route definition.
+     * @param array{
+     *     expression:string,
+     *     function: callable|array{0: object|string, 1: string},
+     *     method:string
+     * } $route  Route definition.
      * @return void
      */
     public static function addRoutes(array $route): void
@@ -103,7 +107,7 @@ class Router extends AbstractRouter
      *
      * @param array<int, array{
      *     expression: string,
-     *     function: callable,
+     *     function: callable|array{0: object|string, 1: string},
      *     method: string
      * }> $arrayRoutes  An array of route definitions.
      * @return void

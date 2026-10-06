@@ -19,6 +19,11 @@ use Omega\Middleware\MaintenanceMiddleware;
 use Omega\Router\RouteServiceProvider;
 use Omega\Router\Router;
 use ReflectionProperty;
+use Tests\Router\Support\SomeClass;
+
+use function Tests\Router\Support\dispatcher;
+
+require_once __DIR__ . '/Support/Dispatcher.php';
 
 covers(RouteServiceProvider::class);
 
@@ -191,6 +196,32 @@ it('re-registers the same cached definitions across several requests', function 
     }
 
     expect(Router::getRoutesRaw())->toHaveCount(24);
+
+    $app->flush();
+});
+
+it('registerWebRoutes keeps a cached controller pair and drops malformed handler arrays', function (): void {
+    $app      = routerProviderApp('support-controller-cache');
+    $provider = new RouteServiceProvider($app);
+
+    $provider->registerWebRoutes();
+
+    $routes      = Router::getRoutesRaw();
+    $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+
+    expect($expressions)->toBe(['/controller']);
+    expect($routes[0]['function'])->toBe([SomeClass::class, 'foo']);
+
+    $app->flush();
+});
+
+it('dispatches a cached controller pair through an instance method', function (): void {
+    $app      = routerProviderApp('support-controller-cache');
+    $provider = new RouteServiceProvider($app);
+
+    $provider->registerWebRoutes();
+
+    expect(dispatcher('/controller', 'get'))->toBe('bar');
 
     $app->flush();
 });
