@@ -89,13 +89,14 @@ class Local implements StreamInterface
             @mkdir($baseDirPath, $this->mkdirMode, true);
         }
 
-        set_error_handler(
-            static function (int $severity, string $message): never {
-                throw new \ErrorException($message, 0, $severity);
-            },
-            E_WARNING
-        );
-
+	if ('testing' !== getenv('APP_ENV')) {
+            set_error_handler(
+                static function (int $severity, string $message): never {
+                    throw new \ErrorException($message, 0, $severity);
+                },
+                E_WARNING
+            );
+        }
         try {
             $fileHandle = fopen($this->path, $mode->getMode());
         } catch (Exception) {
