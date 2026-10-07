@@ -176,9 +176,10 @@ class RouteServiceProvider extends AbstractServiceProvider
      * method, ...) are still skipped.
      *
      * @param mixed $callable The raw callable value from the route cache.
-     * @return callable|array|null The resolved callable or handler pair, or
-     *                             null when the cached value cannot be used as
-     *                             a route callable.
+     * @return callable|array{0: object|string, 1: string}|null The resolved
+     *                             callable or handler pair, or null when the
+     *                             cached value cannot be used as a route
+     *                             callable.
      */
     private function resolveRouteCallable(mixed $callable): callable|array|null
     {
@@ -221,6 +222,7 @@ class RouteServiceProvider extends AbstractServiceProvider
      *
      * @param array<mixed, mixed> $value The array to inspect.
      * @return bool True when the array is exactly a two-element handler pair.
+     * @phpstan-assert-if-true array{0: object|string, 1: string} $value
      */
     private function isHandlerPair(array $value): bool
     {
