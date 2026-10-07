@@ -10,7 +10,7 @@ composer run fix           # phpcbf auto-fix
 composer run test          # pest (PHPUnit-style Pest classes)
 vendor/bin/pest tests/Unit/Macroable   # run a single test file/dir
 composer run check         # lint + test
-composer run ci            # fix + check (what CI runs)
+composer run ci            # fix + check (local full gate; GitHub CI runs the three checks separately)
 vendor/bin/phpstan analyse # level 10, src/ + tests/ (phpstan.neon.dist)
 ```
 
@@ -53,5 +53,5 @@ Run `lint` before `test`; fix lint errors with `composer run fix` first. PHPStan
 
 ## Notes
 
-- No CI pipelines configured (no `.github/`)
+- CI: GitHub Actions in `.github/workflows/` — `tests.yml` (Pest), `coding-standard.yml` (PHPCS), `static-analysis.yml` (PHPStan); each runs on push to `main` and via `workflow_call`, `ci.yml` ties all three together on pull requests
 - `composer.lock` exists on disk but is gitignored and untracked — edit `composer.json` dependencies directly

@@ -11,6 +11,13 @@
     <a href="https://github.com/omega-mvc/omega-framework/blob/main/LICENSE">License</a>
 </p>
 
+<p align="center">
+    <a href="https://github.com/omega-mvc/framework/actions/workflows/tests.yml"><img src="https://img.shields.io/github/actions/workflow/status/omega-mvc/framework/tests.yml?label=Pest" alt="Pest"></a>
+    <a href="https://github.com/omega-mvc/framework/actions/workflows/coding-standard.yml"><img src="https://img.shields.io/github/actions/workflow/status/omega-mvc/framework/coding-standard.yml?label=PHPCS" alt="PHPCS"></a>
+    <a href="https://github.com/omega-mvc/framework/actions/workflows/static-analysis.yml"><img src="https://img.shields.io/github/actions/workflow/status/omega-mvc/framework/static-analysis.yml?label=PHPStan" alt="PHPStan"></a>
+    <a href="https://packagist.org/packages/omega-mvc/framework"><img src="https://img.shields.io/packagist/v/omega-mvc/framework.svg" alt="Packagist Version"></a>
+</p>
+
 # PHP MVC
 
 ## Feature
