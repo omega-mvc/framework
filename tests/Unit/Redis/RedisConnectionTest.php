@@ -10,6 +10,8 @@ use RedisException;
 
 use function expect;
 use function extension_loaded;
+use function fclose;
+use function fsockopen;
 
 covers(Redis::class);
 covers(RedisConnector::class);
@@ -18,6 +20,12 @@ beforeEach(function (): void {
     if (!extension_loaded('redis')) {
         $this->markTestSkipped('Redis extension not loaded.');
     }
+
+    $socket = @fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    if (false === $socket) {
+        $this->markTestSkipped('Redis server is not reachable: ' . $errstr);
+    }
+    fclose($socket);
 });
 
 it('can connect using persistent connection', function (): void {

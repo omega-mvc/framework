@@ -17,7 +17,7 @@ namespace Omega\Filesystem\Adapter\Sftp;
 
 use LogicException;
 use RuntimeException;
-use phpseclib\Net\SFTP as SecLibSFTP;
+use phpseclib3\Net\SFTP as SecLibSFTP;
 use Omega\Filesystem\Adapter\FilesystemAdapterInterface;
 use Omega\Filesystem\Contracts\FileFactoryInterface;
 use Omega\Filesystem\Contracts\ListKeysAwareInterface;
@@ -68,7 +68,7 @@ class Sftp implements
      * SFTP file type identifier for a directory.
      *
      * Matches the runtime-defined phpseclib global constant `NET_SFTP_TYPE_DIRECTORY`
-     * (see `phpseclib\Net\SFTP::$file_types`), which is not statically analysable.
+     * (see `phpseclib3\Net\SFTP::$file_types`), which is not statically analysable.
      *
      * @var int
      */
