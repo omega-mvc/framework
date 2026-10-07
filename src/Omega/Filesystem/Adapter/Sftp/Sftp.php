@@ -141,13 +141,13 @@ class Sftp implements
             return false;
         }
 
-        $size = $this->sftp->size($path);
+        $stat = $this->sftp->stat($path);
 
-        if (!is_int($size)) {
+        if (!is_array($stat) || !isset($stat['size']) || !is_int($stat['size'])) {
             return false;
         }
 
-        return $size;
+        return $stat['size'];
     }
 
     /**
