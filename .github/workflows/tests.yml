@@ -51,7 +51,7 @@ jobs:
         # Tests boot Application('/'), whose cache/log paths resolve to
         # /storage/cache and /storage/logs; the runner cannot mkdir at /.
         run: |
-          sudo mkdir -p /storage/cache /storage/logs
+          sudo mkdir -p /cache /storage/cache /storage/logs
           sudo chmod -R 777 /storage
 
       - name: Run Pest

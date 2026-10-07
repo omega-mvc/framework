@@ -12,6 +12,8 @@ use function expect;
 use function extension_loaded;
 use function fclose;
 use function fsockopen;
+use function restore_error_handler;
+use function set_error_handler;
 
 covers(Redis::class);
 covers(RedisConnector::class);
@@ -21,7 +23,13 @@ beforeEach(function (): void {
         $this->markTestSkipped('Redis extension not loaded.');
     }
 
-    $socket = @fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    $socket = false;
+    set_error_handler(static fn (): bool => true);
+    try {
+        $socket = fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    } finally {
+        restore_error_handler();
+    }
     if (false === $socket) {
         $this->markTestSkipped('Redis server is not reachable: ' . $errstr);
     }

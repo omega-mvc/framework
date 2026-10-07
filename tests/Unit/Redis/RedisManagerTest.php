@@ -15,6 +15,8 @@ use function extension_loaded;
 use function fclose;
 use function file_exists;
 use function fsockopen;
+use function restore_error_handler;
+use function set_error_handler;
 
 covers(Redis::class);
 covers(RedisManager::class);
@@ -24,7 +26,13 @@ beforeEach(function (): void {
         $this->markTestSkipped('Redis extension not loaded.');
     }
 
-    $socket = @fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    $socket = false;
+    set_error_handler(static fn (): bool => true);
+    try {
+        $socket = fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    } finally {
+        restore_error_handler();
+    }
     if (false === $socket) {
         $this->markTestSkipped('Redis server is not reachable: ' . $errstr);
     }
@@ -32,9 +40,25 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
-    if (extension_loaded('redis')) {
-        createRedisDriver()->flushDb();
+    if (!extension_loaded('redis')) {
+        return;
     }
+
+    // Pest runs afterEach even when beforeEach skipped the test;
+    // do not let flushDb() connect to a missing server.
+    $socket = false;
+    set_error_handler(static fn (): bool => true);
+    try {
+        $socket = fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+    } finally {
+        restore_error_handler();
+    }
+    if (false === $socket) {
+        return;
+    }
+    fclose($socket);
+
+    createRedisDriver()->flushDb();
 });
 
 it('can set and get default driver', function (): void {
