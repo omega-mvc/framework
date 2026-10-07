@@ -29,6 +29,7 @@ use function fseek;
 use function fstat;
 use function ftell;
 use function fwrite;
+use function getenv;
 use function is_dir;
 use function is_resource;
 use function mkdir;
@@ -89,20 +90,24 @@ class Local implements StreamInterface
             @mkdir($baseDirPath, $this->mkdirMode, true);
         }
 
-	if ('testing' !== getenv('APP_ENV')) {
+        $handlerSet = false;
+        if ('testing' !== getenv('APP_ENV')) {
             set_error_handler(
                 static function (int $severity, string $message): never {
                     throw new \ErrorException($message, 0, $severity);
                 },
                 E_WARNING
             );
+            $handlerSet = true;
         }
         try {
             $fileHandle = fopen($this->path, $mode->getMode());
         } catch (Exception) {
             $fileHandle = false;
         } finally {
-            restore_error_handler();
+            if ($handlerSet) {
+                restore_error_handler();
+            }
         }
 
         if (false === $fileHandle) {
