@@ -52,7 +52,7 @@ jobs:
         # /storage/cache and /storage/logs; the runner cannot mkdir at /.
         run: |
           sudo mkdir -p /cache /storage/cache /storage/logs
-          sudo chmod -R 777 /storage
+          sudo chmod -R 777 /cache /storage
 
       - name: Run Pest
         # --no-coverage keeps the job green: the XML declares an HTML report
