@@ -56,7 +56,14 @@ it('opens an existing file for reading', function (): void {
 
 it('throws when fopen fails', function (): void {
     $stream = new Local('/nonexistent/path/file.txt');
-    $stream->open(new StreamMode('r'));
+
+    set_error_handler(static fn (): bool => true);
+
+    try {
+        $stream->open(new StreamMode('r'));
+    } finally {
+        restore_error_handler();
+    }
 })->throws(RuntimeException::class);
 
 it('reads data from an open stream', function (): void {
