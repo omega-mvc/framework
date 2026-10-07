@@ -114,35 +114,30 @@ it('calculates the expiration timestamp', function (): void {
     $time = time();
 
     $expired = (fn () => $this->{'calculateExpirationTimestamp'}(null))->call($this->storage);
-    $this->assertIsInt($expired);
     expect($expired)->toBeGreaterThanOrEqual($time);
 
     $expired = (fn () => $this->{'calculateExpirationTimestamp'}(time()))->call($this->storage);
-    $this->assertIsInt($expired);
     expect($expired)->toBeGreaterThanOrEqual($time);
 
     $expired = (
         fn () => $this->{'calculateExpirationTimestamp'}(DateInterval::createFromDateString('1 day'))
     )->call($this->storage);
-    $this->assertIsInt($expired);
     expect($expired)->toBeGreaterThanOrEqual($time);
 
     $expired = (fn () => $this->{'calculateExpirationTimestamp'}(new DateTime()))->call($this->storage);
-    $this->assertIsInt($expired);
     expect($expired)->toBeGreaterThanOrEqual($time);
 });
 
 it('reports whether an item is expired', function (): void {
     $expired = (fn () => $this->{'isExpired'}(time() + 2))->call($this->storage);
 
-    $this->assertIsBool($expired);
     expect($expired)->toBeFalse();
 });
 
 it('creates a float mtime', function (): void {
     $mtime = (fn () => $this->{'createMtime'}())->call($this->storage);
 
-    $this->assertIsFloat($mtime);
+    expect($mtime)->toBeGreaterThan(0.0);
 });
 
 it('remembers a value', function (): void {

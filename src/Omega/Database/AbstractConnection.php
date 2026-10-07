@@ -358,9 +358,7 @@ abstract class AbstractConnection implements ConnectionInterface
         $normalized = [];
 
         foreach ($row as $key => $value) {
-            if (is_string($key)) {
-                $normalized[$key] = $value;
-            }
+            $normalized[$key] = $value;
         }
 
         return $normalized;

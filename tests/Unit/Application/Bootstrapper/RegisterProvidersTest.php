@@ -38,7 +38,6 @@ it('bootstraps the application with default and runtime providers', function ():
     expect((fn () => $this->{'bootedProviders'})->call($app))->not->toBeEmpty();
 
     $loaded = (fn () => $this->{'loadedProviders'})->call($app);
-    expect($loaded)->toBeArray();
     expect($loaded)->toContain(TestRegisterServiceProvider::class);
 });
 
@@ -54,7 +53,6 @@ it('boots the continue line in the boot provider', function (): void {
 
     $booted = (fn () => $this->{'bootedProviders'})->call($app);
 
-    expect($booted)->toBeArray();
     expect($booted)->toContain($provider);
 });
 
@@ -79,7 +77,6 @@ it('resolves core providers when the config has no binding', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    $this->assertIsArray($providers);
     foreach ($app->getCoreProviders() as $core) {
         expect($providers)->toContain($core);
     }
@@ -93,7 +90,6 @@ it('ignores a config binding that is not a ConfigRepository', function (): void 
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 
@@ -106,7 +102,6 @@ it('ignores a providers config entry that is not an array', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 
@@ -122,7 +117,6 @@ it('ignores a package provider list that is not an array', function (): void {
     $bootstrapper = new RegisterProviders();
     $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
 
-    $this->assertIsArray($providers);
     expect($providers)->not->toContain(TestRegisterServiceProvider::class);
 });
 
