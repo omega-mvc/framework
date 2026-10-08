@@ -289,7 +289,7 @@ class Templator
 
         try {
             (static function (array $__, string $__file_name__) {
-                extract($__);
+                extract($__, EXTR_SKIP);
                 include $__file_name__;
             })($data, $templatePath);
         } catch (Throwable $th) {

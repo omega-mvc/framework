@@ -6,7 +6,7 @@
          executionOrder="depends,defects"
          defaultTestSuite="Omega Framework Test Suite"
          beStrictAboutOutputDuringTests="true"
-         failOnRisky="true"
+	 failOnRisky="true"
          failOnWarning="true"
          colors="true"
 >

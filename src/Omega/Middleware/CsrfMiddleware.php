@@ -32,7 +32,17 @@ class CsrfMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!$request->isMethod('GET') && !$request->isMethod('HEAD') && !$request->isMethod('OPTIONS')) {
-            $token = $request->getPost($this->csrf->getTokenField());
+            $field = $this->csrf->getTokenField();
+            $token = $request->getPost($field);
+
+            if (!is_string($token) || $token === '') {
+                $headers = $request->getHeaders('x-csrf-token');
+                if (is_string($headers)) {
+                    $token = $headers;
+                } elseif (is_array($headers) && !empty($headers)) {
+                    $token = $headers[0];
+                }
+            }
 
             if (!is_string($token) || !$this->csrf->validateToken($token)) {
                 throw new InvalidCsrfTokenException('Invalid CSRF token.');

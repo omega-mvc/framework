@@ -195,18 +195,19 @@ class RouteServiceProvider extends AbstractServiceProvider
             return $callable;
         }
 
-        if (!str_contains($callable, 'SerializableClosure')) {
+        $serialized = @unserialize($callable, [
+            'allowed_classes' => [
+                \Omega\SerializableClosure\UnsignedSerializableClosure::class,
+                \Omega\SerializableClosure\Serializers\Native::class,
+            ],
+            'max_depth' => 32,
+        ]);
+
+        if (!$serialized instanceof UnsignedSerializableClosure) {
             if (!is_callable($callable)) {
                 return null;
             }
-
             return $callable;
-        }
-
-        $serialized = unserialize($callable);
-
-        if (!$serialized instanceof UnsignedSerializableClosure) {
-            return null;
         }
 
         return $serialized->getClosure();
