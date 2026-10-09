@@ -22,6 +22,7 @@ use Omega\Http\Request;
 use Omega\Http\Response;
 
 use function is_string;
+use function reset;
 
 class CsrfMiddleware
 {
@@ -40,7 +41,7 @@ class CsrfMiddleware
                 if (is_string($headers)) {
                     $token = $headers;
                 } elseif (is_array($headers) && !empty($headers)) {
-                    $token = $headers[0];
+                    $token = reset($headers);
                 }
             }
 

@@ -4,148 +4,173 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
-use Exception;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Text\Str;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function json_decode;
 use function ob_get_clean;
 use function ob_start;
 use function rand;
 
-covers(Request::class);
-covers(Response::class);
-covers(Str::class);
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+#[CoversClass(Str::class)]
+final class ResponseTest extends TestCase
+{
+    private Response $htmlResponse;
 
-beforeEach(function (): void {
-    $html = '<html lang="en"><head></head><body></body></html>';
-    $json = [
-        'status'  => 'ok',
-        'code'    => 200,
-        'data'    => null,
-    ];
+    private Response $jsonResponse;
 
-    $this->htmlResponse = new Response($html, 200, []);
-    $this->jsonResponse = new Response($json, 200, []);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('render html response', function (): void {
-    ob_start();
-    $this->htmlResponse->html()->send();
-    $html = ob_get_clean();
-
-    expect($html)->toEqual(
-        '<html lang="en"><head></head><body></body></html>'
-    );
-});
-
-it('render json response', function (): void {
-    ob_start();
-    $this->jsonResponse->json()->send();
-    $json = ob_get_clean();
-
-    $this->assertIsString($json);
-
-    expect(json_decode($json))->not->toBeNull();
-    expect(json_decode($json, true))->toEqual(
-        [
+        $html = '<html lang="en"><head></head><body></body></html>';
+        $json = [
             'status'  => 'ok',
             'code'    => 200,
             'data'    => null,
-        ]
-    );
-});
+        ];
 
-it('can be edited content', function (): void {
-    $this->htmlResponse->setContent('edited');
+        $this->htmlResponse = new Response($html, 200, []);
+        $this->jsonResponse = new Response($json, 200, []);
+    }
 
-    ob_start();
-    $this->htmlResponse->html()->send();
-    $html = ob_get_clean();
+    public function testRenderHtmlResponse(): void
+    {
+        ob_start();
+        $this->htmlResponse->html()->send();
+        $html = ob_get_clean();
 
-    expect($html)->toEqual(
-        'edited'
-    );
-});
+        $this->assertEquals(
+            '<html lang="en"><head></head><body></body></html>',
+            $html
+        );
+    }
 
-it('can set header using construct header', function (): void {
-    $res = new Response('content', 200, ['test' => 'test']);
+    public function testRenderJsonResponse(): void
+    {
+        ob_start();
+        $this->jsonResponse->json()->send();
+        $json = ob_get_clean();
 
-    $get_header = $res->getHeaders()['test'];
+        $this->assertIsString($json);
 
-    expect($get_header)->toEqual('test');
-});
+        $this->assertNotNull(json_decode($json));
+        $this->assertEquals(
+            [
+                'status'  => 'ok',
+                'code'    => 200,
+                'data'    => null,
+            ],
+            json_decode($json, true)
+        );
+    }
 
-it('can set header using set headers', function (): void {
-    $res = new Response('content');
-    $res->setHeaders(['test' => 'test']);
+    public function testCanBeEditedContent(): void
+    {
+        $this->htmlResponse->setContent('edited');
 
-    $get_header = $res->getHeaders()['test'];
+        ob_start();
+        $this->htmlResponse->html()->send();
+        $html = ob_get_clean();
 
-    expect($get_header)->toEqual('test');
-});
+        $this->assertEquals(
+            'edited',
+            $html
+        );
+    }
 
-it('can set header using header', function (): void {
-    $res = new Response('content');
-    $res->header('test', 'test');
+    public function testCanSetHeaderUsingConstructHeader(): void
+    {
+        $res = new Response('content', 200, ['test' => 'test']);
 
-    $get_header = $res->getHeaders()['test'];
+        $get_header = $res->getHeaders()['test'];
 
-    expect($get_header)->toEqual('test');
-});
+        $this->assertEquals('test', $get_header);
+    }
 
-it('can set header using header and sanitizer header', function (): void {
-    $res = new Response('content');
-    $res->header('test : test:ok');
+    public function testCanSetHeaderUsingSetHeaders(): void
+    {
+        $res = new Response('content');
+        $res->setHeaders(['test' => 'test']);
 
-    $get_header = $res->getHeaders()['test'];
+        $get_header = $res->getHeaders()['test'];
 
-    expect($get_header)->toEqual('test:ok');
-});
+        $this->assertEquals('test', $get_header);
+    }
 
-it('can set header using follow request', function (): void {
-    $req = new Request('test', [], [], [], [], [], ['test' => 'test']);
-    $res = new Response('content');
+    public function testCanSetHeaderUsingHeader(): void
+    {
+        $res = new Response('content');
+        $res->header('test', 'test');
 
-    $res->followRequest($req, ['test']);
-    $get_header = $res->getHeaders()['test'];
+        $get_header = $res->getHeaders()['test'];
 
-    expect($get_header)->toEqual('test');
-});
+        $this->assertEquals('test', $get_header);
+    }
 
-it('can get response status code', function (): void {
-    $res = new Response('content', 200);
+    public function testCanSetHeaderUsingHeaderAndSanitizerHeader(): void
+    {
+        $res = new Response('content');
+        $res->header('test : test:ok');
 
-    expect($res->getStatusCode())->toEqual(200);
-});
+        $get_header = $res->getHeaders()['test'];
 
-it('can get response content', function (): void {
-    $res = new Response('content', 200);
+        $this->assertEquals('test:ok', $get_header);
+    }
 
-    expect($res->getContent())->toEqual('content');
-});
+    public function testCanSetHeaderUsingFollowRequest(): void
+    {
+        $req = new Request('test', [], [], [], [], [], ['test' => 'test']);
+        $res = new Response('content');
 
-it('can get type of response code', function (): void {
-    $res = new Response('content', rand(100, 199));
-    expect($res->isInformational())->toBeTrue();
+        $res->followRequest($req, ['test']);
+        $get_header = $res->getHeaders()['test'];
 
-    $res = new Response('content', rand(200, 299));
-    expect($res->isSuccessful())->toBeTrue();
+        $this->assertEquals('test', $get_header);
+    }
 
-    $res = new Response('content', rand(300, 399));
-    expect($res->isRedirection())->toBeTrue();
+    public function testCanGetResponseStatusCode(): void
+    {
+        $res = new Response('content', 200);
 
-    $res = new Response('content', rand(400, 499));
-    expect($res->isClientError())->toBeTrue();
+        $this->assertEquals(200, $res->getStatusCode());
+    }
 
-    $res = new Response('content', rand(500, 599));
-    expect($res->isServerError())->toBeTrue();
-});
+    public function testCanGetResponseContent(): void
+    {
+        $res = new Response('content', 200);
 
-it('can change protocol version', function (): void {
-    $res = new Response('content');
-    $res->setProtocolVersion('1.0');
+        $this->assertEquals('content', $res->getContent());
+    }
 
-    expect(Str::contains((string) $res, '1.0'))->toBeTrue();
-});
+    public function testCanGetTypeOfResponseCode(): void
+    {
+        $res = new Response('content', rand(100, 199));
+        $this->assertTrue($res->isInformational());
+
+        $res = new Response('content', rand(200, 299));
+        $this->assertTrue($res->isSuccessful());
+
+        $res = new Response('content', rand(300, 399));
+        $this->assertTrue($res->isRedirection());
+
+        $res = new Response('content', rand(400, 499));
+        $this->assertTrue($res->isClientError());
+
+        $res = new Response('content', rand(500, 599));
+        $this->assertTrue($res->isServerError());
+    }
+
+    public function testCanChangeProtocolVersion(): void
+    {
+        $res = new Response('content');
+        $res->setProtocolVersion('1.0');
+
+        $this->assertTrue(Str::contains((string) $res, '1.0'));
+    }
+}

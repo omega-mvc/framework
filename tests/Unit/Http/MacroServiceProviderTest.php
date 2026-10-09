@@ -8,40 +8,46 @@ use Omega\Application\Application;
 use Omega\Http\MacroServiceProvider;
 use Omega\Http\Request;
 use Omega\Http\Upload\UploadFile;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Application::class);
-covers(MacroServiceProvider::class);
-covers(Request::class);
+#[CoversClass(Application::class)]
+#[CoversClass(MacroServiceProvider::class)]
+#[CoversClass(Request::class)]
+final class MacroServiceProviderTest extends TestCase
+{
+    public function testRegistersRequestMacros(): void
+    {
+        $provider = new MacroServiceProvider(new Application(''));
 
-it('registers request macros', function (): void {
-    $provider = new MacroServiceProvider(new Application(''));
+        $provider->register();
 
-    $provider->register();
+        $this->assertTrue(Request::hasMacro('validate'));
+        $this->assertTrue(Request::hasMacro('upload'));
+    }
 
-    expect(Request::hasMacro('validate'))->toBeTrue();
-    expect(Request::hasMacro('upload'))->toBeTrue();
-});
+    public function testUploadMacroExecutesCorrectly(): void
+    {
+        $provider = new MacroServiceProvider(new Application(''));
+        $provider->register();
 
-it('upload macro executes correctly', function (): void {
-    $provider = new MacroServiceProvider(new Application(''));
-    $provider->register();
+        $mockFiles = [
+            'avatar' => [
+                'name'     => 'test.jpg',
+                'type'     => 'image/jpeg',
+                'tmp_name' => '/tmp/php_mock_file_123', // Un percorso inventato!
+                'error'    => 0,
+                'size'     => 1024,
+            ]
+        ];
 
-    $mockFiles = [
-        'avatar' => [
-            'name'     => 'test.jpg',
-            'type'     => 'image/jpeg',
-            'tmp_name' => '/tmp/php_mock_file_123', // Un percorso inventato!
-            'error'    => 0,
-            'size'     => 1024,
-        ]
-    ];
+        $request = new Request(
+            url: '/',
+            files: $mockFiles
+        );
 
-    $request = new Request(
-        url: '/',
-        files: $mockFiles
-    );
+        $uploadFile = $request->upload('avatar');
 
-    $uploadFile = $request->upload('avatar');
-
-    $this->assertInstanceOf(UploadFile::class, $uploadFile);
-});
+        $this->assertInstanceOf(UploadFile::class, $uploadFile);
+    }
+}

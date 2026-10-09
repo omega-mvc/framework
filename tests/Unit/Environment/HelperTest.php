@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Tests\Environment;
 
 use Omega\Application\Application;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function Omega\Environment\env;
 
-covers(Application::class);
+#[CoversClass(Application::class)]
+final class HelperTest extends TestCase
+{
+    public function testEnvHelperReturnsDefaultValueIfKeyDoesNotExist(): void
+    {
+        $default = 'default_value';
 
-it('env helper returns default value if key does not exist', function (): void {
-    $default = 'default_value';
-
-    expect(env('NON_EXISTING_KEY', $default))->toBe($default);
-});
+        $this->assertSame($default, env('NON_EXISTING_KEY', $default));
+    }
+}

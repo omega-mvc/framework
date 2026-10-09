@@ -561,8 +561,13 @@ class Collection extends AbstractCollectionImmutable
     {
         $newCollection = [];
         foreach ($this->collection as $key => $item) {
-            $arrayAssoc          = $callable($item, $key);
-            $newKey              = array_key_first($arrayAssoc);
+            $arrayAssoc = $callable($item, $key);
+            $newKey     = array_key_first($arrayAssoc);
+
+            if (null === $newKey) {
+                continue;
+            }
+
             $newCollection[$newKey] = $arrayAssoc[$newKey];
         }
 

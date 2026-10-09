@@ -348,7 +348,11 @@ final class VarExport
     {
         $last = array_key_last($this->buffer);
 
-        return $this->buffer[$last] ?? null;
+        if (null === $last) {
+            return null;
+        }
+
+        return $this->buffer[$last];
     }
 
     private function openArray(): void

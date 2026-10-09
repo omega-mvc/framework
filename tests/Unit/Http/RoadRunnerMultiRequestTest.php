@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
-use Exception;
 use Omega\Application\Application;
 use Omega\Application\ApplicationManifest;
 use Omega\Container\Exceptions\BindingResolutionException;
@@ -15,64 +14,74 @@ use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
 use Omega\Router\Router;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function count;
 use function is_string;
 
+#[CoversClass(Application::class)]
+#[CoversClass(Http::class)]
+#[CoversClass(Router::class)]
+final class RoadRunnerMultiRequestTest extends TestCase
+{
+    private Http $http;
 
-covers(Application::class);
-covers(Http::class);
-covers(Router::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
+        $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
-    $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-        basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
-        applicationCachePath: $this->app->getApplicationCachePath(),
-        vendorPath: '/package/'
-    ));
+        $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
+            applicationCachePath: $this->app->getApplicationCachePath(),
+            vendorPath: '/package/'
+        ));
 
-    $this->http = new class ($this->app) extends Http {
-        /**
-         * Resolve the request through the static route table.
-         *
-         * @param Request $request Incoming HTTP request.
-         * @return array<string, mixed> Dispatcher configuration.
-         */
-        protected function dispatcher(Request $request): array
-        {
-            return [
-                'callable'   => Router::run(uri: $request->getUrl(), method: $request->getMethod()),
-                'parameters' => [],
-                'middleware' => [],
-            ];
-        }
-    };
-});
+        $this->http = new class ($this->app) extends Http {
+            /**
+             * Resolve the request through the static route table.
+             *
+             * @param Request $request Incoming HTTP request.
+             * @return array<string, mixed> Dispatcher configuration.
+             */
+            protected function dispatcher(Request $request): array
+            {
+                return [
+                    'callable'   => Router::run(uri: $request->getUrl(), method: $request->getMethod()),
+                    'parameters' => [],
+                    'middleware' => [],
+                ];
+            }
+        };
+    }
 
-afterEach(function (): void {
-    $this->app->flush();
-    HandleExceptions::resetHandlersState();
-});
+    protected function tearDown(): void
+    {
+        $this->app->flush();
+        HandleExceptions::resetHandlersState();
 
-it('routes survive across requests', function (): void {
-    $http = $this->http;
+        parent::tearDown();
+    }
 
-    // Request 1
-    $request  = new Request('/test');
-    $response = $http->handle($request);
-    $this->assertInstanceOf(Response::class, $response);
-    $http->terminate($request, $response);
+    public function testRoutesSurviveAcrossRequests(): void
+    {
+        $http = $this->http;
 
-    // Router::reset() ran; without the fix the table is empty here.
-    expect(count(Router::getRoutes()))->toBeGreaterThan(0);
+        // Request 1
+        $request  = new Request('/test');
+        $response = $http->handle($request);
+        $this->assertInstanceOf(Response::class, $response);
+        $http->terminate($request, $response);
 
-    // Request 2 — the regression this test guards against.
-    $request2  = new Request('/test');
-    $response2 = $http->handle($request2);
-    $this->assertInstanceOf(Response::class, $response2);
-    $http->terminate($request2, $response2);
-});
+        // Router::reset() ran; without the fix the table is empty here.
+        $this->assertGreaterThan(0, count(Router::getRoutes()));
+
+        // Request 2 — the regression this test guards against.
+        $request2  = new Request('/test');
+        $response2 = $http->handle($request2);
+        $this->assertInstanceOf(Response::class, $response2);
+        $http->terminate($request2, $response2);
+    }
+}

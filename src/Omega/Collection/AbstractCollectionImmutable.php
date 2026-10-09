@@ -142,6 +142,10 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
      */
     public function get(int|string|null $name, mixed $default = null): mixed
     {
+        if (null === $name) {
+            return $this->collection[''] ?? $default;
+        }
+
         return $this->collection[$name] ?? $default;
     }
 
@@ -460,6 +464,10 @@ abstract class AbstractCollectionImmutable implements CollectionInterface
     public function last(mixed $default = null): mixed
     {
         $key = array_key_last($this->collection);
+
+        if (null === $key) {
+            return $default;
+        }
 
         return $this->collection[$key] ?? $default;
     }

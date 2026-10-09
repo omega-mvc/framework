@@ -12,65 +12,75 @@ use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Http\Support\TestKernelTerminate;
+use Tests\TestCase;
 
 use function ob_get_clean;
 use function ob_start;
 
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Http::class)]
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+final class KernelTerminateTest extends TestCase
+{
+    private Http $http;
 
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(Http::class);
-covers(Request::class);
-covers(Response::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->app = new Application(__DIR__);
+        $this->app = new Application(__DIR__);
 
-    $this->app->set(
-        Http::class,
-        fn () => new $this->http($this->app)
-    );
+        $this->app->set(
+            Http::class,
+            fn () => new $this->http($this->app)
+        );
 
-    $this->http = new class ($this->app) extends Http {
-        public function handle(Request $request): Response
-        {
-            return new Response('ok');
-        }
+        $this->http = new class ($this->app) extends Http {
+            public function handle(Request $request): Response
+            {
+                return new Response('ok');
+            }
 
-        protected function dispatcherMiddleware(Request $request): array
-        {
-            return [TestKernelTerminate::class];
-        }
-    };
-});
-
-afterEach(function (): void {
-    $this->app->flush();
-});
-
-it('can terminate', function (): void {
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new Exception('Expected an Http instance from the container.');
+            protected function dispatcherMiddleware(Request $request): array
+            {
+                return [TestKernelTerminate::class];
+            }
+        };
     }
 
-    $response = $http->handle(
-        $request = new Request('/test')
-    );
+    protected function tearDown(): void
+    {
+        $this->app->flush();
 
-    $this->app->registerTerminate(static function () {
-        echo 'terminated.';
-    });
+        parent::tearDown();
+    }
 
-    ob_start();
-    $http->terminate($request, $response);
-    $out = ob_get_clean();
+    public function testCanTerminate(): void
+    {
+        $http = $this->app->make(Http::class);
 
-    expect($out)->toEqual('/testokterminated.');
-});
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
+        $response = $http->handle(
+            $request = new Request('/test')
+        );
+
+        $this->app->registerTerminate(static function () {
+            echo 'terminated.';
+        });
+
+        ob_start();
+        $http->terminate($request, $response);
+        $out = ob_get_clean();
+
+        $this->assertEquals('/testokterminated.', $out);
+    }
+}

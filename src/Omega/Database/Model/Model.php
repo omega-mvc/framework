@@ -264,7 +264,7 @@ class Model implements ArrayAccess, IteratorAggregate
     public function setter(string $key, mixed $value): self
     {
         $this->firstColumn($current);
-        if (key_exists($key, $this->columns[$current]) && !in_array($key, $this->resistant)) {
+        if (null !== $current && key_exists($key, $this->columns[$current]) && !in_array($key, $this->resistant)) {
             $this->columns[$current][$key] = $value;
 
             return $this;

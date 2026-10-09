@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander slug', function () {
-    expect(fr()->slug())
-        ->toEqual('slug')
-    ;
-});
+final class SlugTest extends TestCase
+{
+    public function testCanRanderSlug(): void
+    {
+        $this->assertEquals('slug', fr()->slug());
+    }
 
-it('can filter slug', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'long title tobe url']);
+    public function testCanFilterSlug(): void
+    {
+        $fr = new Validator(['field' => 'long title tobe url']);
 
-    $fr->filter('field')->slug();
+        $fr->filter('field')->slug();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'long-title-tobe-url'])
-    ;
-});
+        $this->assertEquals(['field' => 'long-title-tobe-url'], $fr->filterOut());
+    }
+}

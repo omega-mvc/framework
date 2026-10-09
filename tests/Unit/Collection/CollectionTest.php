@@ -688,7 +688,7 @@ it('can handle empty collection', function (): void {
 });
 
 it('can handle null key and value', function (): void {
-    $coll = new Collection([null => null]);
+    $coll = new Collection(['' => null]);
 
     expect($coll->has(null))->toBeTrue();
 });

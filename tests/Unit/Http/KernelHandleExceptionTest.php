@@ -16,73 +16,85 @@ use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Http;
 use Omega\Http\Request;
 use Omega\Http\Response;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 use Throwable;
 
 use function is_string;
 
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(ExceptionHandler::class)]
+#[CoversClass(HttpException::class)]
+#[CoversClass(Http::class)]
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+#[CoversClass(ApplicationManifest::class)]
+final class KernelHandleExceptionTest extends TestCase
+{
+    private Http $http;
 
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(ExceptionHandler::class);
-covers(HttpException::class);
-covers(Http::class);
-covers(Request::class);
-covers(Response::class);
-covers(ApplicationManifest::class);
+    private ExceptionHandler $exceptionHandler;
 
-beforeEach(function (): void {
-    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    HandleExceptions::resetHandlersState();
+        $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
-    $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-        basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
-        applicationCachePath: $this->app->getApplicationCachePath(),
-        vendorPath: '/package/'
-    ));
+        HandleExceptions::resetHandlersState();
 
-    $this->app->set(
-        Http::class,
-        fn () => new $this->http($this->app)
-    );
+        $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
+            applicationCachePath: $this->app->getApplicationCachePath(),
+            vendorPath: '/package/'
+        ));
 
-    $this->app->set(
-        ExceptionHandler::class,
-        fn () => $this->exceptionHandler
-    );
+        $this->app->set(
+            Http::class,
+            fn () => new $this->http($this->app)
+        );
 
-    $this->http = new class ($this->app) extends Http {
-        protected function dispatcher(Request $request): array
-        {
-            throw new HttpException(500, 'Test Exception');
-        }
-    };
+        $this->app->set(
+            ExceptionHandler::class,
+            fn () => $this->exceptionHandler
+        );
 
-    $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
-        public function render(Request $request, Throwable $th): Response
-        {
-            return new Response($th->getMessage(), 500);
-        }
-    };
-});
+        $this->http = new class ($this->app) extends Http {
+            protected function dispatcher(Request $request): array
+            {
+                throw new HttpException(500, 'Test Exception');
+            }
+        };
 
-afterEach(function (): void {
-    $this->app->flush();
-});
-
-it('can render exception', function (): void {
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new Exception('Expected an Http instance from the container.');
+        $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
+            public function render(Request $request, Throwable $th): Response
+            {
+                return new Response($th->getMessage(), 500);
+            }
+        };
     }
 
-    $response = $http->handle(new Request('/test'));
+    protected function tearDown(): void
+    {
+        $this->app->flush();
 
-    expect($response->getContent())->toEqual('Test Exception');
-    expect($response->getStatusCode())->toEqual(500);
-});
+        parent::tearDown();
+    }
+
+    public function testCanRenderException(): void
+    {
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
+        $response = $http->handle(new Request('/test'));
+
+        $this->assertEquals('Test Exception', $response->getContent());
+        $this->assertEquals(500, $response->getStatusCode());
+    }
+}

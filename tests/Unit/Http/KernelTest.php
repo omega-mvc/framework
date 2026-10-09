@@ -11,48 +11,58 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Http;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function is_string;
 
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Http::class)]
+#[CoversClass(ApplicationManifest::class)]
+final class KernelTest extends TestCase
+{
+    private Http $http;
 
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(Http::class);
-covers(ApplicationManifest::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
+        $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
-    $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-        basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
-        applicationCachePath: $this->app->getApplicationCachePath(),
-        vendorPath: '/package/'
-    ));
+        $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
+            basePath: is_string($path = $this->app->get('path.base')) ? $path : '',
+            applicationCachePath: $this->app->getApplicationCachePath(),
+            vendorPath: '/package/'
+        ));
 
-    $this->app->set(
-        Http::class,
-        fn () => new $this->http($this->app)
-    );
+        $this->app->set(
+            Http::class,
+            fn () => new $this->http($this->app)
+        );
 
-    $this->http = new Http($this->app);
-});
-
-afterEach(function (): void {
-    $this->app->flush();
-});
-
-it('can bootstrap', function (): void {
-    expect($this->app->bootstrapped)->toBeFalse();
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new Exception('Expected an Http instance from the container.');
+        $this->http = new Http($this->app);
     }
 
-    $http->bootstrap();
-    expect($this->app->bootstrapped)->toBeTrue();
-});
+    protected function tearDown(): void
+    {
+        $this->app->flush();
+
+        parent::tearDown();
+    }
+
+    public function testCanBootstrap(): void
+    {
+        $this->assertFalse($this->app->bootstrapped);
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new Exception('Expected an Http instance from the container.');
+        }
+
+        $http->bootstrap();
+        $this->assertTrue($this->app->bootstrapped);
+    }
+}

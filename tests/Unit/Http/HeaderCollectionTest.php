@@ -4,98 +4,111 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
-use Exception;
 use Omega\Http\HeaderCollection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(HeaderCollection::class);
+#[CoversClass(HeaderCollection::class)]
+final class HeaderCollectionTest extends TestCase
+{
+    public function testCanGetStringOfHeader(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+        ]);
+        $this->assertEquals(
+            'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+            (string) $header
+        );
 
-it('can get string of header', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
-    ]);
-    expect((string) $header)->toEqual(
-        'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000'
-    );
+        // with multi value
+        $header = new HeaderCollection([
+            'Cache-Control' => 'no-cache="http://example.com, http://example2.com"',
+        ]);
+        $this->assertEquals(
+            'Cache-Control: no-cache="http://example.com, http://example2.com"',
+            (string) $header
+        );
+    }
 
-    // with multi value
-    $header = new HeaderCollection([
-        'Cache-Control' => 'no-cache="http://example.com, http://example2.com"',
-    ]);
-    expect((string) $header)->toEqual(
-        'Cache-Control: no-cache="http://example.com, http://example2.com"'
-    );
-});
+    public function testCanAddRawHeader(): void
+    {
+        $header = new HeaderCollection([]);
+        $header->setRaw('Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000');
+        $this->assertEquals(
+            'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+            (string) $header
+        );
+    }
 
-it('can add raw header', function (): void {
-    $header = new HeaderCollection([]);
-    $header->setRaw('Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000');
-    expect((string) $header)->toEqual(
-        'Cache-Control: max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000'
-    );
-});
+    public function testCanGetHeaderItemDirectly(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+        ]);
 
-it('can get header item directly', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
-    ]);
+        $this->assertEquals([
+            'max-age' => '31536000',
+            'public',
+            'no-transform',
+            'proxy-revalidate',
+            's-maxage' => '2592000',
+        ], $header->getDirective('Cache-Control'));
+    }
 
-    expect($header->getDirective('Cache-Control'))->toEqual([
-        'max-age' => '31536000',
-        'public',
-        'no-transform',
-        'proxy-revalidate',
-        's-maxage' => '2592000',
-    ]);
-});
+    public function testCanGetHeaderItemDirectlyMultiValue(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'no-cache="http://example.com, http://example2.com"',
+        ]);
 
-it('can get header item directly multi value', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'no-cache="http://example.com, http://example2.com"',
-    ]);
+        $this->assertEquals([
+            'no-cache' => [
+                'http://example.com',
+                'http://example2.com',
+            ],
+        ], $header->getDirective('Cache-Control'));
+    }
 
-    expect($header->getDirective('Cache-Control'))->toEqual([
-        'no-cache' => [
-            'http://example.com',
-            'http://example2.com',
-        ],
-    ]);
-});
+    public function testCanAddHeaderItemDirectly(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'max-age=31536000, public, no-transform',
+        ]);
+        $header->addDirective('Cache-Control', ['proxy-revalidate', 's-maxage' => '2592000']);
 
-it('can add header item directly', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'max-age=31536000, public, no-transform',
-    ]);
-    $header->addDirective('Cache-Control', ['proxy-revalidate', 's-maxage' => '2592000']);
+        $this->assertEquals([
+            'max-age' => '31536000',
+            'public',
+            'no-transform',
+            'proxy-revalidate',
+            's-maxage' => '2592000',
+        ], $header->getDirective('Cache-Control'));
+    }
 
-    expect($header->getDirective('Cache-Control'))->toEqual([
-        'max-age' => '31536000',
-        'public',
-        'no-transform',
-        'proxy-revalidate',
-        's-maxage' => '2592000',
-    ]);
-});
+    public function testCanRemoveHeaderItemDirectly(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+        ]);
+        $header->removeDirective('Cache-Control', 's-maxage');
+        $header->removeDirective('Cache-Control', 'public');
 
-it('can remove header item directly', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
-    ]);
-    $header->removeDirective('Cache-Control', 's-maxage');
-    $header->removeDirective('Cache-Control', 'public');
+        $this->assertEquals([
+            'max-age' => '31536000',
+            'no-transform',
+            'proxy-revalidate',
+        ], $header->getDirective('Cache-Control'));
+    }
 
-    expect($header->getDirective('Cache-Control'))->toEqual([
-        'max-age' => '31536000',
-        'no-transform',
-        'proxy-revalidate',
-    ]);
-});
+    public function testCanCheckHeaderItemDirectly(): void
+    {
+        $header = new HeaderCollection([
+            'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
+        ]);
 
-it('can check header item directly', function (): void {
-    $header = new HeaderCollection([
-        'Cache-Control' => 'max-age=31536000, public, no-transform, proxy-revalidate, s-maxage=2592000',
-    ]);
-
-    expect($header->hasDirective('Cache-Control', 'proxy-revalidate'))->toBeTrue();
-    expect($header->hasDirective('Cache-Control', 's-maxage'))->toBeTrue();
-    expect($header->hasDirective('Cache-Control', 'private'))->toBeFalse();
-});
+        $this->assertTrue($header->hasDirective('Cache-Control', 'proxy-revalidate'));
+        $this->assertTrue($header->hasDirective('Cache-Control', 's-maxage'));
+        $this->assertFalse($header->hasDirective('Cache-Control', 'private'));
+    }
+}

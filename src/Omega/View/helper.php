@@ -38,7 +38,11 @@ function vite(string ...$entry_points): array|string
     $resource = $vite->gets($entry_points);
     $first    = array_key_first($resource);
 
-    return 1 === count($resource) ? $resource[$first] : $resource;
+    if (1 === count($resource) && null !== $first) {
+        return $resource[$first];
+    }
+
+    return $resource;
 }
 
 /**

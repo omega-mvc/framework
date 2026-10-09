@@ -357,7 +357,7 @@ class Request implements ArrayAccess, IteratorAggregate
      */
     public function getFile(?string $key = null): array
     {
-        if (func_num_args() === 0) {
+        if (null === $key) {
             return $this->files;
         }
 

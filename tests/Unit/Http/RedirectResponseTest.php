@@ -6,20 +6,25 @@ namespace Tests\Http;
 
 use Omega\Http\RedirectResponse;
 use Omega\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(RedirectResponse::class);
-covers(TestResponse::class);
+#[CoversClass(RedirectResponse::class)]
+#[CoversClass(TestResponse::class)]
+final class RedirectResponseTest extends TestCase
+{
+    public function testCanGetResponseContent(): void
+    {
+        $res      = new RedirectResponse('/login');
+        $redirect = new TestResponse($res);
 
-it('can get response content', function (): void {
-    $res      = new RedirectResponse('/login');
-    $redirect = new TestResponse($res);
+        $redirect->assertSee('Redirecting to /login');
+        $redirect->assertStatusCode(302);
 
-    $redirect->assertSee('Redirecting to /login');
-    $redirect->assertStatusCode(302);
-
-    foreach ($res->getHeaders() as $key => $value) {
-        if ('Location' === $key) {
-            expect($value)->toEqual('/login');
+        foreach ($res->getHeaders() as $key => $value) {
+            if ('Location' === $key) {
+                $this->assertEquals('/login', $value);
+            }
         }
     }
-});
+}

@@ -6,70 +6,78 @@ namespace Tests\Http;
 
 use Omega\Http\Request;
 use Omega\Http\Url;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
 
-use function Omega\Application\path;
+#[CoversClass(Request::class)]
+#[CoversClass(Url::class)]
+#[CoversFunction('Omega\Application\path')]
+final class UrlTest extends TestCase
+{
+    public function testUrlParse(): void
+    {
+        $url = Url::parse('http://username:password@hostname:9090/path?arg=value#anchor');
 
-covers(Request::class);
-covers(Url::class);
-covers('Omega\Application\path');
+        $this->assertEquals('http', $url->schema());
+        $this->assertEquals('hostname', $url->host());
+        $this->assertEquals(9090, $url->port());
+        $this->assertEquals('username', $url->user());
+        $this->assertEquals('password', $url->password());
+        $this->assertEquals('/path', $url->path());
+        $this->assertEquals(['arg' => 'value'], $url->query());
+        $this->assertEquals('anchor', $url->fragment());
+    }
 
-it('url parse', function (): void {
-    $url = Url::parse('http://username:password@hostname:9090/path?arg=value#anchor');
+    public function testUrlParseUsingRequest(): void
+    {
+        $request = new Request('http://username:password@hostname:9090/path?arg=value#anchor');
+        $url     = Url::fromRequest($request);
 
-    expect($url->schema())->toEqual('http');
-    expect($url->host())->toEqual('hostname');
-    expect($url->port())->toEqual(9090);
-    expect($url->user())->toEqual('username');
-    expect($url->password())->toEqual('password');
-    expect($url->path())->toEqual('/path');
-    expect($url->query())->toEqual(['arg' => 'value']);
-    expect($url->fragment())->toEqual('anchor');
-});
+        $this->assertEquals('http', $url->schema());
+        $this->assertEquals('hostname', $url->host());
+        $this->assertEquals(9090, $url->port());
+        $this->assertEquals('username', $url->user());
+        $this->assertEquals('password', $url->password());
+        $this->assertEquals('/path', $url->path());
+        $this->assertEquals(['arg' => 'value'], $url->query());
+        $this->assertEquals('anchor', $url->fragment());
+    }
 
-it('url parse using request', function (): void {
-    $request = new Request('http://username:password@hostname:9090/path?arg=value#anchor');
-    $url     = Url::fromRequest($request);
+    public function testUrlParseMissingSchema(): void
+    {
+        $url = Url::parse('//www.example.com/path?googleguy=googley');
 
-    expect($url->schema())->toEqual('http');
-    expect($url->host())->toEqual('hostname');
-    expect($url->port())->toEqual(9090);
-    expect($url->user())->toEqual('username');
-    expect($url->password())->toEqual('password');
-    expect($url->path())->toEqual('/path');
-    expect($url->query())->toEqual(['arg' => 'value']);
-    expect($url->fragment())->toEqual('anchor');
-});
+        $this->assertEquals('www.example.com', $url->host());
+        $this->assertEquals('/path', $url->path());
+        $this->assertEquals(['googleguy' => 'googley'], $url->query());
+    }
 
-it('url parse missing schema', function (): void {
-    $url = Url::parse('//www.example.com/path?googleguy=googley');
+    public function testCanCheckUrlParse(): void
+    {
+        $url = Url::parse('http://username:password@hostname:9090/path?arg=value#anchor');
 
-    expect($url->host())->toEqual('www.example.com');
-    expect($url->path())->toEqual('/path');
-    expect($url->query())->toEqual(['googleguy' => 'googley']);
-});
+        $this->assertTrue($url->hasSchema());
+        $this->assertTrue($url->hasHost());
+        $this->assertTrue($url->hasPort());
+        $this->assertTrue($url->hasUser());
+        $this->assertTrue($url->hasPassword());
+        $this->assertTrue($url->hasPath());
+        $this->assertTrue($url->hasQuery());
+        $this->assertTrue($url->hasFragment());
+    }
 
-it('can check url parse', function (): void {
-    $url = Url::parse('http://username:password@hostname:9090/path?arg=value#anchor');
+    public function testCanCheckUrlParseMissingSchema(): void
+    {
+        $url = Url::parse('//www.example.com/path?googleguy=googley');
 
-    expect($url->hasSchema())->toBeTrue();
-    expect($url->hasHost())->toBeTrue();
-    expect($url->hasPort())->toBeTrue();
-    expect($url->hasUser())->toBeTrue();
-    expect($url->hasPassword())->toBeTrue();
-    expect($url->hasPath())->toBeTrue();
-    expect($url->hasQuery())->toBeTrue();
-    expect($url->hasFragment())->toBeTrue();
-});
-
-it('can check url parse missing schema', function (): void {
-    $url = Url::parse('//www.example.com/path?googleguy=googley');
-
-    expect($url->hasSchema())->toBeFalse();
-    expect($url->hasHost())->toBeTrue();
-    expect($url->hasPort())->toBeFalse();
-    expect($url->hasUser())->toBeFalse();
-    expect($url->hasPassword())->toBeFalse();
-    expect($url->hasPath())->toBeTrue();
-    expect($url->hasQuery())->toBeTrue();
-    expect($url->hasFragment())->toBeFalse();
-});
+        $this->assertFalse($url->hasSchema());
+        $this->assertTrue($url->hasHost());
+        $this->assertFalse($url->hasPort());
+        $this->assertFalse($url->hasUser());
+        $this->assertFalse($url->hasPassword());
+        $this->assertTrue($url->hasPath());
+        $this->assertTrue($url->hasQuery());
+        $this->assertFalse($url->hasFragment());
+    }
+}

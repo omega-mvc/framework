@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Http;
 
-use Exception;
 use Omega\Http\JsonResponse;
+use Tests\TestCase;
 
 use function json_decode;
 use function ob_get_clean;
@@ -17,73 +17,85 @@ use const JSON_HEX_APOS;
 use const JSON_HEX_QUOT;
 use const JSON_HEX_TAG;
 
-it('can render json string', function (): void {
-    $response = new JsonResponse([
-        'language' => 'php',
-        'ver'      => 80,
-    ]);
+final class JsonResponseTest extends TestCase
+{
+    public function testCanRenderJsonString(): void
+    {
+        $response = new JsonResponse([
+            'language' => 'php',
+            'ver'      => 80,
+        ]);
 
-    ob_start();
-    $response->send();
-    $json = ob_get_clean();
+        ob_start();
+        $response->send();
+        $json = ob_get_clean();
 
-    $this->assertIsString($json);
+        $this->assertIsString($json);
 
-    expect(json_decode($json))->not->toBeNull();
-    $data = json_decode($json, true);
-    expect($response->getContent())->toEqual('{"language":"php","ver":80}');
-    expect($response->getData())->toEqual($data);
-    expect($response->getStatusCode())->toEqual(200);
-    expect($response->getContentType())->toEqual('application/json');
-});
+        $this->assertNotNull(json_decode($json));
+        $data = json_decode($json, true);
+        $this->assertEquals('{"language":"php","ver":80}', $response->getContent());
+        $this->assertEquals($data, $response->getData());
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('application/json', $response->getContentType());
+    }
 
-it('will throws invalid exception', function (): void {
-    $this->expectExceptionMessageIsOrContains('Invalid encode data.');
-    new JsonResponse(['say' => "Hello \x80 World"]);
-});
+    public function testWillThrowsInvalidException(): void
+    {
+        $this->expectExceptionMessageIsOrContains('Invalid encode data.');
+        new JsonResponse(['say' => "Hello \x80 World"]);
+    }
 
-it('constructor empty creates json object', function (): void {
-    $response = new JsonResponse();
-    expect($response->getContent())->toBe('{}');
-});
+    public function testConstructorEmptyCreatesJsonObject(): void
+    {
+        $response = new JsonResponse();
+        $this->assertSame('{}', $response->getContent());
+    }
 
-it('constructor with array creates json array', function (): void {
-    $response = new JsonResponse([0, 1, 2, 3]);
-    expect($response->getContent())->toBe('[0,1,2,3]');
-});
+    public function testConstructorWithArrayCreatesJsonArray(): void
+    {
+        $response = new JsonResponse([0, 1, 2, 3]);
+        $this->assertSame('[0,1,2,3]', $response->getContent());
+    }
 
-it('set json', function (): void {
-    $response = new JsonResponse();
-    $response->setJson('1');
-    expect($response->getContent())->toEqual('1');
+    public function testSetJson(): void
+    {
+        $response = new JsonResponse();
+        $response->setJson('1');
+        $this->assertEquals('1', $response->getContent());
 
-    $response = new JsonResponse();
-    $response->setJson('true');
-    expect($response->getContent())->toEqual('true');
-});
+        $response = new JsonResponse();
+        $response->setJson('true');
+        $this->assertEquals('true', $response->getContent());
+    }
 
-it('json encode flags', function (): void {
-    $response = new JsonResponse();
-    $response->setData('<>\'&"');
+    public function testJsonEncodeFlags(): void
+    {
+        $response = new JsonResponse();
+        $response->setData('<>\'&"');
 
-    expect($response->getContent())->toEqual('"\u003C\u003E\u0027\u0026\u0022"');
-});
+        $this->assertEquals('"\u003C\u003E\u0027\u0026\u0022"', $response->getContent());
+    }
 
-it('get encoding options', function (): void {
-    $response = new JsonResponse();
+    public function testGetEncodingOptions(): void
+    {
+        $response = new JsonResponse();
 
-    expect($response->getEncodingOptions())->toEqual(
-        JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT
-    );
-});
+        $this->assertEquals(
+            JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT,
+            $response->getEncodingOptions()
+        );
+    }
 
-it('can set encoding options', function (): void {
-    $response = new JsonResponse();
-    $response->setData([[1, 2, 3]]);
+    public function testCanSetEncodingOptions(): void
+    {
+        $response = new JsonResponse();
+        $response->setData([[1, 2, 3]]);
 
-    expect($response->getContent())->toEqual('[[1,2,3]]');
+        $this->assertEquals('[[1,2,3]]', $response->getContent());
 
-    $response->setEncodingOptions(JSON_FORCE_OBJECT);
+        $response->setEncodingOptions(JSON_FORCE_OBJECT);
 
-    expect($response->getContent())->toEqual('{"0":{"0":1,"1":2,"2":3}}');
-});
+        $this->assertEquals('{"0":{"0":1,"1":2,"2":3}}', $response->getContent());
+    }
+}

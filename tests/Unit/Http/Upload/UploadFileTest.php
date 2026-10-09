@@ -7,6 +7,8 @@ namespace Tests\Http\Upload;
 use Omega\Http\Exceptions\FolderNotExistsException;
 use Omega\Http\Upload\UploadFile;
 use Omega\Http\Upload\UploadMultiFile;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function file_exists;
 use function filesize;
@@ -15,126 +17,157 @@ use function ini_get;
 use function trim;
 use function unlink;
 
+#[CoversClass(FolderNotExistsException::class)]
+#[CoversClass(UploadFile::class)]
+#[CoversClass(UploadMultiFile::class)]
+final class UploadFileTest extends TestCase
+{
+    /**
+     * @var array{
+     *     file_1: array{name: string, type: string, tmp_name: string, error: int, size: int},
+     *     file_2: array{
+     *         name: array<int, string>,
+     *         type: array<int, string>,
+     *         tmp_name: array<int, string>,
+     *         error: array<int, int>,
+     *         size: array<int, int>
+     *     }
+     * }
+     */
+    private array $files;
 
-covers(FolderNotExistsException::class);
-covers(UploadFile::class);
-covers(UploadMultiFile::class);
+    private UploadFile $upload;
 
-beforeEach(function (): void {
-    if (!ini_get('file_uploads')) {
-        $this->markTestSkipped('file_uploads is disabled in php.ini');
-    }
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    $this->files = [
-        'file_1' => [
-            'name'     => 'test123.txt',
-            'type'     => 'file',
-            'tmp_name' => __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
-            'error'    => 0,
-            'size'     => 1,
-        ],
-        'file_2' => [
-            'name'     => ['test123.txt', 'test234.txt'],
-            'type'     => ['file', 'file'],
-            'tmp_name' => [
-                __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
-                __DIR__ . '/../fixtures/application-read/upload/test234.tmp',
+        if (!ini_get('file_uploads')) {
+            $this->markTestSkipped('file_uploads is disabled in php.ini');
+        }
+
+        $this->files = [
+            'file_1' => [
+                'name'     => 'test123.txt',
+                'type'     => 'file',
+                'tmp_name' => __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
+                'error'    => 0,
+                'size'     => 1,
             ],
-            'error'    => [0, 0],
-            'size'     => [1, 1],
-        ],
-    ];
+            'file_2' => [
+                'name'     => ['test123.txt', 'test234.txt'],
+                'type'     => ['file', 'file'],
+                'tmp_name' => [
+                    __DIR__ . '/../fixtures/application-read/upload/test123.tmp',
+                    __DIR__ . '/../fixtures/application-read/upload/test234.tmp',
+                ],
+                'error'    => [0, 0],
+                'size'     => [1, 1],
+            ],
+        ];
 
-    $size = filesize($this->files['file_1']['tmp_name']);
-    $type = filetype($this->files['file_1']['tmp_name']);
+        $size = filesize($this->files['file_1']['tmp_name']);
+        $type = filetype($this->files['file_1']['tmp_name']);
 
-    $this->files['file_1']['size'] = $size === false ? 0 : $size;
-    $this->files['file_1']['type'] = $type === false ? 'file' : $type;
+        $this->files['file_1']['size'] = $size === false ? 0 : $size;
+        $this->files['file_1']['type'] = $type === false ? 'file' : $type;
 
-    $this->upload = new UploadFile($this->files['file_1']);
-    $this->upload
-        ->markTest(true)
-        ->setFileName('success')
-        ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
-        ->setMaxFileSize(91)
-        ->setMimeTypes(['file']);
-});
-
-afterEach(function (): void {
-    $file = __DIR__ . '/../fixtures/application-read/upload/success.txt';
-    if (file_exists($file)) {
-        unlink($file);
+        $this->upload = new UploadFile($this->files['file_1']);
+        $this->upload
+            ->markTest(true)
+            ->setFileName('success')
+            ->setFileTypes(['txt', 'md'])
+            ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
+            ->setMaxFileSize(91)
+            ->setMimeTypes(['file']);
     }
-});
 
-it('can upload file valid', function (): void {
-    $this->upload->upload();
+    protected function tearDown(): void
+    {
+        $file = __DIR__ . '/../fixtures/application-read/upload/success.txt';
+        if (file_exists($file)) {
+            unlink($file);
+        }
 
-    expect($this->upload->success())->toBeTrue();
-    expect($this->upload->getError())->toEqual('success');
-    expect(trim($this->upload->get()))->toEqual(
-        'This is a story about something that happened long ago when your grandfather was a child.'
-    );
-});
+        parent::tearDown();
+    }
 
-it('can upload file invalid file type', function (): void {
-    $this->upload->setFileTypes(['md'])->upload();
+    public function testCanUploadFileValid(): void
+    {
+        $this->upload->upload();
 
-    expect($this->upload->success())->toBeFalse();
-});
+        $this->assertTrue($this->upload->success());
+        $this->assertEquals('success', $this->upload->getError());
+        $this->assertEquals(
+            'This is a story about something that happened long ago when your grandfather was a child.',
+            trim($this->upload->get())
+        );
+    }
 
-it('can upload file invalid file folder', function (): void {
-    $this->expectException(FolderNotExistsException::class);
+    public function testCanUploadFileInvalidFileType(): void
+    {
+        $this->upload->setFileTypes(['md'])->upload();
 
-    $this->upload->setFolderLocation('/unknown');
-});
+        $this->assertFalse($this->upload->success());
+    }
 
-it('can upload file invalid file size', function (): void {
-    $this->upload->setMaxFileSize(89)->upload();
+    public function testCanUploadFileInvalidFileFolder(): void
+    {
+        $this->expectException(FolderNotExistsException::class);
 
-    expect($this->upload->success())->toBeFalse();
-});
+        $this->upload->setFolderLocation('/unknown');
+    }
 
-it('can upload file invalid mime', function (): void {
-    $this->upload->setMimeTypes(['image/jpeg'])->upload();
+    public function testCanUploadFileInvalidFileSize(): void
+    {
+        $this->upload->setMaxFileSize(89)->upload();
 
-    expect($this->upload->success())->toBeFalse();
-});
+        $this->assertFalse($this->upload->success());
+    }
 
-it('can upload file invalid no file upload', function (): void {
-    $this->files['file_1']['error'] = 4;
+    public function testCanUploadFileInvalidMime(): void
+    {
+        $this->upload->setMimeTypes(['image/jpeg'])->upload();
 
-    $upload = new UploadFile($this->files['file_1']);
-    $upload
-        ->markTest(true)
-        ->setFileName('success')
-        ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
-        ->setMaxFileSize(91)
-        ->setMimeTypes(['file']);
+        $this->assertFalse($this->upload->success());
+    }
 
-    expect($upload->success())->toBeFalse();
+    public function testCanUploadFileInvalidNoFileUpload(): void
+    {
+        $this->files['file_1']['error'] = 4;
 
-    // reset
-    $this->files['file_1']['error'] = 0;
-});
+        $upload = new UploadFile($this->files['file_1']);
+        $upload
+            ->markTest(true)
+            ->setFileName('success')
+            ->setFileTypes(['txt', 'md'])
+            ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
+            ->setMaxFileSize(91)
+            ->setMimeTypes(['file']);
 
-it('can multi upload file but single file', function (): void {
-    $upload = new UploadMultiFile($this->files['file_2']);
-    $upload
-        ->markTest(true)
-        ->setFileName('multi_file_')
-        ->setFileTypes(['txt', 'md'])
-        ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
-        ->setMaxFileSize(91)
-        ->setMimeTypes(['file'])
-        ->uploads();
+        $this->assertFalse($upload->success());
 
-    expect($upload->success())->toBeTrue();
-    expect(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt')->toBeReadableFile();
-    expect(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt')->toBeReadableFile();
+        // reset
+        $this->files['file_1']['error'] = 0;
+    }
 
-    unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt');
-    unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt');
-});
+    public function testCanMultiUploadFileButSingleFile(): void
+    {
+        $upload = new UploadMultiFile($this->files['file_2']);
+        $upload
+            ->markTest(true)
+            ->setFileName('multi_file_')
+            ->setFileTypes(['txt', 'md'])
+            ->setFolderLocation(__DIR__ . '/../fixtures/application-read/upload/')
+            ->setMaxFileSize(91)
+            ->setMimeTypes(['file'])
+            ->uploads();
+
+        $this->assertTrue($upload->success());
+        $this->assertFileIsReadable(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt');
+        $this->assertFileIsReadable(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt');
+
+        unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_0.txt');
+        unlink(__DIR__ . '/../fixtures/application-read/upload/multi_file_1.txt');
+    }
+}
