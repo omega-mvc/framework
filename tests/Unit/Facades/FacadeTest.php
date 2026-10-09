@@ -86,7 +86,6 @@ it('constructor sets application', function (): void {
     new TestAbstractFacade($app);
 
     $ref = new ReflectionProperty(AbstractFacade::class, 'app');
-    $ref->setAccessible(true);
 
     expect($ref->getValue())->toBe($app);
 });
@@ -100,7 +99,6 @@ it('throws from getFacadeBase when the application is not set', function (): voi
     AbstractFacade::setFacadeBase(null);
 
     $method = new ReflectionMethod(AbstractFacade::class, 'getFacadeBase');
-    $method->setAccessible(true);
 
     expect(
         fn () => $method->invoke(null, 'missing.service'),

@@ -29,7 +29,6 @@ function isLostConnection(Throwable $exception): bool
     $connection = $reflection->newInstanceWithoutConstructor();
 
     $method = $reflection->getMethod('causedByLostConnection');
-    $method->setAccessible(true);
     $result = $method->invoke($connection, $exception);
 
     if (!is_bool($result)) {

@@ -123,7 +123,9 @@ trait DateTimeFormatTrait
      */
     public function formatRFC7231(): string
     {
-        return $this->format(DateTimeInterface::RFC7231);
+        // `DateTimeInterface::RFC7231` is deprecated in PHP 8.5; its value is
+        // this format string (HTTP date, always GMT).
+        return $this->format('D, d M Y H:i:s \G\M\T');
     }
 
     /**

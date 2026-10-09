@@ -124,7 +124,6 @@ function isProviderLoaded(Application $app, string $providerClass): bool
 {
     $reflection = new ReflectionClass($app);
     $property = $reflection->getProperty('loadedProviders');
-    $property->setAccessible(true);
     $loaded = $property->getValue($app);
 
     if (!is_array($loaded)) {

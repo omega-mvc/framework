@@ -68,7 +68,6 @@ it('resets all internal state on flush', function (): void {
 
     $value = function (string $property): mixed {
         $reflection = new ReflectionProperty($this->container, $property);
-        $reflection->setAccessible(true);
 
         return $reflection->getValue($this->container);
     };

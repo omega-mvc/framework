@@ -13,7 +13,6 @@ it('generates header', function (): void {
     $exporter   = new VarExport();
     $reflection = new ReflectionClass($exporter);
     $method     = $reflection->getMethod('compileToString');
-    $method->setAccessible(true);
     $output = $method->invoke($exporter, []);
 
     expect($output)->toStartWith('<?php');

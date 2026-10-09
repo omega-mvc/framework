@@ -105,7 +105,6 @@ it('throws an exception for a non-string log level', function (): void {
     $logger = new Stream($this->tempDir . '/invalid.log');
 
     $property = new ReflectionProperty(Stream::class, 'logLevels');
-    $property->setAccessible(true);
     $levels = $property->getValue($logger);
     $this->assertIsArray($levels);
     $property->setValue($logger, [0 => 0] + $levels);
@@ -551,7 +550,6 @@ it('handles a non-resource handle on destruction', function (): void {
 function setProperty(object $object, string $property, mixed $value): void
 {
     $reflection = new ReflectionProperty($object, $property);
-    $reflection->setAccessible(true);
     $reflection->setValue($object, $value);
 }
 

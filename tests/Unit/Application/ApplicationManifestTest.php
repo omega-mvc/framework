@@ -149,7 +149,6 @@ it('uses a custom vendor path', function (): void {
     $manifest   = new ApplicationManifest('/base', '/cache', $customPath);
 
     $reflection = new ReflectionProperty(ApplicationManifest::class, 'vendorPath');
-    $reflection->setAccessible(true);
 
     expect($reflection->getValue($manifest))->toBe(slash($customPath));
 });
@@ -158,7 +157,6 @@ it('uses the default vendor path', function (): void {
     $manifest = new ApplicationManifest('/base', '/cache');
 
     $reflection = new ReflectionProperty(ApplicationManifest::class, 'vendorPath');
-    $reflection->setAccessible(true);
 
     expect($reflection->getValue($manifest))->toBe(slash('/vendor/composer/'));
 });
@@ -341,7 +339,6 @@ it('gets the application manifest when the cache file exists', function (): void
     $applicationManifest = new ApplicationManifest($this->basePath, $this->applicationCachePath);
 
     $ref = new ReflectionProperty(ApplicationManifest::class, 'applicationManifest');
-    $ref->setAccessible(true);
     $ref->setValue($applicationManifest, null);
 
     $manifest = (fn () => $this->{'getApplicationManifest'}())->call($applicationManifest);

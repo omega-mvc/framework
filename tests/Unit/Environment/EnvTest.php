@@ -18,7 +18,6 @@ beforeEach(function (): void {
 
 afterEach(function (): void {
     $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
-    $valuesProp->setAccessible(true);
     $valuesProp->setValue(null, []);
 });
 
@@ -36,7 +35,6 @@ it('returns default value when key not found', function (): void {
 
 it('converts string representations to native types', function (string $key, mixed $rawValue, mixed $expected): void {
     $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
-    $valuesProp->setAccessible(true);
     $valuesProp->setValue(null, [$key => $rawValue]);
 
     expect(Env::get($key))->toBe($expected);
@@ -56,7 +54,6 @@ it('converts string representations to native types', function (string $key, mix
 
 it('returns non-string values as is', function (): void {
     $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
-    $valuesProp->setAccessible(true);
     $valuesProp->setValue(null, [
         'ARRAY_VAL' => [1, 2, 3],
         'INT_VAL'   => 100,

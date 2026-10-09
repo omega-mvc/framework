@@ -25,7 +25,6 @@ it('can return chart at', function (): void {
 
 it('executes with a non string value', function (): void {
     $method = new \ReflectionMethod(Text::class, 'execute');
-    $method->setAccessible(true);
 
     $method->invoke($this->text, ['foo'], 'test');
 

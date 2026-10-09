@@ -112,14 +112,12 @@ it('can get dependency view', function (): void {
 it('extract component and params with positional param', function (): void {
     $reflection = new ReflectionClass($this->templator);
     $property   = $reflection->getProperty('finder');
-    $property->setAccessible(true);
     /** @var TemplatorFinder $finder */
     $finder     = $property->getValue($this->templator);
 
     $componentTemplator = new ComponentTemplator($finder, __DIR__ . '/../fixtures/view/templator/');
 
     $method = new ReflectionMethod(ComponentTemplator::class, 'extractComponentAndParams');
-    $method->setAccessible(true);
 
     /** @var array{string, array<int, mixed>} $result */
     $result = $method->invoke($componentTemplator, "'MyComp', 'simple'");

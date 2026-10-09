@@ -197,7 +197,6 @@ it('recognizes injectable types', function (): void {
     $params = (new ReflectionClass($dummy))->getMethod('method')->getParameters();
 
     $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
-    $method->setAccessible(true);
 
     $injector = new Injector($this->container);
 

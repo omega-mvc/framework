@@ -1,7 +1,6 @@
 <?php
 
 use Omega\Validator\Rule\Filter;
-use ReflectionProperty;
 
 it('can render end_if filter')
     ->expect(fn () => (new Filter())->if(fn (): bool => true)->end_if()->trim()->getFilter())

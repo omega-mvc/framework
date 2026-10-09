@@ -52,7 +52,6 @@ it('throws exception when include not found', function (): void {
 it('returns included template when depth zero', function (): void {
     $reflection = new ReflectionClass($this->templator);
     $property = $reflection->getProperty('finder');
-    $property->setAccessible(true);
     /** @var TemplatorFinder $finder */
     $finder = $property->getValue($this->templator);
 

@@ -1,7 +1,6 @@
 <?php
 
 use Omega\Validator\Rule\Valid;
-use ReflectionProperty;
 
 use function Omega\Validator\vr;
 

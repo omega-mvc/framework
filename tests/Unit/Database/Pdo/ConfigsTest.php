@@ -38,15 +38,12 @@ function buildDsn(string $connectionClass, array $config): string
     $connection = $reflection->newInstanceWithoutConstructor();
 
     $normalize = $reflection->getMethod('normalizeConfigs');
-    $normalize->setAccessible(true);
     $normalized = $normalize->invoke($connection, $config);
 
     $configs = $reflection->getProperty('configs');
-    $configs->setAccessible(true);
     $configs->setValue($connection, $normalized);
 
     $buildDsn = $reflection->getMethod('buildDsn');
-    $buildDsn->setAccessible(true);
 
     $dsn = $buildDsn->invoke($connection);
 
@@ -62,7 +59,6 @@ test('it normalizes legacy config keys', function (): void {
     $connection = $reflection->newInstanceWithoutConstructor();
 
     $normalize = $reflection->getMethod('normalizeConfigs');
-    $normalize->setAccessible(true);
 
     $configs = $normalize->invoke($connection, [
         'driver'        => 'mysql',

@@ -64,7 +64,6 @@ it('resets the parameter override path after a failed make', function (): void {
     })->toThrow(RuntimeException::class);
 
     $reflection = new ReflectionProperty($container, 'with');
-    $reflection->setAccessible(true);
 
     expect($reflection->getValue($container))->toBeEmpty();
 });

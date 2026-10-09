@@ -24,6 +24,7 @@ use function is_object;
 use function is_string;
 use function Omega\Application\get_path;
 use function str_contains;
+use function str_starts_with;
 use function unserialize;
 
 class RouteServiceProvider extends AbstractServiceProvider
@@ -188,6 +189,19 @@ class RouteServiceProvider extends AbstractServiceProvider
         }
 
         if (!is_string($callable)) {
+            if (!is_callable($callable)) {
+                return null;
+            }
+
+            return $callable;
+        }
+
+        // A serializable closure is encoded as an object (`O:...`); anything
+        // else is a plain callable string. Feeding a plain string to
+        // `unserialize()` emits `unserialize(): Error at offset 0` for every
+        // non-serialized route cache entry, which a strict error handler
+        // (e.g. PHPUnit/Pest) surfaces as a test warning.
+        if (!str_starts_with($callable, 'O:')) {
             if (!is_callable($callable)) {
                 return null;
             }

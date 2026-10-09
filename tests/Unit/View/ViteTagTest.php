@@ -238,7 +238,6 @@ it('build attribute string with empty attributes returns empty string', function
 
     $reflection = new ReflectionClass($vite);
     $method = $reflection->getMethod('buildAttributeString');
-    $method->setAccessible(true);
 
     $result = $method->invoke($vite, []);
 
@@ -266,7 +265,6 @@ it('create script tag with type already set', function (): void {
 function invokeCreateScriptTag(Vite $vite, string $url, ?array $attributes = null): string
 {
     $method = new ReflectionMethod(Vite::class, 'createScriptTag');
-    $method->setAccessible(true);
 
     /** @var string $result */
     $result = $method->invoke($vite, $url, $attributes);

@@ -237,7 +237,6 @@ final class VarExport
         $properties = [];
 
         foreach ($reflection->getProperties() as $property) {
-            $property->setAccessible(true);
             $properties[$property->getName()] = $property->getValue($object);
         }
 
@@ -261,7 +260,6 @@ final class VarExport
         $properties = [];
 
         foreach ($reflection->getProperties() as $property) {
-            $property->setAccessible(true);
             $properties[$property->getName()] = $property->getValue($object);
         }
 

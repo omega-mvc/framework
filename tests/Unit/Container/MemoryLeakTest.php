@@ -125,7 +125,6 @@ it('selects the full iteration budget outside light mode and CI', function (): v
 it('does not grow metadata when making non-shared instances', function (): void {
     $value = function (string $property): array {
         $reflection = new ReflectionProperty($this->container, $property);
-        $reflection->setAccessible(true);
         $internal = $reflection->getValue($this->container);
 
         if (!is_array($internal)) {

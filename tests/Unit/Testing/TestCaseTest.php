@@ -137,7 +137,6 @@ it('json method sets the response code and headers', function (): void {
     expect($response['status'])->toBe('ok');
 
     $internalResponse = new ReflectionClass($response)->getProperty('response');
-    $internalResponse->setAccessible(true);
     $resp = $internalResponse->getValue($response);
 
     if (!$resp instanceof Response) {
@@ -159,7 +158,6 @@ it('json method handles responses with and without code and headers', function (
     expect($dataPart['foo'])->toBe('bar');
 
     $internalResponse1 = new ReflectionClass($response1)->getProperty('response');
-    $internalResponse1->setAccessible(true);
     $resp1 = $internalResponse1->getValue($response1);
 
     if (!$resp1 instanceof Response) {
@@ -183,7 +181,6 @@ it('json method handles responses with and without code and headers', function (
     expect($response2['status'])->toBe('ok');
 
     $internalResponse2 = new ReflectionClass($response2)->getProperty('response');
-    $internalResponse2->setAccessible(true);
     $resp2 = $internalResponse2->getValue($response2);
 
     if (!$resp2 instanceof Response) {
@@ -209,7 +206,6 @@ it('json method ignores non-numeric code and non-array headers', function (): vo
     $response = $this->json(fn () => $data);
 
     $internalResponse = new ReflectionClass($response)->getProperty('response');
-    $internalResponse->setAccessible(true);
     $resp = $internalResponse->getValue($response);
 
     if (!$resp instanceof Response) {
@@ -233,7 +229,6 @@ it('json method filters non-string headers', function (): void {
     $response = $this->json(fn () => $data);
 
     $internalResponse = new ReflectionClass($response)->getProperty('response');
-    $internalResponse->setAccessible(true);
     $resp = $internalResponse->getValue($response);
 
     if (!$resp instanceof Response) {
