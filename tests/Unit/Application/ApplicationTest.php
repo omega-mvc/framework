@@ -13,206 +13,226 @@ use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Exceptions\HttpException;
 use Omega\Http\Request;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Application\Fixtures\TestBootstrapProvider;
 use Tests\Application\Fixtures\TestServiceProvider;
+use Tests\TestCase;
 
-covers(Application::class);
-covers(AbstractApplication::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(HttpException::class);
-covers(Request::class);
+#[CoversClass(Application::class)]
+#[CoversClass(AbstractApplication::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(HttpException::class)]
+#[CoversClass(Request::class)]
+final class ApplicationTest extends TestCase
+{
+    public function testLoadsConfigFromDefault(): void
+    {
+        $app = new Application(__DIR__);
 
+        $data = [
+            'BASEURL'    => '/',
+            'APP_DEBUG'  => true,
+            'CACHE_STORE' => 'file',
+        ];
 
-it('loads config from default', function (): void {
-    $app = new Application(__DIR__);
+        $app->loadConfig(new ConfigRepository($data));
+        $config = $app->get('config');
 
-    $data = [
-        'BASEURL'    => '/',
-        'APP_DEBUG'  => true,
-        'CACHE_STORE' => 'file',
-    ];
+        $this->assertInstanceOf(ConfigRepository::class, $config);
+        $this->assertSame($data, $config->getAll());
 
-    $app->loadConfig(new ConfigRepository($data));
-    $config = $app->get('config');
+        $app->flush();
+    }
 
-    $this->assertInstanceOf(ConfigRepository::class, $config);
-    expect($config->getAll())->toBe($data);
+    public function testLoadsEnvironment(): void
+    {
+        $app = new Application(__DIR__);
 
-    $app->flush();
-});
+        $app->set('environment', 'prod');
+        $this->assertFalse($app->isDev());
+        $this->assertTrue($app->isProduction());
 
-it('loads environment', function (): void {
-    $app = new Application(__DIR__);
+        $app->set('environment', 'test');
+        $this->assertSame('test', $app->getenvironment());
 
-    $app->set('environment', 'prod');
-    expect($app->isDev())->toBeFalse();
-    expect($app->isProduction())->toBeTrue();
+        $app->set('app.debug', false);
+        $this->assertFalse($app->isDebugMode());
 
-    $app->set('environment', 'test');
-    expect($app->getenvironment())->toBe('test');
+        $app->flush();
+    }
 
-    $app->set('app.debug', false);
-    expect($app->isDebugMode())->toBeFalse();
+    public function testReturnsTheVersionFromConfiguration(): void
+    {
+        $app = new Application(__DIR__ . '/fixtures/application-read/');
 
-    $app->flush();
-});
+        new ConfigBootstrapper()->bootstrap($app);
 
-it('returns the version from configuration', function (): void {
-    $app = new Application(__DIR__ . '/fixtures/application-read/');
+        $this->assertSame('2.0.0', $app->getVersion());
 
-    new ConfigBootstrapper()->bootstrap($app);
+        $app->flush();
+    }
 
-    expect($app->getVersion())->toBe('2.0.0');
+    public function testTerminatesAfterTheApplicationIsDone(): void
+    {
+        $app = new Application('/');
+        $app->registerTerminate(static function (): void {
+            echo 'terminated.';
+        });
 
-    $app->flush();
-});
+        ob_start();
+        echo 'application started.';
+        echo 'application ended.';
+        $app->terminate();
+        $out = ob_get_clean();
 
-it('terminates after the application is done', function (): void {
-    $app = new Application('/');
-    $app->registerTerminate(static function (): void {
-        echo 'terminated.';
-    });
+        $this->assertSame('application started.application ended.terminated.', $out);
+    }
 
-    ob_start();
-    echo 'application started.';
-    echo 'application ended.';
-    $app->terminate();
-    $out = ob_get_clean();
+    public function testAbortsTheApplicationWithAnHttpException(): void
+    {
+        $this->expectException(HttpException::class);
 
-    expect($out)->toBe('application started.application ended.terminated.');
-});
+        new Application(__DIR__)->abort(500);
+    }
 
-it('aborts the application with an HTTP exception', function (): void {
-    new Application(__DIR__)->abort(500);
-})->throws(HttpException::class);
+    public function testBootstrapsProvidersWithBootstrapWith(): void
+    {
+        $app = new Application(__DIR__);
 
-it('bootstraps providers with bootstrapWith', function (): void {
-    $app = new Application(__DIR__);
+        ob_start();
+        $app->bootstrapWith([
+            TestBootstrapProvider::class,
+        ]);
+        $out = ob_get_clean();
 
-    ob_start();
-    $app->bootstrapWith([
-        TestBootstrapProvider::class,
-    ]);
-    $out = ob_get_clean();
+        $this->assertSame('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap', $out);
+        $this->assertTrue($app->bootstrapped);
+    }
 
-    expect($out)->toBe('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap');
-    expect($app->bootstrapped)->toBeTrue();
-});
+    public function testAddsCallbacksBeforeAndAfterBoot(): void
+    {
+        $app = new Application(__DIR__ . '/fixtures/application-read/');
 
-it('adds callbacks before and after boot', function (): void {
-    $app = new Application(__DIR__ . '/fixtures/application-read/');
+        new ConfigBootstrapper()->bootstrap($app);
 
-    new ConfigBootstrapper()->bootstrap($app);
+        $app->bootedCallback(static function (): void {
+            echo 'booted01';
+        });
+        $app->bootedCallback(static function (): void {
+            echo 'booted02';
+        });
+        $app->bootingCallback(static function (): void {
+            echo 'booting01';
+        });
+        $app->bootingCallback(static function (): void {
+            echo 'booting02';
+        });
 
-    $app->bootedCallback(static function (): void {
-        echo 'booted01';
-    });
-    $app->bootedCallback(static function (): void {
-        echo 'booted02';
-    });
-    $app->bootingCallback(static function (): void {
-        echo 'booting01';
-    });
-    $app->bootingCallback(static function (): void {
-        echo 'booting02';
-    });
+        ob_start();
+        $app->bootProvider();
+        $out = ob_get_clean();
 
-    ob_start();
-    $app->bootProvider();
-    $out = ob_get_clean();
+        $this->assertSame('booting01booting02booted01booted02', $out);
+        $this->assertTrue($app->isBooted);
+    }
 
-    expect($out)->toBe('booting01booting02booted01booted02');
-    expect($app->isBooted)->toBeTrue();
-});
+    public function testAddsCallbackImmediatelyIfApplicationIsAlreadyBooted(): void
+    {
+        $app = new Application(__DIR__ . '/fixtures/application-read/');
 
-it('adds a callback immediately if the application is already booted', function (): void {
-    $app = new Application(__DIR__ . '/fixtures/application-read/');
+        new ConfigBootstrapper()->bootstrap($app);
 
-    new ConfigBootstrapper()->bootstrap($app);
+        $app->bootProvider();
 
-    $app->bootProvider();
+        ob_start();
+        $app->bootedCallback(static function (): void {
+            echo 'immediately call';
+        });
+        $out = ob_get_clean();
 
-    ob_start();
-    $app->bootedCallback(static function (): void {
-        echo 'immediately call';
-    });
-    $out = ob_get_clean();
+        $this->assertTrue($app->isBooted);
+        $this->assertSame('immediately call', $out);
+    }
 
-    expect($app->isBooted)->toBeTrue();
-    expect($out)->toBe('immediately call');
-});
+    public function testDoesNotRegisterAProviderTwice(): void
+    {
+        $app = new Application('/');
 
-it('does not register a provider twice', function (): void {
-    $app = new Application('/');
+        $app->set('ping', 'pong');
 
-    $app->set('ping', 'pong');
+        $app->register(TestServiceProvider::class);
+        $app->register(TestServiceProvider::class);
 
-    $app->register(TestServiceProvider::class);
-    $app->register(TestServiceProvider::class);
+        $test = $app->get('ping');
 
-    $test = $app->get('ping');
+        $this->assertSame('pong', $test);
+    }
 
-    expect($test)->toBe('pong');
-});
+    public function testReturnsDefaultDownData(): void
+    {
+        $app = new Application('/');
 
-it('returns default down data', function (): void {
-    $app = new Application('/');
+        $this->assertSame([
+            'redirect' => null,
+            'retry'    => null,
+            'status'   => 503,
+            'template' => null,
+        ], $app->getDownData());
+    }
 
-    expect($app->getDownData())->toBe([
-        'redirect' => null,
-        'retry'    => null,
-        'status'   => 503,
-        'template' => null,
-    ]);
-});
+    public function testReturnsDownDataFromStorage(): void
+    {
+        $app = new Application(__DIR__);
+        $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage3/');
 
-it('returns down data from storage', function (): void {
-    $app = new Application(__DIR__);
-    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage3/');
+        $this->assertSame([
+            'redirect' => null,
+            'retry'    => 15,
+            'status'   => 503,
+            'template' => null,
+        ], $app->getDownData());
+    }
 
-    expect($app->getDownData())->toBe([
-        'redirect' => null,
-        'retry'    => 15,
-        'status'   => 503,
-        'template' => null,
-    ]);
-});
+    public function testDetectsMaintenanceMode(): void
+    {
+        $app = new Application(__DIR__);
 
-it('detects maintenance mode', function (): void {
-    $app = new Application(__DIR__);
+        $this->assertFalse($app->isDownMaintenanceMode());
 
-    expect($app->isDownMaintenanceMode())->toBeFalse();
+        $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage/');
 
-    $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage/');
+        $this->assertTrue($app->isDownMaintenanceMode());
+    }
 
-    expect($app->isDownMaintenanceMode())->toBeTrue();
-});
+    public function testReturnsFalseWhenStoragePathIsNotAString(): void
+    {
+        $app = new Application('/');
+        $app->set('path.storage', ['array', 'storage']);
 
-it('returns false when the storage path is not a string', function (): void {
-    $app = new Application('/');
-    $app->set('path.storage', ['array', 'storage']);
+        $this->assertFalse($app->isDownMaintenanceMode());
+    }
 
-    expect($app->isDownMaintenanceMode())->toBeFalse();
-});
+    public function testReturnsDefaultDownDataWhenStoragePathIsNotAString(): void
+    {
+        $app = new Application('/');
+        $app->set('path.storage', ['array', 'storage']);
 
-it('returns the default down data when the storage path is not a string', function (): void {
-    $app = new Application('/');
-    $app->set('path.storage', ['array', 'storage']);
+        $this->assertSame([
+            'redirect' => null,
+            'retry'    => null,
+            'status'   => 503,
+            'template' => null,
+        ], $app->getDownData());
+    }
 
-    expect($app->getDownData())->toBe([
-        'redirect' => null,
-        'retry'    => null,
-        'status'   => 503,
-        'template' => null,
-    ]);
-});
+    public function testTerminatesWithNoCallbacks(): void
+    {
+        $this->expectNotToPerformAssertions();
 
-it('terminates with no callbacks', function (): void {
-    $this->expectNotToPerformAssertions();
+        $app = new Application('/');
 
-    $app = new Application('/');
-
-    $app->terminate();
-});
+        $app->terminate();
+    }
+}

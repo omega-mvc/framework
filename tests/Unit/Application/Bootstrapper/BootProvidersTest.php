@@ -10,39 +10,45 @@ use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Application\Bootstrapper\Fixtures\BootCalledServiceProvider;
+use Tests\TestCase;
 
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(BootProviders::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(BootProviders::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+final class BootProvidersTest extends TestCase
+{
+    public function testBootsTheApplicationViaBootProviders(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/application-read/');
 
+        $this->assertFalse($app->isBooted);
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
+        $this->assertTrue($app->isBooted);
+    }
 
-it('boots the application via BootProviders', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/application-read/');
+    public function testBootsRegisteredProviderImmediatelyWhenApplicationIsAlreadyBooted(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/application-read/');
 
-    expect($app->isBooted)->toBeFalse();
-    $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
-    expect($app->isBooted)->toBeTrue();
-});
+        $app->isBooted = true;
 
-it('boots a registered provider immediately when the application is already booted', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/application-read/');
+        $registered = $app->register(BootCalledServiceProvider::class);
 
-    $app->isBooted = true;
+        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
+        $this->assertTrue($registered->bootCalled);
+    }
 
-    $registered = $app->register(BootCalledServiceProvider::class);
+    public function testDoesNotBootRegisteredProviderWhenApplicationIsNotBooted(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/application-read/');
 
-    $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
-    expect($registered->bootCalled)->toBeTrue();
-});
+        $registered = $app->register(BootCalledServiceProvider::class);
 
-it('does not boot a registered provider when the application is not booted', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/application-read/');
-
-    $registered = $app->register(BootCalledServiceProvider::class);
-
-    $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
-    expect($registered->bootCalled)->toBeFalse();
-});
+        $this->assertInstanceOf(BootCalledServiceProvider::class, $registered);
+        $this->assertFalse($registered->bootCalled);
+    }
+}

@@ -6,86 +6,102 @@ namespace Tests\Container;
 
 use Omega\Container\Container;
 use Omega\Container\Exceptions\AliasException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Tests\Container\Support\DummyClass;
+use Tests\TestCase;
 
-covers(AliasException::class);
-covers(Container::class);
+#[CoversClass(AliasException::class)]
+#[CoversClass(Container::class)]
+final class ArrayAccessTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
+    protected function setUp(): void
+    {
+        $this->container = new Container();
+    }
 
-it('sets an entry through array access', function (): void {
-    $this->container['foo'] = 'bar';
+    public function testSetsAnEntryThroughArrayAccess(): void
+    {
+        $this->container['foo'] = 'bar';
 
-    expect(isset($this->container['foo']))->toBeTrue();
-});
+        $this->assertTrue(isset($this->container['foo']));
+    }
 
-it('gets an entry through array access', function (): void {
-    $this->container['foo'] = 'bar';
+    public function testGetsAnEntryThroughArrayAccess(): void
+    {
+        $this->container['foo'] = 'bar';
 
-    expect($this->container['foo'])->toBe('bar');
-});
+        $this->assertSame('bar', $this->container['foo']);
+    }
 
-it('reports whether an entry exists', function (): void {
-    $this->container['foo'] = 'bar';
+    public function testReportsWhetherAnEntryExists(): void
+    {
+        $this->container['foo'] = 'bar';
 
-    expect(isset($this->container['foo']))->toBeTrue();
-    expect(isset($this->container['baz']))->toBeFalse();
-});
+        $this->assertTrue(isset($this->container['foo']));
+        $this->assertFalse(isset($this->container['baz']));
+    }
 
-it('removes an entry through array access', function (): void {
-    $this->container['foo'] = 'bar';
-    unset($this->container['foo']);
+    public function testRemovesAnEntryThroughArrayAccess(): void
+    {
+        $this->container['foo'] = 'bar';
+        unset($this->container['foo']);
 
-    expect(isset($this->container['foo']))->toBeFalse();
-});
+        $this->assertFalse(isset($this->container['foo']));
+    }
 
-it('creates a new instance on each array read', function (): void {
-    $this->container['foo'] = fn () => new stdClass();
+    public function testCreatesANewInstanceOnEachArrayRead(): void
+    {
+        $this->container['foo'] = fn () => new stdClass();
 
-    $instance1 = $this->container['foo'];
-    $instance2 = $this->container['foo'];
+        $instance1 = $this->container['foo'];
+        $instance2 = $this->container['foo'];
 
-    expect($instance1)->not->toBe($instance2);
-});
+        $this->assertNotSame($instance1, $instance2);
+    }
 
-it('resolves the container instance through array access', function (): void {
-    $this->container['std'] = fn () => new stdClass();
+    public function testResolvesTheContainerInstanceThroughArrayAccess(): void
+    {
+        $this->container['std'] = fn () => new stdClass();
 
-    expect($this->container->offsetGet('std'))->toBeInstanceOf(stdClass::class);
-});
+        $this->assertInstanceOf(stdClass::class, $this->container->offsetGet('std'));
+    }
 
-it('respects aliases through array access', function (): void {
-    $this->container->alias(DummyClass::class, 'dummy_alias');
-    $this->container['dummy_alias'] = fn () => new DummyClass();
+    public function testRespectsAliasesThroughArrayAccess(): void
+    {
+        $this->container->alias(DummyClass::class, 'dummy_alias');
+        $this->container['dummy_alias'] = fn () => new DummyClass();
 
-    expect($this->container->offsetGet('dummy_alias'))->toBeInstanceOf(DummyClass::class);
-});
+        $this->assertInstanceOf(DummyClass::class, $this->container->offsetGet('dummy_alias'));
+    }
 
-it('removes aliases pointing to an unset entry', function (): void {
-    $this->container->bind('foo', fn () => 'foo-value');
-    $this->container->alias('foo', 'alias1');
-    $this->container->alias('foo', 'alias2');
+    public function testRemovesAliasesPointingToAnUnsetEntry(): void
+    {
+        $this->container->bind('foo', fn () => 'foo-value');
+        $this->container->alias('foo', 'alias1');
+        $this->container->alias('foo', 'alias2');
 
-    unset($this->container['foo']);
+        unset($this->container['foo']);
 
-    expect(isset($this->container['foo']))->toBeFalse();
-    expect(isset($this->container['alias1']))->toBeFalse();
-    expect(isset($this->container['alias2']))->toBeFalse();
-});
+        $this->assertFalse(isset($this->container['foo']));
+        $this->assertFalse(isset($this->container['alias1']));
+        $this->assertFalse(isset($this->container['alias2']));
+    }
 
-it('keeps unrelated aliases when unsetting through an alias', function (): void {
-    $this->container->bind('bar', fn () => new stdClass());
-    $this->container->alias('bar', 'b1');
-    $this->container->bind('qux', fn () => new stdClass());
-    $this->container->alias('qux', 'q1');
+    public function testKeepsUnrelatedAliasesWhenUnsettingThroughAnAlias(): void
+    {
+        $this->container->bind('bar', fn () => new stdClass());
+        $this->container->alias('bar', 'b1');
+        $this->container->bind('qux', fn () => new stdClass());
+        $this->container->alias('qux', 'q1');
 
-    unset($this->container['b1']);
+        unset($this->container['b1']);
 
-    expect(isset($this->container['bar']))->toBeFalse();
-    expect(isset($this->container['b1']))->toBeFalse();
-    expect(isset($this->container['qux']))->toBeTrue();
-    expect(isset($this->container['q1']))->toBeTrue();
-});
+        $this->assertFalse(isset($this->container['bar']));
+        $this->assertFalse(isset($this->container['b1']));
+        $this->assertTrue(isset($this->container['qux']));
+        $this->assertTrue(isset($this->container['q1']));
+    }
+}

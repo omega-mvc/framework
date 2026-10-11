@@ -2,240 +2,249 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\RouteCacheCommand;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(RouteCacheCommand::class);
+#[CoversClass(RouteCacheCommand::class)]
+final class RouteCacheCommandTest extends TestCase
+{
+    public function testReportsWhenThereAreNoRoutesToCache(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports when there are no routes to cache', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('No routes to cache.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('No routes to cache.');
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testCreatesTheRouteCacheFileForClosureAndCallableRoutes(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base . '/bootstrap/cache', 0777, true);
 
-it('creates the route cache file for closure and callable routes', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base . '/bootstrap/cache', 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
+        Router::get('/home', static function (): string {
+            return 'home';
+        });
+        Router::post('/users', 'HomeController@store');
 
-    Router::reset();
-    Router::get('/home', static function (): string {
-        return 'home';
-    });
-    Router::post('/users', 'HomeController@store');
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $cachePath = $app->getApplicationCachePath() . 'route.php';
 
-    $cachePath = $app->getApplicationCachePath() . 'route.php';
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Route cache file has been successfully created.', $result->getDisplay());
+        $this->assertFileExists($cachePath);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Route cache file has been successfully created.')
-        ->and(file_exists($cachePath))->toBeTrue();
+        $content = (string) file_get_contents($cachePath);
 
-    $content = (string) file_get_contents($cachePath);
+        $this->assertStringContainsString("'uri' => '/home'", $content);
+        $this->assertStringContainsString("'uri' => '/users'", $content);
+        $this->assertStringContainsString('HomeController@store', $content);
 
-    expect($content)->toContain("'uri' => '/home'")
-        ->and($content)->toContain("'uri' => '/users'")
-        ->and($content)->toContain('HomeController@store');
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testRequiresTheGivenRouteFilesBeforeCaching(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base . '/bootstrap/cache', 0777, true);
+        file_put_contents(
+            $base . '/custom-routes.php',
+            '<?php \Omega\Router\Router::get(\'/api\', static function (): void {});'
+        );
 
-it('requires the given route files before caching', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base . '/bootstrap/cache', 0777, true);
-    file_put_contents(
-        $base . '/custom-routes.php',
-        '<?php \Omega\Router\Router::get(\'/api\', static function (): void {});'
-    );
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run(['--files' => ['custom-routes.php']]);
 
-    $result = (new CommandTester($command))->run(['--files' => ['custom-routes.php']]);
+        $content = (string) file_get_contents($app->getApplicationCachePath() . 'route.php');
 
-    $content = (string) file_get_contents($app->getApplicationCachePath() . 'route.php');
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Route cache file has been successfully created.', $result->getDisplay());
+        $this->assertStringContainsString("'uri' => '/api'", $content);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Route cache file has been successfully created.')
-        ->and($content)->toContain("'uri' => '/api'");
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testRequiresEachRouteFileOnlyOnce(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base . '/bootstrap/cache', 0777, true);
+        file_put_contents(
+            $base . '/custom-routes.php',
+            '<?php \Omega\Router\Router::get(\'/api\', static function (): void {});'
+        );
 
-it('requires each route file only once', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base . '/bootstrap/cache', 0777, true);
-    file_put_contents(
-        $base . '/custom-routes.php',
-        '<?php \Omega\Router\Router::get(\'/api\', static function (): void {});'
-    );
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([
+            '--files' => ['custom-routes.php', 'custom-routes.php'],
+        ]);
 
-    $result = (new CommandTester($command))->run([
-        '--files' => ['custom-routes.php', 'custom-routes.php'],
-    ]);
+        $content = (string) file_get_contents($app->getApplicationCachePath() . 'route.php');
 
-    $content = (string) file_get_contents($app->getApplicationCachePath() . 'route.php');
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString("'uri' => '/api'", $content);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($content)->toContain("'uri' => '/api'");
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testReportsAnErrorWhenAGivenRouteFileDoesNotExist(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports an error when a given route file does not exist', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run(['--files' => ['missing-routes.php']]);
 
-    $result = (new CommandTester($command))->run(['--files' => ['missing-routes.php']]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            "Route file can't be loaded: 'missing-routes.php'",
+            $result->getDisplay()
+        );
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain("Route file can't be loaded: 'missing-routes.php'");
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testReportsAnErrorWhenAGivenRouteFileThrows(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+        file_put_contents($base . '/boom.php', '<?php throw new RuntimeException(\'Boom\');');
 
-it('reports an error when a given route file throws', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
-    file_put_contents($base . '/boom.php', '<?php throw new RuntimeException(\'Boom\');');
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run(['--files' => ['boom.php']]);
 
-    $result = (new CommandTester($command))->run(['--files' => ['boom.php']]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Failed to load route file: Boom', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Failed to load route file: Boom');
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testReportsAnErrorWhenThePathBaseBindingIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports an error when the path.base binding is not a string', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
+        $app->set('path.base', 123);
 
-    $app = new Application($base);
-    $app->set('path.base', 123);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run(['--files' => ['routes.php']]);
 
-    $result = (new CommandTester($command))->run(['--files' => ['routes.php']]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            'The "path.base" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('The "path.base" binding must resolve to a string path.');
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testContinuesWhenAGivenFileEntryIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('continues when a given file entry is not a string', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
 
-    Router::reset();
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run(['--files' => [123]]);
 
-    $result = (new CommandTester($command))->run(['--files' => [123]]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('No routes to cache.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('No routes to cache.');
+        Router::reset();
+        $app->flush();
+    }
 
-    Router::reset();
-    $app->flush();
-});
+    public function testReportsAnErrorWhenTheRouteCacheFileCannotBeWritten(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base . '/bootstrap', 0777, true);
+        touch($base . '/bootstrap/cache');
 
-it('reports an error when the route cache file cannot be written', function (): void {
-    $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
-    mkdir($base . '/bootstrap', 0777, true);
-    touch($base . '/bootstrap/cache');
+        $app = new Application($base);
 
-    $app = new Application($base);
+        Router::reset();
+        Router::get('/home', static function (): string {
+            return 'home';
+        });
 
-    Router::reset();
-    Router::get('/home', static function (): string {
-        return 'home';
-    });
+        $command = new RouteCacheCommand();
+        $command->app = $app;
 
-    $command = new RouteCacheCommand();
-    $command->app = $app;
+        set_error_handler(static fn (int $severity, string $message): bool => true);
 
-    set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    restore_error_handler();
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Failed to build route cache.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Failed to build route cache.');
-
-    Router::reset();
-    $app->flush();
-});
+        Router::reset();
+        $app->flush();
+    }
+}

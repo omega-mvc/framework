@@ -5,43 +5,55 @@ declare(strict_types=1);
 namespace Tests\Database;
 
 use Omega\Database\Schema\Table\Alter;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+#[CoversClass(Alter::class)]
+final class SchemaTest extends TestCase
+{
+    use ManagesDatabase;
 
-covers(Alter::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can update database table', function (string $engine): void {
-    $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'MySQL ALTER TABLE syntax');
+    #[DataProvider('engineProvider')]
+    public function testItCanUpdateDatabaseTable(string $engine): void
+    {
+        $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'MySQL ALTER TABLE syntax');
 
-    $this->createConnection($engine);
-    $this->createUserSchema();
+        $this->createConnection($engine);
+        $this->createUserSchema();
 
-    $alter = $this->schema->alter('users', function (Alter $blueprint) {
-        $blueprint->column('user')->varchar(20);
-        $blueprint->drop('stat');
-        $blueprint->add('status')->int(3);
-    });
+        $alter = $this->schema->alter('users', function (Alter $blueprint) {
+            $blueprint->column('user')->varchar(20);
+            $blueprint->drop('stat');
+            $blueprint->add('status')->int(3);
+        });
 
-    expect($alter->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($alter->execute());
+    }
 
-test('it can execute using raw query', function (string $engine): void {
-    $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'MySQL ALTER TABLE syntax');
+    #[DataProvider('engineProvider')]
+    public function testItCanExecuteUsingRawQuery(string $engine): void
+    {
+        $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'MySQL ALTER TABLE syntax');
 
-    $this->createConnection($engine);
-    $this->createUserSchema();
+        $this->createConnection($engine);
+        $this->createUserSchema();
 
-    $raw = $this->schema->raw(
-        'ALTER TABLE ' . $this->pdoSchema->getDatabase() . '.users
-         MODIFY COLUMN user varchar(20),
-         ADD COLUMN status int(3),
-         DROP COLUMN stat'
-    );
+        $raw = $this->schema->raw(
+            'ALTER TABLE ' . $this->pdoSchema->getDatabase() . '.users
+             MODIFY COLUMN user varchar(20),
+             ADD COLUMN status int(3),
+             DROP COLUMN stat'
+        );
 
-    expect($raw->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($raw->execute());
+    }
+}

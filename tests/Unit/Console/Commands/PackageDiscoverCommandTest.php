@@ -2,95 +2,92 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Application\ApplicationManifest;
 use Omega\Console\Commands\PackageDiscoverCommand;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Console\Commands\Fixtures\FakeApplicationManifest;
+use Tests\TestCase;
 
-covers(PackageDiscoverCommand::class);
+#[CoversClass(PackageDiscoverCommand::class)]
+final class PackageDiscoverCommandTest extends TestCase
+{
+    public function testReportsWhenNoDiscoverablePackagesAreFound(): void
+    {
+        $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports when no discoverable packages are found', function (): void {
-    $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $manifest = new FakeApplicationManifest();
+        $manifest->data = [];
+        $app->set(ApplicationManifest::class, $manifest);
 
-    $manifest = new FakeApplicationManifest();
-    $manifest->data = [];
-    $app->set(ApplicationManifest::class, $manifest);
+        $command = new PackageDiscoverCommand();
+        $command->app = $app;
 
-    $command = new PackageDiscoverCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Discovery packages in composer...', $result->getDisplay());
+        $this->assertStringContainsString('No discoverable packages found.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Discovery packages in composer...')
-        ->and($result->getDisplay())->toContain('No discoverable packages found.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testListsTheDiscoveredPackagesAndReportsSuccess(): void
+    {
+        $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('lists the discovered packages and reports success', function (): void {
-    $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $manifest = new FakeApplicationManifest();
+        $manifest->data = [
+            'vendor/package-a' => ['providers' => ['A\\Provider']],
+            'vendor/package-b' => ['providers' => ['B\\Provider']],
+        ];
+        $app->set(ApplicationManifest::class, $manifest);
 
-    $manifest = new FakeApplicationManifest();
-    $manifest->data = [
-        'vendor/package-a' => ['providers' => ['A\\Provider']],
-        'vendor/package-b' => ['providers' => ['B\\Provider']],
-    ];
-    $app->set(ApplicationManifest::class, $manifest);
+        $command = new PackageDiscoverCommand();
+        $command->app = $app;
 
-    $command = new PackageDiscoverCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('vendor/package-a', $result->getDisplay());
+        $this->assertStringContainsString('vendor/package-b', $result->getDisplay());
+        $this->assertStringContainsString('DONE', $result->getDisplay());
+        $this->assertStringContainsString('Package manifest generated successfully.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('vendor/package-a')
-        ->and($result->getDisplay())->toContain('vendor/package-b')
-        ->and($result->getDisplay())->toContain('DONE')
-        ->and($result->getDisplay())->toContain('Package manifest generated successfully.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testReportsAnErrorWhenThePackageDiscoveryFails(): void
+    {
+        $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports an error when the package discovery fails', function (): void {
-    $base = sys_get_temp_dir() . '/omegapd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $manifest = new FakeApplicationManifest();
+        $manifest->throw = new RuntimeException('Packages could not be read');
+        $app->set(ApplicationManifest::class, $manifest);
 
-    $manifest = new FakeApplicationManifest();
-    $manifest->throw = new RuntimeException('Packages could not be read');
-    $app->set(ApplicationManifest::class, $manifest);
+        $command = new PackageDiscoverCommand();
+        $command->app = $app;
 
-    $command = new PackageDiscoverCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Packages could not be read', $result->getDisplay());
+        $this->assertStringContainsString("Can't create package manifest cache file.", $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Packages could not be read')
-        ->and($result->getDisplay())->toContain("Can't create package manifest cache file.");
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

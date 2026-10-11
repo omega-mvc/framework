@@ -5,25 +5,35 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\DB;
 
 use Omega\Database\Schema\DB\Create;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+#[CoversClass(Create::class)]
+final class CreateTest extends TestCase
+{
+    use ManagesDatabase;
 
-covers(Create::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can generate create database', function (string $engine): void {
-    $this->requiresOneOf($engine, ['mysql', 'mariadb', 'pgsql'], 'CREATE DATABASE statement');
+    #[DataProvider('engineProvider')]
+    public function testItCanGenerateCreateDatabase(string $engine): void
+    {
+        $this->requiresOneOf($engine, ['mysql', 'mariadb', 'pgsql'], 'CREATE DATABASE statement');
 
-    $this->createConnection($engine);
+        $this->createConnection($engine);
 
-    // clean up so the database can be created from scratch
-    $this->dropConnection();
+        // clean up so the database can be created from scratch
+        $this->dropConnection();
 
-    $schema = new Create($this->pdoSchema->getDatabase(), $this->pdoSchema);
+        $schema = new Create($this->pdoSchema->getDatabase(), $this->pdoSchema);
 
-    expect($schema->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($schema->execute());
+    }
+}

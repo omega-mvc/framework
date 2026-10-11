@@ -10,7 +10,7 @@ use Omega\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
-    /** @var array<string, mixed> Database connection environment variables */
+    /** @var array{driver: string, host?: string, username?: string, password?: string, database: string, path?: string, port?: int, charset?: string, prefix?: string} Database connection environment variables */
     protected array $env;
 
     /** @var ConnectionInterface Main PDO connection instance for tests */

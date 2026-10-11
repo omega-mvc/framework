@@ -5,507 +5,555 @@ declare(strict_types=1);
 namespace Tests\Database\Model;
 
 use Omega\Database\Query\Insert;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
 use Tests\Database\Support\Order;
 use Tests\Database\Support\Profile;
 use Tests\Database\Support\User;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+use function password_hash;
 
-covers(Insert::class);
+use const PASSWORD_DEFAULT;
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+#[CoversClass(Insert::class)]
+final class BaseModelTest extends TestCase
+{
+    use ManagesDatabase;
 
-test('it can create data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-    $user = new User($this->pdo, [
-        [
-            'user'     => 'nuno',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 50,
-        ],
-    ]);
-
-    expect($user->insert())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can read data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user = new User($this->pdo, []);
-
-    expect($user->read())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can update data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-
-    $user->setter('stat', 75);
-
-    expect($user->update())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can delete data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    expect($user->delete())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get first', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $users = new User($this->pdo, []);
-    $users->identifier()->equal('user', 'taylor');
-    $users->read();
-
-    expect($users->first())->toEqual([
-        'user' => 'taylor',
-        'stat' => 100,
-    ]);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has one', function (string $engine): void {
-    // profile
-    $profile = [
-        'user'   => 'taylor',
-        'name'   => 'taylor otwell',
-        'gender' => 'male',
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE profiles (
-            user      varchar(32)  NOT NULL,
-            name      varchar(100) NOT NULL,
-            gender    varchar(10) NOT NULL,
-            PRIMARY KEY (user)
-        )')
-        ->execute()
-    ;
-
-    new Insert('profiles', $this->pdo)
-        ->rows([$profile])
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    $result = $user->hasOne(Profile::class, 'user');
-    expect($result->first())->toEqual($profile);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has one using magic getter', function (string $engine): void {
-    // profile
-    $profile = [
-        'user'   => 'taylor',
-        'name'   => 'taylor otwell',
-        'gender' => 'male',
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE profiles (
-            user      varchar(32)  NOT NULL,
-            name      varchar(100) NOT NULL,
-            gender    varchar(10) NOT NULL,
-            PRIMARY KEY (user)
-        )')
-        ->execute()
-    ;
-
-    new Insert('profiles', $this->pdo)
-        ->rows([$profile])
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    expect($user->profile)->toEqual($profile);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has one with table name', function (string $engine): void {
-    // profile
-    $profile = [
-        'user'   => 'taylor',
-        'name'   => 'taylor otwell',
-        'gender' => 'male',
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE profiles (
-            user      varchar(32)  NOT NULL,
-            name      varchar(100) NOT NULL,
-            gender    varchar(10) NOT NULL,
-            PRIMARY KEY (user)
-        )')
-        ->execute()
-    ;
-
-    new Insert('profiles', $this->pdo)
-        ->rows([$profile])
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    $result = $user->hasOne('profiles', 'user');
-    expect($result->first())->toEqual($profile);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has many', function (string $engine): void {
-    // order
-    $order = [
-        [
-            'id'     => '1',
-            'user'   => 'taylor',
-            'name'   => 'order 1',
-            'type'   => 'gadget',
-        ], [
-            'id'     => '3',
-            'user'   => 'taylor',
-            'name'   => 'order 2',
-            'type'   => 'gadget',
-        ],
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE orders (
-            id   varchar(3)  NOT NULL,
-            user varchar(32)  NOT NULL,
-            name varchar(100) NOT NULL,
-            type varchar(30) NOT NULL,
-            PRIMARY KEY (id)
-        )')
-        ->execute()
-    ;
-
-    new Insert('orders', $this->pdo)
-        ->rows($order)
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    $result = $user->hasMany(Order::class, 'user');
-    expect($result->toArrayArray())->toEqual($order);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has many with magic getter', function (string $engine): void {
-    // order
-    $order = [
-        [
-            'id'     => '1',
-            'user'   => 'taylor',
-            'name'   => 'order 1',
-            'type'   => 'gadget',
-        ], [
-            'id'     => '3',
-            'user'   => 'taylor',
-            'name'   => 'order 2',
-            'type'   => 'gadget',
-        ],
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE orders (
-            id   varchar(3)  NOT NULL,
-            user varchar(32)  NOT NULL,
-            name varchar(100) NOT NULL,
-            type varchar(30) NOT NULL,
-            PRIMARY KEY (id)
-        )')
-        ->execute()
-    ;
-
-    new Insert('orders', $this->pdo)
-        ->rows($order)
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    expect($user->orders)->toEqual($order);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get has many with table name', function (string $engine): void {
-    // order
-    $order = [
-        [
-            'id'     => '1',
-            'user'   => 'taylor',
-            'name'   => 'order 1',
-            'type'   => 'gadget',
-        ], [
-            'id'     => '3',
-            'user'   => 'taylor',
-            'name'   => 'order 2',
-            'type'   => 'gadget',
-        ],
-    ];
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $this->pdo
-        ->query('CREATE TABLE orders (
-            id   varchar(3)  NOT NULL,
-            user varchar(32)  NOT NULL,
-            name varchar(100) NOT NULL,
-            type varchar(30) NOT NULL,
-            PRIMARY KEY (id)
-        )')
-        ->execute()
-    ;
-
-    new Insert('orders', $this->pdo)
-        ->rows($order)
-        ->execute();
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    $result = $user->hasMany(Order::class, 'user');
-    expect($result->toArrayArray())->toEqual($order);
-})->with(ManagesDatabase::engineProvider());
-
-test('it can get collection', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-
-    $columns = $user->toArray();
-    $models  = $user->get()->toArray();
-
-    // tranform to column
-    $arr = [];
-    foreach ($models as $new) {
-        $arr[] = $new->toArray()[0];
+        parent::tearDown();
     }
-    expect($arr)->toEqual($columns);
-})->with(ManagesDatabase::engineProvider());
 
-test('it can find using id', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
+    #[DataProvider('engineProvider')]
+    public function testItCanCreateData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
 
-    $user = User::find('taylor', $this->pdo);
+        $user = new User($this->pdo, [
+            [
+                'user'     => 'nuno',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 50,
+            ],
+        ]);
 
-    expect($user->has('user'))->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can find using where', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user = User::where('user = :user', [
-        'user' => 'taylor',
-    ], $this->pdo);
-
-    expect($user->has('user'))->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can find using equal', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user = User::equal('user', 'taylor', $this->pdo);
-
-    expect($user->has('user'))->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
-
-test('it can find all', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
-            'stat'     => 100,
-        ],
-    ]);
-
-    $user   = new User($this->pdo, []);
-    $user->identifier()->equal('user', 'taylor');
-    $user->read();
-    $columns = $user->toArray();
-    $models  = User::all($this->pdo)->toArray();
-
-    // tranform to column
-    $arr = [];
-    foreach ($models as $new) {
-        $arr[] = $new->toArray()[0];
+        $this->assertTrue($user->insert());
     }
-    expect($arr)->toEqual($columns);
-})->with(ManagesDatabase::engineProvider());
 
-test('it can find or create', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
+    #[DataProvider('engineProvider')]
+    public function testItCanReadData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = new User($this->pdo, []);
+
+        $this->assertTrue($user->read());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanUpdateData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+
+        $user->setter('stat', 75);
+
+        $this->assertTrue($user->update());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $this->assertTrue($user->delete());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetFirst(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $users = new User($this->pdo, []);
+        $users->identifier()->equal('user', 'taylor');
+        $users->read();
+
+        $this->assertEquals([
+            'user' => 'taylor',
+            'stat' => 100,
+        ], $users->first());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasOne(string $engine): void
+    {
+        // profile
+        $profile = [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE profiles (
+            user      varchar(32)  NOT NULL,
+            name      varchar(100) NOT NULL,
+            gender    varchar(10) NOT NULL,
+            PRIMARY KEY (user)
+        )')
+            ->execute()
+        ;
+
+        new Insert('profiles', $this->pdo)
+            ->rows([$profile])
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $result = $user->hasOne(Profile::class, 'user');
+        $this->assertEquals($profile, $result->first());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasOneUsingMagicGetter(string $engine): void
+    {
+        // profile
+        $profile = [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE profiles (
+            user      varchar(32)  NOT NULL,
+            name      varchar(100) NOT NULL,
+            gender    varchar(10) NOT NULL,
+            PRIMARY KEY (user)
+        )')
+            ->execute()
+        ;
+
+        new Insert('profiles', $this->pdo)
+            ->rows([$profile])
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $this->assertEquals($profile, $user->profile);
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasOneWithTableName(string $engine): void
+    {
+        // profile
+        $profile = [
+            'user'   => 'taylor',
+            'name'   => 'taylor otwell',
+            'gender' => 'male',
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE profiles (
+            user      varchar(32)  NOT NULL,
+            name      varchar(100) NOT NULL,
+            gender    varchar(10) NOT NULL,
+            PRIMARY KEY (user)
+        )')
+            ->execute()
+        ;
+
+        new Insert('profiles', $this->pdo)
+            ->rows([$profile])
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $result = $user->hasOne('profiles', 'user');
+        $this->assertEquals($profile, $result->first());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasMany(string $engine): void
+    {
+        // order
+        $order = [
+            [
+                'id'     => '1',
+                'user'   => 'taylor',
+                'name'   => 'order 1',
+                'type'   => 'gadget',
+            ], [
+                'id'     => '3',
+                'user'   => 'taylor',
+                'name'   => 'order 2',
+                'type'   => 'gadget',
+            ],
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE orders (
+            id   varchar(3)  NOT NULL,
+            user varchar(32)  NOT NULL,
+            name varchar(100) NOT NULL,
+            type varchar(30) NOT NULL,
+            PRIMARY KEY (id)
+        )')
+            ->execute()
+        ;
+
+        new Insert('orders', $this->pdo)
+            ->rows($order)
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $result = $user->hasMany(Order::class, 'user');
+        $this->assertEquals($order, $result->toArrayArray());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasManyWithMagicGetter(string $engine): void
+    {
+        // order
+        $order = [
+            [
+                'id'     => '1',
+                'user'   => 'taylor',
+                'name'   => 'order 1',
+                'type'   => 'gadget',
+            ], [
+                'id'     => '3',
+                'user'   => 'taylor',
+                'name'   => 'order 2',
+                'type'   => 'gadget',
+            ],
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE orders (
+            id   varchar(3)  NOT NULL,
+            user varchar(32)  NOT NULL,
+            name varchar(100) NOT NULL,
+            type varchar(30) NOT NULL,
+            PRIMARY KEY (id)
+        )')
+            ->execute()
+        ;
+
+        new Insert('orders', $this->pdo)
+            ->rows($order)
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $this->assertEquals($order, $user->orders);
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetHasManyWithTableName(string $engine): void
+    {
+        // order
+        $order = [
+            [
+                'id'     => '1',
+                'user'   => 'taylor',
+                'name'   => 'order 1',
+                'type'   => 'gadget',
+            ], [
+                'id'     => '3',
+                'user'   => 'taylor',
+                'name'   => 'order 2',
+                'type'   => 'gadget',
+            ],
+        ];
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $this->pdo
+            ->query('CREATE TABLE orders (
+            id   varchar(3)  NOT NULL,
+            user varchar(32)  NOT NULL,
+            name varchar(100) NOT NULL,
+            type varchar(30) NOT NULL,
+            PRIMARY KEY (id)
+        )')
+            ->execute()
+        ;
+
+        new Insert('orders', $this->pdo)
+            ->rows($order)
+            ->execute();
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $result = $user->hasMany(Order::class, 'user');
+        $this->assertEquals($order, $result->toArrayArray());
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanGetCollection(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+
+        $columns = $user->toArray();
+        $models  = $user->get()->toArray();
+
+        // tranform to column
+        $arr = [];
+        foreach ($models as $new) {
+            $arr[] = $new->toArray()[0];
+        }
+        $this->assertEquals($columns, $arr);
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanFindUsingId(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = User::find('taylor', $this->pdo);
+
+        $this->assertTrue($user->has('user'));
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanFindUsingWhere(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = User::where('user = :user', [
+            'user' => 'taylor',
+        ], $this->pdo);
+
+        $this->assertTrue($user->has('user'));
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanFindUsingEqual(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = User::equal('user', 'taylor', $this->pdo);
+
+        $this->assertTrue($user->has('user'));
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanFindAll(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user   = new User($this->pdo, []);
+        $user->identifier()->equal('user', 'taylor');
+        $user->read();
+        $columns = $user->toArray();
+        $models  = User::all($this->pdo)->toArray();
+
+        // tranform to column
+        $arr = [];
+        foreach ($models as $new) {
+            $arr[] = $new->toArray()[0];
+        }
+        $this->assertEquals($columns, $arr);
+    }
+
+    #[DataProvider('engineProvider')]
+    public function testItCanFindOrCreate(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
+
+        $user = User::findOrCreate('taylor', [
             'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
+            'password' => 'password',
             'stat'     => 100,
-        ],
-    ]);
+        ], $this->pdo);
 
-    $user = User::findOrCreate('taylor', [
-        'user'     => 'taylor',
-        'password' => 'password',
-        'stat'     => 100,
-    ], $this->pdo);
+        $this->assertTrue($user->isExist());
+        $this->assertEquals('taylor', $user->getter('user', 'nuno'));
+    }
 
-    expect($user->isExist())->toBeTrue();
-    expect($user->getter('user', 'nuno'))->toEqual('taylor');
-})->with(ManagesDatabase::engineProvider());
+    #[DataProvider('engineProvider')]
+    public function testItCanFindOrCreateButNotExits(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $this->createUser([
+            [
+                'user'     => 'taylor',
+                'password' => password_hash('password', PASSWORD_DEFAULT),
+                'stat'     => 100,
+            ],
+        ]);
 
-test('it can find or create but not exits', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $this->createUser([
-        [
-            'user'     => 'taylor',
-            'password' => password_hash('password', PASSWORD_DEFAULT),
+        $user = User::findOrCreate('pradana', [
+            'user'     => 'pradana',
+            'password' => 'password',
             'stat'     => 100,
-        ],
-    ]);
+        ], $this->pdo);
 
-    $user = User::findOrCreate('pradana', [
-        'user'     => 'pradana',
-        'password' => 'password',
-        'stat'     => 100,
-    ], $this->pdo);
-
-    expect($user->isExist())->toBeTrue();
-    expect($user->getter('user', 'nuno'))->toEqual('pradana');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($user->isExist());
+        $this->assertEquals('pradana', $user->getter('user', 'nuno'));
+    }
+}

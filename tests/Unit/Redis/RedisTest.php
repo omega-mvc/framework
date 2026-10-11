@@ -6,162 +6,182 @@ namespace Tests\Redis;
 
 use Omega\Redis\Redis;
 use Omega\Redis\RedisConnector;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
+use Tests\TestCase;
 
-use function expect;
 use function extension_loaded;
 use function sleep;
 
-covers(Redis::class);
-covers(RedisConnector::class);
+#[CoversClass(Redis::class)]
+#[CoversClass(RedisConnector::class)]
+final class RedisTest extends TestCase
+{
+    private Redis $redis;
 
-beforeEach(function (): void {
-    if (!extension_loaded('redis')) {
-        $this->markTestSkipped('Redis extension not loaded.');
+    protected function setUp(): void
+    {
+        if (!extension_loaded('redis')) {
+            $this->markTestSkipped('Redis extension not loaded.');
+        }
+
+        try {
+            $redis = new Redis([
+                'host'     => '127.0.0.1',
+                'port'     => 6379,
+                'database' => 1,
+            ]);
+            $redis->flushDb();
+        } catch (\RedisException) {
+            $this->markTestSkipped('Could not connect to Redis server.');
+        }
+
+        $this->redis = $redis;
     }
 
-    try {
+    protected function tearDown(): void
+    {
+        if (isset($this->redis)) {
+            $this->redis->flushDb();
+            unset($this->redis);
+        }
+    }
+
+    public function testCanSetAndGetValues(): void
+    {
+        $this->assertTrue($this->redis->set('test_key', 'test_value'));
+        $this->assertSame('test_value', $this->redis->get('test_key'));
+    }
+
+    public function testCanSetAValueWithExpiry(): void
+    {
+        $this->assertTrue($this->redis->set('expire_key', 'expire_value', 1));
+        $this->assertSame('expire_value', $this->redis->get('expire_key'));
+
+        sleep(2);
+
+        $this->assertFalse($this->redis->get('expire_key'));
+    }
+
+    public function testReturnsFalseWhenAKeyDoesNotExist(): void
+    {
+        $this->assertFalse($this->redis->get('non_existent_key'));
+    }
+
+    public function testCanRunARawCommand(): void
+    {
+        $this->assertTrue($this->redis->command('ping'));
+    }
+
+    public function testCanDeleteKeys(): void
+    {
+        $this->redis->set('test_key', 'test_value');
+
+        $this->assertSame(1, $this->redis->del('test_key'));
+        $this->assertFalse($this->redis->get('test_key'));
+    }
+
+    public function testCanCheckIfAKeyExists(): void
+    {
+        $this->redis->set('test_key', 'test_value');
+
+        $this->assertTrue($this->redis->exists('test_key'));
+        $this->assertFalse($this->redis->exists('non_existent_key'));
+    }
+
+    public function testCanIncrementAValue(): void
+    {
+        $this->redis->set('counter', '1');
+
+        $this->assertSame(2, $this->redis->incr('counter'));
+        $this->assertSame('2', $this->redis->get('counter'));
+    }
+
+    public function testCanDecrementAValue(): void
+    {
+        $this->redis->set('counter', '2');
+
+        $this->assertSame(1, $this->redis->decr('counter'));
+        $this->assertSame('1', $this->redis->get('counter'));
+    }
+
+    public function testCanGetKeysMatchingAPattern(): void
+    {
+        $this->redis->set('key1', 'value1');
+        $this->redis->set('key2', 'value2');
+
+        $keys = $this->redis->keys('key*');
+
+        $this->assertCount(2, $keys);
+        $this->assertContains('key1', $keys);
+        $this->assertContains('key2', $keys);
+    }
+
+    public function testCanCallRedisCommandsMagically(): void
+    {
+        $this->redis->hSet('hash', 'field', 'value');
+
+        $this->assertSame('value', $this->redis->hGet('hash', 'field'));
+    }
+
+    public function testCanPerformHashOperations(): void
+    {
+        $this->redis->hSet('myhash', 'field1', 'value1');
+        $this->redis->hSet('myhash', 'field2', 'value2');
+
+        $this->assertSame(2, $this->redis->hLen('myhash'));
+        $this->assertSame(1, $this->redis->hDel('myhash', 'field1'));
+        $this->assertSame(1, $this->redis->hLen('myhash'));
+        $this->assertSame('value2', $this->redis->hGet('myhash', 'field2'));
+        $this->assertFalse($this->redis->hGet('myhash', 'field1'));
+    }
+
+    public function testCanPerformListOperations(): void
+    {
+        $this->redis->lPush('mylist', 'item1');
+        $this->redis->lPush('mylist', 'item2');
+
+        $this->assertSame(2, $this->redis->lLen('mylist'));
+        $this->assertSame('item1', $this->redis->rPop('mylist'));
+        $this->assertSame('item2', $this->redis->rPop('mylist'));
+        $this->assertFalse($this->redis->rPop('mylist'));
+        $this->assertSame(0, $this->redis->lLen('mylist'));
+    }
+
+    public function testCanConnectToASpecificDatabase(): void
+    {
+        $redis = new Redis([
+            'host'     => '127.0.0.1',
+            'port'     => 6379,
+            'database' => 0,
+        ]);
+        $redis->flushDb();
+
+        $this->redis->set('key_db1', 'value_db1');
+        $redis->set('key_db0', 'value_db0');
+
+        $this->assertSame('value_db1', $this->redis->get('key_db1'));
+        $this->assertFalse($this->redis->get('key_db0'));
+        $this->assertSame('value_db0', $redis->get('key_db0'));
+        $this->assertFalse($redis->get('key_db1'));
+
+        $redis->flushDb();
+    }
+
+    public function testReturnsAnEmptyArrayWhenRedisDoesNotReportKeysAsAnArray(): void
+    {
+        $mock = $this->createStub(\Redis::class);
+        $mock->method('keys')->willReturn(false);
+
         $redis = new Redis([
             'host'     => '127.0.0.1',
             'port'     => 6379,
             'database' => 1,
         ]);
-        $redis->flushDb();
-    } catch (\RedisException) {
-        $this->markTestSkipped('Could not connect to Redis server.');
+
+        $property = new ReflectionProperty(Redis::class, 'redis');
+        $property->setValue($redis, $mock);
+
+        $this->assertSame([], $redis->keys('*'));
     }
-
-    /** @var Redis $redis */
-    $this->redis = $redis;
-});
-
-afterEach(function (): void {
-    if (isset($this->redis)) {
-        $this->redis->flushDb();
-        $this->redis = null;
-    }
-});
-
-it('can set and get values', function (): void {
-    expect($this->redis->set('test_key', 'test_value'))->toBeTrue();
-    expect($this->redis->get('test_key'))->toBe('test_value');
-});
-
-it('can set a value with expiry', function (): void {
-    expect($this->redis->set('expire_key', 'expire_value', 1))->toBeTrue();
-    expect($this->redis->get('expire_key'))->toBe('expire_value');
-
-    sleep(2);
-
-    expect($this->redis->get('expire_key'))->toBeFalse();
-});
-
-it('returns false when a key does not exist', function (): void {
-    expect($this->redis->get('non_existent_key'))->toBeFalse();
-});
-
-it('can run a raw command', function (): void {
-    expect($this->redis->command('ping'))->toBeTrue();
-});
-
-it('can delete keys', function (): void {
-    $this->redis->set('test_key', 'test_value');
-
-    expect($this->redis->del('test_key'))->toBe(1);
-    expect($this->redis->get('test_key'))->toBeFalse();
-});
-
-it('can check if a key exists', function (): void {
-    $this->redis->set('test_key', 'test_value');
-
-    expect($this->redis->exists('test_key'))->toBeTrue();
-    expect($this->redis->exists('non_existent_key'))->toBeFalse();
-});
-
-it('can increment a value', function (): void {
-    $this->redis->set('counter', '1');
-
-    expect($this->redis->incr('counter'))->toBe(2);
-    expect($this->redis->get('counter'))->toBe('2');
-});
-
-it('can decrement a value', function (): void {
-    $this->redis->set('counter', '2');
-
-    expect($this->redis->decr('counter'))->toBe(1);
-    expect($this->redis->get('counter'))->toBe('1');
-});
-
-it('can get keys matching a pattern', function (): void {
-    $this->redis->set('key1', 'value1');
-    $this->redis->set('key2', 'value2');
-
-    $keys = $this->redis->keys('key*');
-
-    expect($keys)->toHaveCount(2);
-    expect($keys)->toContain('key1');
-    expect($keys)->toContain('key2');
-});
-
-it('can call redis commands magically', function (): void {
-    $this->redis->hSet('hash', 'field', 'value');
-
-    expect($this->redis->hGet('hash', 'field'))->toBe('value');
-});
-
-it('can perform hash operations', function (): void {
-    $this->redis->hSet('myhash', 'field1', 'value1');
-    $this->redis->hSet('myhash', 'field2', 'value2');
-
-    expect($this->redis->hLen('myhash'))->toBe(2);
-    expect($this->redis->hDel('myhash', 'field1'))->toBe(1);
-    expect($this->redis->hLen('myhash'))->toBe(1);
-    expect($this->redis->hGet('myhash', 'field2'))->toBe('value2');
-    expect($this->redis->hGet('myhash', 'field1'))->toBeFalse();
-});
-
-it('can perform list operations', function (): void {
-    $this->redis->lPush('mylist', 'item1');
-    $this->redis->lPush('mylist', 'item2');
-
-    expect($this->redis->lLen('mylist'))->toBe(2);
-    expect($this->redis->rPop('mylist'))->toBe('item1');
-    expect($this->redis->rPop('mylist'))->toBe('item2');
-    expect($this->redis->rPop('mylist'))->toBeFalse();
-    expect($this->redis->lLen('mylist'))->toBe(0);
-});
-
-it('can connect to a specific database', function (): void {
-    $redis = new Redis([
-        'host'     => '127.0.0.1',
-        'port'     => 6379,
-        'database' => 0,
-    ]);
-    $redis->flushDb();
-
-    $this->redis->set('key_db1', 'value_db1');
-    $redis->set('key_db0', 'value_db0');
-
-    expect($this->redis->get('key_db1'))->toBe('value_db1');
-    expect($this->redis->get('key_db0'))->toBeFalse();
-    expect($redis->get('key_db0'))->toBe('value_db0');
-    expect($redis->get('key_db1'))->toBeFalse();
-
-    $redis->flushDb();
-});
-
-it('returns an empty array when redis does not report keys as an array', function (): void {
-    $mock = $this->createMock(\Redis::class);
-    $mock->method('keys')->willReturn(false);
-
-    $redis = new Redis([
-        'host'     => '127.0.0.1',
-        'port'     => 6379,
-        'database' => 1,
-    ]);
-
-    $property = new ReflectionProperty(Redis::class, 'redis');
-    $property->setValue($redis, $mock);
-
-    expect($redis->keys('*'))->toBe([]);
-});
+}

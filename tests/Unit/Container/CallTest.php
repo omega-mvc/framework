@@ -9,86 +9,98 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Resolver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\DummyStaticClass;
 use Tests\Container\Support\InvokableClass;
+use Tests\TestCase;
 
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
-covers(Resolver::class);
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Resolver::class)]
+final class CallTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
-
-it('calls an anonymous function', function (): void {
-    $result = $this->container->call(function () {
-        return 'called';
-    });
-
-    expect($result)->toBe('called');
-});
-
-it('calls an object instance method', function (): void {
-    $dummy = new class {
-        public function foo(): string
-        {
-            return 'bar';
-        }
-    };
-
-    expect($this->container->call([$dummy, 'foo']))->toBe('bar');
-});
-
-it('calls a static method', function (): void {
-    expect($this->container->call([DummyStaticClass::class, 'staticMethod']))
-        ->toBe('static called');
-});
-
-it('injects dependencies into callables', function (): void {
-    $result = $this->container->call(function (DependencyClass $dependency) {
-        return $dependency;
-    });
-
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('calls a callable with custom parameters', function (): void {
-    $result = $this->container->call(function (DependencyClass $dependency, string $name) {
-        return [$dependency, $name];
-    }, ['name' => 'test']);
-
-    expect($result)->toBeArray();
-
-    if (!is_array($result)) {
-        throw new \RuntimeException('Expected an array result.');
+    protected function setUp(): void
+    {
+        $this->container = new Container();
     }
 
-    expect($result[0])->toBeInstanceOf(DependencyClass::class);
-    expect($result[1])->toBe('test');
-});
+    public function testCallsAnAnonymousFunction(): void
+    {
+        $result = $this->container->call(function () {
+            return 'called';
+        });
 
-it('resolves callable dependencies through the container', function (): void {
-    $this->container->bind(DependencyClass::class, fn () => new DependencyClass());
+        $this->assertSame('called', $result);
+    }
 
-    $result = $this->container->call(function (DependencyClass $dependency) {
-        return $dependency;
-    });
+    public function testCallsAnObjectInstanceMethod(): void
+    {
+        $dummy = new class {
+            public function foo(): string
+            {
+                return 'bar';
+            }
+        };
 
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
+        $this->assertSame('bar', $this->container->call([$dummy, 'foo']));
+    }
 
-it('throws when a callable parameter cannot be resolved', function (): void {
-    expect(fn () => $this->container->call(function ($param): void {
-    }))
-        ->toThrow(
-            BindingResolutionException::class,
+    public function testCallsAStaticMethod(): void
+    {
+        $this->assertSame('static called', $this->container->call([DummyStaticClass::class, 'staticMethod']));
+    }
+
+    public function testInjectsDependenciesIntoCallables(): void
+    {
+        $result = $this->container->call(function (DependencyClass $dependency) {
+            return $dependency;
+        });
+
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
+
+    public function testCallsACallableWithCustomParameters(): void
+    {
+        $result = $this->container->call(function (DependencyClass $dependency, string $name) {
+            return [$dependency, $name];
+        }, ['name' => 'test']);
+
+        $this->assertIsArray($result);
+
+        $this->assertInstanceOf(DependencyClass::class, $result[0]);
+        $this->assertSame('test', $result[1]);
+    }
+
+    public function testResolvesCallableDependenciesThroughTheContainer(): void
+    {
+        $this->container->bind(DependencyClass::class, fn () => new DependencyClass());
+
+        $result = $this->container->call(function (DependencyClass $dependency) {
+            return $dependency;
+        });
+
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
+
+    public function testThrowsWhenACallableParameterCannotBeResolved(): void
+    {
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage(
             'Unable to resolve dependency [Parameter #0 [ <required> $param ]] in callable'
         );
-});
 
-it('calls an invokable class', function (): void {
-    expect($this->container->call(InvokableClass::class))->toBe('invoked');
-});
+        $this->container->call(function ($param): void {
+        });
+    }
+
+    public function testCallsAnInvokableClass(): void
+    {
+        $this->assertSame('invoked', $this->container->call(InvokableClass::class));
+    }
+}

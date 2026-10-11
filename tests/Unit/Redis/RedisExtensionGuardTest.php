@@ -1,18 +1,11 @@
 <?php
 
-/**
- * Part of Omega - Tests Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Omega\Redis;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function array_filter;
 use function array_pop;
@@ -87,26 +80,45 @@ function extension_loaded(string $extension): bool
 
 $GLOBALS['omega_test_disabled_extensions'] = omegaDisabledExtensions();
 
-covers(Redis::class);
-covers(RedisConnector::class);
-covers(RedisManager::class);
+#[CoversClass(Redis::class)]
+#[CoversClass(RedisConnector::class)]
+#[CoversClass(RedisManager::class)]
+final class RedisExtensionGuardTest extends TestCase
+{
+    public function testThrowsWhenTheRedisExtensionIsNotLoaded(): void
+    {
+        omegaDisableExtension('redis');
 
-it('throws when the redis extension is not loaded', function (): void {
-    omegaDisableExtension('redis');
-
-    try {
-        expect(fn (): Redis => new Redis([]))
-            ->toThrow(\RuntimeException::class, 'The Redis extension is not loaded.');
-
-        expect(fn (): object => (new RedisConnector())->connect([]))
-            ->toThrow(\RuntimeException::class, 'The Redis extension is not loaded.');
-
-        expect(RedisManager::isSupported())->toBeFalse();
-    } finally {
-        omegaRestoreDisabledExtension();
+        try {
+            self::assertRedisGuardThrows(fn (): Redis => new Redis([]));
+            self::assertRedisGuardThrows(fn (): object => (new RedisConnector())->connect([]));
+            $this->assertFalse(RedisManager::isSupported());
+        } finally {
+            omegaRestoreDisabledExtension();
+        }
     }
-});
 
-it('delegates to the real extension state outside the guard toggle', function (): void {
-    expect(RedisManager::isSupported())->toBe(\extension_loaded('redis'));
-});
+    public function testDelegatesToTheRealExtensionStateOutsideTheGuardToggle(): void
+    {
+        $this->assertSame(\extension_loaded('redis'), RedisManager::isSupported());
+    }
+
+    /**
+     * Assert the given callback fails with the Redis guard RuntimeException.
+     *
+     * @param callable $callback The callback expected to throw.
+     * @return void
+     */
+    private static function assertRedisGuardThrows(callable $callback): void
+    {
+        try {
+            $callback();
+        } catch (\RuntimeException $e) {
+            self::assertSame('The Redis extension is not loaded.', $e->getMessage());
+
+            return;
+        }
+
+        self::fail('Expected a RuntimeException stating the Redis extension is not loaded.');
+    }
+}

@@ -11,12 +11,13 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Injector;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionClass;
 use ReflectionMethod;
+use RuntimeException;
 use stdClass;
 use Tests\Container\Support\AnotherService;
 use Tests\Container\Support\Dependant;
-use Tests\Container\Support\Dependency;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\InjectionUsingAttribute;
 use Tests\Container\Support\InjectionUsingAttributeOnParameter;
@@ -28,304 +29,315 @@ use Tests\Container\Support\ScalarSetterClass;
 use Tests\Container\Support\SetterInjectionClass;
 use Tests\Container\Support\StaticSetterClass;
 use Tests\Container\Support\UnresolvableSetterClass;
+use Tests\TestCase;
 
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
-covers(Inject::class);
-covers(Injector::class);
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Inject::class)]
+#[CoversClass(Injector::class)]
+final class InjectOnTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
-
-it('calls setters with resolved dependencies', function (): void {
-    $instance = new SetterInjectionClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->dependency)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('skips non-setter methods', function (): void {
-    $instance = new NonSetterClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->called)->toBeFalse();
-});
-
-it('injects only class types', function (): void {
-    $instance = new ScalarSetterClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->name)->toBe('default');
-});
-
-it('ignores unresolvable setters', function (): void {
-    $instance = new UnresolvableSetterClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->dependency)->toBeNull();
-});
-
-it('skips static setters', function (): void {
-    StaticSetterClass::$called = false;
-    $instance = new class {
-    };
-
-    $this->container->injectOn($instance);
-
-    expect(StaticSetterClass::$called)->not->toBeTrue();
-});
-
-it('injects multiple setters', function (): void {
-    $instance = new MultipleSetterClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->dependency1)->toBeInstanceOf(DependencyClass::class);
-    expect($instance->dependency2)->toBeInstanceOf(AnotherService::class);
-});
-
-it('resolves nested dependencies', function (): void {
-    $instance = new NestedDependencyClass();
-    $this->container->injectOn($instance);
-
-    expect($instance->dependant)->toBeInstanceOf(Dependant::class);
-
-    $dependant = $instance->dependant;
-
-    if (!$dependant instanceof Dependant) {
-        throw new \RuntimeException('Expected a Dependant instance.');
+    protected function setUp(): void
+    {
+        $this->container = new Container();
     }
 
-    expect($dependant->dep)->not->toBe($dependant);
-});
+    public function testCallsSettersWithResolvedDependencies(): void
+    {
+        $instance = new SetterInjectionClass();
+        $this->container->injectOn($instance);
 
-it('returns the original instance', function (): void {
-    $instance         = new stdClass();
-    $returnedInstance = $this->container->injectOn($instance);
-
-    expect($returnedInstance)->toBe($instance);
-});
-
-it('injects through the Inject attribute', function (): void {
-    $instance         = new InjectionUsingAttribute();
-    $returnedInstance = $this->container->injectOn($instance);
-
-    expect($returnedInstance)->toBe($instance);
-
-    if (!$returnedInstance instanceof InjectionUsingAttribute) {
-        throw new \RuntimeException('Expected an InjectionUsingAttribute instance.');
+        $this->assertInstanceOf(DependencyClass::class, $instance->dependency);
     }
 
-    expect($returnedInstance->dependency)->toBe('foo');
-});
+    public function testSkipsNonSetterMethods(): void
+    {
+        $instance = new NonSetterClass();
+        $this->container->injectOn($instance);
 
-it('injects through the Inject attribute on a parameter', function (): void {
-    $this->container->set('db.host', 'localhost');
-    $instance = new InjectionUsingAttributeOnParameter();
-    $returnedInstance = $this->container->injectOn($instance);
-
-    expect($returnedInstance)->toBe($instance);
-
-    if (!$returnedInstance instanceof InjectionUsingAttributeOnParameter) {
-        throw new \RuntimeException('Expected an InjectionUsingAttributeOnParameter instance.');
+        $this->assertFalse($instance->called);
     }
 
-    expect($returnedInstance->dependency)->toBe('localhost');
-});
+    public function testInjectsOnlyClassTypes(): void
+    {
+        $instance = new ScalarSetterClass();
+        $this->container->injectOn($instance);
 
-it('injects through the Inject attribute on a property', function (): void {
-    $this->container->set('db.host', 'localhost');
-    $instance = new InjectionUsingAttributeOnProperty();
-    $returnedInstance = $this->container->injectOn($instance);
-
-    expect($returnedInstance)->toBe($instance);
-
-    if (!$returnedInstance instanceof InjectionUsingAttributeOnProperty) {
-        throw new \RuntimeException('Expected an InjectionUsingAttributeOnProperty instance.');
+        $this->assertSame('default', $instance->name);
     }
 
-    expect($returnedInstance->dependency)->toBe('localhost');
-});
+    public function testIgnoresUnresolvableSetters(): void
+    {
+        $instance = new UnresolvableSetterClass();
+        $this->container->injectOn($instance);
 
-it('catches binding resolution exceptions during method injection', function (): void {
-    $instance = new class {
-        public bool $resolved = false;
+        $this->assertNull($instance->dependency);
+    }
 
-        /**
-         * @param ArrayAccess<string, mixed> $dependency
-         * @noinspection PhpUnused
-         * @noinspection PhpUnusedParameterInspection
-         */
-        #[Inject]
-        public function setDependency(ArrayAccess $dependency): void
-        {
-            $this->resolved = true;
-        }
-    };
+    public function testSkipsStaticSetters(): void
+    {
+        StaticSetterClass::$called = false;
+        $instance = new class {
+        };
 
-    $this->container->injectOn($instance);
+        $this->container->injectOn($instance);
 
-    expect($instance->resolved)->toBeFalse();
-});
+        $this->assertFalse(StaticSetterClass::$called);
+    }
 
-it('catches binding resolution exceptions during property injection', function (): void {
-    $instance = new class {
-        #[Inject(ArrayAccess::class)]
-        public string $dependency = 'initial';
-    };
+    public function testInjectsMultipleSetters(): void
+    {
+        $instance = new MultipleSetterClass();
+        $this->container->injectOn($instance);
 
-    $this->container->injectOn($instance);
+        $this->assertInstanceOf(DependencyClass::class, $instance->dependency1);
+        $this->assertInstanceOf(AnotherService::class, $instance->dependency2);
+    }
 
-    expect($instance->dependency)->toBe('initial');
-});
+    public function testResolvesNestedDependencies(): void
+    {
+        $instance = new NestedDependencyClass();
+        $this->container->injectOn($instance);
 
-it('recognizes injectable types', function (): void {
-    $dummy = new class {
-        /**
-         * @param ArrayAccess<string, mixed> $interface
-         */
-        public function method(
-            string $builtin,
-            ArrayAccess $interface,
-            int $otherBuiltin
-        ): void {
-        }
-    };
+        $this->assertInstanceOf(Dependant::class, $instance->dependant);
 
-    $params = (new ReflectionClass($dummy))->getMethod('method')->getParameters();
+        $dependant = $instance->dependant;
 
-    $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
+        $this->assertNotSame($dependant, $dependant->dep);
+    }
 
-    $injector = new Injector($this->container);
+    public function testReturnsTheOriginalInstance(): void
+    {
+        $instance         = new stdClass();
+        $returnedInstance = $this->container->injectOn($instance);
 
-    expect($method->invoke($injector, $params[0]))->toBeFalse();
-    expect($method->invoke($injector, $params[1]))->toBeTrue();
-    expect($method->invoke($injector, $params[2]))->toBeFalse();
-});
+        $this->assertSame($instance, $returnedInstance);
+    }
 
-it('skips constructors annotated with Inject', function (): void {
-    $instance = new class {
-        public bool $constructed = true;
+    public function testInjectsThroughTheInjectAttribute(): void
+    {
+        $instance         = new InjectionUsingAttribute();
+        $returnedInstance = $this->container->injectOn($instance);
 
-        #[Inject]
-        public function __construct()
-        {
-            $this->constructed = true;
-        }
-    };
+        $this->assertSame($instance, $returnedInstance);
 
-    $returnedInstance = $this->container->injectOn($instance);
+        $this->assertSame('foo', $returnedInstance->dependency);
+    }
 
-    expect($returnedInstance)->toBe($instance);
-    expect($instance->constructed)->toBeTrue();
-});
+    public function testInjectsThroughTheInjectAttributeOnAParameter(): void
+    {
+        $this->container->set('db.host', 'localhost');
+        $instance = new InjectionUsingAttributeOnParameter();
+        $returnedInstance = $this->container->injectOn($instance);
 
-it('resolves array-configured injections on parameters', function (): void {
-    $this->container->set('db.host', 'localhost');
+        $this->assertSame($instance, $returnedInstance);
 
-    $instance = new class {
-        public string $dependency = '';
+        $this->assertSame('localhost', $returnedInstance->dependency);
+    }
 
-        #[Inject]
-        public function setDependency(#[Inject(['dependency' => 'db.host'])] string $dependency): void
-        {
-            $this->dependency = $dependency;
-        }
-    };
+    public function testInjectsThroughTheInjectAttributeOnAProperty(): void
+    {
+        $this->container->set('db.host', 'localhost');
+        $instance = new InjectionUsingAttributeOnProperty();
+        $returnedInstance = $this->container->injectOn($instance);
 
-    $this->container->injectOn($instance);
+        $this->assertSame($instance, $returnedInstance);
 
-    expect($instance->dependency)->toBe('localhost');
-});
+        $this->assertSame('localhost', $returnedInstance->dependency);
+    }
 
-it('falls back to the parameter name for array-configured injections', function (): void {
-    $this->container->set('dependency', 'fallback');
+    public function testCatchesBindingResolutionExceptionsDuringMethodInjection(): void
+    {
+        $instance = new class {
+            public bool $resolved = false;
 
-    $instance = new class {
-        public string $dependency = '';
+            /**
+             * @param ArrayAccess<string, mixed> $dependency
+             * @noinspection PhpUnused
+             * @noinspection PhpUnusedParameterInspection
+             */
+            #[Inject]
+            public function setDependency(ArrayAccess $dependency): void
+            {
+                $this->resolved = true;
+            }
+        };
 
-        #[Inject]
-        public function setDependency(#[Inject(['other' => 'db.host'])] string $dependency): void
-        {
-            $this->dependency = $dependency;
-        }
-    };
+        $this->container->injectOn($instance);
 
-    $this->container->injectOn($instance);
+        $this->assertFalse($instance->resolved);
+    }
 
-    expect($instance->dependency)->toBe('fallback');
-});
+    public function testCatchesBindingResolutionExceptionsDuringPropertyInjection(): void
+    {
+        $instance = new class {
+            #[Inject(ArrayAccess::class)]
+            public string $dependency = 'initial';
+        };
 
-it('resolves a class-typed parameter when the method Inject name is a string', function (): void {
-    $this->container->set(DependencyClass::class, new DependencyClass());
+        $this->container->injectOn($instance);
 
-    $instance = new class {
-        public mixed $dependency = null;
+        $this->assertSame('initial', $instance->dependency);
+    }
 
-        /**
-         * A string method-level name is not an array mapping, so the string
-         * cannot configure the parameter explicitly and the container falls
-         * back to resolving the class-typed parameter.
-         */
-        #[Inject('unused.string')]
-        public function setDependency(DependencyClass $dependency): void
-        {
-            $this->dependency = $dependency;
-        }
-    };
+    public function testRecognizesInjectableTypes(): void
+    {
+        $dummy = new class {
+            /**
+             * @param ArrayAccess<string, mixed> $interface
+             */
+            public function method(
+                string $builtin,
+                ArrayAccess $interface,
+                int $otherBuiltin
+            ): void {
+            }
+        };
 
-    $this->container->injectOn($instance);
+        $params = (new ReflectionClass($dummy))->getMethod('method')->getParameters();
 
-    expect($instance->dependency)->toBeInstanceOf(DependencyClass::class);
-});
+        $method = new ReflectionMethod(Injector::class, 'isTypeInjectable');
 
-it('prefers the parameter Inject attribute over a string method Inject name', function (): void {
-    $this->container->set('db.host', 'localhost');
+        $injector = new Injector($this->container);
 
-    $instance = new class {
-        public string $dependency = '';
+        $this->assertFalse((bool) $method->invoke($injector, $params[0]));
+        $this->assertTrue((bool) $method->invoke($injector, $params[1]));
+        $this->assertFalse((bool) $method->invoke($injector, $params[2]));
+    }
 
-        /**
-         * The method-level name is a string, not an array mapping; the
-         * parameter-level attribute still wins and resolves the named entry.
-         */
-        #[Inject('method.config')]
-        public function setDependency(#[Inject('db.host')] string $dependency): void
-        {
-            $this->dependency = $dependency;
-        }
-    };
+    public function testSkipsConstructorsAnnotatedWithInject(): void
+    {
+        $instance = new class {
+            public bool $constructed = true;
 
-    $this->container->injectOn($instance);
+            #[Inject]
+            public function __construct()
+            {
+                $this->constructed = true;
+            }
+        };
 
-    expect($instance->dependency)->toBe('localhost');
-});
+        $returnedInstance = $this->container->injectOn($instance);
 
-it('skips array-configuration on property injection', function (): void {
-    $instance = new class {
-        #[Inject(['dependency' => 'db.host'])]
-        public string $dependency = 'initial';
-    };
+        $this->assertSame($instance, $returnedInstance);
+        $this->assertTrue($instance->constructed);
+    }
 
-    $this->container->injectOn($instance);
+    public function testResolvesArrayConfiguredInjectionsOnParameters(): void
+    {
+        $this->container->set('db.host', 'localhost');
 
-    expect($instance->dependency)->toBe('initial');
-});
+        $instance = new class {
+            public string $dependency = '';
 
-it('skips methods whose parameters use union types', function (): void {
-    $instance = new class {
-        public bool $called = false;
+            #[Inject]
+            public function setDependency(#[Inject(['dependency' => 'db.host'])] string $dependency): void
+            {
+                $this->dependency = $dependency;
+            }
+        };
 
-        #[Inject]
-        public function setDependency(stdClass|DependencyClass $dependency): void
-        {
-            $this->called = true;
-        }
-    };
+        $this->container->injectOn($instance);
 
-    $this->container->injectOn($instance);
+        $this->assertSame('localhost', $instance->dependency);
+    }
 
-    expect($instance->called)->toBeFalse();
-});
+    public function testFallsBackToTheParameterNameForArrayConfiguredInjections(): void
+    {
+        $this->container->set('dependency', 'fallback');
+
+        $instance = new class {
+            public string $dependency = '';
+
+            #[Inject]
+            public function setDependency(#[Inject(['other' => 'db.host'])] string $dependency): void
+            {
+                $this->dependency = $dependency;
+            }
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertSame('fallback', $instance->dependency);
+    }
+
+    public function testResolvesAClassTypedParameterWhenTheMethodInjectNameIsAString(): void
+    {
+        $this->container->set(DependencyClass::class, new DependencyClass());
+
+        $instance = new class {
+            public mixed $dependency = null;
+
+            /**
+             * A string method-level name is not an array mapping, so the string
+             * cannot configure the parameter explicitly and the container falls
+             * back to resolving the class-typed parameter.
+             */
+            #[Inject('unused.string')]
+            public function setDependency(DependencyClass $dependency): void
+            {
+                $this->dependency = $dependency;
+            }
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertInstanceOf(DependencyClass::class, $instance->dependency);
+    }
+
+    public function testPrefersTheParameterInjectAttributeOverAStringMethodInjectName(): void
+    {
+        $this->container->set('db.host', 'localhost');
+
+        $instance = new class {
+            public string $dependency = '';
+
+            /**
+             * The method-level name is a string, not an array mapping; the
+             * parameter-level attribute still wins and resolves the named entry.
+             */
+            #[Inject('method.config')]
+            public function setDependency(#[Inject('db.host')] string $dependency): void
+            {
+                $this->dependency = $dependency;
+            }
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertSame('localhost', $instance->dependency);
+    }
+
+    public function testSkipsArrayConfigurationOnPropertyInjection(): void
+    {
+        $instance = new class {
+            #[Inject(['dependency' => 'db.host'])]
+            public string $dependency = 'initial';
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertSame('initial', $instance->dependency);
+    }
+
+    public function testSkipsMethodsWhoseParametersUseUnionTypes(): void
+    {
+        $instance = new class {
+            public bool $called = false;
+
+            #[Inject]
+            public function setDependency(stdClass|DependencyClass $dependency): void
+            {
+                $this->called = true;
+            }
+        };
+
+        $this->container->injectOn($instance);
+
+        $this->assertFalse($instance->called);
+    }
+}

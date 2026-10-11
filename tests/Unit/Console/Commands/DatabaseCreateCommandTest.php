@@ -2,16 +2,6 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
@@ -19,148 +9,166 @@ use Omega\Console\Commands\DatabaseCreateCommand;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Facade\AbstractFacade;
 use PDOException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Console\Commands\Fixtures\FakeSchema;
 use Tests\Console\Commands\Fixtures\ScriptedSchemaConnection;
+use Tests\TestCase;
 
-covers(DatabaseCreateCommand::class);
+use function bin2hex;
+use function mkdir;
+use function random_bytes;
+use function sys_get_temp_dir;
 
-it('aborts when the user does not confirm the creation in production', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+#[CoversClass(DatabaseCreateCommand::class)]
+final class DatabaseCreateCommandTest extends TestCase
+{
+    public function testAbortsWhenTheUserDoesNotConfirmTheCreationInProduction(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
+        $app = new Application($base);
+        $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    $tester = new CommandTester($command);
-    $tester->setInputs(['n']);
+        $tester = new CommandTester($command);
+        $tester->setInputs(['n']);
 
-    $result = $tester->run(['--database' => 'omega_test'], ['n'], true);
+        $result = $tester->run(['--database' => 'omega_test'], ['n'], true);
 
-    expect($result->statusCode)->toBe(Command::INVALID)
-        ->and($result->getDisplay())->toContain('The application is in PRODUCTION.')
-        ->and($result->getDisplay())->toContain('Operation aborted.');
+        $this->assertSame(Command::INVALID, $result->statusCode);
+        $this->assertStringContainsString('The application is in PRODUCTION.', $result->getDisplay());
+        $this->assertStringContainsString('Operation aborted.', $result->getDisplay());
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('creates the database after the user confirms in production', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testCreatesTheDatabaseAfterTheUserConfirmsInProduction(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $app->set('Schema', $schema);
-    $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $app->set('Schema', $schema);
+        $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    $tester = new CommandTester($command);
-    $tester->setInputs(['y']);
+        $tester = new CommandTester($command);
+        $tester->setInputs(['y']);
 
-    $result = $tester->run(['--database' => 'omega_test'], ['y'], true);
+        $result = $tester->run(['--database' => 'omega_test'], ['y'], true);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Creating database `omega_test`...')
-        ->and($result->getDisplay())->toContain('Successfully created database `omega_test`')
-        ->and($schema->last->database)->toBe('omega_test');
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Creating database `omega_test`...', $result->getDisplay());
+        $this->assertStringContainsString('Successfully created database `omega_test`', $result->getDisplay());
+        $this->assertSame('omega_test', $schema->last->database);
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('skips the confirmation prompt when the no-interact option is used', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testSkipsTheConfirmationPromptWhenTheNoInteractOptionIsUsed(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $app->set('Schema', $schema);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $app->set('Schema', $schema);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Successfully created database `app_db`')
-        ->and($schema->last->database)->toBe('app_db');
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Successfully created database `app_db`', $result->getDisplay());
+        $this->assertSame('app_db', $schema->last->database);
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('reports when the database already exists', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testReportsWhenTheDatabaseAlreadyExists(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $schema->throwing(new PDOException('SQLSTATE[42P01]: database exists'));
-    $app->set('Schema', $schema);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $schema->throwing(new PDOException('SQLSTATE[42P01]: database exists'));
+        $app->set('Schema', $schema);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Database `app_db` already exists.');
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Database `app_db` already exists.', $result->getDisplay());
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('rethrows a database exception that is not about an existing database', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testRethrowsADatabaseExceptionThatIsNotAboutAnExistingDatabase(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $schema->throwing(new PDOException('Unexpected connection issue'));
-    $app->set('Schema', $schema);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $schema->throwing(new PDOException('Unexpected connection issue'));
+        $app->set('Schema', $schema);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    expect(static fn () => (new CommandTester($command))->run([
-        '--no-interact' => true,
-        '--database'    => 'app_db',
-    ]))->toThrow(PDOException::class, 'Unexpected connection issue');
+        $this->expectException(PDOException::class);
+        $this->expectExceptionMessage('Unexpected connection issue');
 
-    $app->flush();
-});
+        (new CommandTester($command))->run([
+            '--no-interact' => true,
+            '--database'    => 'app_db',
+        ]);
 
-it('reports when the database cannot be created', function (): void {
-    $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app->flush();
+    }
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $schema->fail();
-    $app->set('Schema', $schema);
+    public function testReportsWhenTheDatabaseCannotBeCreated(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadb-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    AbstractFacade::setFacadeBase($app);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $schema->fail();
+        $app->set('Schema', $schema);
 
-    $command = new DatabaseCreateCommand();
-    $command->app = $app;
+        AbstractFacade::setFacadeBase($app);
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
+        $command = new DatabaseCreateCommand();
+        $command->app = $app;
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Cannot create database `app_db`');
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'app_db']);
 
-    $app->flush();
-});
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Cannot create database `app_db`', $result->getDisplay());
+
+        $app->flush();
+    }
+}

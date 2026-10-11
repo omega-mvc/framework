@@ -6,41 +6,53 @@ namespace Tests\Collection;
 
 use Omega\Collection\Collection;
 use Omega\Collection\CollectionImmutable;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
 
 use function Omega\Collection\collection;
 use function Omega\Collection\collection_immutable;
 
-covers(Collection::class);
-covers('Omega\Collection\collection_immutable');
+#[CoversClass(Collection::class)]
+#[CoversFunction('Omega\Collection\collection')]
+#[CoversFunction('Omega\Collection\collection_immutable')]
+final class HelperFunctionTest extends TestCase
+{
+    public function testCreatesACollectionInstanceWithTheCollectionHelper(): void
+    {
+        $this->assertSame(Collection::class, collection()::class);
+    }
 
-it('creates a Collection instance with the collection helper', function (): void {
-    expect(collection()::class)->toBe(Collection::class);
-})->coversFunction('Omega\Collection\collection');
+    public function testCollectionHelperWrapsTheGivenArray(): void
+    {
+        $this->assertSame(['a' => 1], collection(['a' => 1])->all());
+    }
 
-it('collection helper wraps the given array', function (): void {
-    expect(collection(['a' => 1])->all())->toBe(['a' => 1]);
-})->coversFunction('Omega\Collection\collection');
+    public function testCollectionHelperIsChainable(): void
+    {
+        $this->assertSame([2, 4, 6], collection([1, 2, 3])->map(static fn (int $item): int => $item * 2)->all());
+    }
 
-it('collection helper is chainable', function (): void {
-    expect(collection([1, 2, 3])->map(static fn (int $item): int => $item * 2)->all())->toBe([2, 4, 6]);
-})->coversFunction('Omega\Collection\collection');
+    public function testCreatesAnImmutableCollectionInstanceWithTheCollectionImmutableHelper(): void
+    {
+        $this->assertSame(CollectionImmutable::class, collection_immutable()::class);
+    }
 
-it('creates an immutable Collection instance with the collection_immutable helper', function (): void {
-    expect(collection_immutable()::class)->toBe(CollectionImmutable::class);
-});
+    public function testCollectionImmutableHelperWrapsTheGivenArray(): void
+    {
+        $this->assertSame([1, 2], collection_immutable([1, 2])->all());
+    }
 
-it('collection_immutable helper wraps the given array', function (): void {
-    expect(collection_immutable([1, 2])->all())->toBe([1, 2]);
-});
+    public function testCollectionImmutableHelperIsFluent(): void
+    {
+        $collection = collection_immutable([1, 2, 3]);
+        $doubled    = [];
 
-it('collection_immutable helper is fluent', function (): void {
-    $collection = collection_immutable([1, 2, 3]);
-    $doubled    = [];
+        $result = $collection->each(static function (int $item) use (&$doubled): void {
+            $doubled[] = $item * 2;
+        });
 
-    $result = $collection->each(static function (int $item) use (&$doubled): void {
-        $doubled[] = $item * 2;
-    });
-
-    expect($result)->toBe($collection);
-    expect($doubled)->toBe([2, 4, 6]);
-});
+        $this->assertSame($collection, $result);
+        $this->assertSame([2, 4, 6], $doubled);
+    }
+}

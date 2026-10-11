@@ -32,9 +32,9 @@ use function tempnam;
 /**
  * Trait ManagesDatabase
  *
- * Provides the shared helpers for real-engine database tests. Each Pest test
- * runs once per available driver (mysql, mariadb, pgsql, sqlite) through the
- * ``EngineMatrix::engines()`` dataset. When an engine is not installed or not
+ * Provides the shared helpers for real-engine database tests. Each test runs
+ * once per available driver (mysql, mariadb, pgsql, sqlite) through the
+ * ``engineProvider()`` data provider. When an engine is not installed or not
  * reachable, the corresponding execution is skipped instead of failing, so
  * the suite stays honest about which engines are actually exercised.
  *

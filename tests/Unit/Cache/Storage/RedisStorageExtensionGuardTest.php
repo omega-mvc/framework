@@ -1,18 +1,11 @@
 <?php
 
-/**
- * Part of Omega - Tests Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Omega\Cache\Storage;
+
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function array_filter;
 use function array_pop;
@@ -87,22 +80,26 @@ function extension_loaded(string $extension): bool
 
 $GLOBALS['omega_test_disabled_extensions'] = omegaDisabledExtensions();
 
-covers(RedisStorage::class);
+#[CoversClass(RedisStorage::class)]
+final class RedisStorageExtensionGuardTest extends TestCase
+{
+    public function testReportsUnsupportedWhenTheRedisExtensionIsNotLoaded(): void
+    {
+        omegaDisableExtension('redis');
 
-it('reports unsupported when the redis extension is not loaded', function (): void {
-    omegaDisableExtension('redis');
-
-    try {
-        expect(RedisStorage::isSupported())->toBeFalse();
-    } finally {
-        omegaRestoreDisabledExtension();
-    }
-});
-
-it('reports supported by delegating to the real extension state', function (): void {
-    if (\extension_loaded('redis') && false === RedisStorage::isSupported()) {
-        $this->markTestSkipped('Could not connect to Redis server.');
+        try {
+            $this->assertFalse(RedisStorage::isSupported());
+        } finally {
+            omegaRestoreDisabledExtension();
+        }
     }
 
-    expect(RedisStorage::isSupported())->toBe(\extension_loaded('redis'));
-});
+    public function testReportsSupportedByDelegatingToTheRealExtensionState(): void
+    {
+        if (\extension_loaded('redis') && false === RedisStorage::isSupported()) {
+            $this->markTestSkipped('Could not connect to Redis server.');
+        }
+
+        $this->assertSame(\extension_loaded('redis'), RedisStorage::isSupported());
+    }
+}

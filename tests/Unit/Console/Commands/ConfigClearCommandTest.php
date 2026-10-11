@@ -2,86 +2,83 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\ConfigClearCommand;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(ConfigClearCommand::class);
+#[CoversClass(ConfigClearCommand::class)]
+final class ConfigClearCommandTest extends TestCase
+{
+    public function testReportsWhenThereIsNoConfigurationCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports when there is no configuration cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
+        $command = new ConfigClearCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
-    $command = new ConfigClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('No configuration cache file found.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('No configuration cache file found.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testClearsAnExistingConfigurationCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('clears an existing configuration cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $cachePath = $app->getApplicationCachePath() . 'config.php';
+        mkdir($app->getApplicationCachePath(), 0777, true);
+        file_put_contents($cachePath, '<?php return [];');
 
-    $cachePath = $app->getApplicationCachePath() . 'config.php';
-    mkdir($app->getApplicationCachePath(), 0777, true);
-    file_put_contents($cachePath, '<?php return [];');
+        $this->assertFileExists($cachePath);
 
-    expect(file_exists($cachePath))->toBeTrue();
+        $command = new ConfigClearCommand();
+        $command->app = $app;
 
-    $command = new ConfigClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Configuration cache cleared successfully.', $result->getDisplay());
+        $this->assertFileDoesNotExist($cachePath);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Configuration cache cleared successfully.')
-        ->and(file_exists($cachePath))->toBeFalse();
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testFailsWhenTheConfigurationCacheFileCannotBeRemoved(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('fails when the configuration cache file cannot be removed', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $cachePath = $app->getApplicationCachePath() . 'config.php';
+        mkdir(dirname($cachePath), 0777, true);
+        mkdir($cachePath);
 
-    $cachePath = $app->getApplicationCachePath() . 'config.php';
-    mkdir(dirname($cachePath), 0777, true);
-    mkdir($cachePath);
+        $command = new ConfigClearCommand();
+        $command->app = $app;
 
-    $command = new ConfigClearCommand();
-    $command->app = $app;
+        set_error_handler(static fn (int $severity, string $message): bool => true);
 
-    set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    restore_error_handler();
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Could not remove the configuration cache file.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Could not remove the configuration cache file.');
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

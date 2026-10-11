@@ -1,21 +1,13 @@
 <?php
 
-/**
- * Part of Omega - Tests\Archive Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Archive;
 
 use Omega\Archive\ZipAdapter;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
+use Tests\TestCase;
 use ZipArchive;
 
 use function copy;
@@ -29,205 +21,250 @@ use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
 
-covers(ZipAdapter::class);
-
-
-beforeEach(function (): void {
-    $this->tempDir = sys_get_temp_dir() . '/omega-archive-zip-' . uniqid();
-    mkdir($this->tempDir, 0777, true);
-});
-
-afterEach(function (): void {
-    zipRemoveDirectory($this->tempDir);
-});
-
-it('checks membership via exists', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->exists('hello.txt'))->toBeTrue();
-    expect($adapter->exists('missing.txt'))->toBeFalse();
-});
-
-it('returns the stored content of a member on read', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->read('hello.txt'))->toBe('hello zip payload');
-});
-
-it('throws when the member does not exist on read', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->read('nope.txt');
-})->throws(RuntimeException::class, 'Failed to read the key');
-
-it('write adds a member and returns its length', function (): void {
-    $file = $this->tempDir . '/written.zip';
-    copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
-
-    $adapter = new ZipAdapter($file);
-
-    $length = $adapter->write('new.txt', 'abcde');
-
-    expect($length)->toBe(5);
-
-    $adapter->close();
-
-    $reopened = new ZipAdapter($file);
-
-    expect($reopened->read('new.txt'))->toBe('abcde');
-});
-
-it('delete removes a member', function (): void {
-    $file = $this->tempDir . '/written.zip';
-    copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
-
-    $adapter = new ZipAdapter($file);
-
-    expect($adapter->delete('hello.txt'))->toBeTrue();
-
-    $adapter->close();
-
-    $reopened = new ZipAdapter($file);
-
-    expect($reopened->exists('hello.txt'))->toBeFalse();
-});
-
-it('returns the member names on keys', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->keys())->toBe(['hello.txt']);
-});
-
-it('returns an empty array for an empty archive on keys', function (): void {
-    $file = $this->tempDir . '/empty.zip';
-
-    $zip = new ZipArchive();
-    $zip->open($file, ZipArchive::CREATE);
-    $zip->close();
-
-    $adapter = new ZipAdapter($file);
-
-    expect($adapter->keys())->toBe([]);
-});
-
-it('isDirectory distinguishes directories from files', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->isDirectory('hello.txt'))->toBeFalse();
-    expect($adapter->isDirectory('some/dir/'))->toBeTrue();
-});
-
-it('returns an integer timestamp on mtime', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->mtime('hello.txt'))->toBeInt();
-});
-
-it('returns false for a missing member on mtime', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    expect($adapter->mtime('missing.txt'))->toBeFalse();
-});
-
-it('rename persists the change to disk', function (): void {
-    $file = $this->tempDir . '/rename.zip';
-    copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
-
-    $adapter = new ZipAdapter($file);
-
-    expect($adapter->rename('hello.txt', 'renamed.txt'))->toBeTrue();
-
-    $adapter->close();
-
-    $reopened = new ZipAdapter($file);
-
-    expect($reopened->keys())->toBe(['renamed.txt']);
-    expect($reopened->read('renamed.txt'))->toBe('hello zip payload');
-    expect($reopened->exists('hello.txt'))->toBeFalse();
-});
-
-it('throws when the source member does not exist on rename', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->rename('missing.txt', 'renamed.txt');
-})->throws(RuntimeException::class, 'source file');
-
-it('throws when the target member already exists on rename', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->rename('hello.txt', 'hello.txt');
-})->throws(RuntimeException::class, 'target file');
-
-it('throws when the file is not a valid ZIP archive in the constructor', function (): void {
-    $file = $this->tempDir . '/corrupt.zip';
-    file_put_contents($file, 'PK');
-
-    new ZipAdapter($file);
-})->throws(RuntimeException::class, 'Unable to open the ZIP file');
-
-it('throws when the archive enters an invalid state on keys', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->delete('missing.txt');
-
-    $adapter->keys();
-})->throws(RuntimeException::class, 'is not open or is invalid');
-
-it('throws when the underlying rename operation fails', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->rename('hello.txt', 'foo/');
-})->throws(RuntimeException::class, 'Failed to rename');
-
-it('can re-open an adapter with a different archive on open', function (): void {
-    $file = $this->tempDir . '/other.zip';
-    copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
-
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->open($file);
-
-    expect($adapter->read('hello.txt'))->toBe('hello zip payload');
-});
-
-it('throws when the file is not a valid ZIP archive on open', function (): void {
-    $file = $this->tempDir . '/invalid.txt';
-    file_put_contents($file, 'not a zip archive content at all');
-
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->open($file);
-})->throws(RuntimeException::class, 'Unable to open the ZIP file');
-
-it('close is callable without throwing', function (): void {
-    $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
-
-    $adapter->close();
-
-    expect(file_exists(__DIR__ . '/fixtures/archive/sample.zip'))->toBeTrue();
-});
-
-function zipRemoveDirectory(string $directory): void
+#[CoversClass(ZipAdapter::class)]
+final class ZipAdapterTest extends TestCase
 {
-    if (!is_dir($directory)) {
-        return;
+    private string $tempDir;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/omega-archive-zip-' . uniqid();
+        mkdir($this->tempDir, 0777, true);
     }
 
-    $items = scandir($directory);
-
-    foreach ($items as $item) {
-        if ($item === '.' || $item === '..') {
-            continue;
-        }
-
-        $path = slash($directory . '/' . $item);
-
-        if (is_dir($path)) {
-            zipRemoveDirectory($path);
-        } else {
-            unlink($path);
-        }
+    protected function tearDown(): void
+    {
+        self::zipRemoveDirectory($this->tempDir);
     }
 
-    rmdir($directory);
+    public function testChecksMembershipViaExists(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertTrue($adapter->exists('hello.txt'));
+        $this->assertFalse($adapter->exists('missing.txt'));
+    }
+
+    public function testReturnsTheStoredContentOfAMemberOnRead(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertSame('hello zip payload', $adapter->read('hello.txt'));
+    }
+
+    public function testThrowsWhenTheMemberDoesNotExistOnRead(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to read the key');
+
+        $adapter->read('nope.txt');
+    }
+
+    public function testWriteAddsAMemberAndReturnsItsLength(): void
+    {
+        $file = $this->tempDir . '/written.zip';
+        copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
+
+        $adapter = new ZipAdapter($file);
+
+        $length = $adapter->write('new.txt', 'abcde');
+
+        $this->assertSame(5, $length);
+
+        $adapter->close();
+
+        $reopened = new ZipAdapter($file);
+
+        $this->assertSame('abcde', $reopened->read('new.txt'));
+    }
+
+    public function testDeleteRemovesAMember(): void
+    {
+        $file = $this->tempDir . '/written.zip';
+        copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
+
+        $adapter = new ZipAdapter($file);
+
+        $this->assertTrue($adapter->delete('hello.txt'));
+
+        $adapter->close();
+
+        $reopened = new ZipAdapter($file);
+
+        $this->assertFalse($reopened->exists('hello.txt'));
+    }
+
+    public function testReturnsTheMemberNamesOnKeys(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertSame(['hello.txt'], $adapter->keys());
+    }
+
+    public function testReturnsAnEmptyArrayForAnEmptyArchiveOnKeys(): void
+    {
+        $file = $this->tempDir . '/empty.zip';
+
+        $zip = new ZipArchive();
+        $zip->open($file, ZipArchive::CREATE);
+        $zip->close();
+
+        $adapter = new ZipAdapter($file);
+
+        $this->assertSame([], $adapter->keys());
+    }
+
+    public function testIsDirectoryDistinguishesDirectoriesFromFiles(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertFalse($adapter->isDirectory('hello.txt'));
+        $this->assertTrue($adapter->isDirectory('some/dir/'));
+    }
+
+    public function testReturnsAnIntegerTimestampOnMtime(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertIsInt($adapter->mtime('hello.txt'));
+    }
+
+    public function testReturnsFalseForAMissingMemberOnMtime(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->assertFalse($adapter->mtime('missing.txt'));
+    }
+
+    public function testRenamePersistsTheChangeToDisk(): void
+    {
+        $file = $this->tempDir . '/rename.zip';
+        copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
+
+        $adapter = new ZipAdapter($file);
+
+        $this->assertTrue($adapter->rename('hello.txt', 'renamed.txt'));
+
+        $adapter->close();
+
+        $reopened = new ZipAdapter($file);
+
+        $this->assertSame(['renamed.txt'], $reopened->keys());
+        $this->assertSame('hello zip payload', $reopened->read('renamed.txt'));
+        $this->assertFalse($reopened->exists('hello.txt'));
+    }
+
+    public function testThrowsWhenTheSourceMemberDoesNotExistOnRename(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('source file');
+
+        $adapter->rename('missing.txt', 'renamed.txt');
+    }
+
+    public function testThrowsWhenTheTargetMemberAlreadyExistsOnRename(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('target file');
+
+        $adapter->rename('hello.txt', 'hello.txt');
+    }
+
+    public function testThrowsWhenTheFileIsNotAValidZipArchiveInTheConstructor(): void
+    {
+        $file = $this->tempDir . '/corrupt.zip';
+        file_put_contents($file, 'PK');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to open the ZIP file');
+
+        new ZipAdapter($file);
+    }
+
+    public function testThrowsWhenTheArchiveEntersAnInvalidStateOnKeys(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $adapter->delete('missing.txt');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('is not open or is invalid');
+
+        $adapter->keys();
+    }
+
+    public function testThrowsWhenTheUnderlyingRenameOperationFails(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to rename');
+
+        $adapter->rename('hello.txt', 'foo/');
+    }
+
+    public function testCanReOpenAnAdapterWithADifferentArchiveOnOpen(): void
+    {
+        $file = $this->tempDir . '/other.zip';
+        copy(__DIR__ . '/fixtures/archive/sample.zip', $file);
+
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $adapter->open($file);
+
+        $this->assertSame('hello zip payload', $adapter->read('hello.txt'));
+    }
+
+    public function testThrowsWhenTheFileIsNotAValidZipArchiveOnOpen(): void
+    {
+        $file = $this->tempDir . '/invalid.txt';
+        file_put_contents($file, 'not a zip archive content at all');
+
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to open the ZIP file');
+
+        $adapter->open($file);
+    }
+
+    public function testCloseIsCallableWithoutThrowing(): void
+    {
+        $adapter = new ZipAdapter(__DIR__ . '/fixtures/archive/sample.zip');
+
+        $adapter->close();
+
+        $this->assertTrue(file_exists(__DIR__ . '/fixtures/archive/sample.zip'));
+    }
+
+    private static function zipRemoveDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $items = scandir($directory);
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = slash($directory . '/' . $item);
+
+            if (is_dir($path)) {
+                self::zipRemoveDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($directory);
+    }
 }

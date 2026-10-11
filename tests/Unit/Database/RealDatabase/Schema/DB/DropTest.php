@@ -5,22 +5,32 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\DB;
 
 use Omega\Database\Schema\DB\Drop;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+#[CoversClass(Drop::class)]
+final class DropTest extends TestCase
+{
+    use ManagesDatabase;
 
-covers(Drop::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can generate create database', function (string $engine): void {
-    $this->requiresOneOf($engine, ['mysql', 'mariadb', 'pgsql'], 'DROP DATABASE statement');
+    #[DataProvider('engineProvider')]
+    public function testItCanGenerateCreateDatabase(string $engine): void
+    {
+        $this->requiresOneOf($engine, ['mysql', 'mariadb', 'pgsql'], 'DROP DATABASE statement');
 
-    $this->createConnection($engine);
+        $this->createConnection($engine);
 
-    $schema = new Drop($this->pdoSchema->getDatabase(), $this->pdoSchema);
+        $schema = new Drop($this->pdoSchema->getDatabase(), $this->pdoSchema);
 
-    expect($schema->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($schema->execute());
+    }
+}

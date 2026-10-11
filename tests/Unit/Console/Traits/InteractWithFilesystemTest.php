@@ -5,44 +5,51 @@ declare(strict_types=1);
 namespace Tests\Console\Traits;
 
 use Omega\Console\Traits\InteractWithFilesystemTrait;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use Tests\Console\Fixtures\FilesystemProbe;
+use Tests\TestCase;
 
-covers(InteractWithFilesystemTrait::class);
+#[CoversTrait(InteractWithFilesystemTrait::class)]
+final class InteractWithFilesystemTest extends TestCase
+{
+    public function testReturnsAnEmptyListWhenTheDirectoryDoesNotExist(): void
+    {
+        $probe = new FilesystemProbe();
 
-it('returns an empty list when the directory does not exist', function (): void {
-    $probe = new FilesystemProbe();
+        $this->assertSame([], $probe->find('/no/such/directory', '*'));
+    }
 
-    expect($probe->find('/no/such/directory', '*'))->toBe([]);
-});
+    public function testMatchesFilesByASinglePattern(): void
+    {
+        $probe = new FilesystemProbe();
+        $files = $probe->find(__DIR__ . '/../Fixtures/Files', '*.txt');
 
-it('matches files by a single pattern', function (): void {
-    $probe = new FilesystemProbe();
-    $files = $probe->find(__DIR__ . '/../Fixtures/Files', '*.txt');
+        $this->assertCount(1, $files);
+        $this->assertStringEndsWith('a.txt', $files[0]);
+    }
 
-    expect($files)->toHaveCount(1)
-        ->and($files[0])->toEndWith('a.txt');
-});
+    public function testMatchesFilesByMultiplePatterns(): void
+    {
+        $probe = new FilesystemProbe();
+        $files = $probe->find(__DIR__ . '/../Fixtures/Files', ['*.php', '*.log']);
 
-it('matches files by multiple patterns', function (): void {
-    $probe = new FilesystemProbe();
-    $files = $probe->find(__DIR__ . '/../Fixtures/Files', ['*.php', '*.log']);
+        $this->assertCount(2, $files);
+    }
 
-    expect($files)->toHaveCount(2);
-});
+    public function testMatchesEveryFileWithTheDefaultPattern(): void
+    {
+        $probe = new FilesystemProbe();
+        $files = $probe->find(__DIR__ . '/../Fixtures/Files');
 
-it('matches every file with the default pattern', function (): void {
-    $probe = new FilesystemProbe();
-    $files = $probe->find(__DIR__ . '/../Fixtures/Files');
+        $this->assertCount(3, $files);
+    }
 
-    expect($files)->toHaveCount(3);
-});
+    public function testExcludesFilesMatchingTheGivenPatterns(): void
+    {
+        $probe = new FilesystemProbe();
+        $files = $probe->find(__DIR__ . '/../Fixtures/Files', '*', ['*.log']);
 
-it('excludes files matching the given patterns', function (): void {
-    $probe = new FilesystemProbe();
-    $files = $probe->find(__DIR__ . '/../Fixtures/Files', '*', ['*.log']);
-
-    expect($files)->toHaveCount(2)
-        ->and($files)->not->toContain(
-            __DIR__ . '/../Fixtures/Files/b.log'
-        );
-});
+        $this->assertCount(2, $files);
+        $this->assertNotContains(__DIR__ . '/../Fixtures/Files/b.log', $files);
+    }
+}

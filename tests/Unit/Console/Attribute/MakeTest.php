@@ -5,41 +5,47 @@ declare(strict_types=1);
 namespace Tests\Console\Attribute;
 
 use Omega\Console\Attribute\Make;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Make::class);
+#[CoversClass(Make::class)]
+final class MakeTest extends TestCase
+{
+    public function testStoresTheMakeConfiguration(): void
+    {
+        $attribute = new Make(
+            'stub.php',
+            'path.provider',
+            '{{CLASS}}',
+            'Provider',
+            'app/Providers',
+            'Created provider.',
+            'Provider already exists.',
+            ['class' => 'Foo'],
+        );
 
-it('stores the make configuration', function (): void {
-    $attribute = new Make(
-        'stub.php',
-        'path.provider',
-        '{{CLASS}}',
-        'Provider',
-        'app/Providers',
-        'Created provider.',
-        'Provider already exists.',
-        ['class' => 'Foo'],
-    );
+        $this->assertSame('stub.php', $attribute->template);
+        $this->assertSame('path.provider', $attribute->path);
+        $this->assertSame('{{CLASS}}', $attribute->pattern);
+        $this->assertSame('Provider', $attribute->suffix);
+        $this->assertSame('app/Providers', $attribute->target);
+        $this->assertSame('Created provider.', $attribute->info);
+        $this->assertSame('Provider already exists.', $attribute->warning);
+        $this->assertSame(['class' => 'Foo'], $attribute->vars);
+    }
 
-    expect($attribute->template)->toBe('stub.php')
-        ->and($attribute->path)->toBe('path.provider')
-        ->and($attribute->pattern)->toBe('{{CLASS}}')
-        ->and($attribute->suffix)->toBe('Provider')
-        ->and($attribute->target)->toBe('app/Providers')
-        ->and($attribute->info)->toBe('Created provider.')
-        ->and($attribute->warning)->toBe('Provider already exists.')
-        ->and($attribute->vars)->toBe(['class' => 'Foo']);
-});
+    public function testDefaultsTheTemplateVariablesToAnEmptyArray(): void
+    {
+        $attribute = new Make(
+            'stub.php',
+            'path.provider',
+            '{{CLASS}}',
+            'Provider',
+            'app/Providers',
+            'Created provider.',
+            'Provider already exists.',
+        );
 
-it('defaults the template variables to an empty array', function (): void {
-    $attribute = new Make(
-        'stub.php',
-        'path.provider',
-        '{{CLASS}}',
-        'Provider',
-        'app/Providers',
-        'Created provider.',
-        'Provider already exists.',
-    );
-
-    expect($attribute->vars)->toBe([]);
-});
+        $this->assertSame([], $attribute->vars);
+    }
+}

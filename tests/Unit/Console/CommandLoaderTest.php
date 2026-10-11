@@ -6,59 +6,71 @@ namespace Tests\Console;
 
 use Omega\Application\Application;
 use Omega\Console\CommandLoader;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use Symfony\Component\Console\Exception\CommandNotFoundException;
 use Tests\Console\Fixtures\DemoCommand;
 use Tests\Console\Fixtures\PlainCommand;
+use Tests\TestCase;
 
-covers(CommandLoader::class);
+#[CoversClass(CommandLoader::class)]
+final class CommandLoaderTest extends TestCase
+{
+    public function testReturnsAnAbstractCommandInstanceWithTheApplicationInjected(): void
+    {
+        $app = new Application('/');
+        $app->set(DemoCommand::class, static fn (): DemoCommand => new DemoCommand());
+        $loader = new CommandLoader($app, ['demo:hello' => DemoCommand::class]);
 
-it('returns an AbstractCommand instance with the application injected', function (): void {
-    $app = new Application('/');
-    $app->set(DemoCommand::class, static fn (): DemoCommand => new DemoCommand());
-    $loader = new CommandLoader($app, ['demo:hello' => DemoCommand::class]);
+        $command = $loader->get('demo:hello');
 
-    $command = $loader->get('demo:hello');
+        $this->assertInstanceOf(DemoCommand::class, $command);
 
-    expect($command)->toBeInstanceOf(DemoCommand::class);
+        $property = new ReflectionProperty(DemoCommand::class, 'app');
 
-    $property = new ReflectionProperty(DemoCommand::class, 'app');
+        $this->assertSame($app, $property->getValue($command));
 
-    expect($property->getValue($command))->toBe($app);
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testReturnsAPlainSymfonyCommandWithoutInjectingTheApplication(): void
+    {
+        $app = new Application('/');
+        $app->set(PlainCommand::class, static fn (): PlainCommand => new PlainCommand());
+        $loader = new CommandLoader($app, ['plain:run' => PlainCommand::class]);
 
-it('returns a plain Symfony command without injecting the application', function (): void {
-    $app = new Application('/');
-    $app->set(PlainCommand::class, static fn (): PlainCommand => new PlainCommand());
-    $loader = new CommandLoader($app, ['plain:run' => PlainCommand::class]);
+        $command = $loader->get('plain:run');
 
-    $command = $loader->get('plain:run');
+        $this->assertInstanceOf(PlainCommand::class, $command);
 
-    expect($command)->toBeInstanceOf(PlainCommand::class);
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testReportsWhetherACommandNameIsDefined(): void
+    {
+        $loader = new CommandLoader(new Application('/'), ['demo:hello' => DemoCommand::class]);
 
-it('reports whether a command name is defined', function (): void {
-    $loader = new CommandLoader(new Application('/'), ['demo:hello' => DemoCommand::class]);
+        $this->assertTrue($loader->has('demo:hello'));
+        $this->assertFalse($loader->has('unknown:command'));
+    }
 
-    expect($loader->has('demo:hello'))->toBeTrue()
-        ->and($loader->has('unknown:command'))->toBeFalse();
-});
+    public function testReturnsAllDefinedCommandNames(): void
+    {
+        $loader = new CommandLoader(new Application('/'), [
+            'demo:hello' => DemoCommand::class,
+            'plain:run' => PlainCommand::class,
+        ]);
 
-it('returns all defined command names', function (): void {
-    $loader = new CommandLoader(new Application('/'), [
-        'demo:hello' => DemoCommand::class,
-        'plain:run' => PlainCommand::class,
-    ]);
+        $this->assertSame(['demo:hello', 'plain:run'], $loader->getNames());
+    }
 
-    expect($loader->getNames())->toBe(['demo:hello', 'plain:run']);
-});
+    public function testThrowsWhenTheCommandIsNotDefined(): void
+    {
+        $loader = new CommandLoader(new Application('/'), []);
 
-it('throws when the command is not defined', function (): void {
-    $loader = new CommandLoader(new Application('/'), []);
+        $this->expectException(CommandNotFoundException::class);
+        $this->expectExceptionMessage('Command "missing:command" is not defined.');
 
-    $loader->get('missing:command');
-})->throws(CommandNotFoundException::class, 'Command "missing:command" is not defined.');
+        $loader->get('missing:command');
+    }
+}

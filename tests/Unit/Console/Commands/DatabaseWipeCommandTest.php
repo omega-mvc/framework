@@ -2,154 +2,158 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\DatabaseWipeCommand;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Facade\AbstractFacade;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Console\Commands\Fixtures\FakeSchema;
 use Tests\Console\Commands\Fixtures\ScriptedSchemaConnection;
+use Tests\TestCase;
 
-covers(DatabaseWipeCommand::class);
+use function bin2hex;
+use function mkdir;
+use function random_bytes;
+use function sys_get_temp_dir;
 
-it('aborts when the user does not confirm the drop in production', function (): void {
-    $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+#[CoversClass(DatabaseWipeCommand::class)]
+final class DatabaseWipeCommandTest extends TestCase
+{
+    public function testAbortsWhenTheUserDoesNotConfirmTheDropInProduction(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $app->set('dsn.sql', ['driver' => 'mysql']);
-    $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
-    $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
+        $app = new Application($base);
+        $app->set('dsn.sql', ['driver' => 'mysql']);
+        $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
+        $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseWipeCommand();
-    $command->app = $app;
+        $command = new DatabaseWipeCommand();
+        $command->app = $app;
 
-    $tester = new CommandTester($command);
-    $tester->setInputs(['n']);
+        $tester = new CommandTester($command);
+        $tester->setInputs(['n']);
 
-    $result = $tester->run(['--database' => 'omega_test'], ['n'], true);
+        $result = $tester->run(['--database' => 'omega_test'], ['n'], true);
 
-    expect($result->statusCode)->toBe(Command::INVALID)
-        ->and($result->getDisplay())->toContain('The application is in PRODUCTION.')
-        ->and($result->getDisplay())->toContain('Operation aborted.');
+        $this->assertSame(Command::INVALID, $result->statusCode);
+        $this->assertStringContainsString('The application is in PRODUCTION.', $result->getDisplay());
+        $this->assertStringContainsString('Operation aborted.', $result->getDisplay());
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('drops the database after the user confirms in production', function (): void {
-    $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testDropsTheDatabaseAfterTheUserConfirmsInProduction(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $app->set('Schema', $schema);
-    $app->set('dsn.sql', ['driver' => 'mysql']);
-    $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
-    $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $app->set('Schema', $schema);
+        $app->set('dsn.sql', ['driver' => 'mysql']);
+        $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
+        $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseWipeCommand();
-    $command->app = $app;
+        $command = new DatabaseWipeCommand();
+        $command->app = $app;
 
-    $tester = new CommandTester($command);
-    $tester->setInputs(['y']);
+        $tester = new CommandTester($command);
+        $tester->setInputs(['y']);
 
-    $result = $tester->run(['--database' => 'omega_test'], ['y'], true);
+        $result = $tester->run(['--database' => 'omega_test'], ['y'], true);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Trying to drop database `omega_test`...')
-        ->and($result->getDisplay())->toContain('Successfully dropped database `omega_test`')
-        ->and($schema->last->database)->toBe('omega_test')
-        ->and($schema->last->ifExists)->toBeTrue();
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Trying to drop database `omega_test`...', $result->getDisplay());
+        $this->assertStringContainsString('Successfully dropped database `omega_test`', $result->getDisplay());
+        $this->assertSame('omega_test', $schema->last->database);
+        $this->assertTrue($schema->last->ifExists);
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('reports when the database does not exist', function (): void {
-    $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testReportsWhenTheDatabaseDoesNotExist(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $app->set('dsn.sql', ['driver' => 'mysql']);
-    $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
+        $app = new Application($base);
+        $app->set('dsn.sql', ['driver' => 'mysql']);
+        $app->set(SchemaConnection::class, new ScriptedSchemaConnection('omega_test'));
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseWipeCommand();
-    $command->app = $app;
+        $command = new DatabaseWipeCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'missing_db']);
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'missing_db']);
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Database `missing_db` does not exist, nothing to drop.');
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Database `missing_db` does not exist, nothing to drop.', $result->getDisplay());
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('drops the database without confirmation in no-interact mode', function (): void {
-    $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testDropsTheDatabaseWithoutConfirmationInNoInteractMode(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $app->set('Schema', $schema);
-    $app->set('dsn.sql', ['driver' => 'mysql']);
-    $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
-    $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $app->set('Schema', $schema);
+        $app->set('dsn.sql', ['driver' => 'mysql']);
+        $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
+        $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseWipeCommand();
-    $command->app = $app;
+        $command = new DatabaseWipeCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'omega_test']);
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'omega_test']);
 
-    $display = $result->getDisplay();
+        $display = $result->getDisplay();
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($display)->not->toContain('The application is in PRODUCTION.')
-        ->and($display)->toContain('Successfully dropped database `omega_test`');
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringNotContainsString('The application is in PRODUCTION.', $display);
+        $this->assertStringContainsString('Successfully dropped database `omega_test`', $display);
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('reports when the database cannot be dropped', function (): void {
-    $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+    public function testReportsWhenTheDatabaseCannotBeDropped(): void
+    {
+        $base = sys_get_temp_dir() . '/omegadw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
-    $schema = new FakeSchema();
-    $schema->fail();
-    $app->set('Schema', $schema);
-    $app->set('dsn.sql', ['driver' => 'mysql']);
-    $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
-    $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
+        $app = new Application($base);
+        $schema = new FakeSchema();
+        $schema->fail();
+        $app->set('Schema', $schema);
+        $app->set('dsn.sql', ['driver' => 'mysql']);
+        $app->set(SchemaConnection::class, $conn = new ScriptedSchemaConnection('omega_test'));
+        $conn->whenQueryContains('information_schema.schemata', [['total' => '1']]);
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    $command = new DatabaseWipeCommand();
-    $command->app = $app;
+        $command = new DatabaseWipeCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'omega_test']);
+        $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'omega_test']);
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Cannot drop database `omega_test`');
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Cannot drop database `omega_test`', $result->getDisplay());
 
-    $app->flush();
-});
+        $app->flush();
+    }
+}

@@ -6,132 +6,161 @@ namespace Tests\Redis;
 
 use Omega\Redis\Redis;
 use Omega\Redis\RedisConnector;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RedisException;
+use Tests\TestCase;
 
-use function expect;
 use function extension_loaded;
 use function fclose;
 use function fsockopen;
 use function restore_error_handler;
 use function set_error_handler;
 
-covers(Redis::class);
-covers(RedisConnector::class);
+#[CoversClass(Redis::class)]
+#[CoversClass(RedisConnector::class)]
+final class RedisConnectionTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        if (!extension_loaded('redis')) {
+            $this->markTestSkipped('Redis extension not loaded.');
+        }
 
-beforeEach(function (): void {
-    if (!extension_loaded('redis')) {
-        $this->markTestSkipped('Redis extension not loaded.');
+        $socket = false;
+        set_error_handler(static fn (): bool => true);
+        try {
+            $socket = fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
+        } finally {
+            restore_error_handler();
+        }
+        if (false === $socket) {
+            $this->markTestSkipped('Redis server is not reachable: ' . $errstr);
+        }
+        fclose($socket);
     }
 
-    $socket = false;
-    set_error_handler(static fn (): bool => true);
-    try {
-        $socket = fsockopen('127.0.0.1', 6379, $errno, $errstr, 1.0);
-    } finally {
-        restore_error_handler();
+    public function testCanConnectUsingPersistentConnection(): void
+    {
+        $redis = new Redis([
+            'host'       => '127.0.0.1',
+            'port'       => 6379,
+            'database'   => 1,
+            'persistent' => true,
+        ]);
+
+        $this->assertTrue($redis->set('persistent_key', 'value'));
+        $this->assertSame('value', $redis->get('persistent_key'));
+
+        $redis->disconnect();
     }
-    if (false === $socket) {
-        $this->markTestSkipped('Redis server is not reachable: ' . $errstr);
+
+    public function testCanSetReadTimeout(): void
+    {
+        $redis = new Redis([
+            'host'         => '127.0.0.1',
+            'port'         => 6379,
+            'database'     => 1,
+            'read_timeout' => 2.5,
+        ]);
+
+        $this->assertSame(2.5, $redis->client()->getOption(\Redis::OPT_READ_TIMEOUT));
+
+        $redis->disconnect();
     }
-    fclose($socket);
-});
 
-it('can connect using persistent connection', function (): void {
-    $redis = new Redis([
-        'host'       => '127.0.0.1',
-        'port'       => 6379,
-        'database'   => 1,
-        'persistent' => true,
-    ]);
+    public function testThrowsExceptionOnConnectionFailure(): void
+    {
+        $this->expectException(RedisException::class);
+        $this->expectExceptionMessage('Could not connect to Redis');
 
-    expect($redis->set('persistent_key', 'value'))->toBeTrue();
-    expect($redis->get('persistent_key'))->toBe('value');
+        new Redis([
+            'host'    => '127.0.0.1',
+            'port'    => 9999,
+            'timeout' => 0.1,
+        ]);
+    }
 
-    $redis->disconnect();
-});
+    public function testConnectsWithDefaultOptionsWhenNoExtraConfigurationIsProvided(): void
+    {
+        $redis = new Redis([]);
 
-it('can set read timeout', function (): void {
-    $redis = new Redis([
-        'host'         => '127.0.0.1',
-        'port'         => 6379,
-        'database'     => 1,
-        'read_timeout' => 2.5,
-    ]);
+        $this->assertTrue($redis->set('no-config-key', 'no-config-value'));
+        $this->assertSame('no-config-value', $redis->get('no-config-key'));
 
-    expect($redis->client()->getOption(\Redis::OPT_READ_TIMEOUT))->toBe(2.5);
+        $redis->del('no-config-key');
+        $redis->disconnect();
+    }
 
-    $redis->disconnect();
-});
+    public function testIgnoresAnEmptyPasswordOption(): void
+    {
+        $redis = new Redis(['password' => '']);
 
-it('throws exception on connection failure', function (): void {
-    new Redis([
-        'host'    => '127.0.0.1',
-        'port'    => 9999,
-        'timeout' => 0.1,
-    ]);
-})->throws(RedisException::class, 'Could not connect to Redis');
+        $this->assertTrue($redis->set('empty-password-key', 'empty-password-value'));
+        $this->assertSame('empty-password-value', $redis->get('empty-password-key'));
 
-it('connects with default options when no extra configuration is provided', function (): void {
-    $redis = new Redis([]);
+        $redis->del('empty-password-key');
+        $redis->disconnect();
+    }
 
-    expect($redis->set('no-config-key', 'no-config-value'))->toBeTrue();
-    expect($redis->get('no-config-key'))->toBe('no-config-value');
+    public function testThrowsWhenAUnixSocketConnectionFails(): void
+    {
+        $this->expectException(RedisException::class);
+        $this->expectExceptionMessage('Could not connect to Redis');
 
-    $redis->del('no-config-key');
-    $redis->disconnect();
-});
+        new Redis(['unix_socket' => '/nonexistent/redis.sock']);
+    }
 
-it('ignores an empty password option', function (): void {
-    $redis = new Redis(['password' => '']);
+    public function testThrowsWhenAPersistentUnixSocketConnectionFails(): void
+    {
+        $this->expectException(RedisException::class);
+        $this->expectExceptionMessage('Could not connect to Redis');
 
-    expect($redis->set('empty-password-key', 'empty-password-value'))->toBeTrue();
-    expect($redis->get('empty-password-key'))->toBe('empty-password-value');
+        new Redis([
+            'unix_socket'   => '/nonexistent/redis.sock',
+            'persistent'    => true,
+            'persistent_id' => 'test-persistent-id',
+        ]);
+    }
 
-    $redis->del('empty-password-key');
-    $redis->disconnect();
-});
+    public function testThrowsWhenAuthenticationFails(): void
+    {
+        $this->expectException(RedisException::class);
+        $this->expectExceptionMessage('Could not connect to Redis');
 
-it('throws when a unix socket connection fails', function (): void {
-    new Redis(['unix_socket' => '/nonexistent/redis.sock']);
-})->throws(RedisException::class, 'Could not connect to Redis');
+        new Redis([
+            'host'     => '127.0.0.1',
+            'port'     => 6379,
+            'database' => 1,
+            'password' => 'not-the-password',
+        ]);
+    }
 
-it('throws when a persistent unix socket connection fails', function (): void {
-    new Redis([
-        'unix_socket'   => '/nonexistent/redis.sock',
-        'persistent'    => true,
-        'persistent_id' => 'test-persistent-id',
-    ]);
-})->throws(RedisException::class, 'Could not connect to Redis');
+    public function testConfiguresTheReadTimeoutBeforeAttemptingAuthentication(): void
+    {
+        $this->expectException(RedisException::class);
+        $this->expectExceptionMessage('Could not connect to Redis');
 
-it('throws when authentication fails', function (): void {
-    new Redis([
-        'host'     => '127.0.0.1',
-        'port'     => 6379,
-        'database' => 1,
-        'password' => 'not-the-password',
-    ]);
-})->throws(RedisException::class, 'Could not connect to Redis');
+        new Redis([
+            'host'         => '127.0.0.1',
+            'port'         => 6379,
+            'read_timeout' => 1.0,
+            'password'     => 'not-the-password',
+        ]);
+    }
 
-it('configures the read timeout before attempting authentication', function (): void {
-    new Redis([
-        'host'         => '127.0.0.1',
-        'port'         => 6379,
-        'read_timeout' => 1.0,
-        'password'     => 'not-the-password',
-    ]);
-})->throws(RedisException::class, 'Could not connect to Redis');
+    public function testAppliesTheReadTimeoutAndSelectsADatabaseWithoutAuthenticating(): void
+    {
+        $redis = new Redis([
+            'host'         => '127.0.0.1',
+            'port'         => 6379,
+            'database'     => 2,
+            'read_timeout' => 1.5,
+        ]);
 
-it('applies the read timeout and selects a database without authenticating', function (): void {
-    $redis = new Redis([
-        'host'         => '127.0.0.1',
-        'port'         => 6379,
-        'database'     => 2,
-        'read_timeout' => 1.5,
-    ]);
+        $this->assertSame(1.5, $redis->client()->getOption(\Redis::OPT_READ_TIMEOUT));
+        $this->assertNull($redis->client()->getLastError());
+        $this->assertSame(2, $redis->client()->getDbNum());
 
-    expect($redis->client()->getOption(\Redis::OPT_READ_TIMEOUT))->toBe(1.5);
-    expect($redis->client()->getLastError())->toBeNull();
-    expect($redis->client()->getDbNum())->toBe(2);
-
-    $redis->disconnect();
-});
+        $redis->disconnect();
+    }
+}

@@ -6,19 +6,26 @@ namespace Tests\Config\Source;
 
 use Omega\Config\Exceptions\MalformedJsonException;
 use Omega\Config\Source\JsonConfig;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(MalformedJsonException::class);
-covers(JsonConfig::class);
+#[CoversClass(MalformedJsonException::class)]
+#[CoversClass(JsonConfig::class)]
+final class JsonTest extends TestCase
+{
+    public function testShouldReturnValues(): void
+    {
+        $source = new JsonConfig(__DIR__ . '/../fixtures/config/content.json');
 
+        $this->assertEquals(['key' => 'value'], $source->fetch());
+    }
 
-it('should return values', function (): void {
-    $source = new JsonConfig(__DIR__ . '/../fixtures/config/content.json');
+    public function testShouldThrowOnMalformedConfiguration(): void
+    {
+        $source = new JsonConfig(__DIR__ . '/../fixtures/config/malformed.json');
 
-    expect($source->fetch())->toEqual(['key' => 'value']);
-});
+        $this->expectException(MalformedJsonException::class);
 
-it('should throw on malformed configuration', function (): void {
-    $source = new JsonConfig(__DIR__ . '/../fixtures/config/malformed.json');
-
-    $source->fetch();
-})->throws(MalformedJsonException::class);
+        $source->fetch();
+    }
+}

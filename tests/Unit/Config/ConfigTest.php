@@ -7,202 +7,287 @@ namespace Tests\Config;
 use Omega\Config\ConfigRepository;
 use Omega\Config\ConfigRepositoryInterface;
 use Omega\Config\MergeStrategy;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function class_implements;
 
-covers(ConfigRepository::class);
-covers(MergeStrategy::class);
+#[CoversClass(ConfigRepository::class)]
+#[CoversClass(MergeStrategy::class)]
+final class ConfigTest extends TestCase
+{
+    private ConfigRepository $configuration;
 
-beforeEach(function (): void {
-    $this->configuration = new ConfigRepository();
-});
+    protected function setUp(): void
+    {
+        $this->configuration = new ConfigRepository();
+    }
 
-it('should implement config repository interface', function (): void {
-    expect(class_implements($this->configuration::class))->toContain(ConfigRepositoryInterface::class);
-});
+    public function testShouldImplementConfigRepositoryInterface(): void
+    {
+        $this->assertContains(ConfigRepositoryInterface::class, class_implements($this->configuration::class));
+    }
 
-it('should be empty by default', function (): void {
-    expect($this->configuration->getAll())->toBeEmpty();
-});
+    public function testShouldBeEmptyByDefault(): void
+    {
+        $this->assertEmpty($this->configuration->getAll());
+    }
 
-it('should accept store', function (): void {
-    $store = ['key' => 'value'];
-    $configuration = new ConfigRepository($store);
+    public function testShouldAcceptStore(): void
+    {
+        $store         = ['key' => 'value'];
+        $configuration = new ConfigRepository($store);
 
-    expect($configuration->getAll())->toEqual($store);
-});
+        $this->assertEquals($store, $configuration->getAll());
+    }
 
-it('should return all values', function (): void {
-    $this->configuration->set('key', 'value');
+    public function testShouldReturnAllValues(): void
+    {
+        $this->configuration->set('key', 'value');
 
-    expect($this->configuration->getAll())->toEqual(['key' => 'value']);
-});
+        $this->assertEquals(['key' => 'value'], $this->configuration->getAll());
+    }
 
-it('should determine if key has value', function (): void {
-    expect($this->configuration->has('key'))->toBeFalse();
+    public function testShouldDetermineIfKeyHasValue(): void
+    {
+        $this->assertFalse($this->configuration->has('key'));
 
-    $this->configuration->set('key', 'value');
+        $this->configuration->set('key', 'value');
 
-    expect($this->configuration->has('key'))->toBeTrue();
-});
+        $this->assertTrue($this->configuration->has('key'));
+    }
 
-it('should determine if key has nested value', function (): void {
-    expect($this->configuration->has('nested.key'))->toBeFalse();
+    public function testShouldDetermineIfKeyHasNestedValue(): void
+    {
+        $this->assertFalse($this->configuration->has('nested.key'));
 
-    $this->configuration->set('nested', ['key' => 'value']);
+        $this->configuration->set('nested', ['key' => 'value']);
 
-    expect($this->configuration->has('nested.key'))->toBeTrue();
-});
+        $this->assertTrue($this->configuration->has('nested.key'));
+    }
 
-it('should return null if key not found', function (): void {
-    expect($this->configuration->get('key'))->toBeNull();
-});
+    public function testShouldReturnNullIfKeyNotFound(): void
+    {
+        $this->assertNull($this->configuration->get('key'));
+    }
 
-it('should return null if nested key not found', function (): void {
-    expect($this->configuration->get('nested.key'))->toBeNull();
-});
+    public function testShouldReturnNullIfNestedKeyNotFound(): void
+    {
+        $this->assertNull($this->configuration->get('nested.key'));
+    }
 
-it('should return default value if provided', function (): void {
-    expect($this->configuration->get('key', 'test'))->toBe('test');
-});
+    public function testShouldReturnDefaultValueIfProvided(): void
+    {
+        $this->assertSame('test', $this->configuration->get('key', 'test'));
+    }
 
-it('should return value for key', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
+    public function testShouldReturnValueForKey(): void
+    {
+        $configuration = new ConfigRepository(['key' => 'value']);
 
-    expect($configuration->get('key'))->toBe('value');
-});
+        $this->assertSame('value', $configuration->get('key'));
+    }
 
-it('should return value for nested key', function (): void {
-    $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
+    public function testShouldReturnValueForNestedKey(): void
+    {
+        $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
 
-    expect($configuration->get('nested.key'))->toBe('value');
-});
+        $this->assertSame('value', $configuration->get('nested.key'));
+    }
 
-it('should set value for key', function (): void {
-    $this->configuration->set('key', 'value');
+    public function testShouldSetValueForKey(): void
+    {
+        $this->configuration->set('key', 'value');
 
-    expect($this->configuration->get('key'))->toBe('value');
-});
+        $this->assertSame('value', $this->configuration->get('key'));
+    }
 
-it('should set value for nested key', function (): void {
-    $this->configuration->set('nested.key', 'value');
+    public function testShouldSetValueForNestedKey(): void
+    {
+        $this->configuration->set('nested.key', 'value');
 
-    expect($this->configuration->get('nested'))->toEqual(['key' => 'value']);
-});
+        $this->assertEquals(['key' => 'value'], $this->configuration->get('nested'));
+    }
 
-it('should remove value for key', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
-    $configuration->remove('key');
+    public function testShouldRemoveValueForKey(): void
+    {
+        $configuration = new ConfigRepository(['key' => 'value']);
+        $configuration->remove('key');
 
-    expect($configuration->has('key'))->toBeFalse();
+        $this->assertFalse($configuration->has('key'));
 
-    $this->configuration->remove('non_existing_key');
-});
+        $this->configuration->remove('non_existing_key');
+    }
 
-it('should remove value for nested key', function (): void {
-    $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
-    $configuration->remove('nested.key');
+    public function testShouldRemoveValueForNestedKey(): void
+    {
+        $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
+        $configuration->remove('nested.key');
 
-    expect($configuration->has('nested.key'))->toBeFalse();
-    expect($configuration->get('nested'))->toBeArray();
-    expect($configuration->get('nested'))->toBeEmpty();
+        $this->assertFalse($configuration->has('nested.key'));
+        $this->assertIsArray($configuration->get('nested'));
+        $this->assertEmpty($configuration->get('nested'));
 
-    $this->configuration->remove('nested.non_existing_key');
-});
+        $this->configuration->remove('nested.non_existing_key');
+    }
 
-it('should clear all values', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
-    $configuration->clear();
+    public function testShouldClearAllValues(): void
+    {
+        $configuration = new ConfigRepository(['key' => 'value']);
+        $configuration->clear();
 
-    expect($configuration->getAll())->toBeEmpty();
-});
+        $this->assertEmpty($configuration->getAll());
+    }
 
-it('should merge configuration', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
-    $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
+    public function testShouldMergeConfiguration(): void
+    {
+        $configuration        = new ConfigRepository(['key' => 'value']);
+        $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
 
-    $configuration->merge($anotherConfiguration);
+        $configuration->merge($anotherConfiguration);
 
-    expect($configuration->getAll())->toEqual([
-        'key'         => 'value',
-        'another_key' => 'another_value',
-    ]);
-});
-
-it('should merge configuration at key', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
-    $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
-
-    $configuration->merge($anotherConfiguration, 'nested');
-
-    expect($configuration->getAll())->toEqual([
-        'key'    => 'value',
-        'nested' => [
-            'another_key' => 'another_value',
-        ],
-    ]);
-});
-
-it('should merge configuration at nested key', function (): void {
-    $configuration = new ConfigRepository(['key' => 'value']);
-    $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
-
-    $configuration->merge($anotherConfiguration, 'nested.section');
-
-    expect($configuration->getAll())->toEqual([
-        'key'    => 'value',
-        'nested' => [
-            'section' => [
-                'another_key' => 'another_value',
-            ],
-        ],
-    ]);
-});
-
-it('should merge configuration at existing key', function (): void {
-    $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
-    $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
-
-    $configuration->merge($anotherConfiguration, 'nested.section');
-
-    expect($configuration->getAll())->toEqual([
-        'nested' => [
-            'key'     => 'value',
-            'section' => [
-                'another_key' => 'another_value',
-            ],
-        ],
-    ]);
-});
-
-it('should merge associative arrays', function (): void {
-    $configuration = new ConfigRepository(['nested' => ['key' => 'value']]);
-    $anotherConfiguration = new ConfigRepository(['nested' => ['another_key' => 'another_value']]);
-
-    $configuration->merge($anotherConfiguration);
-
-    expect($configuration->getAll())->toEqual([
-        'nested' => [
+        $this->assertEquals([
             'key'         => 'value',
             'another_key' => 'another_value',
-        ],
-    ]);
-});
+        ], $configuration->getAll());
+    }
 
-it('should replace indexed arrays', function (): void {
-    $configuration = new ConfigRepository(['indexed' => [1, 2, 3]]);
-    $anotherConfiguration = new ConfigRepository(['indexed' => [1, 2]]);
+    public function testShouldMergeConfigurationAtKey(): void
+    {
+        $configuration        = new ConfigRepository(['key' => 'value']);
+        $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
 
-    $configuration->merge($anotherConfiguration);
+        $configuration->merge($anotherConfiguration, 'nested');
 
-    expect($configuration->getAll())->toEqual(['indexed' => [1, 2]]);
-});
+        $this->assertEquals([
+            'key'    => 'value',
+            'nested' => [
+                'another_key' => 'another_value',
+            ],
+        ], $configuration->getAll());
+    }
 
-it('should merge indexed arrays', function (): void {
-    $configuration = new ConfigRepository(['indexed' => [1, 2, 3]]);
-    $anotherConfiguration = new ConfigRepository(['indexed' => [3, 4, 5]]);
+    public function testShouldMergeConfigurationAtNestedKey(): void
+    {
+        $configuration        = new ConfigRepository(['key' => 'value']);
+        $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
 
-    $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_INDEXED);
+        $configuration->merge($anotherConfiguration, 'nested.section');
 
-    expect($configuration->getAll())->toEqual(['indexed' => [1, 2, 3, 4, 5]]);
-});
+        $this->assertEquals([
+            'key'    => 'value',
+            'nested' => [
+                'section' => [
+                    'another_key' => 'another_value',
+                ],
+            ],
+        ], $configuration->getAll());
+    }
+
+    public function testShouldMergeConfigurationAtExistingKey(): void
+    {
+        $configuration        = new ConfigRepository(['nested' => ['key' => 'value']]);
+        $anotherConfiguration = new ConfigRepository(['another_key' => 'another_value']);
+
+        $configuration->merge($anotherConfiguration, 'nested.section');
+
+        $this->assertEquals([
+            'nested' => [
+                'key'     => 'value',
+                'section' => [
+                    'another_key' => 'another_value',
+                ],
+            ],
+        ], $configuration->getAll());
+    }
+
+    public function testShouldMergeAssociativeArrays(): void
+    {
+        $configuration        = new ConfigRepository(['nested' => ['key' => 'value']]);
+        $anotherConfiguration = new ConfigRepository(['nested' => ['another_key' => 'another_value']]);
+
+        $configuration->merge($anotherConfiguration);
+
+        $this->assertEquals([
+            'nested' => [
+                'key'         => 'value',
+                'another_key' => 'another_value',
+            ],
+        ], $configuration->getAll());
+    }
+
+    public function testShouldReplaceIndexedArrays(): void
+    {
+        $configuration        = new ConfigRepository(['indexed' => [1, 2, 3]]);
+        $anotherConfiguration = new ConfigRepository(['indexed' => [1, 2]]);
+
+        $configuration->merge($anotherConfiguration);
+
+        $this->assertEquals(['indexed' => [1, 2]], $configuration->getAll());
+    }
+
+    public function testShouldMergeIndexedArrays(): void
+    {
+        $configuration        = new ConfigRepository(['indexed' => [1, 2, 3]]);
+        $anotherConfiguration = new ConfigRepository(['indexed' => [3, 4, 5]]);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_INDEXED);
+
+        $this->assertEquals(['indexed' => [1, 2, 3, 4, 5]], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWithTheMergeAddNewStrategy(): void
+    {
+        $configuration        = new ConfigRepository(['existing' => 'old']);
+        $anotherConfiguration = new ConfigRepository(['existing' => 'new', 'added' => 'value']);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame('new', $configuration->get('existing'));
+        $this->assertSame('value', $configuration->get('added'));
+    }
+
+    public function testShouldPushValuesOntoAKey(): void
+    {
+        $this->configuration->push('items', 'first');
+        $this->configuration->push('items', 'second');
+
+        $this->assertSame(['first', 'second'], $this->configuration->get('items'));
+    }
+
+    public function testShouldPushValuesOntoANonArrayKey(): void
+    {
+        $configuration = new ConfigRepository(['items' => 'scalar']);
+
+        $configuration->push('items', 'first');
+
+        $this->assertSame(['first'], $configuration->get('items'));
+    }
+
+    public function testShouldSupportArrayAccess(): void
+    {
+        $this->configuration['key'] = 'value';
+
+        $this->assertTrue(isset($this->configuration['key']));
+        $this->assertSame('value', $this->configuration['key']);
+
+        unset($this->configuration['key']);
+
+        $this->assertFalse(isset($this->configuration['key']));
+    }
+
+    public function testShouldBeCountableAndIterable(): void
+    {
+        $this->configuration->set('first', 1);
+        $this->configuration->set('second', 2);
+
+        $this->assertCount(2, $this->configuration);
+
+        $values = [];
+        foreach ($this->configuration as $value) {
+            $values[] = $value;
+        }
+
+        $this->assertSame([1, 2], $values);
+    }
+}

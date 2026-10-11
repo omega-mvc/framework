@@ -4,164 +4,186 @@ declare(strict_types=1);
 
 namespace Tests\Database\Model;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
 use Tests\Database\Support\User;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+use function password_hash;
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+use const PASSWORD_DEFAULT;
 
-test('it can read data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $password = password_hash('password', PASSWORD_DEFAULT);
-    $this->createUser([
-        [
-            'user'     => 'nuno',
-            'password' => $password,
-            'stat'     => 90,
-        ],
-        [
-            'user'     => 'taylor',
-            'password' => $password,
-            'stat'     => 100,
-        ],
-        [
-            'user'     => 'pradana',
-            'password' => $password,
-            'stat'     => 80,
-        ],
-    ]);
+final class CollectionModelTest extends TestCase
+{
+    use ManagesDatabase;
 
-    $users = new User($this->pdo, []);
-    $users->read();
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-    foreach ($users->get() as $user) {
-        expect($user->read())->toBeTrue();
+        parent::tearDown();
     }
-})->with(ManagesDatabase::engineProvider());
 
-test('it can update data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $password = password_hash('password', PASSWORD_DEFAULT);
-    $this->createUser([
-        [
-            'user'     => 'nuno',
-            'password' => $password,
-            'stat'     => 90,
-        ],
-        [
-            'user'     => 'taylor',
-            'password' => $password,
-            'stat'     => 100,
-        ],
-        [
-            'user'     => 'pradana',
-            'password' => $password,
-            'stat'     => 80,
-        ],
-    ]);
+    #[DataProvider('engineProvider')]
+    public function testItCanReadData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $password = password_hash('password', PASSWORD_DEFAULT);
+        $this->createUser([
+            [
+                'user'     => 'nuno',
+                'password' => $password,
+                'stat'     => 90,
+            ],
+            [
+                'user'     => 'taylor',
+                'password' => $password,
+                'stat'     => 100,
+            ],
+            [
+                'user'     => 'pradana',
+                'password' => $password,
+                'stat'     => 80,
+            ],
+        ]);
 
-    $users = new User($this->pdo, []);
-    $users->read();
+        $users = new User($this->pdo, []);
+        $users->read();
 
-    foreach ($users->get() as $user) {
-        $user->setter('stat', 0);
-        expect($user->update())->toBeTrue();
+        foreach ($users->get() as $user) {
+            $this->assertTrue($user->read());
+        }
     }
-})->with(ManagesDatabase::engineProvider());
 
-test('it can delete data', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $password = password_hash('password', PASSWORD_DEFAULT);
-    $this->createUser([
-        [
-            'user'     => 'nuno',
-            'password' => $password,
-            'stat'     => 90,
-        ],
-        [
-            'user'     => 'taylor',
-            'password' => $password,
-            'stat'     => 100,
-        ],
-        [
-            'user'     => 'pradana',
-            'password' => $password,
-            'stat'     => 80,
-        ],
-    ]);
+    #[DataProvider('engineProvider')]
+    public function testItCanUpdateData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $password = password_hash('password', PASSWORD_DEFAULT);
+        $this->createUser([
+            [
+                'user'     => 'nuno',
+                'password' => $password,
+                'stat'     => 90,
+            ],
+            [
+                'user'     => 'taylor',
+                'password' => $password,
+                'stat'     => 100,
+            ],
+            [
+                'user'     => 'pradana',
+                'password' => $password,
+                'stat'     => 80,
+            ],
+        ]);
 
-    $users = new User($this->pdo, []);
-    $users->read();
+        $users = new User($this->pdo, []);
+        $users->read();
 
-    foreach ($users->get() as $user) {
-        expect($user->delete())->toBeTrue();
+        foreach ($users->get() as $user) {
+            $user->setter('stat', 0);
+            $this->assertTrue($user->update());
+        }
     }
-})->with(ManagesDatabase::engineProvider());
 
-test('it can update all with single query', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $password = password_hash('password', PASSWORD_DEFAULT);
-    $this->createUser([
-        [
-            'user'     => 'nuno',
-            'password' => $password,
-            'stat'     => 90,
-        ],
-        [
-            'user'     => 'taylor',
-            'password' => $password,
-            'stat'     => 100,
-        ],
-        [
-            'user'     => 'pradana',
-            'password' => $password,
-            'stat'     => 80,
-        ],
-    ]);
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteData(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $password = password_hash('password', PASSWORD_DEFAULT);
+        $this->createUser([
+            [
+                'user'     => 'nuno',
+                'password' => $password,
+                'stat'     => 90,
+            ],
+            [
+                'user'     => 'taylor',
+                'password' => $password,
+                'stat'     => 100,
+            ],
+            [
+                'user'     => 'pradana',
+                'password' => $password,
+                'stat'     => 80,
+            ],
+        ]);
 
-    $users  = new User($this->pdo, []);
-    $users->read();
+        $users = new User($this->pdo, []);
+        $users->read();
 
-    $update = $users->get()->update([
-        'stat' => 0,
-    ]);
+        foreach ($users->get() as $user) {
+            $this->assertTrue($user->delete());
+        }
+    }
 
-    expect($update)->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+    #[DataProvider('engineProvider')]
+    public function testItCanUpdateAllWithSingleQuery(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $password = password_hash('password', PASSWORD_DEFAULT);
+        $this->createUser([
+            [
+                'user'     => 'nuno',
+                'password' => $password,
+                'stat'     => 90,
+            ],
+            [
+                'user'     => 'taylor',
+                'password' => $password,
+                'stat'     => 100,
+            ],
+            [
+                'user'     => 'pradana',
+                'password' => $password,
+                'stat'     => 80,
+            ],
+        ]);
 
-test('it can delete all with single query', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
-    $password = password_hash('password', PASSWORD_DEFAULT);
-    $this->createUser([
-        [
-            'user'     => 'nuno',
-            'password' => $password,
-            'stat'     => 90,
-        ],
-        [
-            'user'     => 'taylor',
-            'password' => $password,
-            'stat'     => 100,
-        ],
-        [
-            'user'     => 'pradana',
-            'password' => $password,
-            'stat'     => 80,
-        ],
-    ]);
+        $users  = new User($this->pdo, []);
+        $users->read();
 
-    $users  = new User($this->pdo, []);
-    $users->read();
+        $update = $users->get()->update([
+            'stat' => 0,
+        ]);
 
-    $delete = $users->get()->delete();
+        $this->assertTrue($update);
+    }
 
-    expect($delete)->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteAllWithSingleQuery(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
+        $password = password_hash('password', PASSWORD_DEFAULT);
+        $this->createUser([
+            [
+                'user'     => 'nuno',
+                'password' => $password,
+                'stat'     => 90,
+            ],
+            [
+                'user'     => 'taylor',
+                'password' => $password,
+                'stat'     => 100,
+            ],
+            [
+                'user'     => 'pradana',
+                'password' => $password,
+                'stat'     => 80,
+            ],
+        ]);
+
+        $users  = new User($this->pdo, []);
+        $users->read();
+
+        $delete = $users->get()->delete();
+
+        $this->assertTrue($delete);
+    }
+}

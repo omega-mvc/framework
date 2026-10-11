@@ -10,178 +10,208 @@ use Omega\Container\Exceptions\AliasException;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Tests\Container\Support\AnotherService;
 use Tests\Container\Support\ConcreteService;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\ServiceInterface;
+use Tests\TestCase;
 
-covers(AliasException::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
+#[CoversClass(AliasException::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+final class BindingTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
+    protected function setUp(): void
+    {
+        $this->container = new Container();
+    }
 
-it('binds an abstraction to a concrete class', function (): void {
-    $this->container->bind(ServiceInterface::class, ConcreteService::class);
+    public function testBindsAnAbstractionToAConcreteClass(): void
+    {
+        $this->container->bind(ServiceInterface::class, ConcreteService::class);
 
-    expect($this->container->get(ServiceInterface::class))
-        ->toBeInstanceOf(ConcreteService::class);
-});
+        $this->assertInstanceOf(ConcreteService::class, $this->container->get(ServiceInterface::class));
+    }
 
-it('binds a closure', function (): void {
-    $this->container->bind('foo', fn () => 'bar');
+    public function testBindsAClosure(): void
+    {
+        $this->container->bind('foo', fn () => 'bar');
 
-    expect($this->container->get('foo'))->toBe('bar');
-});
+        $this->assertSame('bar', $this->container->get('foo'));
+    }
 
-it('binds a shared singleton', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
+    public function testBindsASharedSingleton(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
 
-    $instance1 = $this->container->get('foo');
-    $instance2 = $this->container->get('foo');
+        $instance1 = $this->container->get('foo');
+        $instance2 = $this->container->get('foo');
 
-    expect($instance1)->toBe($instance2);
-});
+        $this->assertSame($instance1, $instance2);
+    }
 
-it('creates a new instance for non-shared bindings', function (): void {
-    $this->container->bind('foo', fn () => new stdClass());
+    public function testCreatesANewInstanceForNonSharedBindings(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass());
 
-    $instance1 = $this->container->make('foo');
-    $instance2 = $this->container->make('foo');
+        $instance1 = $this->container->make('foo');
+        $instance2 = $this->container->make('foo');
 
-    expect($instance1)->not->toBe($instance2);
-});
+        $this->assertNotSame($instance1, $instance2);
+    }
 
-it('overrides a previous binding', function (): void {
-    $this->container->bind('foo', fn () => 'bar');
-    $this->container->bind('foo', fn () => 'baz');
+    public function testOverridesAPreviousBinding(): void
+    {
+        $this->container->bind('foo', fn () => 'bar');
+        $this->container->bind('foo', fn () => 'baz');
 
-    expect($this->container->get('foo'))->toBe('baz');
-});
+        $this->assertSame('baz', $this->container->get('foo'));
+    }
 
-it('binds a class name to itself', function (): void {
-    $this->container->bind(stdClass::class, stdClass::class);
+    public function testBindsAClassNameToItself(): void
+    {
+        $this->container->bind(stdClass::class, stdClass::class);
 
-    expect($this->container->get(stdClass::class))->toBeInstanceOf(stdClass::class);
-});
+        $this->assertInstanceOf(stdClass::class, $this->container->get(stdClass::class));
+    }
 
-it('uses the abstract as concrete when concrete is null', function (): void {
-    $this->container->bind(stdClass::class);
+    public function testUsesTheAbstractAsConcreteWhenConcreteIsNull(): void
+    {
+        $this->container->bind(stdClass::class);
 
-    expect($this->container->get(stdClass::class))->toBeInstanceOf(stdClass::class);
-});
+        $this->assertInstanceOf(stdClass::class, $this->container->get(stdClass::class));
+    }
 
-it('binds multiple unrelated identifiers', function (): void {
-    $this->container->bind('foo', stdClass::class);
-    $this->container->bind('bar', AnotherService::class);
+    public function testBindsMultipleUnrelatedIdentifiers(): void
+    {
+        $this->container->bind('foo', stdClass::class);
+        $this->container->bind('bar', AnotherService::class);
 
-    expect($this->container->get('foo'))->toBeInstanceOf(stdClass::class);
-    expect($this->container->get('bar'))->toBeInstanceOf(AnotherService::class);
-});
+        $this->assertInstanceOf(stdClass::class, $this->container->get('foo'));
+        $this->assertInstanceOf(AnotherService::class, $this->container->get('bar'));
+    }
 
-it('returns scalar values from bound closures', function (): void {
-    $this->container->bind('string_value', fn () => 'hello');
-    $this->container->bind('int_value', fn () => 123);
+    public function testReturnsScalarValuesFromBoundClosures(): void
+    {
+        $this->container->bind('string_value', fn () => 'hello');
+        $this->container->bind('int_value', fn () => 123);
 
-    expect($this->container->get('string_value'))->toBe('hello');
-    expect($this->container->get('int_value'))->toBe(123);
-});
+        $this->assertSame('hello', $this->container->get('string_value'));
+        $this->assertSame(123, $this->container->get('int_value'));
+    }
 
-it('injects dependencies into bound closures', function (): void {
-    $this->container->bind('with_param', function (DependencyClass $dep) {
-        return $dep;
-    });
+    public function testInjectsDependenciesIntoBoundClosures(): void
+    {
+        $this->container->bind('with_param', function (DependencyClass $dep) {
+            return $dep;
+        });
 
-    expect($this->container->get('with_param'))->toBeInstanceOf(DependencyClass::class);
-});
+        $this->assertInstanceOf(DependencyClass::class, $this->container->get('with_param'));
+    }
 
-it('respects alias resolution on bindings', function (): void {
-    $this->container->alias(ServiceInterface::class, 'my_interface_alias');
-    $this->container->bind('my_interface_alias', AnotherService::class);
+    public function testRespectsAliasResolutionOnBindings(): void
+    {
+        $this->container->alias(ServiceInterface::class, 'my_interface_alias');
+        $this->container->bind('my_interface_alias', AnotherService::class);
 
-    $instance = $this->container->get(ServiceInterface::class);
+        $instance = $this->container->get(ServiceInterface::class);
 
-    expect($instance)->toBeInstanceOf(AnotherService::class);
-});
+        $this->assertInstanceOf(AnotherService::class, $instance);
+    }
 
-it('reports an existing binding through has', function (): void {
-    $this->container->bind('foo', stdClass::class);
+    public function testReportsAnExistingBindingThroughHas(): void
+    {
+        $this->container->bind('foo', stdClass::class);
 
-    expect($this->container->has('foo'))->toBeTrue();
-});
+        $this->assertTrue($this->container->has('foo'));
+    }
 
-it('reports a missing binding through has', function (): void {
-    expect($this->container->has('non-existent-binding'))->toBeFalse();
-});
+    public function testReportsAMissingBindingThroughHas(): void
+    {
+        $this->assertFalse($this->container->has('non-existent-binding'));
+    }
 
-it('mirrors has behavior through bound', function (): void {
-    $this->container->bind('foo', stdClass::class);
+    public function testMirrorsHasBehaviorThroughBound(): void
+    {
+        $this->container->bind('foo', stdClass::class);
 
-    expect($this->container->bound('foo'))->toBeTrue();
-    expect($this->container->bound('non-existent'))->toBeFalse();
-});
+        $this->assertTrue($this->container->bound('foo'));
+        $this->assertFalse($this->container->bound('non-existent'));
+    }
 
-it('respects alias resolution through bound', function (): void {
-    $this->container->bind(ServiceInterface::class, ConcreteService::class);
-    $this->container->alias(ServiceInterface::class, 'my_service_alias');
+    public function testRespectsAliasResolutionThroughBound(): void
+    {
+        $this->container->bind(ServiceInterface::class, ConcreteService::class);
+        $this->container->alias(ServiceInterface::class, 'my_service_alias');
 
-    expect($this->container->bound('my_service_alias'))->toBeTrue();
-    expect($this->container->has('my_service_alias'))->toBeTrue();
-});
+        $this->assertTrue($this->container->bound('my_service_alias'));
+        $this->assertTrue($this->container->has('my_service_alias'));
+    }
 
-it('returns all current bindings with their metadata', function (): void {
-    $this->container->bind('foo', stdClass::class);
-    $this->container->bind('bar', ConcreteService::class, true);
+    public function testReturnsAllCurrentBindingsWithTheirMetadata(): void
+    {
+        $this->container->bind('foo', stdClass::class);
+        $this->container->bind('bar', ConcreteService::class, true);
 
-    $bindings = $this->container->getBindings();
+        $bindings = $this->container->getBindings();
 
-    expect($bindings)->toHaveKeys(['foo', 'bar']);
-    expect($bindings['foo']['shared'])->toBeFalse();
-    expect($bindings['bar']['shared'])->toBeTrue();
-});
+        $this->assertArrayHasKey('foo', $bindings);
+        $this->assertArrayHasKey('bar', $bindings);
+        $this->assertFalse($bindings['foo']['shared']);
+        $this->assertTrue($bindings['bar']['shared']);
+    }
 
-it('updates bindings after an override', function (): void {
-    $this->container->bind('foo', stdClass::class);
-    $this->container->bind('foo', ConcreteService::class);
+    public function testUpdatesBindingsAfterAnOverride(): void
+    {
+        $this->container->bind('foo', stdClass::class);
+        $this->container->bind('foo', ConcreteService::class);
 
-    $bindings = $this->container->getBindings();
+        $bindings = $this->container->getBindings();
 
-    expect($bindings)->toHaveKeys(['foo']);
-    expect($this->container->get('foo'))->toBeInstanceOf(ConcreteService::class);
-});
+        $this->assertArrayHasKey('foo', $bindings);
+        $this->assertInstanceOf(ConcreteService::class, $this->container->get('foo'));
+    }
 
-it('empties bindings after flush', function (): void {
-    $this->container->bind('foo', stdClass::class);
-    $this->container->flush();
+    public function testEmptiesBindingsAfterFlush(): void
+    {
+        $this->container->bind('foo', stdClass::class);
+        $this->container->flush();
 
-    expect($this->container->getBindings())->toBeEmpty();
-});
+        $this->assertEmpty($this->container->getBindings());
+    }
 
-it('stores a closure factory as a shared binding through set', function (): void {
-    $this->container->set('shared-factory', fn () => new stdClass());
+    public function testStoresAClosureFactoryAsASharedBindingThroughSet(): void
+    {
+        $this->container->set('shared-factory', fn () => new stdClass());
 
-    expect($this->container->get('shared-factory'))
-        ->toBe($this->container->get('shared-factory'));
+        $this->assertSame(
+            $this->container->get('shared-factory'),
+            $this->container->get('shared-factory')
+        );
 
-    $bindings = $this->container->getBindings();
+        $bindings = $this->container->getBindings();
 
-    expect($bindings['shared-factory']['shared'])->toBeTrue();
-});
+        $this->assertTrue($bindings['shared-factory']['shared']);
+    }
 
-it('stores plain values as resolved singletons through set', function (): void {
-    $this->container->set('plain.value', 'plain');
+    public function testStoresPlainValuesAsResolvedSingletonsThroughSet(): void
+    {
+        $this->container->set('plain.value', 'plain');
 
-    expect($this->container->get('plain.value'))->toBe('plain');
-});
+        $this->assertSame('plain', $this->container->get('plain.value'));
+    }
 
-it('resolves set values against the canonical abstract through an alias', function (): void {
-    $this->container->alias('canonical', 'the-alias');
-    $this->container->set('the-alias', 'via-alias');
+    public function testResolvesSetValuesAgainstTheCanonicalAbstractThroughAnAlias(): void
+    {
+        $this->container->alias('canonical', 'the-alias');
+        $this->container->set('the-alias', 'via-alias');
 
-    expect($this->container->get('canonical'))->toBe('via-alias');
-});
+        $this->assertSame('via-alias', $this->container->get('canonical'));
+    }
+}

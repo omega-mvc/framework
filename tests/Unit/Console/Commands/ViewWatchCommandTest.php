@@ -2,93 +2,90 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\ViewWatchCommand;
 use Omega\View\Templator;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionObject;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Console\Commands\Fixtures\FakeTemplator;
+use Tests\TestCase;
 
-use function file_put_contents;
-use function mkdir;
+#[CoversClass(ViewWatchCommand::class)]
+final class ViewWatchCommandTest extends TestCase
+{
+    public function testReportsAnErrorWhenThePathViewBindingIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-covers(ViewWatchCommand::class);
+        $app = new Application($base);
+        $app->set('path.view', 123);
 
-it('reports an error when the path.view binding is not a string', function (): void {
-    $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $command = new ViewWatchCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
-    $app->set('path.view', 123);
+        $result = (new CommandTester($command))->run([]);
 
-    $command = new ViewWatchCommand();
-    $command->app = $app;
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            'The "path.view" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
-    $result = (new CommandTester($command))->run([]);
+        $app->flush();
+    }
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('The "path.view" binding must resolve to a string path.');
+    public function testReportsAFailureWhenThereAreNoViewFilesToWatch(): void
+    {
+        $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
+        mkdir($base . '/views', 0777, true);
 
-    $app->flush();
-});
+        $app = new Application($base);
+        $app->set('path.view', $base . '/views');
+        $app->set(Templator::class, new FakeTemplator());
 
-it('reports a failure when there are no view files to watch', function (): void {
-    $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
-    mkdir($base . '/views', 0777, true);
+        $command = new ViewWatchCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
-    $app->set('path.view', $base . '/views');
-    $app->set(Templator::class, new FakeTemplator());
+        $result = (new CommandTester($command))->run([]);
 
-    $command = new ViewWatchCommand();
-    $command->app = $app;
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Watching view files in', $result->getDisplay());
 
-    $result = (new CommandTester($command))->run([]);
+        $app->flush();
+    }
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Watching view files in');
+    public function testPrecompilesTheIndexedViewsAndExitsWhenTheWatchLoopIsDisabled(): void
+    {
+        $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
+        mkdir($base . '/views', 0777, true);
+        file_put_contents($base . '/views/welcome.view.php', '<h1>Welcome</h1>');
+        file_put_contents($base . '/views/page.view.php', '<p>Page</p>');
 
-    $app->flush();
-});
+        $templator = new FakeTemplator();
 
-it('precompiles the indexed views and exits when the watch loop is disabled', function (): void {
-    $base = sys_get_temp_dir() . '/omegavw-' . bin2hex(random_bytes(4));
-    mkdir($base . '/views', 0777, true);
-    file_put_contents($base . '/views/welcome.view.php', '<h1>Welcome</h1>');
-    file_put_contents($base . '/views/page.view.php', '<p>Page</p>');
+        $app = new Application($base);
+        $app->set('path.view', $base . '/views');
+        $app->set(Templator::class, $templator);
 
-    $templator = new FakeTemplator();
+        $command = new ViewWatchCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
-    $app->set('path.view', $base . '/views');
-    $app->set(Templator::class, $templator);
+        $reflection = new ReflectionObject($command);
+        $shouldExit = $reflection->getProperty('shouldExit');
+        $shouldExit->setValue($command, true);
 
-    $command = new ViewWatchCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $reflection = new ReflectionObject($command);
-    $shouldExit = $reflection->getProperty('shouldExit');
-    $shouldExit->setValue($command, true);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Watching view files in', $result->getDisplay());
+        $this->assertStringContainsString('PRE-COMPILE', $result->getDisplay());
+        $this->assertCount(2, $templator->compiled);
 
-    $result = (new CommandTester($command))->run([]);
-
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Watching view files in')
-        ->and($result->getDisplay())->toContain('PRE-COMPILE')
-        ->and($templator->compiled)->toHaveCount(2);
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

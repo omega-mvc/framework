@@ -8,168 +8,201 @@ use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Database\Schema\Table\Column;
 use Omega\Database\Schema\Table\Create;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Column::class);
-covers(Create::class);
+#[CoversClass(Column::class)]
+#[CoversClass(Create::class)]
+final class CreateTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->pdo       = $this->createStub(ConnectionInterface::class);
-    $this->pdoSchema = $this->createStub(SchemaConnection::class);
-});
+        $this->pdo       = $this->createStub(ConnectionInterface::class);
+        $this->pdoSchema = $this->createStub(SchemaConnection::class);
+    }
 
-test('it can generate query using add column', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateQueryUsingAddColumn(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query using with multy primery key', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->primaryKey('PersonID');
-    $schema->primaryKey('LastName');
+    public function testItCanGenerateQueryUsingWithMultyPrimeryKey(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->primaryKey('PersonID');
+        $schema->primaryKey('LastName');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID, LastName) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID, LastName) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query using add column without primery key', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
+    public function testItCanGenerateQueryUsingAddColumnWithoutPrimeryKey(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query using add column with unique', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->unique('PersonID');
+    public function testItCanGenerateQueryUsingAddColumnWithUnique(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->unique('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), UNIQUE (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), UNIQUE (PersonID) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query using add column with multy unique', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->unique('PersonID');
-    $schema->unique('LastName');
+    public function testItCanGenerateQueryUsingAddColumnWithMultyUnique(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->unique('PersonID');
+        $schema->unique('LastName');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), UNIQUE (PersonID, LastName) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), UNIQUE (PersonID, LastName) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query using columns', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->columns([
-        new Column()->raw('PersonID int'),
-        new Column()->raw('LastName varchar(255)'),
-    ]);
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateQueryUsingColumns(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->columns([
+            new Column()->raw('PersonID int'),
+            new Column()->raw('LastName varchar(255)'),
+        ]);
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema('PersonID')->int();
-    $schema('LastName')->varchar(255);
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateQuery(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema('PersonID')->int();
+        $schema('LastName')->varchar(255);
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate default constraint', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema('PersonID')->int()->unsigned()->default(1);
-    $schema('LastName')->varchar(255)->default('-');
-    $schema('sufix')->varchar(15)->defaultNull();
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateDefaultConstraint(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema('PersonID')->int()->unsigned()->default(1);
+        $schema('LastName')->varchar(255)->default('-');
+        $schema('sufix')->varchar(15)->defaultNull();
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        "CREATE TABLE testing_db.test ( PersonID int UNSIGNED DEFAULT 1, LastName varchar(255) DEFAULT '-', "
-        . "sufix varchar(15) DEFAULT NULL, PRIMARY KEY (PersonID) )"
-    );
-});
+        $this->assertEquals(
+            "CREATE TABLE testing_db.test ( PersonID int UNSIGNED DEFAULT 1, LastName varchar(255) DEFAULT '-', "
+            . "sufix varchar(15) DEFAULT NULL, PRIMARY KEY (PersonID) )",
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query with datatype and constrait', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema('PersonID')->int()->notNull();
-    $schema('LastName')->varchar(255)->null();
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateQueryWithDatatypeAndConstrait(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema('PersonID')->int()->notNull();
+        $schema('LastName')->varchar(255)->null();
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int NOT NULL, LastName varchar(255) NULL, '
-        . 'PRIMARY KEY (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int NOT NULL, LastName varchar(255) NULL, '
+            . 'PRIMARY KEY (PersonID) )',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query with storage engine', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->primaryKey('PersonID');
-    $schema->engine(Create::INNODB);
+    public function testItCanGenerateQueryWithStorageEngine(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->primaryKey('PersonID');
+        $schema->engine(Create::INNODB);
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
-        . 'ENGINE=INNODB'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
+            . 'ENGINE=INNODB',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query with character set', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->primaryKey('PersonID');
-    $schema->character('utf8mb4');
+    public function testItCanGenerateQueryWithCharacterSet(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->primaryKey('PersonID');
+        $schema->character('utf8mb4');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
-        . 'CHARACTER SET utf8mb4'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
+            . 'CHARACTER SET utf8mb4',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query with engine store and character set', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema->addColumn()->raw('PersonID int');
-    $schema->addColumn()->raw('LastName varchar(255)');
-    $schema->primaryKey('PersonID');
-    $schema->engine(Create::INNODB);
-    $schema->character('utf8mb4');
+    public function testItCanGenerateQueryWithEngineStoreAndCharacterSet(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema->addColumn()->raw('PersonID int');
+        $schema->addColumn()->raw('LastName varchar(255)');
+        $schema->primaryKey('PersonID');
+        $schema->engine(Create::INNODB);
+        $schema->character('utf8mb4');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
-        . 'ENGINE=INNODB CHARACTER SET utf8mb4'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) ) '
+            . 'ENGINE=INNODB CHARACTER SET utf8mb4',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate query with comment', function (): void {
-    $schema = new Create('testing_db', 'test', $this->pdoSchema);
-    $schema('PersonID')->int();
-    $schema('LastName')->varchar(255)->comment('The last name of the person associated with this ID');
-    $schema->primaryKey('PersonID');
+    public function testItCanGenerateQueryWithComment(): void
+    {
+        $schema = new Create('testing_db', 'test', $this->pdoSchema);
+        $schema('PersonID')->int();
+        $schema('LastName')->varchar(255)->comment('The last name of the person associated with this ID');
+        $schema->primaryKey('PersonID');
 
-    expect($schema->__toString())->toEqual(
-        'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255) COMMENT '
-        . '\'The last name of the person associated with this ID\', PRIMARY KEY (PersonID) )'
-    );
-});
+        $this->assertEquals(
+            'CREATE TABLE testing_db.test ( PersonID int, LastName varchar(255) COMMENT '
+            . '\'The last name of the person associated with this ID\', PRIMARY KEY (PersonID) )',
+            $schema->__toString()
+        );
+    }
+}

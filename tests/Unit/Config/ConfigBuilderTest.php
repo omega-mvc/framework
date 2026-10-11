@@ -7,146 +7,162 @@ namespace Tests\Config;
 use Omega\Config\ConfigBuilder;
 use Omega\Config\MergeStrategy;
 use Omega\Config\Source\ArrayConfig;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(ConfigBuilder::class);
-covers(MergeStrategy::class);
-covers(ArrayConfig::class);
+#[CoversClass(ConfigBuilder::class)]
+#[CoversClass(MergeStrategy::class)]
+#[CoversClass(ArrayConfig::class)]
+final class ConfigBuilderTest extends TestCase
+{
+    private ConfigBuilder $builder;
 
-beforeEach(function (): void {
-    $this->builder = new ConfigBuilder();
-});
+    protected function setUp(): void
+    {
+        $this->builder = new ConfigBuilder();
+    }
 
-it('should produce empty configuration object if no sources', function (): void {
-    expect($this->builder->build()->getAll())->toBeEmpty();
-});
+    public function testShouldProduceEmptyConfigurationObjectIfNoSources(): void
+    {
+        $this->assertEmpty($this->builder->build()->getAll());
+    }
 
-it('should accept configuration source', function (): void {
-    $content = ['key' => 'value'];
+    public function testShouldAcceptConfigurationSource(): void
+    {
+        $content = ['key' => 'value'];
 
-    expect(
-        $this->builder
+        $configuration = $this->builder
             ->addConfiguration(new ArrayConfig($content))
             ->build()
-            ->getAll()
-    )->toEqual($content);
-});
+            ->getAll();
 
-it('should merge configuration source contents', function (): void {
-    $source_1 = new ArrayConfig(['key' => 'value']);
-    $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+        $this->assertEquals($content, $configuration);
+    }
 
-    expect(
-        $this->builder
+    public function testShouldMergeConfigurationSourceContents(): void
+    {
+        $source_1 = new ArrayConfig(['key' => 'value']);
+        $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2)
             ->build()
-            ->getAll()
-    )->toEqual([
-        'key'         => 'value',
-        'another_key' => 'another_value',
-    ]);
-});
+            ->getAll();
 
-it('should merge configuration source contents recursively', function (): void {
-    $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
-    $source_2 = new ArrayConfig(['nested' => ['another_key' => 'another_value']]);
-
-    expect(
-        $this->builder
-            ->addConfiguration($source_1)
-            ->addConfiguration($source_2)
-            ->build()
-            ->getAll()
-    )->toEqual([
-        'nested' => [
+        $this->assertEquals([
             'key'         => 'value',
             'another_key' => 'another_value',
-        ],
-    ]);
-});
+        ], $configuration);
+    }
 
-it('should replace indexed arrays in configuration source contents', function (): void {
-    $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
-    $source_2 = new ArrayConfig(['key' => [1, 2]]);
+    public function testShouldMergeConfigurationSourceContentsRecursively(): void
+    {
+        $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
+        $source_2 = new ArrayConfig(['nested' => ['another_key' => 'another_value']]);
 
-    expect(
-        $this->builder
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2)
             ->build()
-            ->getAll()
-    )->toEqual([
-        'key' => [1, 2],
-    ]);
-});
+            ->getAll();
 
-it('should merge indexed arrays in configuration source contents', function (): void {
-    $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
-    $source_2 = new ArrayConfig(['key' => [3, 4, 5]]);
+        $this->assertEquals([
+            'nested' => [
+                'key'         => 'value',
+                'another_key' => 'another_value',
+            ],
+        ], $configuration);
+    }
 
-    expect(
-        $this->builder
+    public function testShouldReplaceIndexedArraysInConfigurationSourceContents(): void
+    {
+        $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
+        $source_2 = new ArrayConfig(['key' => [1, 2]]);
+
+        $configuration = $this->builder
+            ->addConfiguration($source_1)
+            ->addConfiguration($source_2)
+            ->build()
+            ->getAll();
+
+        $this->assertEquals([
+            'key' => [1, 2],
+        ], $configuration);
+    }
+
+    public function testShouldMergeIndexedArraysInConfigurationSourceContents(): void
+    {
+        $source_1 = new ArrayConfig(['key' => [1, 2, 3]]);
+        $source_2 = new ArrayConfig(['key' => [3, 4, 5]]);
+
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2)
             ->build(MergeStrategy::MERGE_INDEXED)
-            ->getAll()
-    )->toEqual([
-        'key' => [1, 2, 3, 4, 5],
-    ]);
-});
+            ->getAll();
 
-it('should merge configuration source contents at key', function (): void {
-    $source_1 = new ArrayConfig(['key' => 'value']);
-    $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+        $this->assertEquals([
+            'key' => [1, 2, 3, 4, 5],
+        ], $configuration);
+    }
 
-    expect(
-        $this->builder
+    public function testShouldMergeConfigurationSourceContentsAtKey(): void
+    {
+        $source_1 = new ArrayConfig(['key' => 'value']);
+        $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2, 'nested')
             ->build()
-            ->getAll()
-    )->toEqual([
-        'key'    => 'value',
-        'nested' => [
-            'another_key' => 'another_value',
-        ],
-    ]);
-});
+            ->getAll();
 
-it('should merge configuration source contents at nested key', function (): void {
-    $source_1 = new ArrayConfig(['key' => 'value']);
-    $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+        $this->assertEquals([
+            'key'    => 'value',
+            'nested' => [
+                'another_key' => 'another_value',
+            ],
+        ], $configuration);
+    }
 
-    expect(
-        $this->builder
+    public function testShouldMergeConfigurationSourceContentsAtNestedKey(): void
+    {
+        $source_1 = new ArrayConfig(['key' => 'value']);
+        $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2, 'nested.section')
             ->build()
-            ->getAll()
-    )->toEqual([
-        'key'    => 'value',
-        'nested' => [
-            'section' => [
-                'another_key' => 'another_value',
+            ->getAll();
+
+        $this->assertEquals([
+            'key'    => 'value',
+            'nested' => [
+                'section' => [
+                    'another_key' => 'another_value',
+                ],
             ],
-        ],
-    ]);
-});
+        ], $configuration);
+    }
 
-it('should merge configuration source contents at existing key', function (): void {
-    $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
-    $source_2 = new ArrayConfig(['another_key' => 'another_value']);
+    public function testShouldMergeConfigurationSourceContentsAtExistingKey(): void
+    {
+        $source_1 = new ArrayConfig(['nested' => ['key' => 'value']]);
+        $source_2 = new ArrayConfig(['another_key' => 'another_value']);
 
-    expect(
-        $this->builder
+        $configuration = $this->builder
             ->addConfiguration($source_1)
             ->addConfiguration($source_2, 'nested')
             ->build()
-            ->getAll()
-    )->toEqual([
-        'nested' => [
-            'key'         => 'value',
-            'another_key' => 'another_value',
-        ],
-    ]);
-});
+            ->getAll();
+
+        $this->assertEquals([
+            'nested' => [
+                'key'         => 'value',
+                'another_key' => 'another_value',
+            ],
+        ], $configuration);
+    }
+}

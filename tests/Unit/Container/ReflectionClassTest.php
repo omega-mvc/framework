@@ -8,8 +8,9 @@ use Omega\Container\Container;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
-use ReflectionClass;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionException;
+use RuntimeException;
 use stdClass;
 use Tests\Container\Support\Attribute\MyClassAttribute;
 use Tests\Container\Support\Attribute\MyMethodAttribute;
@@ -21,112 +22,125 @@ use Tests\Container\Support\ClassWithProperties;
 use Tests\Container\Support\MyService;
 use Tests\Container\Support\ParentClass;
 use Tests\Container\Support\Service;
+use Tests\TestCase;
 
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+final class ReflectionClassTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
-
-it('caches reflection classes', function (): void {
-    $reflector1 = $this->container->getReflectionClass(stdClass::class);
-    $reflector2 = $this->container->getReflectionClass(stdClass::class);
-
-    expect($reflector1)->toBe($reflector2);
-});
-
-it('caches reflection methods', function (): void {
-    $reflector1 = $this->container->getReflectionMethod(MyService::class, 'myMethod');
-    $reflector2 = $this->container->getReflectionMethod(MyService::class, 'myMethod');
-
-    expect($reflector1)->toBe($reflector2);
-});
-
-it('caches parameter resolution', function (): void {
-    $params1 = $this->container->getConstructorParameters(Service::class);
-    $params2 = $this->container->getConstructorParameters(Service::class);
-
-    expect($params1)->toBeArray();
-    expect($params1)->toBe($params2);
-});
-
-it('reflects classes with their names', function (): void {
-    $reflector = $this->container->getReflectionClass(stdClass::class);
-
-    expect($reflector->getName())->toBe(stdClass::class);
-});
-
-it('throws when reflecting a non-existent class', function (): void {
-    expect(fn () => $this->container->getReflectionClass('NonExistentClass'))
-        ->toThrow(ReflectionException::class, 'Class NonExistentClass does not exist');
-});
-
-it('reflects properties', function (): void {
-    $reflector = $this->container->getReflectionClass(ClassWithProperties::class);
-
-    expect($reflector->hasProperty('publicProperty'))->toBeTrue();
-
-    $publicProperty = $reflector->getProperty('publicProperty');
-
-    expect($publicProperty->isPublic())->toBeTrue();
-    expect($publicProperty->getName())->toBe('publicProperty');
-
-    expect($reflector->hasProperty('protectedProperty'))->toBeTrue();
-    expect($reflector->getProperty('protectedProperty')->isPublic())->toBeFalse();
-
-    expect($reflector->hasProperty('privateProperty'))->toBeTrue();
-    expect($reflector->getProperty('privateProperty')->isPublic())->toBeFalse();
-});
-
-it('reflects methods', function (): void {
-    $reflector = $this->container->getReflectionClass(ClassWithMethods::class);
-
-    expect($reflector->hasMethod('publicMethod'))->toBeTrue();
-
-    $publicMethod = $reflector->getMethod('publicMethod');
-
-    expect($publicMethod->isPublic())->toBeTrue();
-    expect($publicMethod->getName())->toBe('publicMethod');
-
-    expect($reflector->hasMethod('protectedMethod'))->toBeTrue();
-    expect($reflector->getMethod('protectedMethod')->isPublic())->toBeFalse();
-
-    expect($reflector->hasMethod('privateMethod'))->toBeTrue();
-    expect($reflector->getMethod('privateMethod')->isPublic())->toBeFalse();
-});
-
-it('reflects attributes', function (): void {
-    $reflector = $this->container->getReflectionClass(ClassWithAttributes::class);
-
-    expect($reflector->getAttributes(MyClassAttribute::class))->toHaveCount(1);
-
-    $property = $reflector->getProperty('propertyWithAttribute');
-
-    expect($property->getAttributes(MyPropertyAttribute::class))->toHaveCount(1);
-
-    $method = $reflector->getMethod('methodWithAttribute');
-
-    expect($method->getAttributes(MyMethodAttribute::class))->toHaveCount(1);
-});
-
-it('reflects inheritance', function (): void {
-    $reflector = $this->container->getReflectionClass(ChildClass::class);
-
-    expect($reflector->hasProperty('childProperty'))->toBeTrue();
-    expect($reflector->hasMethod('childMethod'))->toBeTrue();
-    expect($reflector->hasProperty('parentProperty'))->toBeTrue();
-    expect($reflector->hasMethod('parentMethod'))->toBeTrue();
-
-    $parentClassReflector = $reflector->getParentClass();
-
-    expect($parentClassReflector)->not->toBeFalse();
-
-    if ($parentClassReflector === false) {
-        throw new \RuntimeException('Expected the class to have a parent class.');
+    protected function setUp(): void
+    {
+        $this->container = new Container();
     }
 
-    expect($parentClassReflector->getName())->toBe(ParentClass::class);
-});
+    public function testCachesReflectionClasses(): void
+    {
+        $reflector1 = $this->container->getReflectionClass(stdClass::class);
+        $reflector2 = $this->container->getReflectionClass(stdClass::class);
+
+        $this->assertSame($reflector1, $reflector2);
+    }
+
+    public function testCachesReflectionMethods(): void
+    {
+        $reflector1 = $this->container->getReflectionMethod(MyService::class, 'myMethod');
+        $reflector2 = $this->container->getReflectionMethod(MyService::class, 'myMethod');
+
+        $this->assertSame($reflector1, $reflector2);
+    }
+
+    public function testCachesParameterResolution(): void
+    {
+        $params1 = $this->container->getConstructorParameters(Service::class);
+        $params2 = $this->container->getConstructorParameters(Service::class);
+
+        $this->assertIsArray($params1);
+        $this->assertSame($params1, $params2);
+    }
+
+    public function testReflectsClassesWithTheirNames(): void
+    {
+        $reflector = $this->container->getReflectionClass(stdClass::class);
+
+        $this->assertSame(stdClass::class, $reflector->getName());
+    }
+
+    public function testThrowsWhenReflectingANonExistentClass(): void
+    {
+        $this->expectException(ReflectionException::class);
+        $this->expectExceptionMessage('Class NonExistentClass does not exist');
+
+        $this->container->getReflectionClass('NonExistentClass');
+    }
+
+    public function testReflectsProperties(): void
+    {
+        $reflector = $this->container->getReflectionClass(ClassWithProperties::class);
+
+        $this->assertTrue($reflector->hasProperty('publicProperty'));
+
+        $publicProperty = $reflector->getProperty('publicProperty');
+
+        $this->assertTrue($publicProperty->isPublic());
+        $this->assertSame('publicProperty', $publicProperty->getName());
+
+        $this->assertTrue($reflector->hasProperty('protectedProperty'));
+        $this->assertFalse($reflector->getProperty('protectedProperty')->isPublic());
+
+        $this->assertTrue($reflector->hasProperty('privateProperty'));
+        $this->assertFalse($reflector->getProperty('privateProperty')->isPublic());
+    }
+
+    public function testReflectsMethods(): void
+    {
+        $reflector = $this->container->getReflectionClass(ClassWithMethods::class);
+
+        $this->assertTrue($reflector->hasMethod('publicMethod'));
+
+        $publicMethod = $reflector->getMethod('publicMethod');
+
+        $this->assertTrue($publicMethod->isPublic());
+        $this->assertSame('publicMethod', $publicMethod->getName());
+
+        $this->assertTrue($reflector->hasMethod('protectedMethod'));
+        $this->assertFalse($reflector->getMethod('protectedMethod')->isPublic());
+
+        $this->assertTrue($reflector->hasMethod('privateMethod'));
+        $this->assertFalse($reflector->getMethod('privateMethod')->isPublic());
+    }
+
+    public function testReflectsAttributes(): void
+    {
+        $reflector = $this->container->getReflectionClass(ClassWithAttributes::class);
+
+        $this->assertCount(1, $reflector->getAttributes(MyClassAttribute::class));
+
+        $property = $reflector->getProperty('propertyWithAttribute');
+
+        $this->assertCount(1, $property->getAttributes(MyPropertyAttribute::class));
+
+        $method = $reflector->getMethod('methodWithAttribute');
+
+        $this->assertCount(1, $method->getAttributes(MyMethodAttribute::class));
+    }
+
+    public function testReflectsInheritance(): void
+    {
+        $reflector = $this->container->getReflectionClass(ChildClass::class);
+
+        $this->assertTrue($reflector->hasProperty('childProperty'));
+        $this->assertTrue($reflector->hasMethod('childMethod'));
+        $this->assertTrue($reflector->hasProperty('parentProperty'));
+        $this->assertTrue($reflector->hasMethod('parentMethod'));
+
+        $parentClassReflector = $reflector->getParentClass();
+
+        $this->assertNotFalse($parentClassReflector);
+
+        $this->assertSame(ParentClass::class, $parentClassReflector->getName());
+    }
+}

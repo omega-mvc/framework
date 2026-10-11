@@ -4,111 +4,139 @@ declare(strict_types=1);
 
 namespace Tests\Collection;
 
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
+
 use function Omega\Collection\data_get;
 
-covers('Omega\Collection\data_get');
+#[CoversFunction('Omega\Collection\data_get')]
+final class DataGetTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private array $array;
 
-$array = [
-    'awesome'   => [
-        'lang' => [
-            'go',
-            'rust',
-            'php',
-            'python',
-            'js',
-        ],
-    ],
-    'fav'       => [
-        'lang' => [
-            'rust',
-            'php',
-        ],
-    ],
-    'dont_know' => ['lang_' => ['back_end' => ['erlang', 'h-lang']]],
-    'one'       => ['two' => ['three' => ['four' => ['five' => 6]]]],
-];
+    protected function setUp(): void
+    {
+        $this->array = [
+            'awesome'   => [
+                'lang' => [
+                    'go',
+                    'rust',
+                    'php',
+                    'python',
+                    'js',
+                ],
+            ],
+            'fav'       => [
+                'lang' => [
+                    'rust',
+                    'php',
+                ],
+            ],
+            'dont_know' => ['lang_' => ['back_end' => ['erlang', 'h-lang']]],
+            'one'       => ['two' => ['three' => ['four' => ['five' => 6]]]],
+        ];
+    }
 
-it('can find item using dot keys', function () use ($array): void {
-    expect(data_get($array, 'one.two.three.four.five'))->toEqual(6);
-});
+    public function testCanFindItemUsingDotKeys(): void
+    {
+        $this->assertEquals(6, data_get($this->array, 'one.two.three.four.five'));
+    }
 
-it('can find item using dot keys but key does not exist', function () use ($array): void {
-    expect(data_get($array, '1.2.3.4.5', 'six'))->toEqual('six');
-});
+    public function testCanFindItemUsingDotKeysButKeyDoesNotExist(): void
+    {
+        $this->assertEquals('six', data_get($this->array, '1.2.3.4.5', 'six'));
+    }
 
-it('can find items using dot key with wildcard', function () use ($array): void {
-    expect(data_get($array, '*.lang'))->toEqual([
-        ['go', 'rust', 'php', 'python', 'js'],
-        ['rust', 'php'],
-    ]);
-});
+    public function testCanFindItemsUsingDotKeyWithWildcard(): void
+    {
+        $this->assertEquals([
+            ['go', 'rust', 'php', 'python', 'js'],
+            ['rust', 'php'],
+        ], data_get($this->array, '*.lang'));
+    }
 
-it('can get keys as integer', function (): void {
-    $array = ['foo', 'bar', 'baz'];
+    public function testCanGetKeysAsInteger(): void
+    {
+        $array = ['foo', 'bar', 'baz'];
 
-    expect(data_get($array, 1))->toEqual('bar');
-    expect(data_get($array, 3))->toBeNull();
-    expect(data_get($array, 3, 'qux'))->toEqual('qux');
-});
+        $this->assertEquals('bar', data_get($array, 1));
+        $this->assertNull(data_get($array, 3));
+        $this->assertEquals('qux', data_get($array, 3, 'qux'));
+    }
 
-it('returns the default when the key path traverses a non-array value', function () use ($array): void {
-    expect(data_get($array, 'one.two.three.four.five.six', 'missing'))->toBe('missing');
-});
+    public function testReturnsTheDefaultWhenTheKeyPathTraversesANonArrayValue(): void
+    {
+        $this->assertSame('missing', data_get($this->array, 'one.two.three.four.five.six', 'missing'));
+    }
 
-it('returns the default when a wildcard matches no values', function (): void {
-    expect(data_get(['a' => 1, 'b' => 2], '*.x', 'none'))->toBe('none');
-});
+    public function testReturnsTheDefaultWhenAWildcardMatchesNoValues(): void
+    {
+        $this->assertSame('none', data_get(['a' => 1, 'b' => 2], '*.x', 'none'));
+    }
 
-it('returns the default when a wildcard segment traverses an empty array', function (): void {
-    expect(data_get([], '*.x', 'none'))->toBe('none');
-    expect(data_get(['a' => []], 'a.*.x', 'none'))->toBe('none');
-});
+    public function testReturnsTheDefaultWhenAWildcardSegmentTraversesAnEmptyArray(): void
+    {
+        $this->assertSame('none', data_get([], '*.x', 'none'));
+        $this->assertSame('none', data_get(['a' => []], 'a.*.x', 'none'));
+    }
 
-it('keeps non-null wildcard matches and drops null ones', function (): void {
-    expect(data_get([
-        'a' => ['x' => 1],
-        'b' => ['y' => 2],
-        'c' => ['x' => 3],
-    ], '*.x'))->toEqual([1, 3]);
-});
+    public function testKeepsNonNullWildcardMatchesAndDropsNullOnes(): void
+    {
+        $this->assertEquals([1, 3], data_get([
+            'a' => ['x' => 1],
+            'b' => ['y' => 2],
+            'c' => ['x' => 3],
+        ], '*.x'));
+    }
 
-it('can find a single-segment key', function () use ($array): void {
-    expect(data_get($array, 'dont_know'))->toEqual(['lang_' => ['back_end' => ['erlang', 'h-lang']]]);
-});
+    public function testCanFindASingleSegmentKey(): void
+    {
+        $this->assertEquals(['lang_' => ['back_end' => ['erlang', 'h-lang']]], data_get($this->array, 'dont_know'));
+    }
 
-it('returns the default for a missing single-segment key', function () use ($array): void {
-    expect(data_get($array, 'missing', 'fallback'))->toBe('fallback');
-});
+    public function testReturnsTheDefaultForAMissingSingleSegmentKey(): void
+    {
+        $this->assertSame('fallback', data_get($this->array, 'missing', 'fallback'));
+    }
 
-it('can find a two-segment key', function () use ($array): void {
-    expect(data_get($array, 'one.two'))->toEqual(['three' => ['four' => ['five' => 6]]]);
-});
+    public function testCanFindATwoSegmentKey(): void
+    {
+        $this->assertEquals(['three' => ['four' => ['five' => 6]]], data_get($this->array, 'one.two'));
+    }
 
-it('returns the default when a short path traverses a non-array value', function (): void {
-    expect(data_get(['a' => ['b' => 'plain']], 'a.b.c', 'd'))->toBe('d');
-});
+    public function testReturnsTheDefaultWhenAShortPathTraversesANonArrayValue(): void
+    {
+        $this->assertSame('d', data_get(['a' => ['b' => 'plain']], 'a.b.c', 'd'));
+    }
 
-it('wildcard matches a single item', function (): void {
-    expect(data_get(['a' => ['lang' => 'x']], '*.lang'))->toEqual(['x']);
-});
+    public function testWildcardMatchesASingleItem(): void
+    {
+        $this->assertEquals(['x'], data_get(['a' => ['lang' => 'x']], '*.lang'));
+    }
 
-it('wildcard matches three items', function (): void {
-    expect(data_get([
-        'a' => ['lang' => 'x'],
-        'b' => ['lang' => 'y'],
-        'c' => ['lang' => 'z'],
-    ], '*.lang'))->toEqual(['x', 'y', 'z']);
-});
+    public function testWildcardMatchesThreeItems(): void
+    {
+        $this->assertEquals(['x', 'y', 'z'], data_get([
+            'a' => ['lang' => 'x'],
+            'b' => ['lang' => 'y'],
+            'c' => ['lang' => 'z'],
+        ], '*.lang'));
+    }
 
-it('returns the default when a wildcard drops every null value', function (): void {
-    expect(data_get(['a' => ['y' => 1]], '*.x', 'none'))->toBe('none');
-});
+    public function testReturnsTheDefaultWhenAWildcardDropsEveryNullValue(): void
+    {
+        $this->assertSame('none', data_get(['a' => ['y' => 1]], '*.x', 'none'));
+    }
 
-it('wildcard works mid-path', function (): void {
-    expect(data_get(['a' => ['l1' => ['x' => 1], 'l2' => ['x' => 2]]], 'a.*.x'))->toEqual([1, 2]);
-});
+    public function testWildcardWorksMidPath(): void
+    {
+        $this->assertEquals([1, 2], data_get(['a' => ['l1' => ['x' => 1], 'l2' => ['x' => 2]]], 'a.*.x'));
+    }
 
-it('returns the default for an empty string key', function () use ($array): void {
-    expect(data_get($array, '', 'none'))->toBe('none');
-    expect(data_get([], '', 'none'))->toBe('none');
-});
+    public function testReturnsTheDefaultForAnEmptyStringKey(): void
+    {
+        $this->assertSame('none', data_get($this->array, '', 'none'));
+        $this->assertSame('none', data_get([], '', 'none'));
+    }
+}

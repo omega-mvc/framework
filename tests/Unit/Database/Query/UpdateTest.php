@@ -7,123 +7,151 @@ namespace Tests\Database\Query;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Query;
 use Omega\Database\Schema\SchemaConnection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Query::class);
+#[CoversClass(Query::class)]
+final class UpdateTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->pdo       = $this->createStub(ConnectionInterface::class);
-    $this->pdoSchema = $this->createStub(SchemaConnection::class);
-});
+        $this->pdo       = $this->createStub(ConnectionInterface::class);
+        $this->pdoSchema = $this->createStub(SchemaConnection::class);
+    }
 
-test('it can update between', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->between('column_1', 1, 100)
-    ;
+    public function testItCanUpdateBetween(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->between('column_1', 1, 100)
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE (test.column_1 BETWEEN :b_start AND :b_end)'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE (test.column_1 BETWEEN :b_start AND :b_end)',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE (test.column_1 BETWEEN 1 AND 100)"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE (test.column_1 BETWEEN 1 AND 100)",
+            $update->queryBind()
+        );
+    }
 
-test('it can update compare', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->compare('column_1', '=', 100)
-    ;
+    public function testItCanUpdateCompare(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->compare('column_1', '=', 100)
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) )'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) )',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 100) )"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 100) )",
+            $update->queryBind()
+        );
+    }
 
-test('it can update equal', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->equal('column_1', 100)
-    ;
+    public function testItCanUpdateEqual(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->equal('column_1', 100)
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) )'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) )',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 100) )"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 100) )",
+            $update->queryBind()
+        );
+    }
 
-test('it can update in', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->in('column_1', [1, 2])
-    ;
+    public function testItCanUpdateIn(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->in('column_1', [1, 2])
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE (test.column_1 IN (:in_0, :in_1))'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE (test.column_1 IN (:in_0, :in_1))',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE (test.column_1 IN (1, 2))"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE (test.column_1 IN (1, 2))",
+            $update->queryBind()
+        );
+    }
 
-test('it can update like', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->like('column_1', 'test')
-    ;
+    public function testItCanUpdateLike(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->like('column_1', 'test')
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE ( (test.column_1 LIKE :column_1) )'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE ( (test.column_1 LIKE :column_1) )',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE ( (test.column_1 LIKE 'test') )"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE ( (test.column_1 LIKE 'test') )",
+            $update->queryBind()
+        );
+    }
 
-test('it can update where', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->where('a < :a OR b > :b', [[':a', 1], [':b', 2]])
-    ;
+    public function testItCanUpdateWhere(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->where('a < :a OR b > :b', [[':a', 1], [':b', 2]])
+        ;
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE a < :a OR b > :b'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE a < :a OR b > :b',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE a < 1 OR b > 2"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE a < 1 OR b > 2",
+            $update->queryBind()
+        );
+    }
 
-test('it correct update with strict off', function (): void {
-    $update = Query::from('test', $this->pdo)
-        ->update()
-        ->value('a', 'b')
-        ->equal('column_1', 123)
-        ->equal('column_2', 'abc')
-        ->strictMode(false);
+    public function testItCorrectUpdateWithStrictOff(): void
+    {
+        $update = Query::from('test', $this->pdo)
+            ->update()
+            ->value('a', 'b')
+            ->equal('column_1', 123)
+            ->equal('column_2', 'abc')
+            ->strictMode(false);
 
-    expect($update->__toString())->toEqual(
-        'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) OR (test.column_2 = :column_2) )'
-    );
+        $this->assertEquals(
+            'UPDATE test SET a = :bind_a WHERE ( (test.column_1 = :column_1) OR (test.column_2 = :column_2) )',
+            $update->__toString()
+        );
 
-    expect($update->queryBind())->toEqual(
-        "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 123) OR (test.column_2 = 'abc') )"
-    );
-});
+        $this->assertEquals(
+            "UPDATE test SET a = 'b' WHERE ( (test.column_1 = 123) OR (test.column_2 = 'abc') )",
+            $update->queryBind()
+        );
+    }
+}

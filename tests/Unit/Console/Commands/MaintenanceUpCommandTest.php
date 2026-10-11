@@ -2,88 +2,80 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\MaintenanceUpCommand;
-use const DIRECTORY_SEPARATOR;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(MaintenanceUpCommand::class);
+use const DIRECTORY_SEPARATOR;
 
-it('reports an error when the application is already live', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdu-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+#[CoversClass(MaintenanceUpCommand::class)]
+final class MaintenanceUpCommandTest extends TestCase
+{
+    public function testReportsAnErrorWhenTheApplicationIsAlreadyLive(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamu-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app = new Application($base);
+        $app = new Application($base);
+        $command = new MaintenanceUpCommand();
+        $command->app = $app;
 
-    $command = new MaintenanceUpCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Application is already live.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Application is already live.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testRemovesTheMaintenanceFilesAndBringsTheApplicationBackOnline(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamu-' . bin2hex(random_bytes(4));
+        $appDir = $base . '/storage/app' . DIRECTORY_SEPARATOR;
+        mkdir($appDir, 0777, true);
+        touch($appDir . 'maintenance.php');
+        touch($appDir . 'down');
 
-it('removes the maintenance files and brings the application back online', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdu-' . bin2hex(random_bytes(4));
-    $appDir = $base . '/storage/app' . DIRECTORY_SEPARATOR;
-    mkdir($appDir, 0777, true);
-    touch($appDir . 'maintenance.php');
-    touch($appDir . 'down');
+        $app = new Application($base);
+        $command = new MaintenanceUpCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
+        $result = (new CommandTester($command))->run([]);
 
-    $command = new MaintenanceUpCommand();
-    $command->app = $app;
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Application is now live.', $result->getDisplay());
+        $this->assertFileDoesNotExist($appDir . 'maintenance.php');
+        $this->assertFileDoesNotExist($appDir . 'down');
 
-    $result = (new CommandTester($command))->run([]);
+        $app->flush();
+    }
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Application is now live.')
-        ->and(file_exists($appDir . 'maintenance.php'))->toBeFalse()
-        ->and(file_exists($appDir . 'down'))->toBeFalse();
+    public function testReportsAnErrorWhenAMaintenanceFileCannotBeRemoved(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamu-' . bin2hex(random_bytes(4));
+        $appDir = $base . '/storage/app' . DIRECTORY_SEPARATOR;
+        mkdir($appDir . 'maintenance.php', 0777, true);
 
-    $app->flush();
-});
+        $app = new Application($base);
+        $command = new MaintenanceUpCommand();
+        $command->app = $app;
 
-it('reports an error when a maintenance file cannot be removed', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdu-' . bin2hex(random_bytes(4));
-    $appDir = $base . '/storage/app' . DIRECTORY_SEPARATOR;
-    mkdir($appDir, 0777, true);
-    mkdir($appDir . 'maintenance.php');
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    $app = new Application($base);
+        $path = $appDir . 'maintenance.php';
 
-    $command = new MaintenanceUpCommand();
-    $command->app = $app;
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString("Failed to remove the maintenance file '$path'.", $result->getDisplay());
+        $this->assertStringContainsString("Please remove it manually at: $path", $result->getDisplay());
+        $this->assertFileExists($path);
 
-    set_error_handler(static fn (int $severity, string $message): bool => true);
-
-    $result = (new CommandTester($command))->run([]);
-
-    restore_error_handler();
-
-    $path = $appDir . 'maintenance.php';
-
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain("Failed to remove the maintenance file '$path'.")
-        ->and($result->getDisplay())->toContain("Please remove it manually at: $path")
-        ->and(file_exists($path))->toBeTrue();
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

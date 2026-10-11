@@ -6,47 +6,60 @@ namespace Tests\Database;
 
 use Omega\Database\DatabaseManager;
 use Omega\Database\Exceptions\InvalidConfigurationException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
+#[CoversClass(DatabaseManager::class)]
+#[CoversClass(InvalidConfigurationException::class)]
+final class DatabaseManagerTest extends TestCase
+{
+    use ManagesDatabase;
 
-covers(DatabaseManager::class);
-covers(InvalidConfigurationException::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can set default connection', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
+    #[DataProvider('engineProvider')]
+    public function testItCanSetDefaultConnection(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
 
-    $db = new DatabaseManager([
-        'testing' => $this->env,
-    ]);
+        $db = new DatabaseManager([
+            'testing' => $this->env,
+        ]);
 
-    $db->setDefaultConnection($this->pdo);
-    expect($db->query('SELECT * FROM users')->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $db->setDefaultConnection($this->pdo);
+        $this->assertTrue($db->query('SELECT * FROM users')->execute());
+    }
 
-test('it can get connection', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->createUserSchema();
+    #[DataProvider('engineProvider')]
+    public function testItCanGetConnection(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->createUserSchema();
 
-    $db = new DatabaseManager([
-        'testing' => $this->env,
-    ]);
+        $db = new DatabaseManager([
+            'testing' => $this->env,
+        ]);
 
-    expect($db->connection('testing')->query('SELECT * FROM users')->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($db->connection('testing')->query('SELECT * FROM users')->execute());
+    }
 
-test('it can throw exception when connection not configure', function (): void {
-    $db = new DatabaseManager([
-        'invalid' => null,
-    ]);
+    public function testItCanThrowExceptionWhenConnectionNotConfigure(): void
+    {
+        $db = new DatabaseManager([
+            'invalid' => null,
+        ]);
 
-    $this->expectException(InvalidConfigurationException::class);
-    $this->expectExceptionMessageIsOrContains('Database connection [invalid] not configured.');
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessageIsOrContains('Database connection [invalid] not configured.');
 
-    $this->assertTrue($db->connection('invalid')->query('SELECT * FROM users')->execute());
-});
+        $this->assertTrue($db->connection('invalid')->query('SELECT * FROM users')->execute());
+    }
+}

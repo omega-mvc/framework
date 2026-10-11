@@ -2,165 +2,160 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\MaintenanceDownCommand;
-use const DIRECTORY_SEPARATOR;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(MaintenanceDownCommand::class);
+use const DIRECTORY_SEPARATOR;
 
-it('reports an error when the application is already under maintenance mode', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base . '/storage/app/maintenance.php', 0777, true);
+#[CoversClass(MaintenanceDownCommand::class)]
+final class MaintenanceDownCommandTest extends TestCase
+{
+    public function testReportsAnErrorWhenTheApplicationIsAlreadyUnderMaintenanceMode(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage/app/maintenance.php', 0777, true);
 
-    $app = new Application($base);
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Application is already under maintenance mode.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Application is already under maintenance mode.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testPutsTheApplicationIntoMaintenanceModeWithDefaultOptions(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage/app', 0777, true);
 
-it('puts the application into maintenance mode with default options', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base . '/storage/app', 0777, true);
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
+        $result = (new CommandTester($command))->run([]);
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Application is now in maintenance mode.', $result->getDisplay());
 
-    $result = (new CommandTester($command))->run([]);
+        $downPath        = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down';
+        $maintenancePath = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'maintenance.php';
+        $stub            = (string) file_get_contents(dirname(__DIR__, 4) . '/src/Omega/Console/stubs/maintenance.stub');
+        $down            = (string) file_get_contents($downPath);
 
-    $downPath        = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down';
-    $maintenancePath = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'maintenance.php';
-    $stub            = (string) file_get_contents(dirname(__DIR__, 4) . '/src/Omega/Console/stubs/maintenance.stub');
+        $this->assertFileExists($downPath);
+        $this->assertStringContainsString('503', $down);
+        $this->assertStringContainsString('NULL', $down);
+        $this->assertSame($stub, (string) file_get_contents($maintenancePath));
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Application is now in maintenance mode.')
-        ->and(file_exists($downPath))->toBeTrue()
-        ->and(file_get_contents($downPath))->toContain('503')
-        ->and(file_get_contents($downPath))->toContain('NULL')
-        ->and(file_get_contents($maintenancePath))->toBe($stub);
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testCompilesTheProvidedRedirectRetryStatusAndTemplateOptionsIntoTheDownFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage/app', 0777, true);
 
-it('compiles the provided redirect, retry, status and template options into the down file', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base . '/storage/app', 0777, true);
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
+        $result = (new CommandTester($command))->run([
+            '--redirect' => '/maintenance',
+            '--retry'    => '120',
+            '--status'   => '418',
+            '--template' => '<h1>Under maintenance</h1>',
+        ]);
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+        $down = (string) file_get_contents($base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down');
 
-    $result = (new CommandTester($command))->run([
-        '--redirect' => '/maintenance',
-        '--retry'    => '120',
-        '--status'   => '418',
-        '--template' => '<h1>Under maintenance</h1>',
-    ]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString("'redirect' => '/maintenance',", $down);
+        $this->assertStringContainsString("'retry'    => '120',", $down);
+        $this->assertStringContainsString("'status'   => 418,", $down);
+        $this->assertStringContainsString("'template' => '<h1>Under maintenance</h1>',", $down);
 
-    $down = (string) file_get_contents($base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down');
+        $app->flush();
+    }
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($down)->toContain("'redirect' => '/maintenance',")
-        ->and($down)->toContain("'retry'    => '120',")
-        ->and($down)->toContain("'status'   => 418,")
-        ->and($down)->toContain("'template' => '<h1>Under maintenance</h1>',");
+    public function testRejectsAnInvalidStatusCode(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $app->flush();
-});
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-it('rejects an invalid status code', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $result = (new CommandTester($command))->run(['--status' => '99']);
 
-    $app = new Application($base);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('The status code must be an integer between 100 and 599.', $result->getDisplay());
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+        $app->flush();
+    }
 
-    $result = (new CommandTester($command))->run(['--status' => '99']);
+    public function testRejectsANegativeRetryValue(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('The status code must be an integer between 100 and 599.');
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    $app->flush();
-});
+        $result = (new CommandTester($command))->run(['--status' => '200', '--retry' => '-2']);
 
-it('rejects a negative retry value', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('The retry value must be an integer greater than or equal to zero.', $result->getDisplay());
 
-    $app = new Application($base);
+        $app->flush();
+    }
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+    public function testReportsAnErrorWhenThePathStorageBindingIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-    $result = (new CommandTester($command))->run(['--status' => '200', '--retry' => '-2']);
+        $app = new Application($base);
+        $app->set('path.storage', 123);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('The retry value must be an integer greater than or equal to zero.');
+        $result = (new CommandTester($command))->run([]);
 
-    $app->flush();
-});
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('The "path.storage" binding must resolve to a string path.', $result->getDisplay());
 
-it('reports an error when the path.storage binding is not a string', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app->flush();
+    }
 
-    $app = new Application($base);
-    $app->set('path.storage', 123);
+    public function testReportsAnErrorWhenTheDownConfigurationCannotBeWritten(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/w/app/down', 0777, true);
 
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
+        $app = new Application($base);
+        $app->set('path.storage', $base . '/w');
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
 
-    $result = (new CommandTester($command))->run([]);
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('The "path.storage" binding must resolve to a string path.');
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to write the maintenance mode configuration.', $result->getDisplay());
 
-    $app->flush();
-});
-
-it('reports an error when the down configuration cannot be written', function (): void {
-    $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
-    mkdir($base . '/w/app/down', 0777, true);
-
-    $app = new Application($base);
-    $app->set('path.storage', $base . '/w');
-
-    $command = new MaintenanceDownCommand();
-    $command->app = $app;
-
-    set_error_handler(static fn (int $severity, string $message): bool => true);
-
-    $result = (new CommandTester($command))->run([]);
-
-    restore_error_handler();
-
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Unable to write the maintenance mode configuration.');
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

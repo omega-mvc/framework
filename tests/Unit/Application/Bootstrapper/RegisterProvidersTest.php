@@ -14,121 +14,136 @@ use Omega\Container\AbstractServiceProvider;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionClass;
 use Tests\Application\Bootstrapper\Fixtures\TestRegisterServiceProvider;
+use Tests\TestCase;
 
 use function in_array;
 
-covers(AbstractServiceProvider::class);
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(BootProviders::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(RegisterProviders::class);
-
-
-it('bootstraps the application with default and runtime providers', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-    $app->register(TestRegisterServiceProvider::class);
-    $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
-
-    expect((fn () => $this->{'isBooted'})->call($app))
-        ->toBeTrue('The application should be booted after BootProviders.');
-    expect((fn () => $this->{'bootedProviders'})->call($app))->not->toBeEmpty();
-
-    $loaded = (fn () => $this->{'loadedProviders'})->call($app);
-    expect($loaded)->toContain(TestRegisterServiceProvider::class);
-});
-
-it('boots the continue line in the boot provider', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-    $provider = TestRegisterServiceProvider::class;
-
-    $app->register($provider);
-
-    (fn () => $this->{'bootedProviders'}[] = $provider)->call($app);
-
-    $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
-
-    $booted = (fn () => $this->{'bootedProviders'})->call($app);
-
-    expect($booted)->toContain($provider);
-});
-
-it('registers providers from the config via bootstrap', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-
-    $app->loadConfig(new ConfigRepository([
-        'providers' => [TestRegisterServiceProvider::class],
-        'VIEW_EXTENSIONS' => []
-    ]));
-
-    $bootstrapper = new RegisterProviders();
-    $bootstrapper->bootstrap($app);
-
-    expect(isProviderLoaded($app, TestRegisterServiceProvider::class))
-        ->toBeTrue('The provider was not loaded correctly.');
-});
-
-it('resolves core providers when the config has no binding', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-
-    $bootstrapper = new RegisterProviders();
-    $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
-
-    foreach ($app->getCoreProviders() as $core) {
-        expect($providers)->toContain($core);
-    }
-    expect($providers)->not->toContain(TestRegisterServiceProvider::class);
-});
-
-it('ignores a config binding that is not a ConfigRepository', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-    $app->set('config', static fn () => ['providers' => [TestRegisterServiceProvider::class]]);
-
-    $bootstrapper = new RegisterProviders();
-    $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
-
-    expect($providers)->not->toContain(TestRegisterServiceProvider::class);
-});
-
-it('ignores a providers config entry that is not an array', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-    $app->loadConfig(new ConfigRepository([
-        'providers' => 'not-an-array',
-    ]));
-
-    $bootstrapper = new RegisterProviders();
-    $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
-
-    expect($providers)->not->toContain(TestRegisterServiceProvider::class);
-});
-
-it('ignores a package provider list that is not an array', function (): void {
-    $app = new Application(__DIR__ . '/../fixtures/support/');
-    $app->set(ApplicationManifest::class, static fn () => new class {
-        public function providers(): mixed
-        {
-            return 'not-an-array';
-        }
-    });
-
-    $bootstrapper = new RegisterProviders();
-    $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
-
-    expect($providers)->not->toContain(TestRegisterServiceProvider::class);
-});
-
-function isProviderLoaded(Application $app, string $providerClass): bool
+#[CoversClass(AbstractServiceProvider::class)]
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(BootProviders::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(RegisterProviders::class)]
+final class RegisterProvidersTest extends TestCase
 {
-    $reflection = new ReflectionClass($app);
-    $property = $reflection->getProperty('loadedProviders');
-    $loaded = $property->getValue($app);
+    public function testBootstrapsTheApplicationWithDefaultAndRuntimeProviders(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+        $app->register(TestRegisterServiceProvider::class);
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
 
-    if (!is_array($loaded)) {
-        return false;
+        $this->assertTrue(
+            (fn () => $this->{'isBooted'})->call($app),
+            'The application should be booted after BootProviders.'
+        );
+        $this->assertNotEmpty((fn () => $this->{'bootedProviders'})->call($app));
+
+        $loaded = (fn () => $this->{'loadedProviders'})->call($app);
+        $this->assertContains(TestRegisterServiceProvider::class, $loaded);
     }
 
-    return in_array($providerClass, $loaded);
+    public function testBootsTheContinueLineInTheBootProvider(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+        $provider = TestRegisterServiceProvider::class;
+
+        $app->register($provider);
+
+        (fn () => $this->{'bootedProviders'}[] = $provider)->call($app);
+
+        $app->bootstrapWith([ConfigBootstrapper::class, BootProviders::class]);
+
+        $booted = (fn () => $this->{'bootedProviders'})->call($app);
+
+        $this->assertContains($provider, $booted);
+    }
+
+    public function testRegistersProvidersFromConfigViaBootstrap(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+
+        $app->loadConfig(new ConfigRepository([
+            'providers' => [TestRegisterServiceProvider::class],
+            'VIEW_EXTENSIONS' => []
+        ]));
+
+        $bootstrapper = new RegisterProviders();
+        $bootstrapper->bootstrap($app);
+
+        $this->assertTrue(
+            self::isProviderLoaded($app, TestRegisterServiceProvider::class),
+            'The provider was not loaded correctly.'
+        );
+    }
+
+    public function testResolvesCoreProvidersWhenConfigHasNoBinding(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        foreach ($app->getCoreProviders() as $core) {
+            $this->assertContains($core, $providers);
+        }
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    public function testIgnoresConfigBindingThatIsNotConfigRepository(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+        $app->set('config', static fn () => ['providers' => [TestRegisterServiceProvider::class]]);
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    public function testIgnoresProvidersConfigEntryThatIsNotArray(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+
+        $app->loadConfig(new ConfigRepository([
+            'providers' => 'not-an-array',
+        ]));
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    public function testIgnoresPackageProviderListThatIsNotArray(): void
+    {
+        $app = new Application(__DIR__ . '/../fixtures/support/');
+        $app->set(ApplicationManifest::class, static fn () => new class {
+            public function providers(): mixed
+            {
+                return 'not-an-array';
+            }
+        });
+
+        $bootstrapper = new RegisterProviders();
+        $providers = (fn () => $this->resolveProviders($app))->call($bootstrapper);
+
+        $this->assertNotContains(TestRegisterServiceProvider::class, $providers);
+    }
+
+    private static function isProviderLoaded(Application $app, string $providerClass): bool
+    {
+        $reflection = new ReflectionClass($app);
+        $property = $reflection->getProperty('loadedProviders');
+        $loaded = $property->getValue($app);
+
+        if (!is_array($loaded)) {
+            return false;
+        }
+
+        return in_array($providerClass, $loaded);
+    }
 }

@@ -5,122 +5,146 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\Query;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\Asserts\UserTrait;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
-uses(UserTrait::class);
+#[CoversClass(Query::class)]
+final class DeleteTest extends TestCase
+{
+    use ManagesDatabase;
+    use UserTrait;
 
-covers(Query::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can delete', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDelete(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with between', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithBetween(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->between('stat', 0, 100)
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->between('stat', 0, 100)
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with compare', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithCompare(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->compare('user', '=', 'taylor')
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->compare('user', '=', 'taylor')
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with equal', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithEqual(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->equal('user', 'taylor')
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->equal('user', 'taylor')
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with in', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithIn(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->in('user', ['taylor'])
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->in('user', ['taylor'])
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with like', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithLike(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->like('user', 'tay%')
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->like('user', 'tay%')
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with where', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithWhere(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->where('user = :user', [
-            [':user', 'taylor'],
-        ])
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->where('user = :user', [
+                [':user', 'taylor'],
+            ])
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
 
-test('it can delete with multy condition', function (string $engine): void {
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+    #[DataProvider('engineProvider')]
+    public function testItCanDeleteWithMultyCondition(string $engine): void
+    {
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    Query::from('users', $this->pdo)
-        ->delete()
-        ->compare('stat', '>', 1)
-        ->where('user = :user', [
-            [':user', 'taylor'],
-        ])
-        ->execute()
-    ;
+        Query::from('users', $this->pdo)
+            ->delete()
+            ->compare('stat', '>', 1)
+            ->where('user = :user', [
+                [':user', 'taylor'],
+            ])
+            ->execute()
+        ;
 
-    $this->assertUserNotExist('taylor');
-})->with(ManagesDatabase::engineProvider());
+        $this->assertUserNotExist('taylor');
+    }
+}

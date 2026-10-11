@@ -2,87 +2,84 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\CommandClearCommand;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(CommandClearCommand::class);
+#[CoversClass(CommandClearCommand::class)]
+final class CommandClearCommandTest extends TestCase
+{
+    public function testReportsWhenThereIsNoConsoleCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports when there is no console cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
+        $command = new CommandClearCommand();
+        $command->app = $app;
 
-    $app = new Application($base);
-    $command = new CommandClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('No console cache file found. Nothing to clear.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('No console cache file found. Nothing to clear.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testClearsAnExistingConsoleCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('clears an existing console cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $cachePath = $app->getApplicationCachePath() . 'commands.php';
+        mkdir($app->getApplicationCachePath(), 0777, true);
+        file_put_contents($cachePath, '<?php return [];');
 
-    $cachePath = $app->getApplicationCachePath() . 'commands.php';
-    mkdir($app->getApplicationCachePath(), 0777, true);
-    file_put_contents($cachePath, '<?php return [];');
+        $this->assertFileExists($cachePath);
 
-    expect(file_exists($cachePath))->toBeTrue();
+        $command = new CommandClearCommand();
+        $command->app = $app;
 
-    $command = new CommandClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Console command cache cleared successfully.', $result->getDisplay());
+        $this->assertStringContainsString('The application will now use dynamic discovery.', $result->getDisplay());
+        $this->assertFileDoesNotExist($cachePath);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Console command cache cleared successfully.')
-        ->and($result->getDisplay())->toContain('The application will now use dynamic discovery.')
-        ->and(file_exists($cachePath))->toBeFalse();
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testFailsWhenTheConsoleCacheFileCannotBeDeleted(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('fails when the console cache file cannot be deleted', function (): void {
-    $base = sys_get_temp_dir() . '/omegacl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $cachePath = $app->getApplicationCachePath() . 'commands.php';
+        mkdir(dirname($cachePath), 0777, true);
+        mkdir($cachePath);
 
-    $cachePath = $app->getApplicationCachePath() . 'commands.php';
-    mkdir(dirname($cachePath), 0777, true);
-    mkdir($cachePath);
+        $command = new CommandClearCommand();
+        $command->app = $app;
 
-    $command = new CommandClearCommand();
-    $command->app = $app;
+        set_error_handler(static fn (int $severity, string $message): bool => true);
 
-    set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    restore_error_handler();
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString("Failed to delete the cache file at: {$cachePath}", $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain("Failed to delete the cache file at: {$cachePath}");
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

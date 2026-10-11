@@ -5,25 +5,35 @@ declare(strict_types=1);
 namespace Tests\Database\RealDatabase\Schema\Table;
 
 use Omega\Database\Schema\Table\Drop;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\Asserts\UserTrait;
 use Tests\Database\ManagesDatabase;
+use Tests\TestCase;
 
-uses(ManagesDatabase::class);
-uses(UserTrait::class);
+#[CoversClass(Drop::class)]
+final class DropTest extends TestCase
+{
+    use ManagesDatabase;
+    use UserTrait;
 
-covers(Drop::class);
+    protected function tearDown(): void
+    {
+        $this->dropConnection();
 
-afterEach(function (): void {
-    $this->dropConnection();
-});
+        parent::tearDown();
+    }
 
-test('it can generate drop database', function (string $engine): void {
-    $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'database-qualified DROP TABLE');
+    #[DataProvider('engineProvider')]
+    public function testItCanGenerateDropDatabase(string $engine): void
+    {
+        $this->requiresOneOf($engine, ['mysql', 'mariadb'], 'database-qualified DROP TABLE');
 
-    $this->createConnection($engine);
-    $this->seedDefaultUser();
+        $this->createConnection($engine);
+        $this->seedDefaultUser();
 
-    $schema = new Drop($this->pdoSchema->getDatabase(), 'users', $this->pdoSchema);
+        $schema = new Drop($this->pdoSchema->getDatabase(), 'users', $this->pdoSchema);
 
-    expect($schema->execute())->toBeTrue();
-})->with(ManagesDatabase::engineProvider());
+        $this->assertTrue($schema->execute());
+    }
+}

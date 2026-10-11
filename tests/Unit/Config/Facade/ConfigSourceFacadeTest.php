@@ -9,73 +9,87 @@ use Omega\Config\ConfigSource as ConfigSourceService;
 use Omega\Config\Facade\ConfigSource;
 use Omega\Facade\AbstractFacade;
 use Omega\Facade\Exceptions\FacadeObjectNotSetException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(ConfigSource::class);
-covers(ConfigSourceService::class);
-
-
-beforeEach(function (): void {
-    $this->app = new Application(__DIR__ . '/../fixtures/support/');
-    ConfigSourceService::resetMacro();
-});
-
-afterEach(function (): void {
-    AbstractFacade::setFacadeBase(null);
-    AbstractFacade::flushInstance();
-
-    $this->app->flush();
-});
-
-it('gets the facade accessor', function (): void {
-    expect(ConfigSource::getFacadeAccessor())->toBe(ConfigSourceService::class);
-});
-
-it('forwards a static call to the config source service', function (): void {
-    AbstractFacade::setFacadeBase($this->app);
-
-    $config = ConfigSource::fromArray(['app' => ['debug' => true]])->build();
-
-    expect($config->get('app.debug'))->toBe(true);
-});
-
-it('makes a statically registered macro callable via the facade', function (): void {
-    AbstractFacade::setFacadeBase($this->app);
-
-    $service = new ConfigSourceService();
-
-    $yamlCall = function (array $content) use ($service): ConfigSourceService {
-        return $service->fromArray(stringKeyedContent($content));
-    };
-
-    ConfigSource::__callStatic('macro', ['fromYaml', $yamlCall]);
-
-    $yaml = ConfigSource::__callStatic('fromYaml', [['service' => 'yaml']]);
-    $this->assertInstanceOf(ConfigSourceService::class, $yaml);
-
-    $config = $yaml->build();
-
-    expect($config->get('service'))->toBe('yaml');
-});
-
-it('throws when a static call is made without an application', function (): void {
-    ConfigSource::fromArray(['key' => 'value']);
-})->throws(FacadeObjectNotSetException::class);
-
-/**
- * Keep only the string-keyed entries of the payload.
- *
- * @param array<mixed> $content The macro payload.
- * @return array<string, mixed> The string-keyed subset of the payload.
- */
-function stringKeyedContent(array $content): array
+#[CoversClass(ConfigSource::class)]
+#[CoversClass(ConfigSourceService::class)]
+final class ConfigSourceFacadeTest extends TestCase
 {
-    $result = [];
-
-    foreach ($content as $key => $value) {
-        if (is_string($key)) {
-            $result[$key] = $value;
-        }
+    protected function setUp(): void
+    {
+        $this->app = new Application(__DIR__ . '/../fixtures/support/');
+        ConfigSourceService::resetMacro();
     }
 
-    return $result;
+    protected function tearDown(): void
+    {
+        AbstractFacade::setFacadeBase(null);
+        AbstractFacade::flushInstance();
+
+        $this->app->flush();
+
+        parent::tearDown();
+    }
+
+    public function testGetsTheFacadeAccessor(): void
+    {
+        $this->assertSame(ConfigSourceService::class, ConfigSource::getFacadeAccessor());
+    }
+
+    public function testForwardsAStaticCallToTheConfigSourceService(): void
+    {
+        AbstractFacade::setFacadeBase($this->app);
+
+        $config = ConfigSource::fromArray(['app' => ['debug' => true]])->build();
+
+        $this->assertSame(true, $config->get('app.debug'));
+    }
+
+    public function testMakesAStaticallyRegisteredMacroCallableViaTheFacade(): void
+    {
+        AbstractFacade::setFacadeBase($this->app);
+
+        $service = new ConfigSourceService();
+
+        $filter = self::stringKeyedContent(...);
+        $yamlCall = function (array $content) use ($service, $filter): ConfigSourceService {
+            return $service->fromArray($filter($content));
+        };
+
+        ConfigSource::__callStatic('macro', ['fromYaml', $yamlCall]);
+
+        $yaml = ConfigSource::__callStatic('fromYaml', [['service' => 'yaml']]);
+        $this->assertInstanceOf(ConfigSourceService::class, $yaml);
+
+        $config = $yaml->build();
+
+        $this->assertSame('yaml', $config->get('service'));
+    }
+
+    public function testThrowsWhenAStaticCallIsMadeWithoutAnApplication(): void
+    {
+        $this->expectException(FacadeObjectNotSetException::class);
+
+        ConfigSource::fromArray(['key' => 'value']);
+    }
+
+    /**
+     * Keep only the string-keyed entries of the payload.
+     *
+     * @param array<mixed> $content The macro payload.
+     * @return array<string, mixed> The string-keyed subset of the payload.
+     */
+    private static function stringKeyedContent(array $content): array
+    {
+        $result = [];
+
+        foreach ($content as $key => $value) {
+            if (is_string($key)) {
+                $result[$key] = $value;
+            }
+        }
+
+        return $result;
+    }
 }

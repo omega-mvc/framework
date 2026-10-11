@@ -10,200 +10,237 @@ use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Container\Invoker;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
 use stdClass;
 use Tests\Container\Support\CallableClass;
 use Tests\Container\Support\CallableNoDeps;
 use Tests\Container\Support\DependencyClass;
 use Tests\Container\Support\InvokableInvokeClass;
+use Tests\TestCase;
 
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
-covers(Invoker::class);
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(Invoker::class)]
+final class InvokerTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-    $this->invoker   = new Invoker($this->container);
-});
+    private Invoker $invoker;
 
-it('invokes a closure with dependencies', function (): void {
-    $result = $this->invoker->call(function (DependencyClass $dep) {
-        return $dep;
-    });
-
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('invokes a class method with dependencies', function (): void {
-    $result = $this->invoker->call([CallableClass::class, 'someMethod']);
-
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('invokes a static class method with dependencies', function (): void {
-    $result = $this->invoker->call([CallableClass::class, 'staticMethod']);
-
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('invokes a method on an already instantiated object', function (): void {
-    $instance = new CallableClass();
-
-    $result = $this->invoker->call([$instance, 'someMethod']);
-
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
-
-it('invokes an invokable class', function (): void {
-    $result = $this->invoker->call(InvokableInvokeClass::class);
-
-    expect($result)->toBe('invoked');
-
-    $instance = $this->container->get(InvokableInvokeClass::class);
-
-    expect($instance)->toBeInstanceOf(InvokableInvokeClass::class);
-
-    if (!$instance instanceof InvokableInvokeClass) {
-        throw new \RuntimeException('Expected an InvokableInvokeClass instance.');
+    protected function setUp(): void
+    {
+        $this->container = new Container();
+        $this->invoker   = new Invoker($this->container);
     }
 
-    expect($instance->dep)->not->toBe($instance);
-});
+    public function testInvokesAClosureWithDependencies(): void
+    {
+        $result = $this->invoker->call(function (DependencyClass $dep) {
+            return $dep;
+        });
 
-it('overrides parameters correctly', function (): void {
-    $override = new DependencyClass();
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
 
-    $result = $this->invoker->call(
-        fn (DependencyClass $dep) => $dep,
-        ['dep' => $override]
-    );
+    public function testInvokesAClassMethodWithDependencies(): void
+    {
+        $result = $this->invoker->call([CallableClass::class, 'someMethod']);
 
-    expect($result)->toBe($override);
-});
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
 
-it('throws for unsupported callable types', function (): void {
-    expect(fn () => $this->invoker->call(new stdClass()))
-        ->toThrow(BindingResolutionException::class);
-});
+    public function testInvokesAStaticClassMethodWithDependencies(): void
+    {
+        $result = $this->invoker->call([CallableClass::class, 'staticMethod']);
 
-it('throws when an invokable class has no invoke method', function (): void {
-    expect(fn () => $this->invoker->call(CallableNoDeps::class))
-        ->toThrow(BindingResolutionException::class);
-});
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
 
-it('invokes an invokable object instance', function (): void {
-    $expected = new DependencyClass();
-    $this->container->bind(DependencyClass::class, static fn () => $expected, true);
+    public function testInvokesAMethodOnAnAlreadyInstantiatedObject(): void
+    {
+        $instance = new CallableClass();
 
-    $invokable = new InvokableInvokeClass();
+        $result = $this->invoker->call([$instance, 'someMethod']);
 
-    $result = $this->invoker->call($invokable);
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
 
-    expect($result)->toBe('invoked');
-    expect($invokable->dep)->toBe($expected);
-});
+    public function testInvokesAnInvokableClass(): void
+    {
+        $result = $this->invoker->call(InvokableInvokeClass::class);
 
-it('injects the container into self-typed container parameters', function (): void {
-    $subclass = new class extends Container {
-        public function makeClosure(): Closure
-        {
-            return fn (self $container) => $container;
-        }
-    };
+        $this->assertSame('invoked', $result);
 
-    $invoker = new Invoker($subclass);
+        $instance = $this->container->get(InvokableInvokeClass::class);
 
-    expect($invoker->call($subclass->makeClosure()))->toBe($subclass);
-});
+        $this->assertInstanceOf(InvokableInvokeClass::class, $instance);
 
-it('falls back to parameter defaults', function (): void {
-    $result = $this->invoker->call(fn ($name = 'default') => $name);
+        $this->assertNotSame($instance, $instance->dep);
+    }
 
-    expect($result)->toBe('default');
-});
+    public function testOverridesParametersCorrectly(): void
+    {
+        $override = new DependencyClass();
 
-it('consumes leftover parameters positionally', function (): void {
-    $result = $this->invoker->call(fn (int $value) => 'value:' . $value, ['unmatched' => 7]);
+        $result = $this->invoker->call(
+            fn (DependencyClass $dep) => $dep,
+            ['dep' => $override]
+        );
 
-    expect($result)->toBe('value:7');
-});
+        $this->assertSame($override, $result);
+    }
 
-it('appends unmatched parameters to the invocation arguments', function (): void {
-    $result = $this->invoker->call(fn ($first) => $first, ['first' => 1, 'second' => 2]);
+    public function testThrowsForUnsupportedCallableTypes(): void
+    {
+        $this->expectException(BindingResolutionException::class);
 
-    expect($result)->toBe(1);
-});
+        $this->invoker->call(new stdClass());
+    }
 
-it('overrides parameters by position', function (): void {
-    $override = new DependencyClass();
+    public function testThrowsWhenAnInvokableClassHasNoInvokeMethod(): void
+    {
+        $this->expectException(BindingResolutionException::class);
 
-    $result = $this->invoker->call(
-        fn (DependencyClass $dep) => $dep,
-        [0 => $override]
-    );
+        $this->invoker->call(CallableNoDeps::class);
+    }
 
-    expect($result)->toBe($override);
-});
+    public function testInvokesAnInvokableObjectInstance(): void
+    {
+        $expected = new DependencyClass();
+        $this->container->bind(DependencyClass::class, static fn () => $expected, true);
 
-it('throws when a resolved callable class is not an object', function (): void {
-    $this->container->set('answer', 42);
+        $invokable = new InvokableInvokeClass();
 
-    expect(fn () => $this->invoker->call(['answer', 'anyMethod']))
-        ->toThrow(BindingResolutionException::class, 'Resolved class answer is not an object instance.');
-});
+        $result = $this->invoker->call($invokable);
 
-it('throws when a string callable is neither a class nor a function', function (): void {
-    expect(fn () => $this->invoker->call('undeclared_function_name'))
-        ->toThrow(BindingResolutionException::class, 'Unable to call the given callable. Unsupported type.');
-});
+        $this->assertSame('invoked', $result);
+        $this->assertSame($expected, $invokable->dep);
+    }
 
-it('invokes a named global function with dependencies', function (): void {
-    $result = $this->invoker->call('Tests\Container\invokerTestFunction');
+    public function testInjectsTheContainerIntoSelfTypedContainerParameters(): void
+    {
+        $subclass = new class extends Container {
+            public function makeClosure(): Closure
+            {
+                return fn (self $container) => $container;
+            }
+        };
 
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
+        $invoker = new Invoker($subclass);
 
-it('injects the container into an untyped container parameter', function (): void {
-    $result = $this->invoker->call(fn ($container) => $container);
+        $this->assertSame($subclass, $invoker->call($subclass->makeClosure()));
+    }
 
-    expect($result)->toBe($this->container);
-});
+    public function testFallsBackToParameterDefaults(): void
+    {
+        $result = $this->invoker->call(fn ($name = 'default') => $name);
 
-it('resolves a container-named parameter with a class type', function (): void {
-    $result = $this->invoker->call(fn (DependencyClass $container) => $container);
+        $this->assertSame('default', $result);
+    }
 
-    expect($result)->toBeInstanceOf(DependencyClass::class);
-});
+    public function testConsumesLeftoverParametersPositionally(): void
+    {
+        $result = $this->invoker->call(fn (int $value) => 'value:' . $value, ['unmatched' => 7]);
 
-it('falls back to the default for a container-named built-in parameter', function (): void {
-    $result = $this->invoker->call(fn (string $container = 'default-string') => $container);
+        $this->assertSame('value:7', $result);
+    }
 
-    expect($result)->toBe('default-string');
-});
+    public function testAppendsUnmatchedParametersToTheInvocationArguments(): void
+    {
+        $result = $this->invoker->call(fn ($first) => $first, ['first' => 1, 'second' => 2]);
 
-it('throws when a parameter has no resolvable value', function (): void {
-    expect(fn () => $this->invoker->call(fn ($missing) => $missing))
-        ->toThrow(BindingResolutionException::class);
-});
+        $this->assertSame(1, $result);
+    }
 
-it('falls back to the default for a built-in typed parameter', function (): void {
-    $result = $this->invoker->call(fn (int $num = 3) => $num);
+    public function testOverridesParametersByPosition(): void
+    {
+        $override = new DependencyClass();
 
-    expect($result)->toBe(3);
-});
+        $result = $this->invoker->call(
+            fn (DependencyClass $dep) => $dep,
+            [0 => $override]
+        );
 
-it('consumes leftover parameters for an untyped parameter', function (): void {
-    $result = $this->invoker->call(fn ($value) => $value, ['unmatched' => 7]);
+        $this->assertSame($override, $result);
+    }
 
-    expect($result)->toBe(7);
-});
+    public function testThrowsWhenAResolvedCallableClassIsNotAnObject(): void
+    {
+        $this->container->set('answer', 42);
 
-it('falls back to the default for a container-named union-typed parameter', function (): void {
-    $result = $this->invoker->call(fn (DependencyClass|stdClass|null $container = null) => $container);
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage('Resolved class answer is not an object instance.');
 
-    expect($result)->toBeNull();
-});
+        $this->invoker->call(['answer', 'anyMethod']);
+    }
+
+    public function testThrowsWhenAStringCallableIsNeitherAClassNorAFunction(): void
+    {
+        $this->expectException(BindingResolutionException::class);
+        $this->expectExceptionMessage('Unable to call the given callable. Unsupported type.');
+
+        $this->invoker->call('undeclared_function_name');
+    }
+
+    public function testInvokesANamedGlobalFunctionWithDependencies(): void
+    {
+        $result = $this->invoker->call('Tests\Container\invokerTestFunction');
+
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
+
+    public function testInjectsTheContainerIntoAnUntypedContainerParameter(): void
+    {
+        $result = $this->invoker->call(fn ($container) => $container);
+
+        $this->assertSame($this->container, $result);
+    }
+
+    public function testResolvesAContainerNamedParameterWithAClassType(): void
+    {
+        $result = $this->invoker->call(fn (DependencyClass $container) => $container);
+
+        $this->assertInstanceOf(DependencyClass::class, $result);
+    }
+
+    public function testFallsBackToTheDefaultForAContainerNamedBuiltInParameter(): void
+    {
+        $result = $this->invoker->call(fn (string $container = 'default-string') => $container);
+
+        $this->assertSame('default-string', $result);
+    }
+
+    public function testThrowsWhenAParameterHasNoResolvableValue(): void
+    {
+        $this->expectException(BindingResolutionException::class);
+
+        $this->invoker->call(fn ($missing) => $missing);
+    }
+
+    public function testFallsBackToTheDefaultForABuiltInTypedParameter(): void
+    {
+        $result = $this->invoker->call(fn (int $num = 3) => $num);
+
+        $this->assertSame(3, $result);
+    }
+
+    public function testConsumesLeftoverParametersForAnUntypedParameter(): void
+    {
+        $result = $this->invoker->call(fn ($value) => $value, ['unmatched' => 7]);
+
+        $this->assertSame(7, $result);
+    }
+
+    public function testFallsBackToTheDefaultForAContainerNamedUnionTypedParameter(): void
+    {
+        $result = $this->invoker->call(fn (DependencyClass|stdClass|null $container = null) => $container);
+
+        $this->assertNull($result);
+    }
+}
 
 /**
  * Named function used by the invoker function test above to prove that a

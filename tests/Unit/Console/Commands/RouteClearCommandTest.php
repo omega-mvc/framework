@@ -2,83 +2,80 @@
 
 declare(strict_types=1);
 
-/*
- * Part of Omega - Tests\Console\Commands Package.
- *
- * @link      https://omegamvc.github.io
- * @author    Axel Magold <axel.magold@gmail.com>
- * @copyright 2025-2026 The Omega MVC Framework
- * @license   https://opensource.org/license/mit The MIT License
- * @version   2.0.0
- */
-
 namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\RouteClearCommand;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\TestCase;
 
-covers(RouteClearCommand::class);
+#[CoversClass(RouteClearCommand::class)]
+final class RouteClearCommandTest extends TestCase
+{
+    public function testReportsWhenThereIsNoRouteCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
 
-it('reports when there is no route cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
-    mkdir($base, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $command = new RouteClearCommand();
+        $command->app = $app;
 
-    $command = new RouteClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('No route cache file found.', $result->getDisplay());
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('No route cache file found.');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testClearsTheRouteCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
 
-it('clears the route cache file', function (): void {
-    $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
+        $app = new Application($base);
 
-    $app = new Application($base);
+        mkdir($app->getApplicationCachePath(), 0777, true);
+        file_put_contents($app->getApplicationCachePath() . 'route.php', '<?php return [];');
 
-    mkdir($app->getApplicationCachePath(), 0777, true);
-    file_put_contents($app->getApplicationCachePath() . 'route.php', '<?php return [];');
+        $command = new RouteClearCommand();
+        $command->app = $app;
 
-    $command = new RouteClearCommand();
-    $command->app = $app;
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        $cachePath = $app->getApplicationCachePath() . 'route.php';
 
-    $cachePath = $app->getApplicationCachePath() . 'route.php';
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Route cache cleared successfully.', $result->getDisplay());
+        $this->assertFileDoesNotExist($cachePath);
 
-    expect($result->statusCode)->toBe(Command::SUCCESS)
-        ->and($result->getDisplay())->toContain('Route cache cleared successfully.')
-        ->and(file_exists($cachePath))->toBeFalse();
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testReportsAnErrorWhenTheRouteCacheFileCannotBeRemoved(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
+        $cachePath = $base . '/bootstrap/cache/route.php';
+        mkdir($cachePath, 0777, true);
 
-it('reports an error when the route cache file cannot be removed', function (): void {
-    $base = sys_get_temp_dir() . '/omegarl-' . bin2hex(random_bytes(4));
-    $cachePath = $base . '/bootstrap/cache/route.php';
-    mkdir($cachePath, 0777, true);
+        $app = new Application($base);
 
-    $app = new Application($base);
+        $command = new RouteClearCommand();
+        $command->app = $app;
 
-    $command = new RouteClearCommand();
-    $command->app = $app;
+        set_error_handler(static fn (int $severity, string $message): bool => true);
 
-    set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
 
-    $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
 
-    restore_error_handler();
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to delete the route cache file.', $result->getDisplay());
+        $this->assertFileExists($cachePath);
 
-    expect($result->statusCode)->toBe(Command::FAILURE)
-        ->and($result->getDisplay())->toContain('Unable to delete the route cache file.')
-        ->and(file_exists($cachePath))->toBeTrue();
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

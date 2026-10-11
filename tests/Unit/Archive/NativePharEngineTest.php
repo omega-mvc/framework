@@ -1,21 +1,13 @@
 <?php
 
-/**
- * Part of Omega - Tests\Archive Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Archive;
 
 use Omega\Archive\NativePharEngine;
 use PharData;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function is_dir;
 use function mkdir;
@@ -26,84 +18,94 @@ use function sys_get_temp_dir;
 use function uniqid;
 use function unlink;
 
-covers(NativePharEngine::class);
-
-beforeEach(function (): void {
-    $this->tempDir = sys_get_temp_dir() . '/omega-archive-native-' . uniqid();
-    mkdir($this->tempDir, 0777, true);
-});
-
-afterEach(function (): void {
-    nativePharRemoveDirectory($this->tempDir);
-});
-
-it('write adds a new member which can then be read', function (): void {
-    $engine = new NativePharEngine(
-        new PharData($this->tempDir . '/archive.tar')
-    );
-
-    $engine->write('hello.txt', 'hello phar payload');
-
-    expect($engine->contains('hello.txt'))->toBeTrue();
-    expect($engine->read('hello.txt'))->toBe('hello phar payload');
-});
-
-it('delete removes an existing member', function (): void {
-    $engine = new NativePharEngine(
-        new PharData($this->tempDir . '/archive.tar')
-    );
-    $engine->write('hello.txt', 'hello phar payload');
-
-    $engine->delete('hello.txt');
-
-    expect($engine->contains('hello.txt'))->toBeFalse();
-});
-
-it('delete after write leaves the archive in the expected state', function (): void {
-    $engine = new NativePharEngine(
-        new PharData($this->tempDir . '/archive.tar')
-    );
-    $engine->write('a.txt', 'alpha');
-    $engine->write('b.txt', 'beta');
-
-    $engine->delete('a.txt');
-
-    expect($engine->contains('a.txt'))->toBeFalse();
-    expect($engine->contains('b.txt'))->toBeTrue();
-    expect($engine->read('b.txt'))->toBe('beta');
-});
-
-it('isDirectory distinguishes directories from files', function (): void {
-    $engine = new NativePharEngine(
-        new PharData($this->tempDir . '/archive.tar')
-    );
-    $engine->write('mydir/file.txt', 'nested');
-
-    expect($engine->isDirectory('mydir/file.txt'))->toBeFalse();
-    expect($engine->isDirectory('mydir'))->toBeTrue();
-});
-
-function nativePharRemoveDirectory(string $directory): void
+#[CoversClass(NativePharEngine::class)]
+final class NativePharEngineTest extends TestCase
 {
-    if (!is_dir($directory)) {
-        return;
+    private string $tempDir;
+
+    protected function setUp(): void
+    {
+        $this->tempDir = sys_get_temp_dir() . '/omega-archive-native-' . uniqid();
+        mkdir($this->tempDir, 0777, true);
     }
 
-    $items = scandir($directory);
-
-    foreach ($items as $item) {
-        if ($item === '.' || $item === '..') {
-            continue;
-        }
-
-        $path = slash($directory . '/' . $item);
-
-        if (is_dir($path)) {
-            nativePharRemoveDirectory($path);
-        } else {
-            unlink($path);
-        }
+    protected function tearDown(): void
+    {
+        self::nativePharRemoveDirectory($this->tempDir);
     }
 
-    rmdir($directory);
+    public function testWriteAddsANewMemberWhichCanThenBeRead(): void
+    {
+        $engine = new NativePharEngine(
+            new PharData($this->tempDir . '/archive.tar')
+        );
+
+        $engine->write('hello.txt', 'hello phar payload');
+
+        $this->assertTrue($engine->contains('hello.txt'));
+        $this->assertSame('hello phar payload', $engine->read('hello.txt'));
+    }
+
+    public function testDeleteRemovesAnExistingMember(): void
+    {
+        $engine = new NativePharEngine(
+            new PharData($this->tempDir . '/archive.tar')
+        );
+        $engine->write('hello.txt', 'hello phar payload');
+
+        $engine->delete('hello.txt');
+
+        $this->assertFalse($engine->contains('hello.txt'));
+    }
+
+    public function testDeleteAfterWriteLeavesTheArchiveInTheExpectedState(): void
+    {
+        $engine = new NativePharEngine(
+            new PharData($this->tempDir . '/archive.tar')
+        );
+        $engine->write('a.txt', 'alpha');
+        $engine->write('b.txt', 'beta');
+
+        $engine->delete('a.txt');
+
+        $this->assertFalse($engine->contains('a.txt'));
+        $this->assertTrue($engine->contains('b.txt'));
+        $this->assertSame('beta', $engine->read('b.txt'));
+    }
+
+    public function testIsDirectoryDistinguishesDirectoriesFromFiles(): void
+    {
+        $engine = new NativePharEngine(
+            new PharData($this->tempDir . '/archive.tar')
+        );
+        $engine->write('mydir/file.txt', 'nested');
+
+        $this->assertFalse($engine->isDirectory('mydir/file.txt'));
+        $this->assertTrue($engine->isDirectory('mydir'));
+    }
+
+    private static function nativePharRemoveDirectory(string $directory): void
+    {
+        if (!is_dir($directory)) {
+            return;
+        }
+
+        $items = scandir($directory);
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $path = slash($directory . '/' . $item);
+
+            if (is_dir($path)) {
+                self::nativePharRemoveDirectory($path);
+            } else {
+                unlink($path);
+            }
+        }
+
+        rmdir($directory);
+    }
 }

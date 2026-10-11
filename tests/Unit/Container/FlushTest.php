@@ -9,164 +9,185 @@ use Omega\Container\Exceptions\AliasException;
 use Omega\Container\Exceptions\BindingResolutionException;
 use Omega\Container\Exceptions\CircularAliasException;
 use Omega\Container\Exceptions\EntryNotFoundException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use stdClass;
+use Tests\TestCase;
 
-covers(AliasException::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(Container::class);
-covers(EntryNotFoundException::class);
+#[CoversClass(AliasException::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Container::class)]
+#[CoversClass(EntryNotFoundException::class)]
+final class FlushTest extends TestCase
+{
+    private Container $container;
 
-beforeEach(function (): void {
-    $this->container = new Container();
-});
+    protected function setUp(): void
+    {
+        $this->container = new Container();
+    }
 
-it('removes bindings on flush', function (): void {
-    $this->container->bind('foo', fn () => 'bar');
+    public function testRemovesBindingsOnFlush(): void
+    {
+        $this->container->bind('foo', fn () => 'bar');
 
-    expect($this->container->bound('foo'))->toBeTrue();
+        $this->assertTrue($this->container->bound('foo'));
 
-    $this->container->flush();
+        $this->container->flush();
 
-    expect($this->container->bound('foo'))->toBeFalse();
-});
+        $this->assertFalse($this->container->bound('foo'));
+    }
 
-it('clears resolved instances on flush', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
+    public function testClearsResolvedInstancesOnFlush(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
 
-    $instance1 = $this->container->get('foo');
-    $instance2 = $this->container->get('foo');
+        $instance1 = $this->container->get('foo');
+        $instance2 = $this->container->get('foo');
 
-    expect($instance1)->toBe($instance2);
+        $this->assertSame($instance1, $instance2);
 
-    $this->container->flush();
-    $this->container->bind('foo', fn () => new stdClass(), true);
+        $this->container->flush();
+        $this->container->bind('foo', fn () => new stdClass(), true);
 
-    $instance3 = $this->container->get('foo');
+        $instance3 = $this->container->get('foo');
 
-    expect($instance1)->not->toBe($instance3);
-});
+        $this->assertNotSame($instance1, $instance3);
+    }
 
-it('clears aliases on flush', function (): void {
-    $this->container->bind(stdClass::class);
-    $this->container->alias(stdClass::class, 'foo');
+    public function testClearsAliasesOnFlush(): void
+    {
+        $this->container->bind(stdClass::class);
+        $this->container->alias(stdClass::class, 'foo');
 
-    expect($this->container->get('foo'))->toBeInstanceOf(stdClass::class);
+        $this->assertInstanceOf(stdClass::class, $this->container->get('foo'));
 
-    $this->container->flush();
+        $this->container->flush();
 
-    expect(fn () => $this->container->get('foo'))->toThrow(EntryNotFoundException::class);
-});
+        $this->expectException(EntryNotFoundException::class);
 
-it('resets all internal state on flush', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
-    $this->container->get('foo');
-    $this->container->alias('foo', 'bar');
+        $this->container->get('foo');
+    }
 
-    $this->container->flush();
+    public function testResetsAllInternalStateOnFlush(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
+        $this->container->get('foo');
+        $this->container->alias('foo', 'bar');
 
-    $value = function (string $property): mixed {
-        $reflection = new ReflectionProperty($this->container, $property);
+        $this->container->flush();
 
-        return $reflection->getValue($this->container);
-    };
+        $value = function (string $property): mixed {
+            $reflection = new ReflectionProperty($this->container, $property);
 
-    expect($value('bindings'))->toBeEmpty();
-    expect($value('instances'))->toBeEmpty();
-    expect($value('aliases'))->toBeEmpty();
-    expect($value('reflectionCache'))->toBeEmpty();
-});
+            return $reflection->getValue($this->container);
+        };
 
-it('resets the reflection cache on clearCache', function (): void {
-    $ref1 = $this->container->getReflectionClass(stdClass::class);
-    $ref2 = $this->container->getReflectionClass(stdClass::class);
+        $this->assertEmpty($value('bindings'));
+        $this->assertEmpty($value('instances'));
+        $this->assertEmpty($value('aliases'));
+        $this->assertEmpty($value('reflectionCache'));
+    }
 
-    expect($ref1)->toBe($ref2);
+    public function testResetsTheReflectionCacheOnClearCache(): void
+    {
+        $ref1 = $this->container->getReflectionClass(stdClass::class);
+        $ref2 = $this->container->getReflectionClass(stdClass::class);
 
-    $this->container->clearCache();
+        $this->assertSame($ref1, $ref2);
 
-    $ref3 = $this->container->getReflectionClass(stdClass::class);
+        $this->container->clearCache();
 
-    expect($ref1)->not->toBe($ref3);
-});
+        $ref3 = $this->container->getReflectionClass(stdClass::class);
 
-it('returns the container from clearCache', function (): void {
-    expect($this->container->clearCache())->toBe($this->container);
-});
+        $this->assertNotSame($ref1, $ref3);
+    }
 
-it('returns the container from setRequestScoped', function (): void {
-    expect($this->container->setRequestScoped('foo'))->toBe($this->container);
-});
+    public function testReturnsTheContainerFromClearCache(): void
+    {
+        $this->assertSame($this->container, $this->container->clearCache());
+    }
 
-it('discards request-scoped instances on reset', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
-    $this->container->setRequestScoped('foo');
+    public function testReturnsTheContainerFromSetRequestScoped(): void
+    {
+        $this->assertSame($this->container, $this->container->setRequestScoped('foo'));
+    }
 
-    $instance1 = $this->container->get('foo');
-    $instance2 = $this->container->get('foo');
+    public function testDiscardsRequestScopedInstancesOnReset(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
+        $this->container->setRequestScoped('foo');
 
-    expect($instance1)->toBe($instance2);
+        $instance1 = $this->container->get('foo');
+        $instance2 = $this->container->get('foo');
 
-    $this->container->resetRequestScope();
+        $this->assertSame($instance1, $instance2);
 
-    $instance3 = $this->container->get('foo');
+        $this->container->resetRequestScope();
 
-    expect($instance1)->not->toBe($instance3);
-    expect($this->container->bound('foo'))->toBeTrue();
-});
+        $instance3 = $this->container->get('foo');
 
-it('keeps unresolvable request-scoped bindings after reset', function (): void {
-    $this->container->setRequestScoped('never-resolved');
+        $this->assertNotSame($instance1, $instance3);
+        $this->assertTrue($this->container->bound('foo'));
+    }
 
-    $this->container->resetRequestScope();
+    public function testKeepsUnresolvableRequestScopedBindingsAfterReset(): void
+    {
+        $this->container->setRequestScoped('never-resolved');
 
-    expect($this->container->bound('never-resolved'))->toBeFalse();
-});
+        $this->container->resetRequestScope();
 
-it('resets request-scoped bindings registered through an alias', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
-    $this->container->alias('foo', 'foo-alias');
-    $this->container->setRequestScoped('foo-alias');
+        $this->assertFalse($this->container->bound('never-resolved'));
+    }
 
-    $instance1 = $this->container->get('foo');
+    public function testResetsRequestScopedBindingsRegisteredThroughAnAlias(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
+        $this->container->alias('foo', 'foo-alias');
+        $this->container->setRequestScoped('foo-alias');
 
-    $this->container->resetRequestScope();
+        $instance1 = $this->container->get('foo');
 
-    $instance2 = $this->container->get('foo');
+        $this->container->resetRequestScope();
 
-    expect($instance1)->not->toBe($instance2);
-});
+        $instance2 = $this->container->get('foo');
 
-it('resets an empty request scope without touching instances', function (): void {
-    $this->container->bind('foo', fn () => new stdClass(), true);
+        $this->assertNotSame($instance1, $instance2);
+    }
 
-    $instance1 = $this->container->get('foo');
+    public function testResetsAnEmptyRequestScopeWithoutTouchingInstances(): void
+    {
+        $this->container->bind('foo', fn () => new stdClass(), true);
 
-    // No binding is marked request-scoped, so the reset loop body never runs
-    // and the cached instance survives untouched.
-    $this->container->resetRequestScope();
-    $this->container->resetRequestScope();
+        $instance1 = $this->container->get('foo');
 
-    $instance2 = $this->container->get('foo');
+        // No binding is marked request-scoped, so the reset loop body never runs
+        // and the cached instance survives untouched.
+        $this->container->resetRequestScope();
+        $this->container->resetRequestScope();
 
-    expect($instance1)->toBe($instance2);
-});
+        $instance2 = $this->container->get('foo');
 
-it('resets multiple request-scoped bindings in a single pass', function (): void {
-    $this->container->bind('one', fn () => new stdClass(), true);
-    $this->container->bind('two', fn () => new stdClass(), true);
-    $this->container->setRequestScoped('one');
-    $this->container->setRequestScoped('two');
+        $this->assertSame($instance1, $instance2);
+    }
 
-    $instance1 = $this->container->get('one');
-    $instance2 = $this->container->get('two');
+    public function testResetsMultipleRequestScopedBindingsInASinglePass(): void
+    {
+        $this->container->bind('one', fn () => new stdClass(), true);
+        $this->container->bind('two', fn () => new stdClass(), true);
+        $this->container->setRequestScoped('one');
+        $this->container->setRequestScoped('two');
 
-    $this->container->resetRequestScope();
+        $instance1 = $this->container->get('one');
+        $instance2 = $this->container->get('two');
 
-    $instance3 = $this->container->get('one');
-    $instance4 = $this->container->get('two');
+        $this->container->resetRequestScope();
 
-    expect($instance1)->not->toBe($instance3);
-    expect($instance2)->not->toBe($instance4);
-});
+        $instance3 = $this->container->get('one');
+        $instance4 = $this->container->get('two');
+
+        $this->assertNotSame($instance1, $instance3);
+        $this->assertNotSame($instance2, $instance4);
+    }
+}

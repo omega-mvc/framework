@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Config\Source;
 
+use Omega\Config\Exceptions\InvalidArrayConfigException;
 use Omega\Config\Source\ArrayConfig;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
@@ -17,5 +18,12 @@ final class ArrayTest extends TestCase
         $source = new ArrayConfig($content);
 
         $this->assertEquals($content, $source->fetch());
+    }
+
+    public function testShouldThrowWhenContentIsEmpty(): void
+    {
+        $this->expectException(InvalidArrayConfigException::class);
+
+        new ArrayConfig([])->fetch();
     }
 }

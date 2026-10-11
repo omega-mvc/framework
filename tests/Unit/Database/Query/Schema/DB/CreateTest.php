@@ -7,50 +7,67 @@ namespace Tests\Database\Query\Schema\DB;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\DB\Create;
 use Omega\Database\Schema\SchemaConnection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Create::class);
+#[CoversClass(Create::class)]
+final class CreateTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->pdo       = $this->createStub(ConnectionInterface::class);
-    $this->pdoSchema = $this->createStub(SchemaConnection::class);
-});
+        $this->pdo       = $this->createStub(ConnectionInterface::class);
+        $this->pdoSchema = $this->createStub(SchemaConnection::class);
+    }
 
-test('it can generate create database', function (): void {
-    $schema = new Create('test', $this->pdoSchema);
+    public function testItCanGenerateCreateDatabase(): void
+    {
+        $schema = new Create('test', $this->pdoSchema);
 
-    expect($schema->__toString())->toEqual(
-        'CREATE DATABASE test;'
-    );
-});
+        $this->assertEquals(
+            'CREATE DATABASE test;',
+            $schema->__toString()
+        );
+    }
 
-test('it can generate create database if exists', function (): void {
-    $schema = new Create('test', $this->pdoSchema);
+    public function testItCanGenerateCreateDatabaseIfExists(): void
+    {
+        $schema = new Create('test', $this->pdoSchema);
 
-    expect($schema->ifExists(true)->__toString())->toEqual(
-        'CREATE DATABASE IF EXISTS test;'
-    );
-});
+        $this->assertEquals(
+            'CREATE DATABASE IF EXISTS test;',
+            $schema->ifExists(true)->__toString()
+        );
+    }
 
-test('it can generate create database if exists false', function (): void {
-    $schema = new Create('test', $this->pdoSchema);
+    public function testItCanGenerateCreateDatabaseIfExistsFalse(): void
+    {
+        $schema = new Create('test', $this->pdoSchema);
 
-    expect($schema->ifExists(false)->__toString())->toEqual(
-        'CREATE DATABASE IF NOT EXISTS test;'
-    );
-});
+        $this->assertEquals(
+            'CREATE DATABASE IF NOT EXISTS test;',
+            $schema->ifExists(false)->__toString()
+        );
+    }
 
-test('it can generate create database if not exists', function (): void {
-    $schema = new Create('test', $this->pdoSchema);
+    public function testItCanGenerateCreateDatabaseIfNotExists(): void
+    {
+        $schema = new Create('test', $this->pdoSchema);
 
-    expect($schema->ifNotExists(true)->__toString())->toEqual(
-        'CREATE DATABASE IF NOT EXISTS test;'
-    );
-});
+        $this->assertEquals(
+            'CREATE DATABASE IF NOT EXISTS test;',
+            $schema->ifNotExists(true)->__toString()
+        );
+    }
 
-test('it can generate create database if not exists false', function (): void {
-    $schema = new Create('test', $this->pdoSchema);
+    public function testItCanGenerateCreateDatabaseIfNotExistsFalse(): void
+    {
+        $schema = new Create('test', $this->pdoSchema);
 
-    expect($schema->ifNotExists(false)->__toString())->toEqual(
-        'CREATE DATABASE IF EXISTS test;'
-    );
-});
+        $this->assertEquals(
+            'CREATE DATABASE IF EXISTS test;',
+            $schema->ifNotExists(false)->__toString()
+        );
+    }
+}

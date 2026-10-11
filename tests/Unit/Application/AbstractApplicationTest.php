@@ -10,249 +10,273 @@ use Omega\Application\AbstractApplication;
 use Omega\Application\Application;
 use Omega\Config\Bootstrapper\ConfigBootstrapper;
 use Omega\View\Templator;
+use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Tests\Application\Fixtures\TestBootstrapProvider;
+use Tests\TestCase;
 
-covers(AbstractApplication::class);
+#[CoversClass(AbstractApplication::class)]
+final class AbstractApplicationTest extends TestCase
+{
+    public function testReturnsAnEmptyStringWhenNoNameIsBound(): void
+    {
+        $app = new Application('/');
 
+        $this->assertSame('', $app->getName());
 
-it('returns an empty string when no name is bound', function (): void {
-    $app = new Application('/');
+        $app->flush();
+    }
 
-    expect($app->getName())->toBe('');
+    public function testReturnsAnEmptyStringWhenBoundNameIsNotAString(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.name', 123);
 
-it('returns an empty string when the bound name is not a string', function (): void {
-    $app = new Application('/');
+        $this->assertSame('', $app->getName());
 
-    $app->set('app.name', 123);
+        $app->flush();
+    }
 
-    expect($app->getName())->toBe('');
+    public function testReturnsTheBoundApplicationName(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.name', 'Omega');
 
-it('returns the bound application name', function (): void {
-    $app = new Application('/');
+        $this->assertSame('Omega', $app->getName());
 
-    $app->set('app.name', 'Omega');
+        $app->flush();
+    }
 
-    expect($app->getName())->toBe('Omega');
+    public function testClearsRequestScopedStateAndDependenciesOnResetForRequest(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->registerTerminate(static function (): void {
+            echo 'terminate.';
+        });
+        $app->bootingCallback(static function (): void {
+            echo 'booting.';
+        });
+        $app->bootedCallback(static function (): void {
+            echo 'booted.';
+        });
 
-it('clears request-scoped state and dependencies on resetForRequest', function (): void {
-    $app = new Application('/');
+        $templator = new class extends Templator {
+            public bool $cleared = false;
 
-    $app->registerTerminate(static function (): void {
-        echo 'terminate.';
-    });
-    $app->bootingCallback(static function (): void {
-        echo 'booting.';
-    });
-    $app->bootedCallback(static function (): void {
-        echo 'booted.';
-    });
+            public function __construct()
+            {
+            }
 
-    $templator = new class extends Templator {
-        public bool $cleared = false;
+            public function clearDependencies(): Templator
+            {
+                $this->cleared = true;
 
-        public function __construct()
-        {
-        }
+                return $this;
+            }
+        };
 
-        public function clearDependencies(): Templator
-        {
-            $this->cleared = true;
+        $app->set('view.instance', $templator);
 
-            return $this;
-        }
-    };
+        $app->resetForRequest();
 
-    $app->set('view.instance', $templator);
+        $this->assertTrue($templator->cleared);
 
-    $app->resetForRequest();
+        ob_start();
+        $app->terminate();
+        $out = ob_get_clean();
 
-    expect($templator->cleared)->toBeTrue();
+        $this->assertSame('', $out);
 
-    ob_start();
-    $app->terminate();
-    $out = ob_get_clean();
+        $app->flush();
+    }
 
-    expect($out)->toBe('');
+    public function testResetsRequestStateWithoutTemplatorViewInstance(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->resetForRequest();
 
-it('resets request state without a Templator view instance', function (): void {
-    $app = new Application('/');
+        $this->assertFalse($app->isBooted);
 
-    $app->resetForRequest();
+        $app->flush();
+    }
 
-    expect($app->isBooted)->toBeFalse();
+    public function testReturnsAnEmptyStringWhenNoVersionIsBound(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $this->assertSame('', $app->getVersion());
 
-it('returns an empty string when no version is bound', function (): void {
-    $app = new Application('/');
+        $app->flush();
+    }
 
-    expect($app->getVersion())->toBe('');
+    public function testReturnsAnEmptyStringWhenBoundVersionIsNotAString(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.version', 123);
 
-it('returns an empty string when the bound version is not a string', function (): void {
-    $app = new Application('/');
+        $this->assertSame('', $app->getVersion());
 
-    $app->set('app.version', 123);
+        $app->flush();
+    }
 
-    expect($app->getVersion())->toBe('');
+    public function testReturnsTheBoundApplicationVersion(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.version', '1.0.0');
 
-it('returns the bound application version', function (): void {
-    $app = new Application('/');
+        $this->assertSame('1.0.0', $app->getVersion());
 
-    $app->set('app.version', '1.0.0');
+        $app->flush();
+    }
 
-    expect($app->getVersion())->toBe('1.0.0');
+    public function testReturnsAnEmptyStringWhenNoEnvironmentIsBound(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $this->assertSame('', $app->getEnvironment());
 
-it('returns an empty string when no environment is bound', function (): void {
-    $app = new Application('/');
+        $app->flush();
+    }
 
-    expect($app->getEnvironment())->toBe('');
+    public function testReturnsAnEmptyStringWhenBoundEnvironmentIsNotAString(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('environment', 123);
 
-it('returns an empty string when the bound environment is not a string', function (): void {
-    $app = new Application('/');
+        $this->assertSame('', $app->getEnvironment());
 
-    $app->set('environment', 123);
+        $app->flush();
+    }
 
-    expect($app->getEnvironment())->toBe('');
+    public function testReturnsTheBoundEnvironment(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('environment', 'production');
 
-it('returns the bound environment', function (): void {
-    $app = new Application('/');
+        $this->assertSame('production', $app->getEnvironment());
 
-    $app->set('environment', 'production');
+        $app->flush();
+    }
 
-    expect($app->getEnvironment())->toBe('production');
+    public function testReturnsFalseWhenNoDebugValueIsBound(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $this->assertFalse($app->isDebugMode());
 
-it('returns false when no debug value is bound', function (): void {
-    $app = new Application('/');
+        $app->flush();
+    }
 
-    expect($app->isDebugMode())->toBeFalse();
+    public function testReturnsFalseWhenBoundDebugValueIsNotBoolean(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.debug', 'true');
 
-it('returns false when the bound debug value is not a boolean', function (): void {
-    $app = new Application('/');
+        $this->assertFalse($app->isDebugMode());
 
-    $app->set('app.debug', 'true');
+        $app->flush();
+    }
 
-    expect($app->isDebugMode())->toBeFalse();
+    public function testReturnsTrueWhenDebugIsBoundToTrue(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.debug', true);
 
-it('returns true when debug is bound to true', function (): void {
-    $app = new Application('/');
+        $this->assertTrue($app->isDebugMode());
 
-    $app->set('app.debug', true);
+        $app->flush();
+    }
 
-    expect($app->isDebugMode())->toBeTrue();
+    public function testReturnsFalseWhenDebugIsBoundToFalse(): void
+    {
+        $app = new Application('/');
 
-    $app->flush();
-});
+        $app->set('app.debug', false);
 
-it('returns false when debug is bound to false', function (): void {
-    $app = new Application('/');
+        $this->assertFalse($app->isDebugMode());
 
-    $app->set('app.debug', false);
+        $app->flush();
+    }
 
-    expect($app->isDebugMode())->toBeFalse();
+    public function testThrowsLogicExceptionWhenSetBaseBindingReceivesNonApplicationInstance(): void
+    {
+        $this->expectException(LogicException::class);
 
-    $app->flush();
-});
+        new class ('/') extends AbstractApplication {
+            public function registerAlias(): void
+            {
+            }
 
-it('throws a logic exception when setBaseBinding receives a non-Application instance', function (): void {
-    new class ('/') extends AbstractApplication {
-        public function registerAlias(): void
-        {
-        }
+            public function isDownMaintenanceMode(): bool
+            {
+                return false;
+            }
 
-        public function isDownMaintenanceMode(): bool
-        {
-            return false;
-        }
+            public function getDownData(): array
+            {
+                return [];
+            }
 
-        public function getDownData(): array
-        {
-            return [];
-        }
+            public function abort(int $code, string $message = '', array $headers = []): void
+            {
+            }
+        };
+    }
 
-        public function abort(int $code, string $message = '', array $headers = []): void
-        {
-        }
-    };
-})->throws(LogicException::class);
+    public function testIsNoOpWhenApplicationIsAlreadyBooted(): void
+    {
+        $app = new Application(__DIR__ . '/fixtures/application-read/');
 
-it('is a no-op when the application is already booted', function (): void {
-    $app = new Application(__DIR__ . '/fixtures/application-read/');
+        new ConfigBootstrapper()->bootstrap($app);
 
-    new ConfigBootstrapper()->bootstrap($app);
+        $app->bootProvider();
+        $app->bootProvider();
 
-    $app->bootProvider();
-    $app->bootProvider();
+        $this->assertTrue($app->isBooted);
 
-    expect($app->isBooted)->toBeTrue();
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testIgnoresNonObjectInstancesAndObjectsWithoutBootstrapMethod(): void
+    {
+        $app = new Application('/');
 
-it('ignores non-object instances and objects without a bootstrap method', function (): void {
-    $app = new Application('/');
+        $app->set(ArrayObject::class, 'scalar-value');
 
-    $app->set(ArrayObject::class, 'scalar-value');
+        ob_start();
+        $app->bootstrapWith([
+            ArrayObject::class,
+            stdClass::class,
+            TestBootstrapProvider::class,
+        ]);
+        $out = ob_get_clean();
 
-    ob_start();
-    $app->bootstrapWith([
-        ArrayObject::class,
-        stdClass::class,
-        TestBootstrapProvider::class,
-    ]);
-    $out = ob_get_clean();
+        $this->assertSame('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap', $out);
+        $this->assertTrue($app->bootstrapped);
 
-    expect($out)->toBe('Tests\Application\Fixtures\TestBootstrapProvider::bootstrap');
-    expect($app->bootstrapped)->toBeTrue();
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testWorksWhenViewInstanceIsNotTemplator(): void
+    {
+        $app = new Application('/');
 
-it('works when the view instance is not a Templator', function (): void {
-    $app = new Application('/');
+        $app->set('view.instance', new stdClass());
 
-    $app->set('view.instance', new stdClass());
+        $app->resetForRequest();
 
-    $app->resetForRequest();
+        $this->assertFalse($app->isBooted);
 
-    expect($app->isBooted)->toBeFalse();
-
-    $app->flush();
-});
+        $app->flush();
+    }
+}

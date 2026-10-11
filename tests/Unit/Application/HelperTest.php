@@ -7,6 +7,9 @@ namespace Tests\Application;
 use InvalidArgumentException;
 use Omega\Application\Application;
 use Omega\Exceptions\ApplicationNotAvailableException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
 
 use function Omega\Application\app;
 use function Omega\Application\get_path;
@@ -17,183 +20,205 @@ use function Omega\Application\path;
 use function Omega\Application\set_path;
 use function Omega\Application\slash;
 
-covers(
-    Application::class,
-    'Omega\Application\app',
-    'Omega\Application\get_path',
-    'Omega\Application\is_dev',
-    'Omega\Application\is_production',
-    'Omega\Application\os_detect',
-    'Omega\Application\path',
-    'Omega\Application\set_path',
-    'Omega\Application\slash'
-);
+#[CoversClass(Application::class)]
+#[CoversFunction('Omega\Application\app')]
+#[CoversFunction('Omega\Application\get_path')]
+#[CoversFunction('Omega\Application\is_dev')]
+#[CoversFunction('Omega\Application\is_production')]
+#[CoversFunction('Omega\Application\os_detect')]
+#[CoversFunction('Omega\Application\path')]
+#[CoversFunction('Omega\Application\set_path')]
+#[CoversFunction('Omega\Application\slash')]
+final class HelperTest extends TestCase
+{
+    public function testThrowsErrorAfterFlushingTheApplication(): void
+    {
+        $app = new Application('/');
+        $app->flush();
 
+        $this->expectException(ApplicationNotAvailableException::class);
 
-it('throws an error after flushing the application', function (): void {
-    $app = new Application('/');
-    $app->flush();
+        app();
+    }
 
-    app();
-})->throws(ApplicationNotAvailableException::class);
+    public function testLoadsTheApplication(): void
+    {
+        $app = new Application('');
 
-it('loads the application', function (): void {
-    $app = new Application('');
+        $this->assertSame('/', app()->get('path.base'));
 
-    expect(app()->get('path.base'))->toBe('/');
+        $app->flush();
+    }
 
-    $app->flush();
-});
+    public function testResolvesEnvironmentHelpers(): void
+    {
+        $app = new Application(__DIR__);
 
-it('resolves environment helpers', function (): void {
-    $app = new Application(__DIR__);
+        $app->set('environment', 'prod');
+        $this->assertFalse(is_dev());
+        $this->assertTrue(is_production());
+    }
 
-    $app->set('environment', 'prod');
-    expect(is_dev())->toBeFalse();
-    expect(is_production())->toBeTrue();
-});
+    public function testDetectsAllSupportedOsFamilies(): void
+    {
+        $this->assertSame('windows', os_detect('Windows'));
+        $this->assertSame('linux', os_detect('Linux'));
+        $this->assertSame('mac', os_detect('Darwin'));
+        $this->assertSame('bsd', os_detect('Bsd'));
+        $this->assertSame('solaris', os_detect('Solaris'));
+        $this->assertSame('unknown', os_detect('AmigaOS'));
 
-it('detects all supported OS families', function (): void {
-    expect(os_detect('Windows'))->toBe('windows');
-    expect(os_detect('Linux'))->toBe('linux');
-    expect(os_detect('Darwin'))->toBe('mac');
-    expect(os_detect('Bsd'))->toBe('bsd');
-    expect(os_detect('Solaris'))->toBe('solaris');
-    expect(os_detect('AmigaOS'))->toBe('unknown');
+        $currentOs = strtolower(PHP_OS_FAMILY);
+        $expected  = match ($currentOs) {
+            'darwin' => 'mac',
+            'windows', 'linux', 'bsd', 'solaris' => $currentOs,
+            default => 'unknown',
+        };
 
-    $currentOs = strtolower(PHP_OS_FAMILY);
-    $expected  = match ($currentOs) {
-        'darwin' => 'mac',
-        'windows', 'linux', 'bsd', 'solaris' => $currentOs,
-        default => 'unknown',
-    };
+        $this->assertSame($expected, os_detect());
+    }
 
-    expect(os_detect())->toBe($expected);
-});
+    public function testHandlesBothStringsAndArraysInSlash(): void
+    {
+        $separator = DIRECTORY_SEPARATOR;
 
-it('handles both strings and arrays in slash', function (): void {
-    $separator = DIRECTORY_SEPARATOR;
+        $this->assertSame("a{$separator}b", slash('a/b'));
+        $this->assertSame('c', slash('c'));
 
-    expect(slash('a/b'))->toBe("a{$separator}b");
-    expect(slash('c'))->toBe('c');
+        $input    = ['a/b', 'c/d'];
+        $expected = ["a{$separator}b", "c{$separator}d"];
 
-    $input    = ['a/b', 'c/d'];
-    $expected = ["a{$separator}b", "c{$separator}d"];
+        $this->assertSame($expected, slash($input));
+    }
 
-    expect(slash($input))->toBe($expected);
-});
+    public function testNormalizesPaths(): void
+    {
+        $ds = DIRECTORY_SEPARATOR;
 
-it('normalizes paths', function (): void {
-    $ds = DIRECTORY_SEPARATOR;
+        $this->assertSame("app{$ds}config{$ds}", path('app.config'));
+        $this->assertSame("app{$ds}logs{$ds}", path("app.logs{$ds}"));
 
-    expect(path('app.config'))->toBe("app{$ds}config{$ds}");
-    expect(path("app.logs{$ds}"))->toBe("app{$ds}logs{$ds}");
+        $input    = ['core.view', 'cache'];
+        $expected = ["core{$ds}view{$ds}", "cache{$ds}"];
+        $this->assertSame($expected, path($input));
 
-    $input    = ['core.view', 'cache'];
-    $expected = ["core{$ds}view{$ds}", "cache{$ds}"];
-    expect(path($input))->toBe($expected);
+        $this->assertSame("{$ds}", path(''));
+    }
 
-    expect(path(''))->toBe("{$ds}");
-});
+    public function testGetsPathWithArrayAndSuffix(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
 
-it('gets a path with array and suffix', function (): void {
-    $app = new Application(__DIR__);
-    $ds  = DIRECTORY_SEPARATOR;
+        $paths = [
+            'logs'  => 'storage/logs/',
+            'cache' => 'storage/framework/cache/',
+        ];
+        $app->set('custom_paths', $paths);
 
-    $paths = [
-        'logs'  => 'storage/logs/',
-        'cache' => 'storage/framework/cache/',
-    ];
-    $app->set('custom_paths', $paths);
+        $result = get_path('custom_paths', 'daily/');
 
-    $result = get_path('custom_paths', 'daily/');
+        $expected = [
+            'logs'  => "storage/logs/daily{$ds}",
+            'cache' => "storage/framework/cache/daily{$ds}",
+        ];
 
-    $expected = [
-        'logs'  => "storage/logs/daily{$ds}",
-        'cache' => "storage/framework/cache/daily{$ds}",
-    ];
+        $this->assertSame($expected, $result);
+    }
 
-    expect($result)->toBe($expected);
-});
+    public function testGetsPathWithStringAndSuffix(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
 
-it('gets a path with string and suffix', function (): void {
-    $app = new Application(__DIR__);
-    $ds  = DIRECTORY_SEPARATOR;
+        $app->set('single_path', 'app/core/');
 
-    $app->set('single_path', 'app/core/');
+        $result = get_path('single_path', 'test/');
 
-    $result = get_path('single_path', 'test/');
+        $this->assertSame("app/core/test{$ds}", $result);
+    }
 
-    expect($result)->toBe("app/core/test{$ds}");
-});
+    public function testGetsPathWithArrayOfStringIdentifiers(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
 
-it('gets a path with an array of string identifiers', function (): void {
-    $app = new Application(__DIR__);
-    $ds  = DIRECTORY_SEPARATOR;
+        $app->set('a_path', 'a/');
+        $app->set('b_path', 'b/');
 
-    $app->set('a_path', 'a/');
-    $app->set('b_path', 'b/');
+        $result = get_path(['a_path', 'b_path'], 'x/');
 
-    $result = get_path(['a_path', 'b_path'], 'x/');
+        $this->assertSame(["a/x{$ds}", "b/x{$ds}"], $result);
+    }
 
-    expect($result)->toBe(["a/x{$ds}", "b/x{$ds}"]);
-});
+    public function testGetsPathWithNonStringBindingValue(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
 
-it('gets a path with a non-string binding value', function (): void {
-    $app = new Application(__DIR__);
-    $ds  = DIRECTORY_SEPARATOR;
+        $app->set('int_path', 42);
 
-    $app->set('int_path', 42);
+        $result = get_path('int_path', 'suf/');
 
-    $result = get_path('int_path', 'suf/');
+        $this->assertSame("suf{$ds}", $result);
+    }
 
-    expect($result)->toBe("suf{$ds}");
-});
+    public function testGetsPathWithNonStringElementInsideArrayValue(): void
+    {
+        $app = new Application(__DIR__);
+        $ds  = DIRECTORY_SEPARATOR;
 
-it('gets a path with a non-string element inside an array value', function (): void {
-    $app = new Application(__DIR__);
-    $ds  = DIRECTORY_SEPARATOR;
+        $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
 
-    $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
+        $result = get_path('mixed_path', 'suf/');
 
-    $result = get_path('mixed_path', 'suf/');
+        $this->assertSame(['str' => "app/suf{$ds}", 'num' => "suf{$ds}"], $result);
+    }
 
-    expect($result)->toBe(['str' => "app/suf{$ds}", 'num' => "suf{$ds}"]);
-});
+    public function testGetsPathWithArrayIdentifierContainingArrayValue(): void
+    {
+        $app = new Application(__DIR__);
 
-it('gets a path with an array identifier containing an array value', function (): void {
-    $app = new Application(__DIR__);
+        $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
 
-    $app->set('mixed_path', ['str' => 'app/', 'num' => 42]);
+        $result = get_path(['mixed_path'], 'suf/');
 
-    $result = get_path(['mixed_path'], 'suf/');
+        $this->assertSame([''], $result);
+    }
 
-    expect($result)->toBe(['']);
-});
+    public function testSetsPathWithSingleString(): void
+    {
+        $ds      = DIRECTORY_SEPARATOR;
+        $input   = 'app.config.storage';
+        $expected = "{$ds}app{$ds}config{$ds}storage{$ds}";
 
-it('sets a path with a single string', function (): void {
-    $ds      = DIRECTORY_SEPARATOR;
-    $input   = 'app.config.storage';
-    $expected = "{$ds}app{$ds}config{$ds}storage{$ds}";
+        $this->assertSame($expected, set_path($input));
+    }
 
-    expect(set_path($input))->toBe($expected);
-});
+    public function testSetsPathWithArrayOfStrings(): void
+    {
+        $ds       = DIRECTORY_SEPARATOR;
+        $input    = ['app.config', 'public.assets'];
+        $expected = [
+            "{$ds}app{$ds}config{$ds}",
+            "{$ds}public{$ds}assets{$ds}",
+        ];
 
-it('sets a path with an array of strings', function (): void {
-    $ds       = DIRECTORY_SEPARATOR;
-    $input    = ['app.config', 'public.assets'];
-    $expected = [
-        "{$ds}app{$ds}config{$ds}",
-        "{$ds}public{$ds}assets{$ds}",
-    ];
+        $this->assertSame($expected, set_path($input));
+    }
 
-    expect(set_path($input))->toBe($expected);
-});
+    public function testThrowsExceptionOnEmptyStringPath(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('The path key cannot be an empty string');
 
-it('throws an exception on an empty string path', function (): void {
-    set_path('');
-})->throws(InvalidArgumentException::class, 'The path key cannot be an empty string');
+        set_path('');
+    }
 
-it('throws an exception on an empty array path', function (): void {
-    set_path([]);
-})->throws(InvalidArgumentException::class);
+    public function testThrowsExceptionOnEmptyArrayPath(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        set_path([]);
+    }
+}

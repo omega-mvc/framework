@@ -6,6 +6,8 @@ namespace Tests\Collection;
 
 use Omega\Collection\Collection;
 use Omega\Collection\CollectionImmutable;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function array_filter;
 use function array_keys;
@@ -21,871 +23,953 @@ use function ucfirst;
 
 use const JSON_THROW_ON_ERROR;
 
-covers(Collection::class);
-covers(CollectionImmutable::class);
-
-it('can get getter setter', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->buah_1)->toEqual('mangga');
-    expect($test->get('buah_1'))->toEqual('mangga');
-
-    $test->set('buah_7', 'kelengkeng');
-    $test->buah_8 = 'cherry';
-
-    expect($test->buah_8)->toEqual('cherry');
-    expect($test->get('buah_7'))->toEqual('kelengkeng');
-
-    $test->set('buah_7', 'durian');
-    $test->buah_8 = 'nanas';
-
-    expect($test->buah_8)->toEqual('nanas');
-    expect($test->get('buah_7'))->toEqual('durian');
-});
-
-it('can get add remove has contain', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->has('buah_1'))->toBeTrue();
-    expect($test->contain('mangga'))->toBeTrue();
-
-    $test->remove('buah_2');
-
-    expect($test->has('buah_2'))->toBeFalse();
-
-    $test->replace($original);
-});
-
-it('can get count and count if', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->count())->toEqual(6);
-
-    $countIf = $test->countIf(function ($item) {
-        return str_contains($item, 'e');
-    });
-
-    expect($countIf)->toEqual(4);
-});
-
-it('can get first last', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->first('bukan buah'))->toEqual('mangga');
-    expect($test->last('bukan buah'))->toEqual('peer');
-});
-
-it('can get clear is empty replace all', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->isEmpty())->toBeFalse();
-
-    $test->clear();
-
-    expect($test->isEmpty())->toBeTrue();
-
-    $test->replace($original);
-
-    expect($test->all())->toEqual($original);
-});
-
-it('can get keys items', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test  = new Collection($original);
-    $keys  = array_keys($original);
-    $items = array_values($original);
-
-    expect($test->keys())->toEqual($keys);
-    expect($test->items())->toEqual($items);
-});
-
-it('can get each map filter', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    $test->each(function (string $item, string $key = '') use ($original) {
-        expect($original)->toContain($item);
-        expect($original)->toHaveKey($key);
-    });
-
-    $test->map(fn ($item) => ucfirst($item));
-
-    $copyOrigin = array_map(fn ($item) => ucfirst($item), $original);
-
-    expect($test->all())->toEqual($copyOrigin);
-
-    $test->replace($original);
-
-    $test->filter(function ($item) {
-        return str_contains($item, 'e');
-    });
-
-    $copyOrigin = array_filter($original, function ($item) {
-        return str_contains($item, 'e');
-    });
-
-    expect($test->all())->toEqual($copyOrigin);
-
-    $test->replace($original);
-});
-
-it('can get some every', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    $some = $test->some(function ($item) {
-        return str_contains($item, 'e');
-    });
-
-    expect($some)->toBeTrue();
-
-    $every = $test->every(function ($item) {
-        return !str_contains($item, 'x');
-    });
-
-    expect($every)->toBeTrue();
-});
-
-it('can get json', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-    $json = json_encode($original, JSON_THROW_ON_ERROR);
-
-    expect($test->json())->toBe($json);
-});
-
-it('can get reverse sort', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test        = new Collection($original);
-    $copyOrigin = $original;
-
-    expect($test->reverse()->all())->toEqual(array_reverse($copyOrigin));
-
-    $test->replace($original);
-
-    expect($test->sort()->first())->toEqual('apel');
-    expect($test->sortDesc()->first())->toEqual('rambutan');
-
-    $test->sortBy(function ($a, $b) {
-        if ($a == $b) {
-            return 0;
-        }
-
-        return ($a < $b) ? -1 : 1;
-    });
-
-    expect($test->first())->toEqual('apel');
-
-    $test->sortByDesc(function ($a, $b) {
-        if ($a == $b) {
-            return 0;
-        }
-
-        return ($a < $b) ? -1 : 1;
-    });
-
-    expect($test->first())->toEqual('rambutan');
-    expect($test->sortKey()->first())->toEqual('mangga');
-    expect($test->sortKeyDesc()->first())->toEqual('peer');
-
-    $test->replace($original);
-});
-
-it('can get clone reject chunk split only except flatten', function (): void {
-    $original = [
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-        'buah_6' => 'peer',
-    ];
-    $test = new Collection($original);
-
-    expect($test->clone()->reverse()->first())->toEqual($test->last());
-
-    $copyOrigin = $original;
-    unset($copyOrigin['buah_2']);
-
-    expect($test->reject(fn ($item) => $item == 'jeruk')->all())->toEqual($copyOrigin);
-
-    $chunk = $test->clone()->chunk(3)->all();
-    expect($chunk)->toEqual([
-        ['buah_1' => 'mangga', 'buah_3' => 'apel', 'buah_4' => 'melon'],
-        ['buah_5' => 'rambutan', 'buah_6' => 'peer'],
-    ]);
-
-    $split = $test->clone()->split(3)->all();
-    expect($split)->toEqual([
-        ['buah_1' => 'mangga', 'buah_3' => 'apel'],
-        ['buah_4' => 'melon', 'buah_5' => 'rambutan'],
-        ['buah_6' => 'peer'],
-    ]);
-
-    $only = $test->clone()->only(['buah_1', 'buah_5']);
-    expect($only->all())->toEqual(['buah_1' => 'mangga', 'buah_5' => 'rambutan']);
-
-    $except = $test->clone()->except(['buah_3', 'buah_4', 'buah_6']);
-    expect($except->all())->toEqual(['buah_1' => 'mangga', 'buah_5' => 'rambutan']);
-
-    $arrayNesting = [
-        'first' => ['buah_1' => 'mangga', ['buah_2' => 'jeruk', 'buah_3' => 'apel', 'buah_4' => 'melon']],
-        'mid'   => ['buah_4' => 'melon', ['buah_5' => 'rambutan']],
-        'last'  => ['buah_6' => 'peer'],
-    ];
-    $flatten = new Collection($arrayNesting);
-
-    expect($flatten->flatten()->all())->toEqual($original);
-});
-
-it('collection chain work great', function (): void {
-    $origin     = [0, 1, 2, 3, 4];
-    $collection = new Collection($origin);
-
-    $chain = $collection
-        ->add($origin)
-        ->remove(0)
-        ->set(0, 0)
-        ->clear()
-        ->replace($origin)
-        ->each(fn ($el) => in_array($el, $origin))
-        ->map(fn ($el) => $el + 100 - (2 * 50))
-        ->filter(fn ($el) => $el > -1)
-        ->sort()
-        ->sortDesc()
-        ->sortKey()
-        ->sortKeyDesc()
-        ->sortBy(function ($a, $b) {
+#[CoversClass(Collection::class)]
+#[CoversClass(CollectionImmutable::class)]
+final class CollectionTest extends TestCase
+{
+    public function testCanGetGetterSetter(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $this->assertEquals('mangga', $test->buah_1);
+        $this->assertEquals('mangga', $test->get('buah_1'));
+
+        $test->set('buah_7', 'kelengkeng');
+        $test->buah_8 = 'cherry';
+
+        $this->assertEquals('cherry', $test->buah_8);
+        $this->assertEquals('kelengkeng', $test->get('buah_7'));
+
+        $test->set('buah_7', 'durian');
+        $test->buah_8 = 'nanas';
+
+        $this->assertEquals('nanas', $test->buah_8);
+        $this->assertEquals('durian', $test->get('buah_7'));
+    }
+
+    public function testCanGetAddRemoveHasContain(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $this->assertTrue($test->has('buah_1'));
+        $this->assertTrue($test->contain('mangga'));
+
+        $test->remove('buah_2');
+
+        $this->assertFalse($test->has('buah_2'));
+
+        $test->replace($original);
+    }
+
+    public function testCanGetCountAndCountIf(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $this->assertEquals(6, $test->count());
+
+        $countIf = $test->countIf(function ($item) {
+            return str_contains($item, 'e');
+        });
+
+        $this->assertEquals(4, $countIf);
+    }
+
+    public function testCanGetFirstLast(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $this->assertEquals('mangga', $test->first('bukan buah'));
+        $this->assertEquals('peer', $test->last('bukan buah'));
+    }
+
+    public function testCanGetClearIsEmptyReplaceAll(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $this->assertFalse($test->isEmpty());
+
+        $test->clear();
+
+        $this->assertTrue($test->isEmpty());
+
+        $test->replace($original);
+
+        $this->assertEquals($original, $test->all());
+    }
+
+    public function testCanGetKeysItems(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test  = new Collection($original);
+        $keys  = array_keys($original);
+        $items = array_values($original);
+
+        $this->assertEquals($keys, $test->keys());
+        $this->assertEquals($items, $test->items());
+    }
+
+    public function testCanGetEachMapFilter(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $test->each(function (string $item, string $key = '') use ($original) {
+            $this->assertContains($item, $original);
+            $this->assertArrayHasKey($key, $original);
+        });
+
+        $test->map(fn ($item) => ucfirst($item));
+
+        $copyOrigin = array_map(fn ($item) => ucfirst($item), $original);
+
+        $this->assertEquals($copyOrigin, $test->all());
+
+        $test->replace($original);
+
+        $test->filter(function ($item) {
+            return str_contains($item, 'e');
+        });
+
+        $copyOrigin = array_filter($original, function ($item) {
+            return str_contains($item, 'e');
+        });
+
+        $this->assertEquals($copyOrigin, $test->all());
+
+        $test->replace($original);
+    }
+
+    public function testCanGetSomeEvery(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+
+        $some = $test->some(function ($item) {
+            return str_contains($item, 'e');
+        });
+
+        $this->assertTrue($some);
+
+        $every = $test->every(function ($item) {
+            return !str_contains($item, 'x');
+        });
+
+        $this->assertTrue($every);
+    }
+
+    public function testCanGetJson(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
+        $json = json_encode($original, JSON_THROW_ON_ERROR);
+
+        $this->assertSame($json, $test->json());
+    }
+
+    public function testCanGetReverseSort(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test        = new Collection($original);
+        $copyOrigin = $original;
+
+        $this->assertEquals(array_reverse($copyOrigin), $test->reverse()->all());
+
+        $test->replace($original);
+
+        $this->assertEquals('apel', $test->sort()->first());
+        $this->assertEquals('rambutan', $test->sortDesc()->first());
+
+        $test->sortBy(function ($a, $b) {
             if ($a == $b) {
                 return 0;
             }
 
             return ($a < $b) ? -1 : 1;
-        })
-        ->sortByDesc(function ($a, $b) {
-            if ($b == $a) {
+        });
+
+        $this->assertEquals('apel', $test->first());
+
+        $test->sortByDesc(function ($a, $b) {
+            if ($a == $b) {
                 return 0;
             }
 
-            return ($b < $a) ? -1 : 1;
-        })
-        ->all();
+            return ($a < $b) ? -1 : 1;
+        });
 
-    expect($chain)->toEqual($origin);
-});
+        $this->assertEquals('rambutan', $test->first());
+        $this->assertEquals('mangga', $test->sortKey()->first());
+        $this->assertEquals('peer', $test->sortKeyDesc()->first());
 
-it('can add collection from collection', function (): void {
-    $arr1 = ['a' => 'b'];
-    $arr2 = ['c' => 'd'];
-
-    $collect1 = new Collection($arr1);
-    $collect2 = new CollectionImmutable($arr2);
-
-    $collect = (new Collection($arr1))->clear();
-    $collect->ref($collect1)->ref($collect2);
-
-    expect($collect->all())->toEqual(['a' => 'b', 'c' => 'd']);
-});
-
-it('can act like array', function (): void {
-    $coll = new Collection(['one' => 1, 'two' => 2, 'three' => 3]);
-
-    expect(isset($coll['one']))->toBeTrue();
-    expect(isset($coll['two']))->toBeTrue();
-    expect(isset($coll['three']))->toBeTrue();
-});
-
-it('can do like array', function (): void {
-    $arr  = ['one' => 1, 'two' => 2, 'three' => 3];
-    $coll = new Collection($arr);
-
-    foreach ($arr as $key => $value) {
-        expect($coll[$key])->toEqual($value);
+        $test->replace($original);
     }
 
-    $coll['four'] = 4;
+    public function testCanGetCloneRejectChunkSplitOnlyExceptFlatten(): void
+    {
+        $original = [
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+            'buah_6' => 'peer',
+        ];
+        $test = new Collection($original);
 
-    expect(isset($coll['four']))->toBeTrue();
+        $this->assertEquals($test->last(), $test->clone()->reverse()->first());
 
-    unset($coll['four']);
+        $copyOrigin = $original;
+        unset($copyOrigin['buah_2']);
 
-    expect($coll->all())->toEqual($arr);
-});
+        $this->assertEquals($copyOrigin, $test->reject(fn ($item) => $item == 'jeruk')->all());
 
-it('can be iterator', function (): void {
-    $coll = new Collection(['one' => 1, 'two' => 2, 'three' => 3]);
+        $chunk = $test->clone()->chunk(3)->all();
+        $this->assertEquals([
+            ['buah_1' => 'mangga', 'buah_3' => 'apel', 'buah_4' => 'melon'],
+            ['buah_5' => 'rambutan', 'buah_6' => 'peer'],
+        ], $chunk);
 
-    foreach ($coll as $key => $value) {
-        expect($coll[$key])->toEqual($value);
+        $split = $test->clone()->split(3)->all();
+        $this->assertEquals([
+            ['buah_1' => 'mangga', 'buah_3' => 'apel'],
+            ['buah_4' => 'melon', 'buah_5' => 'rambutan'],
+            ['buah_6' => 'peer'],
+        ], $split);
+
+        $only = $test->clone()->only(['buah_1', 'buah_5']);
+        $this->assertEquals(['buah_1' => 'mangga', 'buah_5' => 'rambutan'], $only->all());
+
+        $except = $test->clone()->except(['buah_3', 'buah_4', 'buah_6']);
+        $this->assertEquals(['buah_1' => 'mangga', 'buah_5' => 'rambutan'], $except->all());
+
+        $arrayNesting = [
+            'first' => ['buah_1' => 'mangga', ['buah_2' => 'jeruk', 'buah_3' => 'apel', 'buah_4' => 'melon']],
+            'mid'   => ['buah_4' => 'melon', ['buah_5' => 'rambutan']],
+            'last'  => ['buah_6' => 'peer'],
+        ];
+        $flatten = new Collection($arrayNesting);
+
+        $this->assertEquals($original, $flatten->flatten()->all());
     }
-});
 
-it('can be shuffled', function (): void {
-    $arr  = ['one' => 1, 'two' => 2, 'three' => 3];
-    $coll = new Collection($arr);
+    public function testCollectionChainWorkGreat(): void
+    {
+        $origin     = [0, 1, 2, 3, 4];
+        $collection = new Collection($origin);
 
-    $coll->shuffle();
+        $chain = $collection
+            ->add($origin)
+            ->remove(0)
+            ->set(0, 0)
+            ->clear()
+            ->replace($origin)
+            ->each(fn ($el) => in_array($el, $origin))
+            ->map(fn ($el) => $el + 100 - (2 * 50))
+            ->filter(fn ($el) => $el > -1)
+            ->sort()
+            ->sortDesc()
+            ->sortKey()
+            ->sortKeyDesc()
+            ->sortBy(function ($a, $b) {
+                if ($a == $b) {
+                    return 0;
+                }
 
-    foreach ($arr as $key => $val) {
-        expect($coll->has($key))->toBeTrue();
+                return ($a < $b) ? -1 : 1;
+            })
+            ->sortByDesc(function ($a, $b) {
+                if ($b == $a) {
+                    return 0;
+                }
+
+                return ($b < $a) ? -1 : 1;
+            })
+            ->all();
+
+        $this->assertEquals($origin, $chain);
     }
-});
 
-it('can map with keys', function (): void {
-    $arr = new Collection([
-        [
-            'name'  => 'taylor',
-            'email' => 'taylor@laravel.com',
-        ], [
-            'name'  => 'giovannini',
-            'email' => 'giovannini@savanna.com',
-        ],
-    ]);
+    public function testCanAddCollectionFromCollection(): void
+    {
+        $arr1 = ['a' => 'b'];
+        $arr2 = ['c' => 'd'];
 
-    $assocBy = $arr->assocBy(fn ($item) => [$item['name'] => $item['email']]);
+        $collect1 = new Collection($arr1);
+        $collect2 = new CollectionImmutable($arr2);
 
-    expect($assocBy->toArray())->toEqual([
-        'taylor'     => 'taylor@laravel.com',
-        'giovannini' => 'giovannini@savanna.com',
-    ]);
-});
+        $collect = (new Collection($arr1))->clear();
+        $collect->ref($collect1)->ref($collect2);
 
-it('can clone collection', function (): void {
-    $ori = new Collection([
-        'one' => 'one',
-        'two' => [
-            'one',
-            'two' => [1, 2],
-        ],
-        'three' => new Collection([]),
-    ]);
+        $this->assertEquals(['a' => 'b', 'c' => 'd'], $collect->all());
+    }
 
-    $clone = clone $ori;
+    public function testCanActLikeArray(): void
+    {
+        $coll = new Collection(['one' => 1, 'two' => 2, 'three' => 3]);
 
-    $ori->set('one', 'uno');
+        $this->assertTrue(isset($coll['one']));
+        $this->assertTrue(isset($coll['two']));
+        $this->assertTrue(isset($coll['three']));
+    }
 
-    expect($clone->get('one'))->toEqual('one');
+    public function testCanDoLikeArray(): void
+    {
+        $arr  = ['one' => 1, 'two' => 2, 'three' => 3];
+        $coll = new Collection($arr);
 
-    $clone->set('one', 1);
-
-    expect($ori->get('one'))->toEqual('uno');
-});
-
-it('can get sum using reduce', function (): void {
-    $collection = new Collection([1, 2, 3, 4]);
-
-    $sum = $collection->reduce(fn ($carry, $item) => $carry + $item);
-
-    expect($sum === 10)->toBeTrue();
-});
-
-it('can get take first', function (): void {
-    $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
-
-    expect($coll->take(2)->toArray())->toEqual([10, 20]);
-});
-
-it('can get take last', function (): void {
-    $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
-
-    expect($coll->take(-2)->toArray())->toEqual([80, 90]);
-});
-
-it('can push new item', function (): void {
-    $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
-    $coll->push(100);
-
-    expect(in_array(100, $coll->toArray()))->toBeTrue();
-});
-
-it('can get diff', function (): void {
-    $coll = new Collection([1, 2, 3, 4, 5]);
-    $coll->diff([2, 4, 6, 8]);
-
-    expect($coll->items())->toEqual([1, 3, 5]);
-});
-
-it('can get diff using key', function (): void {
-    $coll = new Collection([
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-    ]);
-    $coll->diffKeys([
-        'buah_2' => 'orange',
-        'buah_4' => 'water malon',
-        'buah_6' => 'six',
-        'buah_8' => 'eight',
-    ]);
-
-    expect($coll->toArray())->toEqual([
-        'buah_1' => 'mangga',
-        'buah_3' => 'apel',
-        'buah_5' => 'rambutan',
-    ]);
-});
-
-it('can get diff using assoc', function (): void {
-    $coll = new Collection([
-        'color'   => 'green',
-        'type'    => 'library',
-        'version' => 0,
-    ]);
-    $coll->diffAssoc([
-        'color'   => 'orange',
-        'type'    => 'framework',
-        'version' => 10,
-        'used'    => 100,
-    ]);
-
-    expect($coll->toArray())->toEqual([
-        'color'   => 'green',
-        'type'    => 'library',
-        'version' => 0,
-    ]);
-});
-
-it('can get complement', function (): void {
-    $coll = new Collection([1, 2, 3, 4, 5]);
-    $coll->complement([2, 4, 6, 8]);
-
-    expect($coll->items())->toEqual([6, 8]);
-});
-
-it('can get complement using key', function (): void {
-    $coll = new Collection([
-        'buah_1' => 'mangga',
-        'buah_2' => 'jeruk',
-        'buah_3' => 'apel',
-        'buah_4' => 'melon',
-        'buah_5' => 'rambutan',
-    ]);
-    $coll->complementKeys([
-        'buah_2' => 'orange',
-        'buah_4' => 'water malon',
-        'buah_6' => 'six',
-        'buah_8' => 'eight',
-    ]);
-
-    expect($coll->toArray())->toEqual([
-        'buah_6' => 'six',
-        'buah_8' => 'eight',
-    ]);
-});
-
-it('can get complement using assoc', function (): void {
-    $coll = new Collection([
-        'color'   => 'green',
-        'type'    => 'library',
-        'version' => 0,
-    ]);
-    $coll->complementAssoc([
-        'color'   => 'orange',
-        'type'    => 'framework',
-        'version' => 10,
-        'used'    => 100,
-    ]);
-
-    expect($coll->toArray())->toEqual([
-        'color'   => 'orange',
-        'type'    => 'framework',
-        'version' => 10,
-        'used'    => 100,
-    ]);
-});
-
-it('can get filtered using where', function (): void {
-    $data = [
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        ['user' => 'user4', 'age' => 13],
-        ['user' => 'user5', 'age' => 14],
-    ];
-
-    $equal = new Collection($data)->where('age', '=', '13');
-    expect($equal->toArray())->toEqual([
-        3 => ['user' => 'user4', 'age' => 13],
-    ]);
-
-    $identical = new Collection($data)->where('age', '===', 13);
-    expect($identical->toArray())->toEqual([
-        3 => ['user' => 'user4', 'age' => 13],
-    ]);
-
-    $notEqual = new Collection($data)->where('age', '!=', '13');
-    expect($notEqual->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        4       => ['user' => 'user5', 'age' => 14],
-    ]);
-
-    $notEqualIdentical = new Collection($data)->where('age', '!==', 13);
-    expect($notEqualIdentical->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        4       => ['user' => 'user5', 'age' => 14],
-    ]);
-
-    $greaterThan = new Collection($data)->where('age', '>', 13);
-    expect($greaterThan->toArray())->toEqual([
-        4 => ['user' => 'user5', 'age' => 14],
-    ]);
-
-    $greaterThanEqual = new Collection($data)->where('age', '>=', 13);
-    expect($greaterThanEqual->toArray())->toEqual([
-        3 => ['user' => 'user4', 'age' => 13],
-        4 => ['user' => 'user5', 'age' => 14],
-    ]);
-
-    $lessThan = new Collection($data)->where('age', '<', 13);
-    expect($lessThan->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-    ]);
-
-    $lessThanEqual = new Collection($data)->where('age', '<=', 13);
-    expect($lessThanEqual->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        ['user' => 'user4', 'age' => 13],
-    ]);
-});
-
-it('can filter data using where in', function (): void {
-    $data = [
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        ['user' => 'user4', 'age' => 13],
-        ['user' => 'user5', 'age' => 14],
-    ];
-
-    $whereIn = new Collection($data)->whereIn('age', [10, 12]);
-
-    expect($whereIn->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-    ]);
-});
-
-it('can filter data using where not in', function (): void {
-    $data = [
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-        ['user' => 'user4', 'age' => 13],
-        ['user' => 'user5', 'age' => 14],
-    ];
-
-    $whereNotIn = new Collection($data)->whereNotIn('age', [13, 14]);
-
-    expect($whereNotIn->toArray())->toEqual([
-        ['user' => 'user1', 'age' => 10],
-        ['user' => 'user2', 'age' => 12],
-        ['user' => 'user3', 'age' => 10],
-    ]);
-});
-
-it('can convert to immutable', function (): void {
-    $coll      = new Collection(['a' => 1, 'b' => 2]);
-    $immutable = $coll->immutable();
-
-    $this->assertInstanceOf(CollectionImmutable::class, $immutable);
-    expect($immutable->all())->toEqual(['a' => 1, 'b' => 2]);
-});
-
-it('can handle empty collection', function (): void {
-    $coll = (new Collection(['a' => 1]))->clear();
-
-    expect($coll->isEmpty())->toBeTrue();
-    expect($coll->first())->toBeNull();
-    expect($coll->last())->toBeNull();
-    expect($coll->keys())->toEqual([]);
-    expect($coll->items())->toEqual([]);
-});
-
-it('can handle null key and value', function (): void {
-    $coll = new Collection(['' => null]);
-
-    expect($coll->has(null))->toBeTrue();
-});
-
-it('can dump without error', function (): void {
-    $coll = new Collection(['a' => 1]);
-
-    $this->expectNotToPerformAssertions();
-    ob_start();
-    $coll->dump();
-    ob_get_clean();
-});
-
-it('throws when chunking with a non-positive length', function (): void {
-    $coll = new Collection([1, 2, 3]);
-
-    expect(fn () => $coll->chunk(0))->toThrow(
-        \InvalidArgumentException::class,
-        'Chunk length must be greater than zero.'
-    );
-});
-
-it('can flatten a limited depth', function (): void {
-    $coll = new Collection([[1, 2], [3, [4, 5]]]);
-
-    expect($coll->flatten(1)->all())->toEqual([1, 2, 3, [4, 5]]);
-    expect($coll->flatten(2)->all())->toEqual([1, 2, 3, 4, 5]);
-});
-
-it('can flatten without dropping sibling arrays', function (): void {
-    $coll = new Collection([[1, 2], [3, 4]]);
-
-    expect($coll->flatten()->all())->toEqual([1, 2, 3, 4]);
-    expect((new Collection([1, [2, 3], [4, 5], 6]))->flatten()->all())->toEqual([1, 2, 3, 4, 5, 6]);
-});
-
-it('can flatten deeply nested collections', function (): void {
-    $coll = new Collection([1, [2, [3, [4]]]]);
-
-    expect($coll->flatten(2)->all())->toEqual([1, 2, 3, [4]]);
-    expect($coll->flatten()->all())->toEqual([1, 2, 3, 4]);
-});
-
-it('can flatten while preserving assoc leaf keys', function (): void {
-    $coll = new Collection([
-        'first' => ['x' => 1, 'y' => 2],
-        'last'  => ['z' => 3],
-    ]);
-
-    expect($coll->flatten()->all())->toEqual(['x' => 1, 'y' => 2, 'z' => 3]);
-});
-
-it('can flatten collections nested inside a collection', function (): void {
-    $coll = new Collection([new Collection([9]), [1, [2]]]);
-
-    expect($coll->flatten()->all())->toEqual([9, 1, 2]);
-});
-
-it('can flatten empty subarrays', function (): void {
-    $coll = new Collection([[], [1, 2]]);
-
-    expect($coll->flatten()->all())->toEqual([1, 2]);
-});
-
-it('can stringify objects when comparing', function (): void {
-    $value = new class {
-        public function __toString(): string
-        {
-            return 'x';
+        foreach ($arr as $key => $value) {
+            $this->assertEquals($value, $coll[$key]);
         }
-    };
 
-    $coll = new Collection([1, 2, $value]);
-    $coll->diff([$value]);
+        $coll['four'] = 4;
 
-    expect($coll->items())->toEqual([1, 2]);
-});
+        $this->assertTrue(isset($coll['four']));
 
-it('ignores non stringifiable values in assoc diff', function (): void {
-    $coll = new Collection(['a' => 'keep', 'x' => [1, 2]]);
-    $coll->diffAssoc(['x' => [1, 2]]);
+        unset($coll['four']);
 
-    expect($coll->all())->toEqual(['a' => 'keep', 'x' => [1, 2]]);
-});
+        $this->assertEquals($arr, $coll->all());
+    }
 
-it('clears the collection for an unsupported where operator', function (): void {
-    $coll = new Collection(['a', 'b']);
+    public function testCanBeIterator(): void
+    {
+        $coll = new Collection(['one' => 1, 'two' => 2, 'three' => 3]);
 
-    expect($coll->where('age', 'like', '1')->isEmpty())->toBeTrue();
-});
+        foreach ($coll as $key => $value) {
+            $this->assertEquals($value, $coll[$key]);
+        }
+    }
 
-it('can only keep every requested key', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3]);
+    public function testCanBeShuffled(): void
+    {
+        $arr  = ['one' => 1, 'two' => 2, 'three' => 3];
+        $coll = new Collection($arr);
 
-    expect($coll->only(['a', 'b', 'c'])->all())->toEqual(['a' => 1, 'b' => 2, 'c' => 3]);
-});
+        $coll->shuffle();
 
-it('can only keep keys that are all absent', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        foreach ($arr as $key => $val) {
+            $this->assertTrue($coll->has($key));
+        }
+    }
 
-    expect($coll->only(['x', 'y'])->all())->toEqual([]);
-});
+    public function testCanMapWithKeys(): void
+    {
+        $arr = new Collection([
+            [
+                'name'  => 'taylor',
+                'email' => 'taylor@laravel.com',
+            ], [
+                'name'  => 'giovannini',
+                'email' => 'giovannini@savanna.com',
+            ],
+        ]);
 
-it('can only keep keys from an empty selection', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        $assocBy = $arr->assocBy(fn ($item) => [$item['name'] => $item['email']]);
 
-    expect($coll->only([])->all())->toEqual([]);
-});
+        $this->assertEquals([
+            'taylor'     => 'taylor@laravel.com',
+            'giovannini' => 'giovannini@savanna.com',
+        ], $assocBy->toArray());
+    }
 
-it('can except nothing', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+    public function testCanCloneCollection(): void
+    {
+        $ori = new Collection([
+            'one' => 'one',
+            'two' => [
+                'one',
+                'two' => [1, 2],
+            ],
+            'three' => new Collection([]),
+        ]);
 
-    expect($coll->except([])->all())->toEqual(['a' => 1, 'b' => 2]);
-});
+        $clone = clone $ori;
 
-it('can except keys that are all absent', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        $ori->set('one', 'uno');
 
-    expect($coll->except(['x', 'y'])->all())->toEqual(['a' => 1, 'b' => 2]);
-});
+        $this->assertEquals('one', $clone->get('one'));
 
-it('can except every key', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        $clone->set('one', 1);
 
-    expect($coll->except(['a', 'b'])->all())->toEqual([]);
-});
+        $this->assertEquals('uno', $ori->get('one'));
+    }
 
-it('can complement with an empty array', function (): void {
-    $coll = new Collection([1, 2, 3]);
+    public function testCanGetSumUsingReduce(): void
+    {
+        $collection = new Collection([1, 2, 3, 4]);
 
-    expect($coll->complement([])->items())->toEqual([]);
-});
+        $sum = $collection->reduce(fn ($carry, $item) => $carry + $item);
 
-it('can complement when every item overlaps', function (): void {
-    $coll = new Collection([1, 2, 3]);
+        $this->assertTrue($sum === 10);
+    }
 
-    expect($coll->complement([1, 2, 3])->items())->toEqual([]);
-});
+    public function testCanGetTakeFirst(): void
+    {
+        $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
 
-it('can complement when a single item overlaps', function (): void {
-    $coll = new Collection([1, 2, 3]);
+        $this->assertEquals([10, 20], $coll->take(2)->toArray());
+    }
 
-    expect($coll->complement([3, 9])->items())->toEqual([9]);
-});
+    public function testCanGetTakeLast(): void
+    {
+        $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
 
-it('can diff with an empty array', function (): void {
-    $coll = new Collection([1, 2, 3]);
+        $this->assertEquals([80, 90], $coll->take(-2)->toArray());
+    }
 
-    $coll->diff([]);
+    public function testCanPushNewItem(): void
+    {
+        $coll = new Collection([10, 20, 30, 40, 50, 60, 70, 80, 90]);
+        $coll->push(100);
 
-    expect($coll->items())->toEqual([1, 2, 3]);
-});
+        $this->assertTrue(in_array(100, $coll->toArray()));
+    }
 
-it('can diff when every item overlaps', function (): void {
-    $coll = new Collection([1, 2, 3]);
+    public function testCanGetDiff(): void
+    {
+        $coll = new Collection([1, 2, 3, 4, 5]);
+        $coll->diff([2, 4, 6, 8]);
 
-    $coll->diff([1, 2, 3]);
+        $this->assertEquals([1, 3, 5], $coll->items());
+    }
 
-    expect($coll->items())->toEqual([]);
-});
+    public function testCanGetDiffUsingKey(): void
+    {
+        $coll = new Collection([
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+        ]);
+        $coll->diffKeys([
+            'buah_2' => 'orange',
+            'buah_4' => 'water malon',
+            'buah_6' => 'six',
+            'buah_8' => 'eight',
+        ]);
 
-it('can diff keys with an empty selector', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        $this->assertEquals([
+            'buah_1' => 'mangga',
+            'buah_3' => 'apel',
+            'buah_5' => 'rambutan',
+        ], $coll->toArray());
+    }
 
-    $coll->diffKeys([]);
+    public function testCanGetDiffUsingAssoc(): void
+    {
+        $coll = new Collection([
+            'color'   => 'green',
+            'type'    => 'library',
+            'version' => 0,
+        ]);
+        $coll->diffAssoc([
+            'color'   => 'orange',
+            'type'    => 'framework',
+            'version' => 10,
+            'used'    => 100,
+        ]);
 
-    expect($coll->all())->toEqual(['a' => 1, 'b' => 2]);
-});
+        $this->assertEquals([
+            'color'   => 'green',
+            'type'    => 'library',
+            'version' => 0,
+        ], $coll->toArray());
+    }
 
-it('can complement keys with no overlap', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+    public function testCanGetComplement(): void
+    {
+        $coll = new Collection([1, 2, 3, 4, 5]);
+        $coll->complement([2, 4, 6, 8]);
 
-    expect($coll->complementKeys(['x' => 9])->all())->toEqual(['x' => 9]);
-});
+        $this->assertEquals([6, 8], $coll->items());
+    }
 
-it('can diff assoc when keys and values are identical', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+    public function testCanGetComplementUsingKey(): void
+    {
+        $coll = new Collection([
+            'buah_1' => 'mangga',
+            'buah_2' => 'jeruk',
+            'buah_3' => 'apel',
+            'buah_4' => 'melon',
+            'buah_5' => 'rambutan',
+        ]);
+        $coll->complementKeys([
+            'buah_2' => 'orange',
+            'buah_4' => 'water malon',
+            'buah_6' => 'six',
+            'buah_8' => 'eight',
+        ]);
 
-    $coll->diffAssoc(['a' => 1, 'b' => 2]);
+        $this->assertEquals([
+            'buah_6' => 'six',
+            'buah_8' => 'eight',
+        ], $coll->toArray());
+    }
 
-    expect($coll->all())->toEqual([]);
-});
+    public function testCanGetComplementUsingAssoc(): void
+    {
+        $coll = new Collection([
+            'color'   => 'green',
+            'type'    => 'library',
+            'version' => 0,
+        ]);
+        $coll->complementAssoc([
+            'color'   => 'orange',
+            'type'    => 'framework',
+            'version' => 10,
+            'used'    => 100,
+        ]);
 
-it('can complement assoc when keys and values are identical', function (): void {
-    $coll = new Collection(['a' => 1, 'b' => 2]);
+        $this->assertEquals([
+            'color'   => 'orange',
+            'type'    => 'framework',
+            'version' => 10,
+            'used'    => 100,
+        ], $coll->toArray());
+    }
 
-    expect($coll->complementAssoc(['a' => 1, 'b' => 2])->all())->toEqual([]);
-});
+    public function testCanGetFilteredUsingWhere(): void
+    {
+        $data = [
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            ['user' => 'user4', 'age' => 13],
+            ['user' => 'user5', 'age' => 14],
+        ];
 
-it('can map over an empty collection', function (): void {
-    $coll = new Collection([]);
+        $equal = new Collection($data)->where('age', '=', '13');
+        $this->assertEquals([
+            3 => ['user' => 'user4', 'age' => 13],
+        ], $equal->toArray());
 
-    expect($coll->map(static fn (int $item): int => $item + 1)->all())->toEqual([]);
-});
+        $identical = new Collection($data)->where('age', '===', 13);
+        $this->assertEquals([
+            3 => ['user' => 'user4', 'age' => 13],
+        ], $identical->toArray());
 
-it('can map over a single item', function (): void {
-    $coll = new Collection([5]);
+        $notEqual = new Collection($data)->where('age', '!=', '13');
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            4       => ['user' => 'user5', 'age' => 14],
+        ], $notEqual->toArray());
 
-    expect($coll->map(static fn (int $item): int => $item * 2)->all())->toEqual([10]);
-});
+        $notEqualIdentical = new Collection($data)->where('age', '!==', 13);
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            4       => ['user' => 'user5', 'age' => 14],
+        ], $notEqualIdentical->toArray());
+
+        $greaterThan = new Collection($data)->where('age', '>', 13);
+        $this->assertEquals([
+            4 => ['user' => 'user5', 'age' => 14],
+        ], $greaterThan->toArray());
+
+        $greaterThanEqual = new Collection($data)->where('age', '>=', 13);
+        $this->assertEquals([
+            3 => ['user' => 'user4', 'age' => 13],
+            4 => ['user' => 'user5', 'age' => 14],
+        ], $greaterThanEqual->toArray());
+
+        $lessThan = new Collection($data)->where('age', '<', 13);
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+        ], $lessThan->toArray());
+
+        $lessThanEqual = new Collection($data)->where('age', '<=', 13);
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            ['user' => 'user4', 'age' => 13],
+        ], $lessThanEqual->toArray());
+    }
+
+    public function testCanFilterDataUsingWhereIn(): void
+    {
+        $data = [
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            ['user' => 'user4', 'age' => 13],
+            ['user' => 'user5', 'age' => 14],
+        ];
+
+        $whereIn = new Collection($data)->whereIn('age', [10, 12]);
+
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+        ], $whereIn->toArray());
+    }
+
+    public function testCanFilterDataUsingWhereNotIn(): void
+    {
+        $data = [
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+            ['user' => 'user4', 'age' => 13],
+            ['user' => 'user5', 'age' => 14],
+        ];
+
+        $whereNotIn = new Collection($data)->whereNotIn('age', [13, 14]);
+
+        $this->assertEquals([
+            ['user' => 'user1', 'age' => 10],
+            ['user' => 'user2', 'age' => 12],
+            ['user' => 'user3', 'age' => 10],
+        ], $whereNotIn->toArray());
+    }
+
+    public function testCanConvertToImmutable(): void
+    {
+        $coll      = new Collection(['a' => 1, 'b' => 2]);
+        $immutable = $coll->immutable();
+
+        $this->assertInstanceOf(CollectionImmutable::class, $immutable);
+        $this->assertEquals(['a' => 1, 'b' => 2], $immutable->all());
+    }
+
+    public function testCanHandleEmptyCollection(): void
+    {
+        $coll = (new Collection(['a' => 1]))->clear();
+
+        $this->assertTrue($coll->isEmpty());
+        $this->assertNull($coll->first());
+        $this->assertNull($coll->last());
+        $this->assertEquals([], $coll->keys());
+        $this->assertEquals([], $coll->items());
+    }
+
+    public function testCanHandleNullKeyAndValue(): void
+    {
+        $coll = new Collection(['' => null]);
+
+        $this->assertTrue($coll->has(null));
+    }
+
+    public function testCanDumpWithoutError(): void
+    {
+        $coll = new Collection(['a' => 1]);
+
+        $this->expectNotToPerformAssertions();
+        ob_start();
+        $coll->dump();
+        ob_get_clean();
+    }
+
+    public function testThrowsWhenChunkingWithANonPositiveLength(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Chunk length must be greater than zero.');
+
+        $coll->chunk(0);
+    }
+
+    public function testCanFlattenALimitedDepth(): void
+    {
+        $coll = new Collection([[1, 2], [3, [4, 5]]]);
+
+        $this->assertEquals([1, 2, 3, [4, 5]], $coll->flatten(1)->all());
+        $this->assertEquals([1, 2, 3, 4, 5], $coll->flatten(2)->all());
+    }
+
+    public function testCanFlattenWithoutDroppingSiblingArrays(): void
+    {
+        $coll = new Collection([[1, 2], [3, 4]]);
+
+        $this->assertEquals([1, 2, 3, 4], $coll->flatten()->all());
+        $this->assertEquals([1, 2, 3, 4, 5, 6], (new Collection([1, [2, 3], [4, 5], 6]))->flatten()->all());
+    }
+
+    public function testCanFlattenDeeplyNestedCollections(): void
+    {
+        $coll = new Collection([1, [2, [3, [4]]]]);
+
+        $this->assertEquals([1, 2, 3, [4]], $coll->flatten(2)->all());
+        $this->assertEquals([1, 2, 3, 4], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWhilePreservingAssocLeafKeys(): void
+    {
+        $coll = new Collection([
+            'first' => ['x' => 1, 'y' => 2],
+            'last'  => ['z' => 3],
+        ]);
+
+        $this->assertEquals(['x' => 1, 'y' => 2, 'z' => 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenCollectionsNestedInsideACollection(): void
+    {
+        $coll = new Collection([new Collection([9]), [1, [2]]]);
+
+        $this->assertEquals([9, 1, 2], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenEmptySubarrays(): void
+    {
+        $coll = new Collection([[], [1, 2]]);
+
+        $this->assertEquals([1, 2], $coll->flatten()->all());
+    }
+
+    public function testCanStringifyObjectsWhenComparing(): void
+    {
+        $value = new class {
+            public function __toString(): string
+            {
+                return 'x';
+            }
+        };
+
+        $coll = new Collection([1, 2, $value]);
+        $coll->diff([$value]);
+
+        $this->assertEquals([1, 2], $coll->items());
+    }
+
+    public function testIgnoresNonStringifiableValuesInAssocDiff(): void
+    {
+        $coll = new Collection(['a' => 'keep', 'x' => [1, 2]]);
+        $coll->diffAssoc(['x' => [1, 2]]);
+
+        $this->assertEquals(['a' => 'keep', 'x' => [1, 2]], $coll->all());
+    }
+
+    public function testClearsTheCollectionForAnUnsupportedWhereOperator(): void
+    {
+        $coll = new Collection(['a', 'b']);
+
+        $this->assertTrue($coll->where('age', 'like', '1')->isEmpty());
+    }
+
+    public function testCanOnlyKeepEveryRequestedKey(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3]);
+
+        $this->assertEquals(['a' => 1, 'b' => 2, 'c' => 3], $coll->only(['a', 'b', 'c'])->all());
+    }
+
+    public function testCanOnlyKeepKeysThatAreAllAbsent(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals([], $coll->only(['x', 'y'])->all());
+    }
+
+    public function testCanOnlyKeepKeysFromAnEmptySelection(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals([], $coll->only([])->all());
+    }
+
+    public function testCanExceptNothing(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals(['a' => 1, 'b' => 2], $coll->except([])->all());
+    }
+
+    public function testCanExceptKeysThatAreAllAbsent(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals(['a' => 1, 'b' => 2], $coll->except(['x', 'y'])->all());
+    }
+
+    public function testCanExceptEveryKey(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals([], $coll->except(['a', 'b'])->all());
+    }
+
+    public function testCanComplementWithAnEmptyArray(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $this->assertEquals([], $coll->complement([])->items());
+    }
+
+    public function testCanComplementWhenEveryItemOverlaps(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $this->assertEquals([], $coll->complement([1, 2, 3])->items());
+    }
+
+    public function testCanComplementWhenASingleItemOverlaps(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $this->assertEquals([9], $coll->complement([3, 9])->items());
+    }
+
+    public function testCanDiffWithAnEmptyArray(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $coll->diff([]);
+
+        $this->assertEquals([1, 2, 3], $coll->items());
+    }
+
+    public function testCanDiffWhenEveryItemOverlaps(): void
+    {
+        $coll = new Collection([1, 2, 3]);
+
+        $coll->diff([1, 2, 3]);
+
+        $this->assertEquals([], $coll->items());
+    }
+
+    public function testCanDiffKeysWithAnEmptySelector(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $coll->diffKeys([]);
+
+        $this->assertEquals(['a' => 1, 'b' => 2], $coll->all());
+    }
+
+    public function testCanComplementKeysWithNoOverlap(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals(['x' => 9], $coll->complementKeys(['x' => 9])->all());
+    }
+
+    public function testCanDiffAssocWhenKeysAndValuesAreIdentical(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $coll->diffAssoc(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals([], $coll->all());
+    }
+
+    public function testCanComplementAssocWhenKeysAndValuesAreIdentical(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2]);
+
+        $this->assertEquals([], $coll->complementAssoc(['a' => 1, 'b' => 2])->all());
+    }
+
+    public function testCanMapOverAnEmptyCollection(): void
+    {
+        $coll = new Collection([]);
+
+        $this->assertEquals([], $coll->map(static fn (int $item): int => $item + 1)->all());
+    }
+
+    public function testCanMapOverASingleItem(): void
+    {
+        $coll = new Collection([5]);
+
+        $this->assertEquals([10], $coll->map(static fn (int $item): int => $item * 2)->all());
+    }
+
+    public function testCanGetWithANullKey(): void
+    {
+        $coll = new Collection(['' => 'empty']);
+
+        $this->assertSame('empty', $coll->get(null));
+        $this->assertSame('empty', $coll->get(null, 'fallback'));
+
+        $this->assertSame('fallback', (new Collection([]))->get(null, 'fallback'));
+    }
+
+    public function testCanAssocByWithACallbackReturningAnEmptyArray(): void
+    {
+        $coll = new Collection(['a' => 1]);
+
+        $this->assertSame([], $coll->assocBy(static fn (): array => [])->all());
+    }
+}
