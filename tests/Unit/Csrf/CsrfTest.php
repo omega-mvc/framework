@@ -24,6 +24,10 @@ use PHPUnit\Framework\TestCase;
 
 final class CsrfTest extends TestCase
 {
+    protected SessionManager $session;
+
+    protected Csrf $csrf;
+
     protected function setUp(): void
     {
         $this->session = new SessionManager('array', new ArrayStorage());

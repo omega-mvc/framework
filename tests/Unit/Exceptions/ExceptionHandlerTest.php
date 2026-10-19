@@ -46,6 +46,10 @@ use function str_contains;
 
 class ExceptionHandlerTest extends \Tests\TestCase
 {
+    protected Http $http;
+
+    protected ExceptionHandler $exceptionHandler;
+
     protected function setUp(): void {
     LogStore::reset();
 

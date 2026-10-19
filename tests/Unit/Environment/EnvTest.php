@@ -18,6 +18,8 @@ use PHPUnit\Framework\TestCase;
 
 final class EnvTest extends TestCase
 {
+    protected string $fixturePath;
+
     protected function setUp(): void
     {
         $this->fixturePath = __DIR__ . '/fixtures/support/';
