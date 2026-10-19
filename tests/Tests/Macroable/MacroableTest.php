@@ -11,13 +11,14 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-#[CoversClass(MacroNotFoundException::class)]
-#[CoversClass(MacroableTrait::class)]
-
 /**
  * @method bool test()
  * @method bool test_param(bool $bool)
+ * @method static bool test()
+ * @method static bool test_param(bool $bool)
  */
+#[CoversClass(MacroNotFoundException::class)]
+#[CoversClass(MacroableTrait::class)]
 class MacroableFixture
 {
     use MacroableTrait;

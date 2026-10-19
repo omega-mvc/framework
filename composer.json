@@ -41,12 +41,11 @@
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0",
         "phpstan/phpstan": "^2.2",
-        "pestphp/pest": "^5.1",
+        "phpunit/phpunit": "^13.3",
+        "tomasvotruba/type-coverage": "^2.5",
         "aws/aws-sdk-php": "^3.394",
         "async-aws/simple-s3": "^3.0",
         "phpseclib/phpseclib": "^3.0",
-        "pestphp/pest-plugin-type-coverage": "^5.0",
-        "pestphp/pest-plugin-phpstan": "^5.2",
         "phpunit/php-code-coverage": "dev-omega as 14.3.1"
     },
     "repositories": [
@@ -73,20 +72,20 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Tests\\": ["tests/Unit/", "tests/"],
+            "Tests\\": "tests/Tests/",
             "Omega\\PHPStan\\": "phpstan/"
         },
         "exclude-from-classmap": [
-            "tests/Unit/fixtures/",
-            "tests/Unit/Application/fixtures/",
-            "tests/Unit/Config/fixtures/",
-            "tests/Unit/Exceptions/fixtures/",
-            "tests/Unit/Http/fixtures/",
-            "tests/Unit/Middleware/fixtures/",
-            "tests/Unit/View/fixtures/",
-            "tests/Unit/Console/Fixtures/",
-            "tests/Unit/Console/Commands/Fixtures/",
-            "tests/Unit/Macroable/MacroableTest.php"
+            "tests/Tests/fixtures/",
+            "tests/Tests/Application/fixtures/",
+            "tests/Tests/Config/fixtures/",
+            "tests/Tests/Exceptions/fixtures/",
+            "tests/Tests/Http/fixtures/",
+            "tests/Tests/Middleware/fixtures/",
+            "tests/Tests/View/fixtures/",
+            "tests/Tests/Console/Fixtures/",
+            "tests/Tests/Console/Commands/Fixtures/",
+            "tests/Tests/Macroable/MacroableTest.php"
         ]
     },
     "extra": {
@@ -99,8 +98,8 @@
         "lint": "composer run phpcs",
         "phpcbf": "vendor/bin/phpcbf src/ tests/",
         "fix": "composer run phpcbf",
-        "test": "vendor/bin/pest",
-        "type-coverage": "vendor/bin/pest --type-coverage",
+        "test": "vendor/bin/phpunit",
+        "type-coverage": "vendor/bin/phpstan analyze --no-progress",
         "phpstan": "vendor/bin/phpstan analyze",
         "check": [
             "composer run lint",
@@ -126,10 +125,5 @@
         "ext-http": "If you want to use HTTP extension features"
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "config": {
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        }
-    }
+    "prefer-stable": true
 }

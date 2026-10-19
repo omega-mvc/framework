@@ -18,6 +18,9 @@ final class CheckingCollectionTest extends TestCase
 
     public function testCanCheckItemWithNotExistItem(): void
     {
-        $this->assertFalse((new Collection([]))->has('key'));
+        /** @var array<string, string> $items */
+        $items = [];
+
+        $this->assertFalse((new Collection($items))->has('key'));
     }
 }

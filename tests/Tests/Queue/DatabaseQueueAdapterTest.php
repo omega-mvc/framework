@@ -12,8 +12,6 @@ use RuntimeException;
 use Tests\Console\Commands\Fixtures\ScriptedConnection;
 use Tests\TestCase;
 
-use function is_object;
-use function method_exists;
 use function serialize;
 use function unserialize;
 
@@ -36,15 +34,9 @@ final class DatabaseQueueAdapterTest extends TestCase
 
         $payload = unserialize($job->getPayload());
 
-        $this->assertTrue(is_object($payload));
+        $this->assertInstanceOf(UnsignedSerializableClosure::class, $payload);
 
-        if (is_object($payload)) {
-            $this->assertTrue(method_exists($payload, '__invoke'));
-        }
-
-        if ($payload instanceof UnsignedSerializableClosure) {
-            $this->assertSame(42, $payload());
-        }
+        $this->assertSame(42, $payload());
     }
 
     public function testShiftsAndReservesTheNextAvailableJob(): void
@@ -63,13 +55,11 @@ final class DatabaseQueueAdapterTest extends TestCase
 
         $this->assertInstanceOf(Job::class, $job);
 
-        if ($job instanceof Job) {
-            $this->assertSame(3, $job->getId());
-            $this->assertSame('default', $job->getQueue());
-            $this->assertSame(0, $job->getAttempts());
-            $this->assertNotNull($job->getReservedAt());
-            $this->assertSame('2026-01-01 00:00:00', $job->getCreatedAt());
-        }
+        $this->assertSame(3, $job->getId());
+        $this->assertSame('default', $job->getQueue());
+        $this->assertSame(0, $job->getAttempts());
+        $this->assertNotNull($job->getReservedAt());
+        $this->assertSame('2026-01-01 00:00:00', $job->getCreatedAt());
 
         $this->assertCount(2, $pdo->queries);
         $this->assertStringContainsString('SELECT * FROM jobs', $pdo->queries[0]);

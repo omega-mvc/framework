@@ -87,6 +87,9 @@ public function test_falls_back_to_getenv(): void {
         $this->assertSame($expected, Env::get($key));
     }
 
+    /**
+     * @return array<int, array{0: string, 1: mixed, 2: mixed}>
+     */
     public static function typeConversionProvider(): array
     {
         return [

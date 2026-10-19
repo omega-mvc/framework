@@ -12,8 +12,8 @@ Run from this package directory. The `composer` scripts are the source of truth;
 OpenCode config denies `composer*`, so call the underlying binaries directly when blocked.
 
 ```bash
-composer test            # vendor/bin/pest    (Pest 5, not PHPUnit)
-composer type-coverage   # vendor/bin/pest --type-coverage
+composer test            # vendor/bin/phpunit   (PHPUnit 13)
+composer type-coverage   # vendor/bin/phpstan analyze --no-progress   (100% type coverage)
 composer phpstan         # vendor/bin/phpstan analyze   (level 10)
 composer lint            # vendor/bin/phpcs src/ tests/
 composer fix             # phpcbf
@@ -21,33 +21,31 @@ composer check           # lint + test   (does NOT run phpstan)
 composer ci              # fix + check
 ```
 
-- Single test / filter: `vendor/bin/pest tests/Unit/Collection/CollectionTest.php` or `--filter=<name>`.
-  Unit tests are tagged `--group=unit` in `pest.php`.
+- Single test / filter: `vendor/bin/phpunit tests/Tests/Collection/CollectionTest.php` or `--filter=<name>`.
 - Unlike gettext/serializable-closure, these scripts do **not** prefix `XDEBUG_MODE=off`.
 - `phpcs`/`phpstan`/coverage write to `cache/`; create it with `mkdir -p cache/phpcs cache/phpstan`
   when invoking tools directly.
 
 ## Tests
 
-- **Pest 5** (`pest.php`, `phpunit.xml.dist`). `pest.php` bootstraps `tests/bootstrap.php`, tags the
-  `Tests\` namespace with `group('unit')`, and configures coverage over `src` with a **minimum of 80**.
-- Namespace `Tests\` maps to **both** `tests/Unit/` and `tests/` (see `autoload-dev`). Layout:
-  `tests/Unit/<Area>/*` and `tests/Feature/**`.
+- **PHPUnit 13** (`phpunit.xml.dist`). The base `Tests\TestCase` lives in `tests/Tests/TestCase.php`.
+- Namespace `Tests\` maps to `tests/Tests/` (see `autoload-dev`). Layout: `tests/Tests/<Area>/*`.
 - `phpunit.xml.dist`: `APP_ENV=testing`, `OMEGA_TEST_MODE=light`, `pathCoverage="true"`, HTML report to
   `cache/coverage-report`.
-- `tests/Unit/*/fixtures/` is excluded from both phpstan and phpcs — do not lint or analyse fixtures.
-- Two known, **intentional** warnings: `tests/Unit/Filesystem/Util/SizeTest` and `ChecksumTest` install a
+- `tests/Tests/*/fixtures/` is excluded from both phpstan and phpcs — do not lint or analyse fixtures.
+- Two known, **intentional** warnings: `tests/Tests/Filesystem/Util/SizeTest` and `ChecksumTest` install a
   temporary error handler so the expected `E_WARNING` from a bad path passed to `filesize()`/`md5_file()`
   does not fail the run. Do not "fix" them.
 
 ## Static analysis / lint
 
-- PHPStan level 10 via `phpstan.neon.dist`. It includes `pest-plugin-phpstan` plus two custom services
+- PHPStan level 10 via `phpstan.neon.dist`. It includes `tomasvotruba/type-coverage` (100% return, param,
+  property and constant type coverage) plus two custom services
   (`Omega\PHPStan\Type\ReflectionFunctionAbstractReturnTypeExtension`,
   `Omega\PHPStan\Type\ValidatorMagicPropertiesClassReflectionExtension`), bootstraps `vendor/autoload.php`,
-  and excludes `tests/Unit/*/fixtures/*` and `src/Omega/Console/stubs`.
+  and excludes `tests/Tests/*/fixtures/*` and `src/Omega/Console/stubs`.
 - PHPCS: PSR-12, `severity=10`, line limit 120, paths `src` + `tests`, cache `cache/phpcs/phpcs.json`,
-  excludes `tests/Unit/[^/]+/fixtures/`.
+  excludes `tests/Tests/[^/]+/fixtures/`.
 
 ## Conventions
 

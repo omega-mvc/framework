@@ -153,19 +153,22 @@ final class RouterStaticApiTest extends TestCase
     {
         Router::reset();
 
-        $this->assertNull(Router::getCurrent());
+        $before = Router::getCurrent();
+        $this->assertNull($before);
 
         Router::get('/current', fn () => 'ok');
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REQUEST_URI']    = '/current';
         Router::run();
 
-        $this->assertInstanceOf(Route::class, Router::getCurrent());
-        $this->assertSame('/current', Router::getCurrent()['uri'] ?? null);
+        $current = Router::getCurrent();
+        $this->assertInstanceOf(Route::class, $current);
+        $this->assertSame('/current', $current->route()['uri'] ?? null);
 
         Router::reset();
 
-        $this->assertNull(Router::getCurrent());
+        $after = Router::getCurrent();
+        $this->assertNull($after);
     }
 
     public function testGroupFallsBackToTheCurrentGroupPrefixWhenNoPrefixKeyIsGiven(): void

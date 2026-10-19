@@ -9,8 +9,6 @@ use Omega\SerializableClosure\UnsignedSerializableClosure;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
-use function is_object;
-use function method_exists;
 use function serialize;
 
 #[CoversClass(Job::class)]
@@ -51,15 +49,9 @@ final class JobTest extends TestCase
 
         $body = $job->getRawBody();
 
-        $this->assertTrue(is_object($body));
+        $this->assertInstanceOf(UnsignedSerializableClosure::class, $body);
 
-        if (is_object($body)) {
-            $this->assertTrue(method_exists($body, '__invoke'));
-        }
-
-        if ($body instanceof UnsignedSerializableClosure) {
-            $this->assertSame('lavorato', $body());
-        }
+        $this->assertSame('lavorato', $body());
     }
 
     public function testUnserializesAnArrayPayloadAsIs(): void

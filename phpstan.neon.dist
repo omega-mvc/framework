@@ -1,5 +1,3 @@
-includes:
-    - vendor/pestphp/pest-plugin-phpstan/extension.neon
 parameters:
     level: 10
     paths:
@@ -7,7 +5,7 @@ parameters:
         - tests
     tmpDir: cache/phpstan
     excludePaths:
-        - tests/Unit/*/fixtures/*
+        - tests/Tests/*/fixtures/*
         - src/Omega/Console/stubs
     bootstrapFiles:
         - vendor/autoload.php

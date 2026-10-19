@@ -66,7 +66,10 @@ final class ViewServiceProviderTest extends TestCase
 
         $response = $resolver('test');
         $this->assertInstanceOf(Response::class, $response);
-        $this->assertStringContainsString('omega', $response->getContent());
+
+        $content = $response->getContent();
+        $this->assertIsString($content);
+        $this->assertStringContainsString('omega', $content);
     }
 
     public function testRegistersTheViteTemplateDirective(): void

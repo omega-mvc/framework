@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Validator;
+namespace Tests\Validator;
 
 use Omega\Validator\Validator;
 use PHPUnit\Framework\Attributes\CoversClass;

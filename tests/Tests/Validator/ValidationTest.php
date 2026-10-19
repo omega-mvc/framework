@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Validator;
+namespace Tests\Validator;
 
 use LogicException;
 use Omega\Validator\Rule\ValidPool;

@@ -22,6 +22,8 @@ use Omega\Facade\Bootstrapper\FacadeBootstrapper;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
 use Tests\Exceptions\Support\LogStore;
 use Throwable;
@@ -195,8 +197,12 @@ class ExceptionHandlerTest extends \Tests\TestCase
         $this->assertSame('Omega\Http\Exceptions\HttpException', $messages['exception']);
 
         $reflection = new ReflectionMethod($this->http, 'dispatcher');
-        $fileName   = $reflection->getFileName();
-        $source     = $fileName !== false ? file($fileName) : [];
+        $fileName = $reflection->getFileName();
+        $source   = [];
+
+        if ($fileName !== false) {
+            $source = file($fileName) ?: [];
+        }
 
         $expectedLine = null;
 
