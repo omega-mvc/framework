@@ -9,26 +9,32 @@ use Omega\Database\Model\Model;
 use Omega\Event\Dispatcher\Dispatcher;
 use Omega\Event\Dispatcher\DispatcherInterface;
 use Omega\Event\EventServiceProvider;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(EventServiceProvider::class);
+#[CoversClass(EventServiceProvider::class)]
+final class EventServiceProviderTest extends TestCase
+{
+    public function testBootsAndRegistersTheDefaultModelDispatcher(): void
+    {
+        $app      = new Application(__DIR__);
+        $provider = new EventServiceProvider($app);
 
-it('boots and registers the default model dispatcher', function (): void {
-    $app      = new Application(__DIR__);
-    $provider = new EventServiceProvider($app);
+        $provider->boot();
 
-    $provider->boot();
+        $dispatcher = $app->make(DispatcherInterface::class);
 
-    $dispatcher = $app->make(DispatcherInterface::class);
+        $this->assertInstanceOf(Dispatcher::class, $dispatcher);
+        $this->assertSame($dispatcher, Model::getEventDispatcher());
+    }
 
-    expect($dispatcher)->toBeInstanceOf(Dispatcher::class);
-    expect(Model::getEventDispatcher())->toBe($dispatcher);
-});
+    public function testBootsAndRegistersTheEventsAlias(): void
+    {
+        $app      = new Application(__DIR__);
+        $provider = new EventServiceProvider($app);
 
-it('boots and registers the events alias', function (): void {
-    $app      = new Application(__DIR__);
-    $provider = new EventServiceProvider($app);
+        $provider->boot();
 
-    $provider->boot();
-
-    expect($app->make('events'))->toBeInstanceOf(DispatcherInterface::class);
-});
+        $this->assertInstanceOf(DispatcherInterface::class, $app->make('events'));
+    }
+}

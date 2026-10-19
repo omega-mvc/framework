@@ -9,229 +9,278 @@ use Omega\Filesystem\Adapter\Memory\InMemory;
 use Omega\Filesystem\Filesystem;
 use Omega\Filesystem\Stream\InMemoryBuffer;
 use Omega\Filesystem\Stream\StreamMode;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(InMemoryBuffer::class);
+#[CoversClass(InMemoryBuffer::class)]
+final class InMemoryBufferTest extends TestCase
+{
+    private InMemory $adapter;
 
-beforeEach(function (): void {
-    $this->adapter = new InMemory([
-        'test.txt' => 'Hello World',
-    ]);
-    $this->fs = new Filesystem($this->adapter);
-});
+    private Filesystem $fs;
 
-it('opens for reading existing file', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    expect($buffer->open(new StreamMode('r')))->toBeTrue();
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('opens for writing existing file', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    expect($buffer->open(new StreamMode('w')))->toBeTrue();
-});
+        $this->adapter = new InMemory([
+            'test.txt' => 'Hello World',
+        ]);
+        $this->fs = new Filesystem($this->adapter);
+    }
 
-it('opens new file with write mode', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'new.txt');
-    expect($buffer->open(new StreamMode('w')))->toBeTrue();
-});
+    public function testOpensForReadingExistingFile(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $this->assertTrue($buffer->open(new StreamMode('r')));
+    }
 
-it('returns false when opening existing file with x mode', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    expect($buffer->open(new StreamMode('x')))->toBeFalse();
-});
+    public function testOpensForWritingExistingFile(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $this->assertTrue($buffer->open(new StreamMode('w')));
+    }
 
-it('opens new file with x mode', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'brandnew.txt');
-    expect($buffer->open(new StreamMode('x')))->toBeTrue();
-});
+    public function testOpensNewFileWithWriteMode(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'new.txt');
+        $this->assertTrue($buffer->open(new StreamMode('w')));
+    }
 
-it('reads from buffer', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->read(5))->toBe('Hello');
-});
+    public function testReturnsFalseWhenOpeningExistingFileWithXMode(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $this->assertFalse($buffer->open(new StreamMode('x')));
+    }
 
-it('throws when reading on write-only mode', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $buffer->read(5);
-})->throws(LogicException::class, 'The stream does not allow read.');
+    public function testOpensNewFileWithXMode(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'brandnew.txt');
+        $this->assertTrue($buffer->open(new StreamMode('x')));
+    }
 
-it('writes to buffer', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $bytes = $buffer->write('New Content');
-    expect($bytes)->toBe(11);
-});
+    public function testReadsFromBuffer(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertSame('Hello', $buffer->read(5));
+    }
 
-it('throws when writing on read-only mode', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    $buffer->write('data');
-})->throws(LogicException::class, 'The stream does not allow write.');
+    public function testThrowsWhenReadingOnWriteOnlyMode(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
 
-it('close returns false and flushes', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $buffer->write('New Content');
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe('New Content');
-    expect($this->fs->has('test.txt'))->toBeTrue();
-});
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageIsOrContains('The stream does not allow read.');
 
-it('close does nothing when synchronized', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe('Hello World');
-});
+        $buffer->read(5);
+    }
 
-it('seek with SEEK_SET', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->seek(5))->toBeTrue();
-    expect($buffer->tell())->toBe(5);
-});
+    public function testWritesToBuffer(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $bytes = $buffer->write('New Content');
+        $this->assertSame(11, $bytes);
+    }
 
-it('seek with SEEK_CUR', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    $buffer->read(3);
-    expect($buffer->seek(2, SEEK_CUR))->toBeTrue();
-    expect($buffer->tell())->toBe(5);
-});
+    public function testThrowsWhenWritingOnReadOnlyMode(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
 
-it('seek with SEEK_END', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->seek(-5, SEEK_END))->toBeTrue();
-    expect($buffer->tell())->toBe(6);
-});
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageIsOrContains('The stream does not allow write.');
 
-it('seek returns false for invalid whence', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->seek(0, 999))->toBeFalse();
-});
+        $buffer->write('data');
+    }
 
-it('tell returns position', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->tell())->toBe(0);
-    $buffer->read(5);
-    expect($buffer->tell())->toBe(5);
-});
+    public function testCloseReturnsFalseAndFlushes(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $buffer->write('New Content');
+        $buffer->close();
+        $this->assertSame('New Content', $this->adapter->read('test.txt'));
+        $this->assertTrue($this->fs->has('test.txt'));
+    }
 
-it('eof returns true when at end', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->eof())->toBeFalse();
-    $buffer->read(100);
-    expect($buffer->eof())->toBeTrue();
-});
+    public function testCloseDoesNothingWhenSynchronized(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $buffer->close();
+        $this->assertSame('Hello World', $this->adapter->read('test.txt'));
+    }
 
-it('eof returns true for empty content', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'new_empty.txt');
-    $buffer->open(new StreamMode('w'));
-    expect($buffer->eof())->toBeTrue();
-});
+    public function testSeekWithSeekSet(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertTrue($buffer->seek(5));
+        $this->assertSame(5, $buffer->tell());
+    }
 
-it('flush returns true when synchronized', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->flush())->toBeTrue();
-});
+    public function testSeekWithSeekCur(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $buffer->read(3);
+        $this->assertTrue($buffer->seek(2, SEEK_CUR));
+        $this->assertSame(5, $buffer->tell());
+    }
 
-it('flush returns true after writing', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $buffer->write('data');
-    expect($buffer->flush())->toBeTrue();
-});
+    public function testSeekWithSeekEnd(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertTrue($buffer->seek(-5, SEEK_END));
+        $this->assertSame(6, $buffer->tell());
+    }
 
-it('stat returns stats for existing file', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    $stat = $buffer->stat();
-    $this->assertIsArray($stat);
-    expect($stat['size'])->toBe(11);
-});
+    public function testSeekReturnsFalseForInvalidWhence(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertFalse($buffer->seek(0, 999));
+    }
 
-it('stat returns false for non-existent file', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'nonexistent.txt');
-    expect($buffer->stat())->toBeFalse();
-});
+    public function testTellReturnsPosition(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertSame(0, $buffer->tell());
+        $buffer->read(5);
+        $this->assertSame(5, $buffer->tell());
+    }
 
-it('cast always returns false', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->cast(0))->not->toBeTrue();
-});
+    public function testEofReturnsTrueWhenAtEnd(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertFalse($buffer->eof());
+        $buffer->read(100);
+        $this->assertTrue($buffer->eof());
+    }
 
-it('unlink deletes file when mode implies deletion', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    expect($buffer->unlink())->toBeTrue();
-    expect($this->fs->has('test.txt'))->toBeFalse();
-});
+    public function testEofReturnsTrueForEmptyContent(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'new_empty.txt');
+        $buffer->open(new StreamMode('w'));
+        $this->assertTrue($buffer->eof());
+    }
 
-it('unlink returns false when mode does not imply deletion', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r'));
-    expect($buffer->unlink())->toBeFalse();
-});
+    public function testFlushReturnsTrueWhenSynchronized(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertTrue($buffer->flush());
+    }
 
-it('write appends at end of content', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $buffer->write('Hello');
-    $buffer->write(' World');
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe('Hello World');
-});
+    public function testFlushReturnsTrueAfterWriting(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $buffer->write('data');
+        $this->assertTrue($buffer->flush());
+    }
 
-it('write replaces at non-eof position', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('r+'));
-    $buffer->seek(6);
-    $buffer->write('Beautiful ');
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe(
-        'Hello Beautiful '
-    );
-});
+    public function testStatReturnsStatsForExistingFile(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $stat = $buffer->stat();
+        $this->assertIsArray($stat);
+        $this->assertSame(11, $stat['size']);
+    }
 
-it('write pads when hasNewContentAtFurtherPosition', function (): void {
-    $this->adapter->write('pad.txt', 'content');
-    $buffer = new InMemoryBuffer($this->fs, 'pad.txt');
-    $buffer->open(new StreamMode('r+'));
-    $buffer->seek(20);
-    $buffer->write('X');
-    $buffer->close();
-    $read = $this->adapter->read('pad.txt');
-    expect($read)->toContain('X');
-});
+    public function testStatReturnsFalseForNonExistentFile(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'nonexistent.txt');
+        $this->assertFalse($buffer->stat());
+    }
 
-it('open with append mode positions cursor at end', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('a'));
-    expect($buffer->tell())->toBe(11);
-    $buffer->write('!');
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe('Hello World!');
-});
+    public function testCastAlwaysReturnsFalse(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertSame(false, $buffer->cast(0));
+    }
 
-it('write with w mode deletes existing content', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'test.txt');
-    $buffer->open(new StreamMode('w'));
-    $buffer->write('New');
-    $buffer->close();
-    expect($this->adapter->read('test.txt'))->toBe('New');
-});
+    public function testUnlinkDeletesFileWhenModeImpliesDeletion(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $this->assertTrue($buffer->unlink());
+        $this->assertFalse($this->fs->has('test.txt'));
+    }
 
-it('open new file with a mode allows writing', function (): void {
-    $buffer = new InMemoryBuffer($this->fs, 'appended.txt');
-    $buffer->open(new StreamMode('a'));
-    $buffer->write('first');
-    $buffer->close();
-    expect($this->adapter->read('appended.txt'))->toBe('first');
-});
+    public function testUnlinkReturnsFalseWhenModeDoesNotImplyDeletion(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r'));
+        $this->assertFalse($buffer->unlink());
+    }
+
+    public function testWriteAppendsAtEndOfContent(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $buffer->write('Hello');
+        $buffer->write(' World');
+        $buffer->close();
+        $this->assertSame('Hello World', $this->adapter->read('test.txt'));
+    }
+
+    public function testWriteReplacesAtNonEofPosition(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('r+'));
+        $buffer->seek(6);
+        $buffer->write('Beautiful ');
+        $buffer->close();
+        $this->assertSame('Hello Beautiful ', $this->adapter->read('test.txt'));
+    }
+
+    public function testWritePadsWhenHasNewContentAtFurtherPosition(): void
+    {
+        $this->adapter->write('pad.txt', 'content');
+        $buffer = new InMemoryBuffer($this->fs, 'pad.txt');
+        $buffer->open(new StreamMode('r+'));
+        $buffer->seek(20);
+        $buffer->write('X');
+        $buffer->close();
+        $read = $this->adapter->read('pad.txt');
+        $this->assertIsString($read);
+        $this->assertStringContainsString('X', $read);
+    }
+
+    public function testOpenWithAppendModePositionsCursorAtEnd(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('a'));
+        $this->assertSame(11, $buffer->tell());
+        $buffer->write('!');
+        $buffer->close();
+        $this->assertSame('Hello World!', $this->adapter->read('test.txt'));
+    }
+
+    public function testWriteWithWModeDeletesExistingContent(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'test.txt');
+        $buffer->open(new StreamMode('w'));
+        $buffer->write('New');
+        $buffer->close();
+        $this->assertSame('New', $this->adapter->read('test.txt'));
+    }
+
+    public function testOpenNewFileWithAModeAllowsWriting(): void
+    {
+        $buffer = new InMemoryBuffer($this->fs, 'appended.txt');
+        $buffer->open(new StreamMode('a'));
+        $buffer->write('first');
+        $buffer->close();
+        $this->assertSame('first', $this->adapter->read('appended.txt'));
+    }
+}

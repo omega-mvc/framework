@@ -1,48 +1,69 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render between_len validation')
-    ->expect(vr()->between_len(3, 11))
-    ->toEqual('between_len,3;11')
-;
+final class BetweenLenTest extends TestCase
+{
+    public function testCanRenderBetweenLenValidation(): void
+    {
+        $this->assertEquals('between_len,3;11', vr()->between_len(3, 11));
+    }
 
-it('can render invert between_len validation')
-    ->expect(vr()->not()->between_len(3, 11))
-    ->toEqual('invert_between_len,3;11')
-;
+    public function testCanRenderInvertBetweenLenValidation(): void
+    {
+        $this->assertEquals('invert_between_len,3;11', vr()->not()->between_len(3, 11));
+    }
 
-$correct   = ['test' => '123'];
-$incorrect = ['test1' => '1', 'test2' => '123456'];
+    public function testCanValidateBetweenLenWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->between_len(2, 5);
 
-// validate with correct input field
-it('can validate between_len with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->between_len(2, 5);
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateBetweenLenNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->not()->between_len(2, 5);
 
-it('can validate between_len (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->not()->between_len(2, 5);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateBetweenLenWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        // less that & more that
+        $val->field('test1', 'test2')->between_len(2, 5);
 
-// validate with incorrect input field
-it('can validate between_len with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    // less that & more that
-    $val->field('test1', 'test2')->between_len(2, 5);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateBetweenLenNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        // less that & more that
+        $val->field('test1', 'test2')->not->between_len(2, 5);
 
-it('can validate between_len (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    // less that & more that
-    $val->field('test1', 'test2')->not->between_len(2, 5);
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => '123'];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test1' => '1', 'test2' => '123456'];
+    }
+}

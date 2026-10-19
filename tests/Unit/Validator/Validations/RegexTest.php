@@ -1,51 +1,65 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render regex validation')
-    ->expect(vr()->regex('/test-[0-9]{3}/'))
-    ->toEqual('regex,/test-[0-9]{3}/')
-;
+final class RegexTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = ['test' => 'validation using gump'];
 
-it('can render invert regex validation')
-    ->expect(vr()->not()->regex('/test-[0-9]{3}/'))
-    ->toEqual('invert_regex,/test-[0-9]{3}/')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = ['test' => 'testing using pest'];
 
-$correct   = ['test' => 'validation using gump'];
-$incorrect = ['test' => 'testing using pest'];
-// validate with correct input field
+    public function testCanRenderRegexValidation(): void
+    {
+        $this->assertEquals('regex,/test-[0-9]{3}/', vr()->regex('/test-[0-9]{3}/'));
+    }
 
-it('can validate regex with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanRenderInvertRegexValidation(): void
+    {
+        $this->assertEquals('invert_regex,/test-[0-9]{3}/', vr()->not()->regex('/test-[0-9]{3}/'));
+    }
 
-    $val->test->regex('/gump/i');
+    public function testCanValidateRegexWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->test->regex('/gump/i');
 
-it('can validate regex (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test->not->regex('/gump/i');
+    public function testCanValidateRegexNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test->not->regex('/gump/i');
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate regex with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateRegexWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->regex('/gump/i');
+        $val->test->regex('/gump/i');
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate regex (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateRegexNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->not()->regex('/gump/i');
+        $val->test->not()->regex('/gump/i');
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

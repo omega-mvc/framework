@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -18,223 +8,249 @@ use Omega\Router\AbstractRouter;
 use Omega\Router\Exceptions\RouteNotFoundException;
 use Omega\Router\Route;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
 use function ob_get_clean;
 use function ob_start;
 
-covers(AbstractRouter::class);
-covers(Router::class);
+#[CoversClass(AbstractRouter::class)]
+#[CoversClass(Router::class)]
+final class RouterStaticApiTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-afterEach(function (): void {
-    Router::reset();
-});
+        parent::tearDown();
+    }
 
-it('returns route definitions from getRoutes and raw instances from getRoutesRaw', function (): void {
-    Router::get('/static', fn () => 'x')->name('static');
+    public function testReturnsRouteDefinitionsFromGetRoutesAndRawInstancesFromGetRoutesRaw(): void
+    {
+        Router::get('/static', fn () => 'x')->name('static');
 
-    $routes   = Router::getRoutes();
-    $rawRoutes = Router::getRoutesRaw();
+        $routes    = Router::getRoutes();
+        $rawRoutes = Router::getRoutesRaw();
 
-    expect($routes)->toHaveCount(1);
-    expect($routes[0]['name'])->toBe('static');
-    expect($routes[0]['uri'] ?? null)->toBe('/static');
+        $this->assertCount(1, $routes);
+        $this->assertSame('static', $routes[0]['name']);
+        $this->assertSame('/static', $routes[0]['uri'] ?? null);
 
-    expect($rawRoutes)->toHaveCount(1);
-});
+        $this->assertCount(1, $rawRoutes);
+    }
 
-it('removes routes by name', function (): void {
-    Router::get('/a', fn () => 'a')->name('keep');
-    Router::get('/b', fn () => 'b')->name('remove');
+    public function testRemovesRoutesByName(): void
+    {
+        Router::get('/a', fn () => 'a')->name('keep');
+        Router::get('/b', fn () => 'b')->name('remove');
 
-    Router::removeRoutes('remove');
+        Router::removeRoutes('remove');
 
-    expect(Router::has('remove'))->toBeFalse();
-    expect(Router::has('keep'))->toBeTrue();
-    expect(Router::getRoutesRaw())->toHaveCount(1);
-});
+        $this->assertFalse(Router::has('remove'));
+        $this->assertTrue(Router::has('keep'));
+        $this->assertCount(1, Router::getRoutesRaw());
+    }
 
-it('replaces an existing route by name', function (): void {
-    Router::get('/old', fn () => 'old')->name('target');
+    public function testReplacesAnExistingRouteByName(): void
+    {
+        Router::get('/old', fn () => 'old')->name('target');
 
-    $replacement = new Route([
-        'name'       => 'target',
-        'method'     => 'post',
-        'uri'        => '/new',
-        'expression' => '/new',
-        'function'   => fn () => 'new',
-    ]);
+        $replacement = new Route([
+            'name'       => 'target',
+            'method'     => 'post',
+            'uri'        => '/new',
+            'expression' => '/new',
+            'function'   => fn () => 'new',
+        ]);
 
-    Router::changeRoutes('target', $replacement);
+        Router::changeRoutes('target', $replacement);
 
-    $routes = Router::getRoutes();
+        $routes = Router::getRoutes();
 
-    expect($routes)->toHaveCount(1);
-    expect($routes[0]['uri'] ?? null)->toBe('/new');
-    expect($routes[0]['method'])->toBe('post');
-});
+        $this->assertCount(1, $routes);
+        $this->assertSame('/new', $routes[0]['uri'] ?? null);
+        $this->assertSame('post', $routes[0]['method']);
+    }
 
-it('leaves the route table untouched when the name is not registered', function (): void {
-    Router::get('/old', fn () => 'old')->name('target');
+    public function testLeavesTheRouteTableUntouchedWhenTheNameIsNotRegistered(): void
+    {
+        Router::get('/old', fn () => 'old')->name('target');
 
-    $replacement = new Route([
-        'name'       => 'other',
-        'method'     => 'delete',
-        'uri'        => '/elsewhere',
-        'expression' => '/elsewhere',
-        'function'   => fn () => 'elsewhere',
-    ]);
+        $replacement = new Route([
+            'name'       => 'other',
+            'method'     => 'delete',
+            'uri'        => '/elsewhere',
+            'expression' => '/elsewhere',
+            'function'   => fn () => 'elsewhere',
+        ]);
 
-    Router::changeRoutes('missing', $replacement);
+        Router::changeRoutes('missing', $replacement);
 
-    $routes = Router::getRoutes();
+        $routes = Router::getRoutes();
 
-    expect($routes)->toHaveCount(1);
-    expect($routes[0]['uri'] ?? null)->toBe('/old');
-});
+        $this->assertCount(1, $routes);
+        $this->assertSame('/old', $routes[0]['uri'] ?? null);
+    }
 
-it('merges multiple route definitions in one call', function (): void {
-    Router::mergeRoutes([
-        ['expression' => '/m1', 'function' => fn () => 'one', 'method' => 'get'],
-        ['expression' => '/m2', 'function' => fn () => 'two', 'method' => 'post'],
-    ]);
+    public function testMergesMultipleRouteDefinitionsInOneCall(): void
+    {
+        Router::mergeRoutes([
+            ['expression' => '/m1', 'function' => fn () => 'one', 'method' => 'get'],
+            ['expression' => '/m2', 'function' => fn () => 'two', 'method' => 'post'],
+        ]);
 
-    expect(Router::getRoutesRaw())->toHaveCount(2);
-    expect(Router::getRoutes()[1]['method'])->toBe('post');
-});
+        $this->assertCount(2, Router::getRoutesRaw());
+        $this->assertSame('post', Router::getRoutes()[1]['method']);
+    }
 
-it('registers an any() route for every http method', function (): void {
-    Router::any('/any', fn () => 'any');
+    public function testRegistersAnAnyRouteForEveryHttpMethod(): void
+    {
+        Router::any('/any', fn () => 'any');
 
-    expect(Router::getRoutes()[0]['method'])->toBe([
-        'get',
-        'head',
-        'post',
-        'put',
-        'patch',
-        'delete',
-        'options',
-    ]);
-});
+        $this->assertSame([
+            'get',
+            'head',
+            'post',
+            'put',
+            'patch',
+            'delete',
+            'options',
+        ], Router::getRoutes()[0]['method']);
+    }
 
-it('registers a patch() route', function (): void {
-    Router::patch('/patch-only', fn () => 'patched');
+    public function testRegistersAPatchRoute(): void
+    {
+        Router::patch('/patch-only', fn () => 'patched');
 
-    expect(Router::getRoutes()[0]['method'])->toBe('patch');
-});
+        $this->assertSame('patch', Router::getRoutes()[0]['method']);
+    }
 
-it('registers put(), delete() and options() routes', function (): void {
-    Router::put('/put-only', fn () => 'put');
-    Router::delete('/delete-only', fn () => 'delete');
-    Router::options('/options-only', fn () => 'options');
+    public function testRegistersPutDeleteAndOptionsRoutes(): void
+    {
+        Router::put('/put-only', fn () => 'put');
+        Router::delete('/delete-only', fn () => 'delete');
+        Router::options('/options-only', fn () => 'options');
 
-    $methods = array_map(static fn (array $route): mixed => $route['method'], Router::getRoutes());
+        $methods = array_map(static fn (array $route): mixed => $route['method'], Router::getRoutes());
 
-    expect($methods)->toBe(['put', 'delete', 'options']);
-});
+        $this->assertSame(['put', 'delete', 'options'], $methods);
+    }
 
-it('redirect() returns the matching route or throws when missing', function (): void {
-    Router::get('/home', fn () => 'home')->name('home');
+    public function testRedirectReturnsTheMatchingRouteOrThrowsWhenMissing(): void
+    {
+        Router::get('/home', fn () => 'home')->name('home');
 
-    expect(Router::redirect('home')['uri'] ?? null)->toBe('/home');
-    expect(fn () => Router::redirect('nowhere'))
-        ->toThrow(RouteNotFoundException::class, 'Route [nowhere] not found.');
-});
+        $this->assertSame('/home', Router::redirect('home')['uri'] ?? null);
 
-it('getCurrent is null before dispatch and holds the matched route afterwards', function (): void {
-    Router::reset();
+        $this->expectException(RouteNotFoundException::class);
+        $this->expectExceptionMessage('Route [nowhere] not found.');
 
-    expect(Router::getCurrent())->toBeNull();
+        Router::redirect('nowhere');
+    }
 
-    Router::get('/current', fn () => 'ok');
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_SERVER['REQUEST_URI']    = '/current';
-    Router::run();
+    public function testGetCurrentIsNullBeforeDispatchAndHoldsTheMatchedRouteAfterwards(): void
+    {
+        Router::reset();
 
-    expect(Router::getCurrent())->toBeInstanceOf(Route::class);
-    expect(Router::getCurrent()['uri'] ?? null)->toBe('/current');
+        $this->assertNull(Router::getCurrent());
 
-    Router::reset();
+        Router::get('/current', fn () => 'ok');
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI']    = '/current';
+        Router::run();
 
-    expect(Router::getCurrent())->toBeNull();
-});
+        $this->assertInstanceOf(Route::class, Router::getCurrent());
+        $this->assertSame('/current', Router::getCurrent()['uri'] ?? null);
 
-it('group falls back to the current group prefix when no prefix key is given', function (): void {
-    Router::prefix('/base')->group(function (): void {
-        Router::get('/x', fn () => 'x');
-    });
+        Router::reset();
 
-    Router::group([], function (): void {
-        Router::get('/y', fn () => 'y');
-    });
+        $this->assertNull(Router::getCurrent());
+    }
 
-    $uris = array_map(static fn (array $route): string => $route['uri'] ?? '', Router::getRoutes());
-
-    expect($uris)->toContain('/base/x');
-    expect($uris)->toContain('/y');
-});
-
-it('group applies the as name prefix and merges middleware', function (): void {
-    Router::group([
-        'as'         => 'admin.',
-        'middleware' => [TestMiddleware::class],
-    ], function (): void {
-        Router::get('/dashboard', fn () => 'dash')->name('dashboard');
-    });
-
-    $routes = Router::getRoutes();
-
-    expect($routes)->toHaveCount(1);
-    expect($routes[0]['name'])->toBe('admin.dashboard');
-    expect($routes[0]['middleware'] ?? [])->toBe([TestMiddleware::class]);
-});
-
-it('group falls back to the current group as name prefix', function (): void {
-    Router::group(['as' => 'api.'], function (): void {
-        Router::group([], function (): void {
-            Router::get('/ping', fn () => 'pong')->name('ping');
+    public function testGroupFallsBackToTheCurrentGroupPrefixWhenNoPrefixKeyIsGiven(): void
+    {
+        Router::prefix('/base')->group(function (): void {
+            Router::get('/x', fn () => 'x');
         });
-    });
 
-    expect(Router::getRoutes()[0]['name'])->toBe('api.ping');
-});
+        Router::group([], function (): void {
+            Router::get('/y', fn () => 'y');
+        });
 
-it('group reset restores the previous prefix and middleware state', function (): void {
-    Router::prefix('/outer')->group(function (): void {
+        $uris = array_map(static fn (array $route): string => $route['uri'] ?? '', Router::getRoutes());
+
+        $this->assertContains('/base/x', $uris);
+        $this->assertContains('/y', $uris);
+    }
+
+    public function testGroupAppliesTheAsNamePrefixAndMergesMiddleware(): void
+    {
         Router::group([
-            'prefix'     => '/inner',
+            'as'         => 'admin.',
             'middleware' => [TestMiddleware::class],
         ], function (): void {
-            Router::get('/inside', fn () => 'i');
+            Router::get('/dashboard', fn () => 'dash')->name('dashboard');
         });
-    });
 
-    Router::get('/after', fn () => 'a');
+        $routes = Router::getRoutes();
 
-    $routes  = Router::getRoutes();
-    $outside = $routes[1];
+        $this->assertCount(1, $routes);
+        $this->assertSame('admin.dashboard', $routes[0]['name']);
+        $this->assertSame([TestMiddleware::class], $routes[0]['middleware'] ?? []);
+    }
 
-    expect($outside['uri'] ?? null)->toBe('/after');
-    expect($outside['middleware'] ?? [])->toBe([]);
-});
+    public function testGroupFallsBackToTheCurrentGroupAsNamePrefix(): void
+    {
+        Router::group(['as' => 'api.'], function (): void {
+            Router::group([], function (): void {
+                Router::get('/ping', fn () => 'pong')->name('ping');
+            });
+        });
 
-it('mapPatterns expands aliases and named expressions', function (): void {
-    expect(Router::mapPatterns('/u/(id:num)', Router::$patterns))->toBe('/u/(?P<id>([0-9]*))');
-    expect(Router::mapPatterns('/(slug:unknown)', []))->toBe('/(?P<slug>[^/]+)');
-    expect(Router::mapPatterns('/plain', Router::$patterns))->toBe('/plain');
-});
+        $this->assertSame('api.ping', Router::getRoutes()[0]['name']);
+    }
 
-it('dispatches a route whose alias is not part of the known patterns', function (): void {
-    Router::get('/wild/(slug:whatever)', function (string $slug): void {
-        echo 'wild-' . $slug;
-    });
+    public function testGroupResetRestoresThePreviousPrefixAndMiddlewareState(): void
+    {
+        Router::prefix('/outer')->group(function (): void {
+            Router::group([
+                'prefix'     => '/inner',
+                'middleware' => [TestMiddleware::class],
+            ], function (): void {
+                Router::get('/inside', fn () => 'i');
+            });
+        });
 
-    $_SERVER['REQUEST_METHOD'] = 'GET';
-    $_SERVER['REQUEST_URI']    = '/wild/anything-goes';
+        Router::get('/after', fn () => 'a');
 
-    ob_start();
-    Router::run();
-    $output = ob_get_clean();
+        $routes  = Router::getRoutes();
+        $outside = $routes[1];
 
-    expect($output)->toBe('wild-anything-goes');
-});
+        $this->assertSame('/after', $outside['uri'] ?? null);
+        $this->assertSame([], $outside['middleware'] ?? []);
+    }
+
+    public function testMapPatternsExpandsAliasesAndNamedExpressions(): void
+    {
+        $this->assertSame('/u/(?P<id>([0-9]*))', Router::mapPatterns('/u/(id:num)', Router::$patterns));
+        $this->assertSame('/(?P<slug>[^/]+)', Router::mapPatterns('/(slug:unknown)', []));
+        $this->assertSame('/plain', Router::mapPatterns('/plain', Router::$patterns));
+    }
+
+    public function testDispatchesARouteWhoseAliasIsNotPartOfTheKnownPatterns(): void
+    {
+        Router::get('/wild/(slug:whatever)', function (string $slug): void {
+            echo 'wild-' . $slug;
+        });
+
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI']    = '/wild/anything-goes';
+
+        ob_start();
+        Router::run();
+        $output = ob_get_clean();
+
+        $this->assertSame('wild-anything-goes', $output);
+    }
+}

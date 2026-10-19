@@ -1,20 +1,11 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
 
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionException;
 use Tests\Router\Attribute\TestBasicRouteAttribute;
 use Tests\Router\Attribute\TestRouteAttribute;
@@ -28,122 +19,136 @@ use Tests\Router\Support\AttributeSingleNameController;
 use Tests\Router\Support\AttributeSinglePrefixController;
 use Tests\Router\Support\NoRouteAttributeController;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
-covers(Router::class);
+#[CoversClass(Router::class)]
+final class RouterRegisterTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-afterEach(function (): void {
-    Router::reset();
-});
+        parent::tearDown();
+    }
 
-it('registers a single class using attributes at class and method level', function (): void {
-    Router::register(TestRouteAttribute::class);
+    public function testRegistersASingleClassUsingAttributesAtClassAndMethodLevel(): void
+    {
+        Router::register(TestRouteAttribute::class);
 
-    $routes = Router::getRoutes();
+        $routes = Router::getRoutes();
 
-    expect($routes)->toHaveCount(1);
+        $this->assertCount(1, $routes);
 
-    $route = $routes[0];
+        $route = $routes[0];
 
-    expect($route['uri'] ?? null)->toBe('/test/{id}/test');
-    expect($route['name'])->toBe('test.test');
-    expect($route['method'])->toBe(['GET']);
-    expect($route['patterns'] ?? [])->toBe(['{id}' => '(\d+)']);
-    expect($route['expression'] ?? null)->toBe('/test/{id}/test');
-    expect($route['function'])->toBe([TestRouteAttribute::class, 'index']);
-    expect($route['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
-});
+        $this->assertSame('/test/{id}/test', $route['uri'] ?? null);
+        $this->assertSame('test.test', $route['name']);
+        $this->assertSame(['GET'], $route['method']);
+        $this->assertSame(['{id}' => '(\d+)'], $route['patterns'] ?? []);
+        $this->assertSame('/test/{id}/test', $route['expression'] ?? null);
+        $this->assertSame([TestRouteAttribute::class, 'index'], $route['function']);
+        $this->assertSame([TestMiddleware::class, TestMiddleware::class], $route['middleware'] ?? []);
+    }
 
-it('registers a class whose methods carry plain http route attributes', function (): void {
-    Router::register(TestBasicRouteAttribute::class);
+    public function testRegistersAClassWhoseMethodsCarryPlainHttpRouteAttributes(): void
+    {
+        Router::register(TestBasicRouteAttribute::class);
 
-    $routes = Router::getRoutes();
+        $routes = Router::getRoutes();
 
-    expect($routes)->toHaveCount(7);
+        $this->assertCount(7, $routes);
 
-    $methods = array_map(static fn (array $route): mixed => $route['method'], $routes);
+        $methods = array_map(static fn (array $route): mixed => $route['method'], $routes);
 
-    expect($methods)->toContain(['GET']);
-    expect($methods)->toContain(['POST']);
-    expect($methods)->toContain(['DELETE']);
-    expect($methods)->toContain(['put', 'patch']);
-});
+        $this->assertContains(['GET'], $methods);
+        $this->assertContains(['POST'], $methods);
+        $this->assertContains(['DELETE'], $methods);
+        $this->assertContains(['put', 'patch'], $methods);
+    }
 
-it('registers multiple classes when given an array of class names', function (): void {
-    Router::register([TestBasicRouteAttribute::class]);
+    public function testRegistersMultipleClassesWhenGivenAnArrayOfClassNames(): void
+    {
+        Router::register([TestBasicRouteAttribute::class]);
 
-    expect(Router::getRoutesRaw())->toHaveCount(7);
+        $this->assertCount(7, Router::getRoutesRaw());
 
-    Router::reset();
+        Router::reset();
 
-    Router::register([TestBasicRouteAttribute::class, NoRouteAttributeController::class]);
+        Router::register([TestBasicRouteAttribute::class, NoRouteAttributeController::class]);
 
-    expect(Router::getRoutesRaw())->toHaveCount(7);
-});
+        $this->assertCount(7, Router::getRoutesRaw());
+    }
 
-it('ignores classes whose methods expose no route attribute', function (): void {
-    Router::register(NoRouteAttributeController::class);
+    public function testIgnoresClassesWhoseMethodsExposeNoRouteAttribute(): void
+    {
+        Router::register(NoRouteAttributeController::class);
 
-    expect(Router::getRoutesRaw())->toBe([]);
-});
+        $this->assertSame([], Router::getRoutesRaw());
+    }
 
-it('throws a reflection exception when registering a missing class', function (): void {
-    expect(fn () => Router::register('Missing\\Router\\Controller'))->toThrow(ReflectionException::class);
-});
+    public function testThrowsAReflectionExceptionWhenRegisteringAMissingClass(): void
+    {
+        $this->expectException(ReflectionException::class);
 
-it('registers classes whose class attributes combine in different orders', function (): void {
-    Router::register([
-        AttributeCombinationController::class,
-        AttributeMiddlewarePrefixController::class,
-        AttributeNamePrefixController::class,
-        AttributeSingleMiddlewareController::class,
-        AttributeSingleNameController::class,
-        AttributeSinglePrefixController::class,
-        AttributeMiddlewareNameController::class,
-        AttributeMiddlewareNamePrefixOrderedController::class,
-    ]);
+        Router::register('Missing\\Router\\Controller');
+    }
 
-    $routes = Router::getRoutes();
+    public function testRegistersClassesWhoseClassAttributesCombineInDifferentOrders(): void
+    {
+        Router::register([
+            AttributeCombinationController::class,
+            AttributeMiddlewarePrefixController::class,
+            AttributeNamePrefixController::class,
+            AttributeSingleMiddlewareController::class,
+            AttributeSingleNameController::class,
+            AttributeSinglePrefixController::class,
+            AttributeMiddlewareNameController::class,
+            AttributeMiddlewareNamePrefixOrderedController::class,
+        ]);
 
-    expect($routes)->toHaveCount(8);
+        $routes = Router::getRoutes();
 
-    expect($routes[0]['method'])->toBe(['GET']);
-    expect($routes[1]['method'])->toBe(['GET']);
-    expect($routes[2]['method'])->toBe(['get']);
+        $this->assertCount(8, $routes);
 
-    expect($routes[0]['uri'] ?? null)->toBe('/combo/all');
-    expect($routes[0]['name'])->toBe('combo.all');
-    expect($routes[0]['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
-    expect($routes[0]['patterns'] ?? [])->toBe(['{id}' => '(\d+)']);
+        $this->assertSame(['GET'], $routes[0]['method']);
+        $this->assertSame(['GET'], $routes[1]['method']);
+        $this->assertSame(['get'], $routes[2]['method']);
 
-    expect($routes[1]['uri'] ?? null)->toBe('/mp/ping');
-    expect($routes[1]['name'])->toBe('');
+        $this->assertSame('/combo/all', $routes[0]['uri'] ?? null);
+        $this->assertSame('combo.all', $routes[0]['name']);
+        $this->assertSame([TestMiddleware::class, TestMiddleware::class], $routes[0]['middleware'] ?? []);
+        $this->assertSame(['{id}' => '(\d+)'], $routes[0]['patterns'] ?? []);
 
-    expect($routes[2]['uri'] ?? null)->toBe('/np/item');
-    expect($routes[2]['name'])->toBe('np.');
+        $this->assertSame('/mp/ping', $routes[1]['uri'] ?? null);
+        $this->assertSame('', $routes[1]['name']);
 
-    expect($routes[3]['uri'] ?? null)->toBe('/mw');
-    expect($routes[3]['middleware'] ?? [])->toBe([TestMiddleware::class]);
-    expect($routes[3]['name'])->toBe('');
+        $this->assertSame('/np/item', $routes[2]['uri'] ?? null);
+        $this->assertSame('np.', $routes[2]['name']);
 
-    expect($routes[4]['uri'] ?? null)->toBe('/named');
-    expect($routes[4]['middleware'] ?? [])->toBe([]);
-    expect($routes[4]['name'])->toBe('n.');
+        $this->assertSame('/mw', $routes[3]['uri'] ?? null);
+        $this->assertSame([TestMiddleware::class], $routes[3]['middleware'] ?? []);
+        $this->assertSame('', $routes[3]['name']);
 
-    expect($routes[5]['uri'] ?? null)->toBe('/single/prefixed');
-    expect($routes[5]['middleware'] ?? [])->toBe([]);
-    expect($routes[5]['name'])->toBe('');
+        $this->assertSame('/named', $routes[4]['uri'] ?? null);
+        $this->assertSame([], $routes[4]['middleware'] ?? []);
+        $this->assertSame('n.', $routes[4]['name']);
 
-    expect($routes[6]['uri'] ?? null)->toBe('/pair');
-    expect($routes[6]['middleware'] ?? [])->toBe([TestMiddleware::class]);
-    expect($routes[6]['name'])->toBe('mn.');
+        $this->assertSame('/single/prefixed', $routes[5]['uri'] ?? null);
+        $this->assertSame([], $routes[5]['middleware'] ?? []);
+        $this->assertSame('', $routes[5]['name']);
 
-    expect($routes[7]['uri'] ?? null)->toBe('/full/index');
-    expect($routes[7]['middleware'] ?? [])->toBe([TestMiddleware::class]);
-    expect($routes[7]['name'])->toBe('full.');
+        $this->assertSame('/pair', $routes[6]['uri'] ?? null);
+        $this->assertSame([TestMiddleware::class], $routes[6]['middleware'] ?? []);
+        $this->assertSame('mn.', $routes[6]['name']);
 
-    Router::reset();
+        $this->assertSame('/full/index', $routes[7]['uri'] ?? null);
+        $this->assertSame([TestMiddleware::class], $routes[7]['middleware'] ?? []);
+        $this->assertSame('full.', $routes[7]['name']);
 
-    Router::register(AttributeCombinationController::class);
+        Router::reset();
 
-    expect(Router::getRoutesRaw())->toHaveCount(1);
-});
+        Router::register(AttributeCombinationController::class);
+
+        $this->assertCount(1, Router::getRoutesRaw());
+    }
+}

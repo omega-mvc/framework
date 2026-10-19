@@ -1,65 +1,78 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_url validation')
-    ->expect(vr()->valid_url())
-    ->toEqual('valid_url')
-;
+final class ValidUrlTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 'http://test.com/',
+        'test2' => 'http://test.com',
+        'test3' => 'https://test.com',
+        'test4' => 'tcp://test.com',
+        'test5' => 'ftp://test.com',
+    ];
 
-it('can render invert valid_url validation')
-    ->expect(vr()->not->valid_url())
-    ->toEqual('invert_valid_url')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test1' => 'example.com',
+        'test2' => 'text',
+    ];
 
-$correct = [
-    'test1' => 'http://test.com/',
-    'test2' => 'http://test.com',
-    'test3' => 'https://test.com',
-    'test4' => 'tcp://test.com',
-    'test5' => 'ftp://test.com',
-];
-$incorrect = [
-    'test1' => 'example.com',
-    'test2' => 'text',
-];
+    public function testCanRenderValidUrlValidation(): void
+    {
+        $this->assertEquals('valid_url', vr()->valid_url());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidUrlValidation(): void
+    {
+        $this->assertEquals('invert_valid_url', vr()->not->valid_url());
+    }
 
-it('can validate valid_url with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidUrlWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_url();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_url();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_url (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidUrlNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_url();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_url();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidUrlWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_url with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_url();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_url();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateIbanNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate iban (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_url();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_url();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

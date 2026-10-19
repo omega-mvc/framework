@@ -1,138 +1,157 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-// add validation
-it('can add validation using method field', function () {
-    $valid = new Validator(['test' => 'test']);
+final class AddValidRuleValidationTest extends TestCase
+{
+    public function testCanAddValidationUsingMethodField(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->field('test')->required();
+        $valid->field('test')->required();
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('can add validation using __get', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanAddValidationUsingGet(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test->required();
+        $valid->test->required();
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('can add validation using __invoke', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanAddValidationUsingInvoke(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid('test')->required();
+        $valid('test')->required();
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('can add validation using __set', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanAddValidationUsingSet(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test = 'required';
+        $valid->test = 'required';
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('can add validator rule using method validation (param)', function () {
-    $v = Validator::make(['test' => 'test'])
-        ->validation(function () {
+    public function testCanAddValidatorRuleUsingMethodValidationParam(): void
+    {
+        $v = Validator::make(['test' => 'test'])
+            ->validation(function (): ValidPool {
+                $v = new ValidPool();
+                $v('test')->required();
+
+                return $v;
+            })->isValid();
+
+        $this->assertTrue($v);
+    }
+
+    public function testCanAddValidatorRuleUsingMethodValidationReturn(): void
+    {
+        $v = Validator::make(['test' => 'test'])
+            ->validation(fn (ValidPool $v): array => [
+                $v('test')->required(),
+            ])->isValid();
+
+        $this->assertTrue($v);
+    }
+
+    public function testCanAddValidatorRuleUsingPoolsCallbackFromMethodMakeParam(): void
+    {
+        $v = Validator::make(['test' => 123], fn (ValidPool $v): array => [
+            $v('test')->required(),
+            $v('d')->alpha(),
+        ])->isValid();
+
+        $this->assertTrue($v);
+    }
+
+    public function testCanAddValidatorRuleUsingPoolsCallbackFromMethodMakeReturn(): void
+    {
+        $v = Validator::make(['test' => 123], function (): ValidPool {
             $v = new ValidPool();
             $v('test')->required();
+            $v('d')->alpha();
 
             return $v;
         })->isValid();
 
-    expect($v)->toBeTrue();
-});
+        $this->assertTrue($v);
+    }
 
-it('can add validator rule using method validation (return)', function () {
-    $v = Validator::make(['test' => 'test'])
-        ->validation(fn (ValidPool $v) => [
-            $v('test')->required(),
-        ])->isValid();
+    public function testCanAddNewValidRuleWithExistField(): void
+    {
+        $validation = new Validator(['test' => 'test']);
 
-    expect($v)->toBeTrue();
-});
+        $validation->field('test')->max_len(4);
+        $validation->field('test')->required();
 
-it('can add validator rule using pools callback from method make() (param)', function () {
-    $v = Validator::make(['test' => 123], fn (ValidPool $v) => [
-        $v('test')->required(),
-        $v('d')->alpha(),
-    ])->isValid();
+        $this->assertTrue($validation->isValid());
+    }
 
-    expect($v)->toBeTrue();
-});
+    public function testCanAddNewValidRuleWithExistFieldUsingValidpool(): void
+    {
+        $validation = new Validator(['test' => 'test']);
+        $validation->validation(fn (ValidPool $valid): array => [
+            $valid('test')->max_len(4),
+            $valid('test')->required(),
+        ]);
 
-it('can add validator rule using pools callback from method make() (return)', function () {
-    $v = Validator::make(['test' => 123], function () {
-        $v = new ValidPool();
-        $v('test')->required();
-        $v('d')->alpha();
+        $this->assertTrue($validation->isValid());
+    }
 
-        return $v;
-    })->isValid();
+    public function testCanAddMultyFieldUsingMethodField(): void
+    {
+        $valid = new Validator(['test' => 'test', 'test2' => 'test']);
 
-    expect($v)->toBeTrue();
-});
+        $valid->field('test', 'test2')->required();
 
-it('can add new valid rule with exist field', function () {
-    $validation = new Validator(['test' => 'test']);
+        $this->assertTrue($valid->isValid());
+    }
 
-    $validation->field('test')->max_len(4);
-    $validation->field('test')->required();
+    public function testCanAddMultyFieldUsingMethodFieldWithFieldExist(): void
+    {
+        $valid = new Validator(['test' => 'test', 'test2' => 'test2']);
 
-    expect($validation->isValid())->toBeTrue();
-});
+        $valid->field('test', 'test2')->required();
+        $valid->field('test')->max_len(4);
+        $valid->field('test2')->max_len(5);
+        $valid->field('test', 'test2')->min_len(4);
 
-it('can add new valid rule with exist field using validpool', function () {
-    $validation = new Validator(['test' => 'test']);
-    $validation->validation(fn ($valid) => [
-        $valid('test')->max_len(4),
-        $valid('test')->required(),
-    ]);
+        $this->assertTrue($valid->isValid());
+    }
 
-    expect($validation->isValid())->toBeTrue();
-});
+    public function testCanAddMultyFieldUsingMethodInvoke(): void
+    {
+        $valid = new Validator(['test' => 'test', 'test2' => 'test']);
 
-// Multy --------------------------------------------------
+        $valid('test', 'test2')->required();
 
-it('can add multy field using method field', function () {
-    $valid = new Validator(['test' => 'test', 'test2' => 'test']);
+        $this->assertTrue($valid->isValid());
+    }
 
-    $valid->field('test', 'test2')->required();
+    public function testCanAddMultyFieldUsingMethodInvokeWithFieldExist(): void
+    {
+        $valid = new Validator(['test' => 'test', 'test2' => 'test2']);
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $valid('test', 'test2')->required();
+        $valid->field('test')->max_len(4);
+        $valid->field('test2')->max_len(5);
+        $valid('test', 'test2')->min_len(4);
 
-it('can add multy field using method field with field exist', function () {
-    $valid = new Validator(['test' => 'test', 'test2' => 'test2']);
-
-    $valid->field('test', 'test2')->required();
-    $valid->field('test')->max_len(4);
-    $valid->field('test2')->max_len(5);
-    $valid->field('test', 'test2')->min_len(4);
-
-    expect($valid->isValid())->toBeTrue();
-});
-
-it('can add multy field using method __invoke', function () {
-    $valid = new Validator(['test' => 'test', 'test2' => 'test']);
-
-    $valid('test', 'test2')->required();
-
-    expect($valid->isValid())->toBeTrue();
-});
-
-it('can add multy field using method __invoke with field exist', function () {
-    $valid = new Validator(['test' => 'test', 'test2' => 'test2']);
-
-    $valid('test', 'test2')->required();
-    $valid->field('test')->max_len(4);
-    $valid->field('test2')->max_len(5);
-    $valid('test', 'test2')->min_len(4);
-
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
+}

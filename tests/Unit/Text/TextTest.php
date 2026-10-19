@@ -6,81 +6,95 @@ namespace Tests\Text;
 
 use Omega\Text\Str;
 use Omega\Text\Text;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
 use function Omega\Text\string;
 use function Omega\Text\text;
 
-covers(Str::class);
-covers(Text::class);
-
-it('can create new instance using helper', function (): void {
-    expect(string('text')->getText())->toBe('text');
-    expect(text('text')->getText())->toBe('text');
-});
-
-it('can create new instance using str class', function (): void {
-    expect(Str::of('text')->getText())->toBe('text');
-});
-
-it('can set get current text', function (): void {
-    $class = new Text('text');
-
-    expect($class->getText())->toBe('text');
-});
-
-it('can set get current text using to string', function (): void {
-    $class = new Text('text');
-
-    expect($class)->toEqual('text');
-});
-
-it('can set new text without reset', function (): void {
-    $class = new Text('text');
-    $class->upper()->lower()->firstUpper();
-    $class->text('string');
-
-    expect($class->getText())->toBe('string');
-    expect($class->logs())->toHaveCount(5);
-});
-
-it('can set get log of string', function (): void {
-    $class = new Text('text');
-    $class->upper()->lower()->firstUpper();
-
-    $logs = $class->logs();
-    expect($logs)->toHaveCount(4);
-
-    foreach ($logs as $log) {
-        expect($log)->toHaveKeys(['function', 'return', 'type']);
+#[CoversClass(Str::class)]
+#[CoversClass(Text::class)]
+final class TextTest extends TestCase
+{
+    public function testCanCreateNewInstanceUsingHelper(): void
+    {
+        $this->assertSame('text', string('text')->getText());
+        $this->assertSame('text', text('text')->getText());
     }
-});
 
-it('can set reset', function (): void {
-    $class = new Text('text');
-    $class->upper()->lower()->firstUpper();
-    $class->reset();
+    public function testCanCreateNewInstanceUsingStrClass(): void
+    {
+        $this->assertSame('text', Str::of('text')->getText());
+    }
 
-    expect($class->getText())->toBe('text');
-    expect($class->logs())->toBeEmpty();
-});
+    public function testCanSetGetCurrentText(): void
+    {
+        $class = new Text('text');
 
-it('can set refresh', function (): void {
-    $class = new Text('text');
-    $class->upper()->lower()->firstUpper();
-    $class->refresh('string');
+        $this->assertSame('text', $class->getText());
+    }
 
-    expect($class->getText())->toBe('string');
-    expect($class->logs())->toBeEmpty();
-});
+    public function testCanSetGetCurrentTextUsingToString(): void
+    {
+        $class = new Text('text');
 
-it('can chain non string and continue chain without break', function (): void {
-    $class = new Text('text');
-    $class->upper()->firstUpper();
+        $this->assertEquals('text', $class);
+    }
 
-    expect($class->startsWith('T'))->toBeTrue();
-    expect($class->length())->toBe(4);
+    public function testCanSetNewTextWithoutReset(): void
+    {
+        $class = new Text('text');
+        $class->upper()->lower()->firstUpper();
+        $class->text('string');
 
-    $class->lower();
-    expect($class->startsWith('t'))->toBeTrue();
-});
+        $this->assertSame('string', $class->getText());
+        $this->assertCount(5, $class->logs());
+    }
+
+    public function testCanSetGetLogOfString(): void
+    {
+        $class = new Text('text');
+        $class->upper()->lower()->firstUpper();
+
+        $logs = $class->logs();
+        $this->assertCount(4, $logs);
+
+        foreach ($logs as $log) {
+            $this->assertArrayHasKey('function', $log);
+            $this->assertArrayHasKey('return', $log);
+            $this->assertArrayHasKey('type', $log);
+        }
+    }
+
+    public function testCanSetReset(): void
+    {
+        $class = new Text('text');
+        $class->upper()->lower()->firstUpper();
+        $class->reset();
+
+        $this->assertSame('text', $class->getText());
+        $this->assertEmpty($class->logs());
+    }
+
+    public function testCanSetRefresh(): void
+    {
+        $class = new Text('text');
+        $class->upper()->lower()->firstUpper();
+        $class->refresh('string');
+
+        $this->assertSame('string', $class->getText());
+        $this->assertEmpty($class->logs());
+    }
+
+    public function testCanChainNonStringAndContinueChainWithoutBreak(): void
+    {
+        $class = new Text('text');
+        $class->upper()->firstUpper();
+
+        $this->assertTrue($class->startsWith('T'));
+        $this->assertSame(4, $class->length());
+
+        $class->lower();
+        $this->assertTrue($class->startsWith('t'));
+    }
+}

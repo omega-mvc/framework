@@ -1,15 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
+
 use Omega\Validator\Rule\Valid;
+use Tests\TestCase;
 
-it('can create rule using with method', function () {
-    $rule = Valid::with()->required();
+final class WithTest extends TestCase
+{
+    public function testCanCreateRuleUsingWithMethod(): void
+    {
+        $rule = Valid::with()->required();
 
-    expect($rule)->toEqual('required');
-});
+        $this->assertEquals('required', $rule);
+    }
 
-it('can create rule using with method from instance', function () {
-    $rule = (new Valid())->with()->required();
+    public function testCanCreateRuleUsingWithMethodFromInstance(): void
+    {
+        $rule = (new Valid())->with()->required();
 
-    expect($rule)->toEqual('required');
-});
+        $this->assertEquals('required', $rule);
+    }
+}

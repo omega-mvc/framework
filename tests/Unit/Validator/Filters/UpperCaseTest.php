@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander upper_case', function () {
-    expect(fr()->upper_case())
-        ->toEqual('upper_case')
-    ;
-});
+final class UpperCaseTest extends TestCase
+{
+    public function testCanRanderUpperCase(): void
+    {
+        $this->assertEquals('upper_case', fr()->upper_case());
+    }
 
-it('can filter upper_case', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'test']);
+    public function testCanFilterUpperCase(): void
+    {
+        $fr = new Validator(['field' => 'test']);
 
-    $fr->filter('field')->upper_case();
+        $fr->filter('field')->upper_case();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'TEST'])
-    ;
-});
+        $this->assertEquals(['field' => 'TEST'], $fr->filterOut());
+    }
+}

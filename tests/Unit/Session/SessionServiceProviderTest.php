@@ -1,19 +1,11 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session;
 
 use Omega\Application\Application;
+use Omega\Application\ApplicationInterface;
 use Omega\Cache\Storage\MemoryStorage;
 use Omega\Config\ConfigRepository;
 use Omega\Database\DatabaseManager;
@@ -25,209 +17,256 @@ use Omega\Session\Storage\ArrayStorage;
 use Omega\Session\Storage\CacheStorage;
 use Omega\Session\Storage\DatabaseStorage;
 use Omega\Session\Storage\NativeStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionMethod;
+use RuntimeException;
+use Tests\TestCase;
 
 use function Omega\Application\slash;
 
-covers(SessionServiceProvider::class);
-
-afterEach(function (): void {
-    if (isset($this->app)) {
-        $this->app->flush();
-    }
-});
-
-it('registers a session manager with the configured default driver', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'array',
-            'drivers' => [
-                'array' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $session = appSessionManager($this->app);
-
-    expect($session->getDriver())->toBeInstanceOf(ArrayStorage::class);
-});
-
-it('registers every configured storage driver', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'array',
-            'drivers' => [
-                'array'    => [],
-                'native'   => [],
-                'cache'    => [],
-                'database' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $this->app->set('cache', new MemoryStorage([]));
-    $this->app->set(DatabaseManager::class, new DatabaseManager([]));
-
-    expect($this->app->get('session.storage.array'))->toBeInstanceOf(ArrayStorage::class);
-    expect($this->app->get('session.storage.native'))->toBeInstanceOf(NativeStorage::class);
-    expect($this->app->get('session.storage.cache'))->toBeInstanceOf(CacheStorage::class);
-    expect($this->app->get('session.storage.database'))->toBeInstanceOf(DatabaseStorage::class);
-});
-
-it('registers non default drivers on the session manager', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'array',
-            'drivers' => [
-                'array'    => [],
-                'native'   => [],
-                'cache'    => [],
-                'database' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $this->app->set('cache', new MemoryStorage([]));
-    $this->app->set(DatabaseManager::class, new DatabaseManager([]));
-
-    $session = appSessionManager($this->app);
-
-    expect($session->getDriver())->toBeInstanceOf(ArrayStorage::class);
-
-    $resolve = new ReflectionMethod(SessionManager::class, 'resolve');
-
-    expect($resolve->invoke($session, 'native'))->toBeInstanceOf(NativeStorage::class);
-    expect($resolve->invoke($session, 'cache'))->toBeInstanceOf(CacheStorage::class);
-    expect($resolve->invoke($session, 'database'))->toBeInstanceOf(DatabaseStorage::class);
-});
-
-it('defaults to the native driver when no session configuration is present', function (): void {
-    $this->app = makeApp(['environment' => 'testing']);
-
-    $session = appSessionManager($this->app);
-
-    expect($session->getDriver())->toBeInstanceOf(NativeStorage::class);
-});
-
-it('applies driver options to the cache and database storage', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'array',
-            'drivers' => [
-                'array'    => [],
-                'cache'    => ['prefix' => 'store_'],
-                'database' => ['table' => 'user_sessions'],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $this->app->set('cache', new MemoryStorage([]));
-    $this->app->set(DatabaseManager::class, new DatabaseManager([]));
-
-    expect($this->app->get('session.storage.cache'))->toBeInstanceOf(CacheStorage::class);
-    expect($this->app->get('session.storage.database'))->toBeInstanceOf(DatabaseStorage::class);
-});
-
-it('registers the start session middleware', function (): void {
-    $this->app = makeApp(['session' => ['default' => 'array', 'drivers' => ['array' => []]]]);
-
-    expect($this->app->get(StartSessionMiddleware::class))->toBeInstanceOf(StartSessionMiddleware::class);
-});
-
-it('throws when the registered session is not a manager', function (): void {
-    $this->app = makeApp(['session' => ['default' => 'array', 'drivers' => ['array' => []]]]);
-    $this->app->set('session', new \stdClass());
-
-    $this->app->get(StartSessionMiddleware::class);
-})->throws(UnknownDriverException::class, 'The session storage driver "session" could not be resolved or is not registered.');
-
-it('throws when the configured default driver is unsupported', function (): void {
-    $this->app = makeApp(['session' => ['default' => 'bogus']]);
-
-    $this->app->get('session');
-})->throws(UnknownDriverException::class, 'The session storage driver "bogus" could not be resolved or is not registered.');
-
-it('throws when a configured storage driver is unsupported', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'array',
-            'drivers' => [
-                'array' => [],
-                'bogus' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-
-    $this->app->get('session.storage.bogus');
-})->throws(UnknownDriverException::class, 'The session storage driver "bogus" could not be resolved or is not registered.');
-
-it('throws when the cache service is not a cache implementation', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'cache',
-            'drivers' => [
-                'cache' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $this->app->set('cache', new \stdClass());
-
-    $this->app->get('session');
-})->throws(UnknownDriverException::class, 'The session storage driver "cache" could not be resolved or is not registered.');
-
-it('throws when the database service is not a connection implementation', function (): void {
-    $config = [
-        'session' => [
-            'default' => 'database',
-            'drivers' => [
-                'database' => [],
-            ],
-        ],
-    ];
-
-    $this->app = makeApp($config);
-    $this->app->set(DatabaseManager::class, new \stdClass());
-
-    $this->app->get('session');
-})->throws(UnknownDriverException::class, 'The session storage driver "database" could not be resolved or is not registered.');
-
-/**
- * Build an application with the session provider booted.
- *
- * @param array<string, mixed> $config The application configuration.
- * @return Application The configured application instance.
- */
-function makeApp(array $config): Application
+#[CoversClass(SessionServiceProvider::class)]
+final class SessionServiceProviderTest extends TestCase
 {
-    $app = new Application(slash(__DIR__ . '/fixtures/support/'));
-    $app->set('config', static fn () => new ConfigRepository($config));
+    protected function tearDown(): void
+    {
+        if (isset($this->app)) {
+            $this->app->flush();
+        }
 
-    (new SessionServiceProvider($app))->boot();
-
-    return $app;
-}
-
-/**
- * Resolve the session manager from the application container.
- *
- * @param Application $app The application instance.
- * @return SessionManager The resolved session manager.
- */
-function appSessionManager(Application $app): SessionManager
-{
-    $session = $app->get('session');
-
-    if (!$session instanceof SessionManager) {
-        throw new \RuntimeException('The "session" container binding is not a SessionManager.');
+        parent::tearDown();
     }
 
-    return $session;
+    public function testRegistersASessionManagerWithTheConfiguredDefaultDriver(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'array',
+                'drivers' => [
+                    'array' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $session = $this->appSessionManager($this->app);
+
+        $this->assertInstanceOf(ArrayStorage::class, $session->getDriver());
+    }
+
+    public function testRegistersEveryConfiguredStorageDriver(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'array',
+                'drivers' => [
+                    'array'    => [],
+                    'native'   => [],
+                    'cache'    => [],
+                    'database' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $this->app->set('cache', new MemoryStorage([]));
+        $this->app->set(DatabaseManager::class, new DatabaseManager([]));
+
+        $this->assertInstanceOf(ArrayStorage::class, $this->app->get('session.storage.array'));
+        $this->assertInstanceOf(NativeStorage::class, $this->app->get('session.storage.native'));
+        $this->assertInstanceOf(CacheStorage::class, $this->app->get('session.storage.cache'));
+        $this->assertInstanceOf(DatabaseStorage::class, $this->app->get('session.storage.database'));
+    }
+
+    public function testRegistersNonDefaultDriversOnTheSessionManager(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'array',
+                'drivers' => [
+                    'array'    => [],
+                    'native'   => [],
+                    'cache'    => [],
+                    'database' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $this->app->set('cache', new MemoryStorage([]));
+        $this->app->set(DatabaseManager::class, new DatabaseManager([]));
+
+        $session = $this->appSessionManager($this->app);
+
+        $this->assertInstanceOf(ArrayStorage::class, $session->getDriver());
+
+        $resolve = new ReflectionMethod(SessionManager::class, 'resolve');
+
+        $this->assertInstanceOf(NativeStorage::class, $resolve->invoke($session, 'native'));
+        $this->assertInstanceOf(CacheStorage::class, $resolve->invoke($session, 'cache'));
+        $this->assertInstanceOf(DatabaseStorage::class, $resolve->invoke($session, 'database'));
+    }
+
+    public function testDefaultsToTheNativeDriverWhenNoSessionConfigurationIsPresent(): void
+    {
+        $this->app = $this->makeApp(['environment' => 'testing']);
+
+        $session = $this->appSessionManager($this->app);
+
+        $this->assertInstanceOf(NativeStorage::class, $session->getDriver());
+    }
+
+    public function testAppliesDriverOptionsToTheCacheAndDatabaseStorage(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'array',
+                'drivers' => [
+                    'array'    => [],
+                    'cache'    => ['prefix' => 'store_'],
+                    'database' => ['table' => 'user_sessions'],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $this->app->set('cache', new MemoryStorage([]));
+        $this->app->set(DatabaseManager::class, new DatabaseManager([]));
+
+        $this->assertInstanceOf(CacheStorage::class, $this->app->get('session.storage.cache'));
+        $this->assertInstanceOf(DatabaseStorage::class, $this->app->get('session.storage.database'));
+    }
+
+    public function testRegistersTheStartSessionMiddleware(): void
+    {
+        $this->app = $this->makeApp(['session' => ['default' => 'array', 'drivers' => ['array' => []]]]);
+
+        $this->assertInstanceOf(
+            StartSessionMiddleware::class,
+            $this->app->get(StartSessionMiddleware::class)
+        );
+    }
+
+    public function testThrowsWhenTheRegisteredSessionIsNotAManager(): void
+    {
+        $this->app = $this->makeApp(['session' => ['default' => 'array', 'drivers' => ['array' => []]]]);
+        $this->app->set('session', new \stdClass());
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessageIsOrContains(
+            'The session storage driver "session" could not be resolved or is not registered.'
+        );
+
+        $this->app->get(StartSessionMiddleware::class);
+    }
+
+    public function testThrowsWhenTheConfiguredDefaultDriverIsUnsupported(): void
+    {
+        $this->app = $this->makeApp(['session' => ['default' => 'bogus']]);
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessageIsOrContains(
+            'The session storage driver "bogus" could not be resolved or is not registered.'
+        );
+
+        $this->app->get('session');
+    }
+
+    public function testThrowsWhenAConfiguredStorageDriverIsUnsupported(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'array',
+                'drivers' => [
+                    'array' => [],
+                    'bogus' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessageIsOrContains(
+            'The session storage driver "bogus" could not be resolved or is not registered.'
+        );
+
+        $this->app->get('session.storage.bogus');
+    }
+
+    public function testThrowsWhenTheCacheServiceIsNotACacheImplementation(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'cache',
+                'drivers' => [
+                    'cache' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $this->app->set('cache', new \stdClass());
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessageIsOrContains(
+            'The session storage driver "cache" could not be resolved or is not registered.'
+        );
+
+        $this->app->get('session');
+    }
+
+    public function testThrowsWhenTheDatabaseServiceIsNotAConnectionImplementation(): void
+    {
+        $config = [
+            'session' => [
+                'default' => 'database',
+                'drivers' => [
+                    'database' => [],
+                ],
+            ],
+        ];
+
+        $this->app = $this->makeApp($config);
+        $this->app->set(DatabaseManager::class, new \stdClass());
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessageIsOrContains(
+            'The session storage driver "database" could not be resolved or is not registered.'
+        );
+
+        $this->app->get('session');
+    }
+
+    /**
+     * Build an application with the session provider booted.
+     *
+     * @param array<string, mixed> $config The application configuration.
+     * @return Application The configured application instance.
+     */
+    private function makeApp(array $config): Application
+    {
+        $app = new Application(slash(__DIR__ . '/fixtures/support/'));
+        $app->set('config', static fn (): ConfigRepository => new ConfigRepository($config));
+
+        (new SessionServiceProvider($app))->boot();
+
+        return $app;
+    }
+
+    /**
+     * Resolve the session manager from the application container.
+     *
+     * @param ApplicationInterface $app The application instance.
+     * @return SessionManager The resolved session manager.
+     */
+    private function appSessionManager(ApplicationInterface $app): SessionManager
+    {
+        $session = $app->get('session');
+
+        if (!$session instanceof SessionManager) {
+            throw new RuntimeException('The "session" container binding is not a SessionManager.');
+        }
+
+        return $session;
+    }
 }

@@ -7,32 +7,41 @@ namespace Tests\Event;
 use Omega\Event\Dispatcher\Dispatcher;
 use Omega\Event\Dispatcher\DispatcherAwareTrait;
 use Omega\Event\Exceptions\DispatcherNotSetException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Event\Support\DispatcherAwareService;
+use Tests\TestCase;
 
-covers(DispatcherAwareTrait::class);
-covers(DispatcherNotSetException::class);
+#[CoversClass(DispatcherAwareTrait::class)]
+#[CoversClass(DispatcherNotSetException::class)]
+final class DispatcherAwareTest extends TestCase
+{
+    public function testThrowsWhenNoDispatcherHasBeenSet(): void
+    {
+        $service = new DispatcherAwareService();
 
-it('throws when no dispatcher has been set', function (): void {
-    $service = new DispatcherAwareService();
+        $this->expectException(DispatcherNotSetException::class);
 
-    expect(fn () => $service->getDispatcher())->toThrow(DispatcherNotSetException::class);
-});
+        $service->getDispatcher();
+    }
 
-it('sets and returns the dispatcher', function (): void {
-    $service    = new DispatcherAwareService();
-    $dispatcher = new Dispatcher();
+    public function testSetsAndReturnsTheDispatcher(): void
+    {
+        $service    = new DispatcherAwareService();
+        $dispatcher = new Dispatcher();
 
-    expect($service->setDispatcher($dispatcher))->toBe($service);
-    expect($service->getDispatcher())->toBe($dispatcher);
-});
+        $this->assertSame($service, $service->setDispatcher($dispatcher));
+        $this->assertSame($dispatcher, $service->getDispatcher());
+    }
 
-it('returns the most recent dispatcher', function (): void {
-    $service     = new DispatcherAwareService();
-    $first       = new Dispatcher();
-    $second      = new Dispatcher();
+    public function testReturnsTheMostRecentDispatcher(): void
+    {
+        $service = new DispatcherAwareService();
+        $first   = new Dispatcher();
+        $second  = new Dispatcher();
 
-    $service->setDispatcher($first);
-    $service->setDispatcher($second);
+        $service->setDispatcher($first);
+        $service->setDispatcher($second);
 
-    expect($service->getDispatcher())->toBe($second);
-});
+        $this->assertSame($second, $service->getDispatcher());
+    }
+}

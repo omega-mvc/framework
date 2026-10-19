@@ -1,66 +1,78 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render required validation', function () {
-    expect(vr()->required())
-        ->toEqual('required')
-    ;
-});
+final class RequiredTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 'test',
+        'test2' => '0',
+        'test3' => 0.0,
+        'test4' => 0,
+        'test5' => false,
+    ];
 
-it('can render invert required validation', function () {
-    expect(vr()->not()->required())
-        ->toEqual('invert_required')
-    ;
-});
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test1' => null,
+        'test2' => '',
+    ];
 
-// validate with correct input field
-$correct = [
-    'test1' => 'test',
-    'test2' => '0',
-    'test3' => 0.0,
-    'test4' => 0,
-    'test5' => false,
-];
-$incorrect = [
-    'test1' => null,
-    'test2' => '',
-];
+    public function testCanRenderRequiredValidation(): void
+    {
+        $this->assertEquals('required', vr()->required());
+    }
 
-it('can validate regex with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanRenderInvertRequiredValidation(): void
+    {
+        $this->assertEquals('invert_required', vr()->not()->required());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->required();
+    public function testCanValidateRegexWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->required();
 
-it('can validate required (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->required();
+    public function testCanValidateRequiredNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->required();
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate required with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateRequiredWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->required();
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->required();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate regex (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateRegexNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->required();
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->required();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

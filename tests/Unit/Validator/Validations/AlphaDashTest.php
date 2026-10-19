@@ -1,46 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render alpha_dash validation')
-    ->expect(vr()->alpha_dash())
-    ->toEqual('alpha_dash')
-;
+final class AlphaDashTest extends TestCase
+{
+    public function testCanRenderAlphaDashValidation(): void
+    {
+        $this->assertEquals('alpha_dash', vr()->alpha_dash());
+    }
 
-it('can render invert alpha_dash validation')
-    ->expect(vr()->not()->alpha_dash())
-    ->toEqual('invert_alpha_dash')
-;
+    public function testCanRenderInvertAlphaDashValidation(): void
+    {
+        $this->assertEquals('invert_alpha_dash', vr()->not()->alpha_dash());
+    }
 
-$correct   = ['test' => 'my_username-with_dash'];
-$incorrect = ['test' => 'hello123'];
+    public function testCanValidateAlphaWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->alpha_dash();
 
-// validate with correct input field
-it('can validate alpha with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->alpha_dash();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateAlphaNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->not()->alpha_dash();
 
-it('can validate alpha (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->not()->alpha_dash();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->alpha_dash();
 
-// validate with incorrect input field
-it('can validate alpha with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->alpha_dash();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->not()->alpha_dash();
 
-it('can validate alpha (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->not()->alpha_dash();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => 'my_username-with_dash'];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => 'hello123'];
+    }
+}

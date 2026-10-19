@@ -4,89 +4,111 @@ declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
-use Exception;
 use Omega\View\Templator;
 use Omega\View\Templator\ContinueTemplator;
 use Omega\View\Templator\EachTemplator;
 use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
+#[CoversClass(ContinueTemplator::class)]
+#[CoversClass(EachTemplator::class)]
+#[CoversClass(Templator::class)]
+#[CoversClass(TemplatorFinder::class)]
+final class EachTest extends TestCase
+{
+    private Templator $templator;
 
-covers(ContinueTemplator::class);
-covers(EachTemplator::class);
-covers(Templator::class);
-covers(TemplatorFinder::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->templator = new Templator(
-        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
-        __DIR__ . '/../fixtures/view/templator/'
-    );
-});
+        $this->templator = new Templator(
+            new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
+            __DIR__ . '/../fixtures/view/templator/'
+        );
+    }
 
-it('can render each', function (): void {
-    $out = $this->templator->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
-    expect($out)->toEqual(
-        '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>'
-    );
-});
+    public function testCanRenderEach(): void
+    {
+        $out = $this->templator->templates('{% foreach ($numbers as $number) %}{{ $number }}{% endforeach %}');
 
-it('can render each without curve braces', function (): void {
-    $out = $this->templator->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
-    expect($out)->toEqual(
-        '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>'
-    );
-});
+        $this->assertEquals(
+            '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
+            $out
+        );
+    }
 
-it('can render each with key value', function (): void {
-    $out = $this->templator->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
-    expect($out)->toEqual(
-        '<?php foreach ($numbers as $key => $number): ?>'
-        . '<?php echo htmlspecialchars($number); ?>'
-        . '<?php endforeach; ?>'
-    );
-});
+    public function testCanRenderEachWithoutCurveBraces(): void
+    {
+        $out = $this->templator->templates('{% foreach $numbers as $number %}{{ $number }}{% endforeach %}');
 
-it('can render nested each', function (): void {
-    $template = '{% foreach ($categories as $category) %}{{ $category->name }}'
-        . '{% foreach ($category->items as $item) %}{{ $item->name }}{% endforeach %}{% endforeach %}';
+        $this->assertEquals(
+            '<?php foreach ($numbers as $number): ?><?php echo htmlspecialchars($number); ?><?php endforeach; ?>',
+            $out
+        );
+    }
 
-    $expected = '<?php foreach ($categories as $category): ?>'
-        . '<?php echo htmlspecialchars($category->name); ?>'
-        . '<?php foreach ($category->items as $item): ?>'
-        . '<?php echo htmlspecialchars($item->name); ?>'
-        . '<?php endforeach; ?>'
-        . '<?php endforeach; ?>';
+    public function testCanRenderEachWithKeyValue(): void
+    {
+        $out = $this->templator->templates('{% foreach ($numbers as $key => $number) %}{{ $number }}{% endforeach %}');
 
-    $out = $this->templator->templates($template);
-    expect($out)->toEqual($expected);
-});
+        $this->assertEquals(
+            '<?php foreach ($numbers as $key => $number): ?>'
+            . '<?php echo htmlspecialchars($number); ?>'
+            . '<?php endforeach; ?>',
+            $out
+        );
+    }
 
-it('can render nested each with key value', function (): void {
-    $template = '{% foreach ($data as $key => $values) %}{{ $key }}'
-        . '{% foreach ($values as $index => $item) %}{{ $index }}: {{ $item }}'
-        . '{% endforeach %}{% endforeach %}';
-    $expected = '<?php foreach ($data as $key => $values): ?>'
-        . '<?php echo htmlspecialchars($key); ?>'
-        . '<?php foreach ($values as $index => $item): ?>'
-        . '<?php echo htmlspecialchars($index); ?>: '
-        . '<?php echo htmlspecialchars($item); ?>'
-        . '<?php endforeach; ?>'
-        . '<?php endforeach; ?>';
+    public function testCanRenderNestedEach(): void
+    {
+        $template = '{% foreach ($categories as $category) %}{{ $category->name }}'
+            . '{% foreach ($category->items as $item) %}{{ $item->name }}{% endforeach %}{% endforeach %}';
 
-    $out = $this->templator->templates($template);
-    expect($out)->toEqual($expected);
-});
+        $expected = '<?php foreach ($categories as $category): ?>'
+            . '<?php echo htmlspecialchars($category->name); ?>'
+            . '<?php foreach ($category->items as $item): ?>'
+            . '<?php echo htmlspecialchars($item->name); ?>'
+            . '<?php endforeach; ?>'
+            . '<?php endforeach; ?>';
 
-it('can render multiple foreach blocks', function (): void {
-    $template = '{% foreach ($users as $user) %}{{ $user->name }}{% endforeach %}'
-        . '{% foreach ($products as $product) %}{{ $product->name }}{% endforeach %}';
-    $expected = '<?php foreach ($users as $user): ?>'
-        . '<?php echo htmlspecialchars($user->name); ?>'
-        . '<?php endforeach; ?>'
-        . '<?php foreach ($products as $product): ?>'
-        . '<?php echo htmlspecialchars($product->name); ?>'
-        . '<?php endforeach; ?>';
+        $out = $this->templator->templates($template);
 
-    $out = $this->templator->templates($template);
-    expect($out)->toEqual($expected);
-});
+        $this->assertEquals($expected, $out);
+    }
+
+    public function testCanRenderNestedEachWithKeyValue(): void
+    {
+        $template = '{% foreach ($data as $key => $values) %}{{ $key }}'
+            . '{% foreach ($values as $index => $item) %}{{ $index }}: {{ $item }}'
+            . '{% endforeach %}{% endforeach %}';
+        $expected = '<?php foreach ($data as $key => $values): ?>'
+            . '<?php echo htmlspecialchars($key); ?>'
+            . '<?php foreach ($values as $index => $item): ?>'
+            . '<?php echo htmlspecialchars($index); ?>: '
+            . '<?php echo htmlspecialchars($item); ?>'
+            . '<?php endforeach; ?>'
+            . '<?php endforeach; ?>';
+
+        $out = $this->templator->templates($template);
+
+        $this->assertEquals($expected, $out);
+    }
+
+    public function testCanRenderMultipleForeachBlocks(): void
+    {
+        $template = '{% foreach ($users as $user) %}{{ $user->name }}{% endforeach %}'
+            . '{% foreach ($products as $product) %}{{ $product->name }}{% endforeach %}';
+        $expected = '<?php foreach ($users as $user): ?>'
+            . '<?php echo htmlspecialchars($user->name); ?>'
+            . '<?php endforeach; ?>'
+            . '<?php foreach ($products as $product): ?>'
+            . '<?php echo htmlspecialchars($product->name); ?>'
+            . '<?php endforeach; ?>';
+
+        $out = $this->templator->templates($template);
+
+        $this->assertEquals($expected, $out);
+    }
+}

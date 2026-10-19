@@ -1,52 +1,71 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render equalsfield validation')
-    ->expect(vr()->equalsfield('other_field_name'))
-    ->toEqual('equalsfield,other_field_name')
-;
+final class EqualsFieldTest extends TestCase
+{
+    public function testCanRenderEqualsfieldValidation(): void
+    {
+        $this->assertEquals('equalsfield,other_field_name', vr()->equalsfield('other_field_name'));
+    }
 
-it('can render invert equalsfield validation')
-    ->expect(vr()->not->equalsfield('other_field_name'))
-    ->toEqual('invert_equalsfield,other_field_name')
-;
+    public function testCanRenderInvertEqualsfieldValidation(): void
+    {
+        $this->assertEquals('invert_equalsfield,other_field_name', vr()->not->equalsfield('other_field_name'));
+    }
 
-$correct   = ['test' => 'string', 'other' => 'string'];
-$incorrect = ['test' => 'string', 'other' => 'different_string'];
+    public function testCanValidateEqualsfieldWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $val->test->equalsfield('other');
 
-it('can validate equalsfield with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test->equalsfield('other');
+    public function testCanValidateEqualsfieldNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->test->not->equalsfield('other');
 
-it('can validate equalsfield (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->test->not->equalsfield('other');
+    public function testCanValidateEqualsfieldWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test->equalsfield('other');
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate equalsfield with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateContainsNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $val->test->equalsfield('other');
+        $val->test->not->equalsfield('other');
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate contains (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => 'string', 'other' => 'string'];
+    }
 
-    $val->test->not->equalsfield('other');
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => 'string', 'other' => 'different_string'];
+    }
+}

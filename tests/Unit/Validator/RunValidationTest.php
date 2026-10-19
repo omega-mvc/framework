@@ -1,157 +1,193 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-// run validation
-it('can run validation using method is_valid', function () {
-    $valid = new Validator(['test' => 'test']);
+#[CoversClass(Validator::class)]
+final class RunValidationTest extends TestCase
+{
+    public function testCanRunValidationUsingMethodIsValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test->required();
+        $valid->test->required();
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('can run validation using method passed', function () {
-    $_SERVER['REQUEST_METHOD']  = 'POST';
-    $valid                      = new Validator(['test' => 'test']);
+    public function testCanRunValidationUsingMethodPassed(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $valid                     = new Validator(['test' => 'test']);
 
-    $valid->test->required();
+        $valid->test->required();
 
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
 
-it('validation false because method pass required valid validation', function () {
-    $_SERVER['REQUEST_METHOD'] = 'POST';
+    public function testValidationFalseBecauseMethodPassRequiredValidValidation(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
 
-    expect(Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ])->passed())->toBeFalse();
-});
+        $passed = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ])->passed();
 
-it('validation false because method pass required submitted form', function () {
-    $_SERVER['REQUEST_METHOD'] = 'GET';
+        $this->assertFalse($passed);
+    }
 
-    expect(Validator::make()->passed())->toBeFalse();
-});
+    public function testValidationFalseBecauseMethodPassRequiredSubmittedForm(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
 
-it('validation false because method pass required submitted form and valid validation', function () {
-    $_SERVER['REQUEST_METHOD'] = 'GET';
+        $this->assertFalse(Validator::make()->passed());
+    }
 
-    expect(Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ])->passed())->toBeFalse();
-});
+    public function testValidationFalseBecauseMethodPassRequiredSubmittedFormAndValidValidation(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
 
-it('can run validation using method is_valid with closure (param)', function () {
-    $valid = new Validator([
-        'test1' => 'test',
-        'test2' => 'test',
-        'test3' => 'test',
-        'test4' => 'test',
-        'test5' => 'test',
-        'test6' => 'test',
-        'test7' => 'test',
-    ]);
+        $passed = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ])->passed();
 
-    expect($valid->isValid(
-        fn (ValidPool $pool) => [
-            $pool->rule('test1')->required(),
-            $pool('test2')->required(),
-            $pool->test3->required(),
-            $pool->rule('test4', 'test5')->required(),
-            $pool('test6', 'test7')->required(),
-        ]
-    ))->toBeTrue();
-});
+        $this->assertFalse($passed);
+    }
 
-it('can run validation using method is_valid with closure (return)', function () {
-    $valid = new Validator([
-        'test1' => 'test',
-        'test2' => 'test',
-        'test3' => 'test',
-        'test4' => 'test',
-        'test5' => 'test',
-    ]);
+    public function testCanRunValidationUsingMethodIsValidWithClosureParam(): void
+    {
+        $valid = new Validator([
+            'test1' => 'test',
+            'test2' => 'test',
+            'test3' => 'test',
+            'test4' => 'test',
+            'test5' => 'test',
+            'test6' => 'test',
+            'test7' => 'test',
+        ]);
 
-    expect($valid->isValid(function () {
-        $pool = new ValidPool();
-        $pool->rule('test1')->required();
-        $pool('test2')->required();
-        $pool->test3->required();
-        $pool->rule('test4', 'test5')->required();
+        $result = $valid->isValid(
+            fn (ValidPool $pool): array => [
+                $pool->rule('test1')->required(),
+                $pool('test2')->required(),
+                $pool->test3->required(),
+                $pool->rule('test4', 'test5')->required(),
+                $pool('test6', 'test7')->required(),
+            ]
+        );
 
-        return $pool;
-    }))->toBeTrue();
-});
+        $this->assertTrue($result);
+    }
 
-it('can run validation using method is_valid with closure (param) but not valid', function () {
-    $valid = new Validator(['test' => '']);
+    public function testCanRunValidationUsingMethodIsValidWithClosureReturn(): void
+    {
+        $valid = new Validator([
+            'test1' => 'test',
+            'test2' => 'test',
+            'test3' => 'test',
+            'test4' => 'test',
+            'test5' => 'test',
+        ]);
 
-    expect($valid->isValid(fn (ValidPool $pool) => [
-        $pool('test')->required(),
-    ]))->toBeFalse();
-});
+        $result = $valid->isValid(function (): ValidPool {
+            $pool = new ValidPool();
+            $pool->rule('test1')->required();
+            $pool('test2')->required();
+            $pool->test3->required();
+            $pool->rule('test4', 'test5')->required();
 
-it('can run validation using method ifValid', function () {
-    $valid = new Validator(['test' => 'test']);
+            return $pool;
+        });
 
-    $valid->test->required();
+        $this->assertTrue($result);
+    }
 
-    $valid->ifValid(function () use ($valid) {
-        expect($valid->getError())->toBe([]);
-    })->else(function ($err) {
-        expect($err)->toBe([]);
-    });
-});
+    public function testCanRunValidationUsingMethodIsValidWithClosureParamButNotValid(): void
+    {
+        $valid = new Validator(['test' => '']);
 
-it('can run validation using method validOrException', function () {
-    $valid = new Validator(['test' => 'test']);
+        $result = $valid->isValid(fn (ValidPool $pool): array => [
+            $pool('test')->required(),
+        ]);
 
-    $valid->test->required();
+        $this->assertFalse($result);
+    }
 
-    expect($valid->validOrException())->toBeTrue();
-});
+    public function testCanRunValidationUsingMethodIfValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-it('can run validation using method validOrException but not valid', function () {
-    $valid = new Validator(['test' => 'test']);
+        $valid->test->required();
 
-    $valid->test->required()->min_len(5);
-    $valid->validOrException();
-})->throws('vaildate if fallen');
+        $valid->ifValid(function () use ($valid): void {
+            $this->assertSame([], $valid->getError());
+        })->else(function (array $err): void {
+            $this->assertSame([], $err);
+        });
+    }
 
-it('can run validation using method validOrError', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanRunValidationUsingMethodValidOrException(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test->required();
+        $valid->test->required();
 
-    expect($valid->validOrError())->toBeTrue();
-});
+        $this->assertTrue($valid->validOrException());
+    }
 
-it('can run validation using method validOrError but not valid', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanRunValidationUsingMethodValidOrExceptionButNotValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test->required()->min_len(5);
+        $valid->test->required()->min_len(5);
 
-    expect($valid->validOrError())->toBeArray();
-});
+        $this->expectExceptionMessage('vaildate if fallen');
+        $valid->validOrException();
+    }
 
-test('method isError() is invert as method isValid()', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanRunValidationUsingMethodValidOrError(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->test->required();
+        $valid->test->required();
 
-    expect($valid->isError())->toBeFalse();
-    expect($valid->isError())->not->toEqual($valid->isValid());
-});
+        $this->assertTrue($valid->validOrError());
+    }
 
-test('method fails() is invert as method passed()', function () {
-    $_SERVER['REQUEST_METHOD'] = 'POST';
+    public function testCanRunValidationUsingMethodValidOrErrorButNotValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid = new Validator(['test' => 'test']);
+        $valid->test->required()->min_len(5);
 
-    $valid->test->required();
+        $this->assertIsArray($valid->validOrError());
+    }
 
-    expect($valid->fails())->toBeFalse();
-    expect($valid->fails())->not->toEqual($valid->passed());
-});
+    public function testMethodIsErrorIsInvertAsMethodIsValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
+
+        $valid->test->required();
+
+        $this->assertFalse($valid->isError());
+        $this->assertNotEquals($valid->isValid(), $valid->isError());
+    }
+
+    public function testMethodFailsIsInvertAsMethodPassed(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+
+        $valid = new Validator(['test' => 'test']);
+
+        $valid->test->required();
+
+        $this->assertFalse($valid->fails());
+        $this->assertNotEquals($valid->passed(), $valid->fails());
+    }
+}

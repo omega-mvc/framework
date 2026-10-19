@@ -1,15 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
+
 use Omega\Validator\Rule\Filter;
+use Tests\TestCase;
 
-it('can create filter using with method', function () {
-    $filter = Filter::with()->trim();
+final class WithTest extends TestCase
+{
+    public function testCanCreateFilterUsingWithMethod(): void
+    {
+        $filter = Filter::with()->trim();
 
-    expect($filter->getFilter())->toEqual('trim');
-});
+        $this->assertEquals('trim', $filter->getFilter());
+    }
 
-it('can create filter using with method from instance', function () {
-    $filter = (new Filter())->with()->trim();
+    public function testCanCreateFilterUsingWithMethodFromInstance(): void
+    {
+        $filter = (new Filter())->with()->trim();
 
-    expect($filter->getFilter())->toEqual('trim');
-});
+        $this->assertEquals('trim', $filter->getFilter());
+    }
+}

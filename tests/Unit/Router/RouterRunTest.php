@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -18,90 +8,107 @@ use Omega\Router\AbstractRouter;
 use Omega\Router\RouteDispatcher;
 use Omega\Router\RouteGroup;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Router\Support\NoHandleMiddleware;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
-covers(AbstractRouter::class);
-covers(RouteDispatcher::class);
-covers(RouteGroup::class);
-covers(Router::class);
+#[CoversClass(AbstractRouter::class)]
+#[CoversClass(RouteDispatcher::class)]
+#[CoversClass(RouteGroup::class)]
+#[CoversClass(Router::class)]
+final class RouterRunTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-afterEach(function (): void {
-    Router::reset();
-});
+        parent::tearDown();
+    }
 
-it('run falls back to server defaults when uri and method are omitted', function (): void {
-    Router::get('/', fn () => 'root');
+    public function testRunFallsBackToServerDefaultsWhenUriAndMethodAreOmitted(): void
+    {
+        Router::get('/', fn () => 'root');
 
-    unset($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+        unset($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
 
-    expect(Router::run())->toBe('root');
-});
+        $this->assertSame('root', Router::run());
+    }
 
-it('run accepts explicit uri and method arguments', function (): void {
-    Router::post('/explicit', fn () => 'posted');
+    public function testRunAcceptsExplicitUriAndMethodArguments(): void
+    {
+        Router::post('/explicit', fn () => 'posted');
 
-    expect(Router::run(uri: '/explicit', method: 'POST'))->toBe('posted');
-});
+        $this->assertSame('posted', Router::run(uri: '/explicit', method: 'POST'));
+    }
 
-it('run falls back to the server method when only the uri is passed', function (): void {
-    Router::get('/server-method', fn () => 'served');
+    public function testRunFallsBackToTheServerMethodWhenOnlyTheUriIsPassed(): void
+    {
+        Router::get('/server-method', fn () => 'served');
 
-    $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
 
-    expect(Router::run(uri: '/server-method'))->toBe('served');
-});
+        $this->assertSame('served', Router::run(uri: '/server-method'));
+    }
 
-it('run returns null when no route matches and no not-found handler is set', function (): void {
-    Router::get('/only', fn () => 'ok');
+    public function testRunReturnsNullWhenNoRouteMatchesAndNoNotFoundHandlerIsSet(): void
+    {
+        Router::get('/only', fn () => 'ok');
 
-    expect(Router::run(uri: '/missing', method: 'GET'))->toBeNull();
-});
+        $this->assertNull(Router::run(uri: '/missing', method: 'GET'));
+    }
 
-it('run returns null when the method is not allowed and no handler is set', function (): void {
-    Router::get('/only', fn () => 'ok');
+    public function testRunReturnsNullWhenTheMethodIsNotAllowedAndNoHandlerIsSet(): void
+    {
+        Router::get('/only', fn () => 'ok');
 
-    expect(Router::run(uri: '/only', method: 'POST'))->toBeNull();
-});
+        $this->assertNull(Router::run(uri: '/only', method: 'POST'));
+    }
 
-it('run matches a route against a non-empty base path', function (): void {
-    Router::get('/users', fn () => 'users');
+    public function testRunMatchesARouteAgainstANonEmptyBasePath(): void
+    {
+        Router::get('/users', fn () => 'users');
 
-    expect(Router::run(basePath: '/api', uri: '/api/users', method: 'GET'))->toBe('users');
-});
+        $this->assertSame('users', Router::run(basePath: '/api', uri: '/api/users', method: 'GET'));
+    }
 
-it('run honours case sensitive matching', function (): void {
-    Router::get('/CaseRoute', fn () => 'case-matched');
+    public function testRunHonoursCaseSensitiveMatching(): void
+    {
+        Router::get('/CaseRoute', fn () => 'case-matched');
 
-    expect(Router::run(caseMatters: true, uri: '/CaseRoute', method: 'GET'))->toBe('case-matched');
-    expect(Router::run(caseMatters: true, uri: '/caseroute', method: 'GET'))->toBeNull();
-    expect(Router::run(caseMatters: false, uri: '/caseroute', method: 'GET'))->toBe('case-matched');
-});
+        $this->assertSame('case-matched', Router::run(caseMatters: true, uri: '/CaseRoute', method: 'GET'));
+        $this->assertNull(Router::run(caseMatters: true, uri: '/caseroute', method: 'GET'));
+        $this->assertSame('case-matched', Router::run(caseMatters: false, uri: '/caseroute', method: 'GET'));
+    }
 
-it('run picks the first match by default and the last match in multiMatch mode', function (): void {
-    Router::get('/multi', fn () => 'one');
-    Router::get('/multi', fn () => 'two');
+    public function testRunPicksTheFirstMatchByDefaultAndTheLastMatchInMultiMatchMode(): void
+    {
+        Router::get('/multi', fn () => 'one');
+        Router::get('/multi', fn () => 'two');
 
-    expect(Router::run(multiMatch: false, uri: '/multi', method: 'GET'))->toBe('one');
-    expect(Router::run(multiMatch: true, uri: '/multi', method: 'GET'))->toBe('two');
-});
+        $this->assertSame('one', Router::run(multiMatch: false, uri: '/multi', method: 'GET'));
+        $this->assertSame('two', Router::run(multiMatch: true, uri: '/multi', method: 'GET'));
+    }
 
-it('run instantiates middleware that does not expose a handle method', function (): void {
-    Router::get('/mw', fn () => 'mw')->middleware([NoHandleMiddleware::class]);
+    public function testRunInstantiatesMiddlewareThatDoesNotExposeAHandleMethod(): void
+    {
+        Router::get('/mw', fn () => 'mw')->middleware([NoHandleMiddleware::class]);
 
-    expect(Router::run(uri: '/mw', method: 'GET'))->toBe('mw');
-});
+        $this->assertSame('mw', Router::run(uri: '/mw', method: 'GET'));
+    }
 
-it('run executes duplicated middleware only once per request', function (): void {
-    TestMiddleware::$last = 0;
+    public function testRunExecutesDuplicatedMiddlewareOnlyOncePerRequest(): void
+    {
+        TestMiddleware::$last = 0;
 
-    Router::middleware([TestMiddleware::class])->group(function (): void {
-        Router::get('/dup', fn () => 'dup')->middleware([TestMiddleware::class]);
-    });
+        Router::middleware([TestMiddleware::class])->group(function (): void {
+            Router::get('/dup', fn () => 'dup')->middleware([TestMiddleware::class]);
+        });
 
-    Router::run(uri: '/dup', method: 'GET');
+        Router::run(uri: '/dup', method: 'GET');
 
-    expect(TestMiddleware::$last)->toBe(1);
+        $this->assertSame(1, TestMiddleware::$last);
 
-    TestMiddleware::$last = 0;
-});
+        TestMiddleware::$last = 0;
+    }
+}

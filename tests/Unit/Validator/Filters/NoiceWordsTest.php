@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander noise_words', function () {
-    expect(fr()->noise_words())
-        ->toEqual('noise_words')
-    ;
-});
+final class NoiceWordsTest extends TestCase
+{
+    public function testCanRanderNoiseWords(): void
+    {
+        $this->assertEquals('noise_words', fr()->noise_words());
+    }
 
-it('can filter noice_words', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'word']);
+    public function testCanFilterNoiceWords(): void
+    {
+        $fr = new Validator(['field' => 'word']);
 
-    $fr->filter('field')->noise_words();
+        $fr->filter('field')->noise_words();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'word'])
-    ;
-});
+        $this->assertEquals(['field' => 'word'], $fr->filterOut());
+    }
+}

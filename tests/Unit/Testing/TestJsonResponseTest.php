@@ -7,224 +7,248 @@ namespace Tests\Testing;
 use Exception;
 use Omega\Http\Response;
 use Omega\Testing\TestJsonResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Response::class);
-covers(TestJsonResponse::class);
+#[CoversClass(Response::class)]
+#[CoversClass(TestJsonResponse::class)]
+final class TestJsonResponseTest extends TestCase
+{
+    public function testAllowsArrayAccessToResponseData(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => 'success',
+            ],
+            'error' => null,
+        ]));
+        $response['test'] = 'test';
 
-it('allows array access to response data', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => 'success',
-        ],
-        'error' => null,
-    ]));
-    $response['test'] = 'test';
+        $this->assertSame('ok', $response['status']);
+        $this->assertSame('test', $response['test']);
+    }
 
-    expect($response['status'])->toBe('ok');
-    expect($response['test'])->toBe('test');
-});
+    public function testReturnsTheDataPartOfTheResponse(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => 'success',
+            ],
+            'error' => null,
+        ]));
 
-it('returns the data part of the response', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => 'success',
-        ],
-        'error' => null,
-    ]));
+        $this->assertEquals(['test' => 'success'], $response->getData());
+        $this->assertSame('ok', $response['status']);
+    }
 
-    expect($response->getData())->toEqual(['test' => 'success']);
-    expect($response['status'])->toBe('ok');
-});
+    public function testAssertsThatADataKeyEqualsTheExpectedValue(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => 'success',
+            ],
+            'error' => null,
+        ]));
 
-it('asserts that a data key equals the expected value', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => 'success',
-        ],
-        'error' => null,
-    ]));
+        $response->assertEqual('data.test', 'success');
+    }
 
-    $response->assertEqual('data.test', 'success');
-});
+    public function testAssertsThatADataKeyIsTrue(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => true,
+            ],
+            'error' => null,
+        ]));
 
-it('asserts that a data key is true', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => true,
-        ],
-        'error' => null,
-    ]));
+        $response->assertTrue('data.test');
+    }
 
-    $response->assertTrue('data.test');
-});
+    public function testAssertsThatADataKeyIsFalse(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => false,
+            ],
+            'error' => null,
+        ]));
 
-it('asserts that a data key is false', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => false,
-        ],
-        'error' => null,
-    ]));
+        $response->assertFalse('data.test');
+    }
 
-    $response->assertFalse('data.test');
-});
+    public function testAssertsThatADataKeyIsNull(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => false,
+            ],
+            'error' => null,
+        ]));
 
-it('asserts that a data key is null', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => false,
-        ],
-        'error' => null,
-    ]));
+        $response->assertNull('error');
+    }
 
-    $response->assertNull('error');
-});
+    public function testAssertsThatADataKeyIsNotNull(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => false,
+            ],
+            'error' => [
+                'test' => 'some error',
+            ],
+        ]));
 
-it('asserts that a data key is not null', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => false,
-        ],
-        'error' => [
-            'test' => 'some error',
-        ],
-    ]));
+        $response->assertNotNull('error');
+    }
 
-    $response->assertNotNull('error');
-});
+    public function testAssertsThatTheDataPayloadIsEmpty(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [],
+            'error' => null,
+        ]));
 
-it('asserts that the data payload is empty', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [],
-        'error' => null,
-    ]));
+        $response->assertEmpty('error');
+    }
 
-    $response->assertEmpty('error');
-});
+    public function testAssertsThatTheDataPayloadIsNotEmpty(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'code'  => 200,
+            'data'  => [
+                'test' => false,
+            ],
+            'error' => null,
+        ]));
 
-it('asserts that the data payload is not empty', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'code'  => 200,
-        'data'  => [
-            'test' => false,
-        ],
-        'error' => null,
-    ]));
+        $response->assertNotEmpty('error');
+    }
 
-    $response->assertNotEmpty('error');
-});
+    public function testThrowsWhenTheResponseContentIsNotAnArray(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('Response body is not Array.');
 
-it('throws when the response content is not an array', function (): void {
-    expect(fn () => new TestJsonResponse(new Response('not-an-array')))
-        ->toThrow(Exception::class, 'Response body is not Array.');
-});
+        new TestJsonResponse(new Response('not-an-array'));
+    }
 
-it('replaces the response data', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'data' => [],
-    ]));
+    public function testReplacesTheResponseData(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'data' => [],
+        ]));
 
-    $response->setResponseData([
-        'data' => ['changed' => true],
-    ]);
+        $response->setResponseData([
+            'data' => ['changed' => true],
+        ]);
 
-    expect($response->getData())->toEqual(['changed' => true]);
-});
+        $this->assertEquals(['changed' => true], $response->getData());
+    }
 
-it('checks whether an offset exists', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testChecksWhetherAnOffsetExists(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    expect(isset($response['status']))->toBeTrue();
-    expect(isset($response['missing']))->toBeFalse();
-});
+        $this->assertTrue(isset($response['status']));
+        $this->assertFalse(isset($response['missing']));
+    }
 
-it('unsets an offset', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testUnsetsAnOffset(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    unset($response['status']);
+        unset($response['status']);
 
-    expect(isset($response['status']))->toBeFalse();
-});
+        $this->assertFalse(isset($response['status']));
+    }
 
-it('returns false when the offset is not a string or int', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testReturnsFalseWhenTheOffsetIsNotAStringOrInt(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    expect($response->offsetExists(1.5))->toBeFalse();
-});
+        $this->assertFalse($response->offsetExists(1.5));
+    }
 
-it('returns null when the offset is not a string or int', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testReturnsNullWhenTheOffsetIsNotAStringOrInt(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    expect($response->offsetGet(1.5))->toBeNull();
-});
+        $this->assertNull($response->offsetGet(1.5));
+    }
 
-it('does not set the value when the offset is not a string or int', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testDoesNotSetTheValueWhenTheOffsetIsNotAStringOrInt(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    $response->offsetSet(1.5, 'ignored');
+        $response->offsetSet(1.5, 'ignored');
 
-    expect($response->offsetExists('status'))->toBeTrue();
-    expect($response->offsetExists('ignored'))->toBeFalse();
-});
+        $this->assertTrue($response->offsetExists('status'));
+        $this->assertFalse($response->offsetExists('ignored'));
+    }
 
-it('does not unset the value when the offset is not a string or int', function (): void {
-    $response = new TestJsonResponse(new Response([
-        'status' => 'ok',
-        'data' => [],
-    ]));
+    public function testDoesNotUnsetTheValueWhenTheOffsetIsNotAStringOrInt(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            'status' => 'ok',
+            'data' => [],
+        ]));
 
-    $response->offsetUnset(1.5);
+        $response->offsetUnset(1.5);
 
-    expect($response->offsetExists('status'))->toBeTrue();
-});
+        $this->assertTrue($response->offsetExists('status'));
+    }
 
-it('supports integer offsets', function (): void {
-    $response = new TestJsonResponse(new Response([
-        0     => 'zero',
-        'var' => 'ok',
-    ]));
+    public function testSupportsIntegerOffsets(): void
+    {
+        $response = new TestJsonResponse(new Response([
+            0     => 'zero',
+            'var' => 'ok',
+        ]));
 
-    expect($response->offsetExists(0))->toBeTrue();
+        $this->assertTrue($response->offsetExists(0));
 
-    expect($response->offsetGet(0))->toBe('zero');
+        $this->assertSame('zero', $response->offsetGet(0));
 
-    $response->offsetSet(0, 'changed');
+        $response->offsetSet(0, 'changed');
 
-    expect($response->offsetGet(0))->toBe('changed');
+        $this->assertSame('changed', $response->offsetGet(0));
 
-    $response->offsetUnset(0);
+        $response->offsetUnset(0);
 
-    expect($response->offsetExists(0))->toBeFalse();
-});
+        $this->assertFalse($response->offsetExists(0));
+    }
+}

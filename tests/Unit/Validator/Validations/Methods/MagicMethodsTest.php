@@ -1,20 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
+
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can access unknown property using __get', function () {
-    $valid = vr();
+final class MagicMethodsTest extends TestCase
+{
+    public function testCanAccessUnknownPropertyUsingGet(): void
+    {
+        $valid = vr();
 
-    expect($valid->__get('unknown_property'))->toBe($valid);
-});
+        $this->assertSame($valid, $valid->__get('unknown_property'));
+    }
 
-it('can call unknown method using __call', function () {
-    $valid = vr();
+    public function testCanCallUnknownMethodUsingCall(): void
+    {
+        $valid = vr();
 
-    expect($valid->__call('unknown_method', []))->toBe($valid);
-});
+        $this->assertSame($valid, $valid->__call('unknown_method', []));
+    }
 
-it('can render equals_field using __call')
-    ->expect(vr()->equals_field('other'))
-    ->toEqual('equalsfield,other')
-;
+    public function testCanRenderEqualsFieldUsingCall(): void
+    {
+        $this->assertEquals('equalsfield,other', vr()->equals_field('other'));
+    }
+}

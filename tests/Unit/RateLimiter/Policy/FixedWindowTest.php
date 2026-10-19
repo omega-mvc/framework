@@ -1,158 +1,174 @@
 <?php
 
-/**
- * Part of Omega - Tests Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\RateLimiter\Policy;
 
 use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\Policy\FixedWindow;
-
-use function expect;
+use Tests\TestCase;
 use function floor;
 use function Omega\Time\now;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-covers(FixedWindow::class);
-covers(MemoryStorage::class);
+final class FixedWindowTest extends TestCase
+{
 
-beforeEach(function (): void {
-    $this->cache = new MemoryStorage(['ttl' => 3600]);
-});
 
-afterEach(function (): void {
-    $this->cache->clear();
-});
+    private MemoryStorage $cache;
 
-it('can consume tokens within the limit', function (): void {
-    $limiter   = new FixedWindow($this->cache, 5, 60);
-    $rateLimit = $limiter->consume('test_key');
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    expect($rateLimit->isBlocked())->toBeFalse();
-    expect($rateLimit->getConsumed())->toBe(1);
-    expect($rateLimit->getRemaining())->toBe(4);
-});
-
-it('blocks when consuming tokens exceeds the limit', function (): void {
-    $limiter = new FixedWindow($this->cache, 5, 60);
-
-    for ($i = 0; $i < 5; $i++) {
-        $limiter->consume('test_key');
+        $this->cache = new MemoryStorage(['ttl' => 3600]);
     }
 
-    $rateLimit = $limiter->consume('test_key');
+    protected function tearDown(): void
+    {
+        $this->cache->clear();
 
-    expect($rateLimit->isBlocked())->toBeTrue();
-    expect($rateLimit->getConsumed())->toBe(5);
-    expect($rateLimit->getRemaining())->toBe(0);
-});
+        parent::tearDown();
+    }
 
-it('can peek at the rate limit status', function (): void {
-    $limiter = new FixedWindow($this->cache, 5, 60);
+    public function testCanConsumeTokensWithinTheLimit(): void
+    {
+        $limiter   = new FixedWindow($this->cache, 5, 60);
+        $rateLimit = $limiter->consume('test_key');
 
-    $this->cache->set('test_key:fw:' . floor(now()->getTimestamp() / 60), 3);
+        $this->assertFalse($rateLimit->isBlocked());
+        $this->assertSame(1, $rateLimit->getConsumed());
+        $this->assertSame(4, $rateLimit->getRemaining());
+    }
 
-    $rateLimit = $limiter->peek('test_key');
+    public function testBlocksWhenConsumingTokensExceedsTheLimit(): void
+    {
+        $limiter = new FixedWindow($this->cache, 5, 60);
 
-    expect($rateLimit->isBlocked())->toBeFalse();
-    expect($rateLimit->getConsumed())->toBe(3);
-    expect($rateLimit->getRemaining())->toBe(2);
-});
-
-it('can reset the rate limit', function (): void {
-    $limiter = new FixedWindow($this->cache, 5, 60);
-
-    $limiter->consume('test_key');
-    $limiter->reset('test_key');
-
-    $rateLimit = $limiter->peek('test_key');
-
-    expect($rateLimit->getConsumed())->toBe(0);
-});
-
-it('treats a non-integer cached value as zero when consuming', function (): void {
-    $cache = new class(['ttl' => 3600]) extends MemoryStorage {
-        private bool $returnString = false;
-
-        public function returnString(bool $returnString): void
-        {
-            $this->returnString = $returnString;
+        for ($i = 0; $i < 5; $i++) {
+            $limiter->consume('test_key');
         }
 
-        public function get(string $key, mixed $default = null): mixed
-        {
-            if ($this->returnString) {
-                return 'corrupted';
+        $rateLimit = $limiter->consume('test_key');
+
+        $this->assertTrue($rateLimit->isBlocked());
+        $this->assertSame(5, $rateLimit->getConsumed());
+        $this->assertSame(0, $rateLimit->getRemaining());
+    }
+
+    public function testCanPeekAtTheRateLimitStatus(): void
+    {
+        $limiter = new FixedWindow($this->cache, 5, 60);
+
+        $this->cache->set('test_key:fw:' . floor(now()->getTimestamp() / 60), 3);
+
+        $rateLimit = $limiter->peek('test_key');
+
+        $this->assertFalse($rateLimit->isBlocked());
+        $this->assertSame(3, $rateLimit->getConsumed());
+        $this->assertSame(2, $rateLimit->getRemaining());
+    }
+
+    public function testCanResetTheRateLimit(): void
+    {
+        $limiter = new FixedWindow($this->cache, 5, 60);
+
+        $limiter->consume('test_key');
+        $limiter->reset('test_key');
+
+        $rateLimit = $limiter->peek('test_key');
+
+        $this->assertSame(0, $rateLimit->getConsumed());
+    }
+
+    public function testTreatsANonIntegerCachedValueAsZeroWhenConsuming(): void
+    {
+        $cache = new class(['ttl' => 3600]) extends MemoryStorage {
+            private bool $returnString = false;
+
+            public function returnString(bool $returnString): void
+            {
+                $this->returnString = $returnString;
             }
 
-            return parent::get($key, $default);
-        }
-    };
+            public function get(string $key, mixed $default = null): mixed
+            {
+                if ($this->returnString) {
+                    return 'corrupted';
+                }
 
-    $cache->returnString(true);
+                return parent::get($key, $default);
+            }
+        };
 
-    $limiter   = new FixedWindow($cache, 5, 60);
-    $rateLimit = $limiter->consume('test_key');
+        $cache->returnString(true);
 
-    expect($rateLimit->isBlocked())->toBeFalse();
-    expect($rateLimit->getConsumed())->toBe(1);
-    expect($rateLimit->getRemaining())->toBe(4);
-});
+        $limiter   = new FixedWindow($cache, 5, 60);
+        $rateLimit = $limiter->consume('test_key');
 
-it('blocks when the requested tokens exceed the limit', function (): void {
-    $limiter   = new FixedWindow($this->cache, 2, 60);
-    $rateLimit = $limiter->consume('test_key', 3);
+        $this->assertFalse($rateLimit->isBlocked());
+        $this->assertSame(1, $rateLimit->getConsumed());
+        $this->assertSame(4, $rateLimit->getRemaining());
+    }
 
-    expect($rateLimit->isBlocked())->toBeTrue();
-    expect($rateLimit->getConsumed())->toBe(0);
-    expect($rateLimit->getRemaining())->toBe(2);
-});
+    public function testBlocksWhenTheRequestedTokensExceedTheLimit(): void
+    {
+        $limiter   = new FixedWindow($this->cache, 2, 60);
+        $rateLimit = $limiter->consume('test_key', 3);
 
-it('treats a non-integer cached value as zero when peeking', function (): void {
-    $cache = new class(['ttl' => 3600]) extends MemoryStorage {
-        private bool $returnString = false;
+        $this->assertTrue($rateLimit->isBlocked());
+        $this->assertSame(0, $rateLimit->getConsumed());
+        $this->assertSame(2, $rateLimit->getRemaining());
+    }
 
-        public function returnString(bool $returnString): void
-        {
-            $this->returnString = $returnString;
-        }
+    public function testTreatsANonIntegerCachedValueAsZeroWhenPeeking(): void
+    {
+        $cache = new class(['ttl' => 3600]) extends MemoryStorage {
+            private bool $returnString = false;
 
-        public function get(string $key, mixed $default = null): mixed
-        {
-            if ($this->returnString) {
-                return 'corrupted';
+            public function returnString(bool $returnString): void
+            {
+                $this->returnString = $returnString;
             }
 
-            return parent::get($key, $default);
-        }
-    };
+            public function get(string $key, mixed $default = null): mixed
+            {
+                if ($this->returnString) {
+                    return 'corrupted';
+                }
 
-    $cache->returnString(true);
+                return parent::get($key, $default);
+            }
+        };
 
-    $limiter   = new FixedWindow($cache, 5, 60);
-    $rateLimit = $limiter->peek('test_key');
+        $cache->returnString(true);
 
-    expect($rateLimit->isBlocked())->toBeFalse();
-    expect($rateLimit->getConsumed())->toBe(0);
-    expect($rateLimit->getRemaining())->toBe(5);
-});
+        $limiter   = new FixedWindow($cache, 5, 60);
+        $rateLimit = $limiter->peek('test_key');
 
-it('reports the key as blocked when the limit is reached', function (): void {
-    $limiter = new FixedWindow($this->cache, 5, 60);
+        $this->assertFalse($rateLimit->isBlocked());
+        $this->assertSame(0, $rateLimit->getConsumed());
+        $this->assertSame(5, $rateLimit->getRemaining());
+    }
 
-    $this->cache->set('test_key:fw:' . floor(now()->getTimestamp() / 60), 5);
+    public function testReportsTheKeyAsBlockedWhenTheLimitIsReached(): void
+    {
+        $limiter = new FixedWindow($this->cache, 5, 60);
 
-    $rateLimit = $limiter->peek('test_key');
+        $this->cache->set('test_key:fw:' . floor(now()->getTimestamp() / 60), 5);
 
-    expect($rateLimit->isBlocked())->toBeTrue();
-    expect($rateLimit->getConsumed())->toBe(5);
-    expect($rateLimit->getRemaining())->toBe(0);
-});
+        $rateLimit = $limiter->peek('test_key');
+
+        $this->assertTrue($rateLimit->isBlocked());
+        $this->assertSame(5, $rateLimit->getConsumed());
+        $this->assertSame(0, $rateLimit->getRemaining());
+    }
+
+
+}

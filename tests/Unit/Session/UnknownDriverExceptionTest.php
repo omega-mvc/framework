@@ -1,37 +1,34 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session;
 
 use Omega\Session\Exceptions\UnknownDriverException;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
+use Tests\TestCase;
 
 use function class_parents;
-use function expect;
 
-covers(UnknownDriverException::class);
+#[CoversClass(UnknownDriverException::class)]
+final class UnknownDriverExceptionTest extends TestCase
+{
+    public function testConstructsAnUnknownDriverException(): void
+    {
+        $exception = new UnknownDriverException('redis');
 
-it('constructs an UnknownDriverException', function (): void {
-    $exception = new UnknownDriverException('redis');
+        $this->assertContains(RuntimeException::class, class_parents(UnknownDriverException::class));
+        $this->assertSame(
+            'The session storage driver "redis" could not be resolved or is not registered.',
+            $exception->getMessage()
+        );
+    }
 
-    expect(class_parents(UnknownDriverException::class))->toContain(RuntimeException::class);
-    expect($exception->getMessage())
-        ->toBe('The session storage driver "redis" could not be resolved or is not registered.');
-});
+    public function testReportsTheDriverNameThatCouldNotBeResolved(): void
+    {
+        $exception = new UnknownDriverException('file');
 
-it('reports the driver name that could not be resolved', function (): void {
-    $exception = new UnknownDriverException('file');
-
-    expect($exception->getMessage())->toContain('"file"');
-});
+        $this->assertStringContainsString('"file"', $exception->getMessage());
+    }
+}

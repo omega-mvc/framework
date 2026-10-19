@@ -1,61 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Rule;
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-// get error message
-it('can get error message when valadation is fallen using method get_error', function () {
-    $valid = new Validator(['test' => 'test']);
+final class GetErrorValidationTest extends TestCase
+{
+    public function testCanGetErrorMessageWhenValadationIsFallenUsingMethodGetError(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->field('test')->min_len(5);
+        $valid->field('test')->min_len(5);
 
-    expect($valid->getError())->toHaveCount(1);
-});
+        $this->assertCount(1, $valid->getError());
+    }
 
-it('can get error message when valadation is fallen using method ifValid', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanGetErrorMessageWhenValadationIsFallenUsingMethodIfValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->field('test')->min_len(5);
+        $valid->field('test')->min_len(5);
 
-    $valid->ifValid(function () {
-    })->else(function ($err) {
-        expect($err)->toHaveCount(1);
-    });
-});
+        $valid->ifValid(function (): void {
+        })->else(function (array $err): void {
+            $this->assertCount(1, $err);
+        });
+    }
 
-it('can get error message when valadation is fallen using method validOrError', function () {
-    $valid = new Validator(['test' => 'test']);
+    public function testCanGetErrorMessageWhenValadationIsFallenUsingMethodValidOrError(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-    $valid->field('test')->min_len(5);
+        $valid->field('test')->min_len(5);
 
-    expect($valid->validOrError())->toHaveCount(1);
-});
+        $error = $valid->validOrError();
 
-it('can get error from method errors', function () {
-    Rule::set_error_message('required', '{field} can\'t be null');
+        $this->assertIsArray($error);
+        $this->assertCount(1, $error);
+    }
 
-    $v = new Validator(['test' => null, 'test2' => 'abc']);
+    public function testCanGetErrorFromMethodErrors(): void
+    {
+        Rule::set_error_message('required', '{field} can\'t be null');
 
-    $v('test')->required();
-    $v->filter('test2')->upper_case();
+        $v = new Validator(['test' => null, 'test2' => 'abc']);
 
-    expect($v->errors()->all())->toMatchArray([
-        'test' => 'Test can\'t be null',
-    ]);
-    expect($v->errors->has('test'))->toBeTrue();
-});
+        $v('test')->required();
+        $v->filter('test2')->upper_case();
 
-it('can get error from property errors', function () {
-    Rule::set_error_message('required', '{field} can\'t be null');
+        $errors = $v->errors()->all();
 
-    $v = new Validator(['test' => null, 'test2' => 'abc']);
+        $this->assertEquals('Test can\'t be null', $errors['test']);
+        $this->assertTrue($v->errors->has('test'));
+    }
 
-    $v('test')->required();
-    $v->filter('test2')->upper_case();
+    public function testCanGetErrorFromPropertyErrors(): void
+    {
+        Rule::set_error_message('required', '{field} can\'t be null');
 
-    expect($v->errors)
-        ->has('test')->toBeTrue()
-        ->all()->toMatchArray([
-            'test' => 'Test can\'t be null',
-        ]);
-});
+        $v = new Validator(['test' => null, 'test2' => 'abc']);
+
+        $v('test')->required();
+        $v->filter('test2')->upper_case();
+
+        $this->assertTrue($v->errors->has('test'));
+        $this->assertEquals('Test can\'t be null', $v->errors->all()['test']);
+    }
+}

@@ -9,39 +9,47 @@ use Omega\Http\Response;
 use Omega\Middleware\StartSessionMiddleware;
 use Omega\Session\SessionManager;
 use Omega\Session\Storage\ArrayStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(ArrayStorage::class)]
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+#[CoversClass(SessionManager::class)]
+#[CoversClass(StartSessionMiddleware::class)]
+final class StartSessionMiddlewareTest extends TestCase
+{
+    public function testStartsAndSavesTheSessionForEachRequest(): void
+    {
+        $storage    = new ArrayStorage();
+        $session    = new SessionManager('array', $storage);
+        $middleware = new StartSessionMiddleware($session);
 
-covers(ArrayStorage::class);
-covers(Request::class);
-covers(Response::class);
-covers(SessionManager::class);
-covers(StartSessionMiddleware::class);
+        $session->setId('test-session-id');
 
-it('starts and saves the session for each request', function (): void {
-    $storage    = new ArrayStorage();
-    $session    = new SessionManager('array', $storage);
-    $middleware = new StartSessionMiddleware($session);
+        $handled = $middleware->handle(new Request('/'), function (Request $request) use ($session): Response {
+            $session->put('name', 'omega');
 
-    $session->setId('test-session-id');
+            return new Response('content');
+        });
 
-    $handled = $middleware->handle(new Request('/'), function (Request $request) use ($session): Response {
-        $session->put('name', 'omega');
+        $this->assertSame('test-session-id', $session->getId());
 
-        return new Response('content');
-    });
+        $content = $storage->read('test-session-id');
+        $this->assertIsString($content);
+        $this->assertStringContainsString('"name":"omega"', $content);
 
-    expect($session->getId())->toBe('test-session-id');
-    expect($storage->read('test-session-id'))->toContain('"name":"omega"');
-    expect($handled->getContent())->toBe('content');
-});
+        $this->assertSame('content', $handled->getContent());
+    }
 
-it('returns the response produced by the next middleware', function (): void {
-    $session    = new SessionManager('array', new ArrayStorage());
-    $middleware = new StartSessionMiddleware($session);
-    $response   = new Response('ok');
+    public function testReturnsTheResponseProducedByTheNextMiddleware(): void
+    {
+        $session    = new SessionManager('array', new ArrayStorage());
+        $middleware = new StartSessionMiddleware($session);
+        $response   = new Response('ok');
 
-    $handled = $middleware->handle(new Request('/'), fn (Request $request) => $response);
+        $handled = $middleware->handle(new Request('/'), fn (Request $request) => $response);
 
-    expect($handled)->toBe($response);
-});
+        $this->assertSame($response, $handled);
+    }
+}

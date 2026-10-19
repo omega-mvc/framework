@@ -15,8 +15,6 @@ use function Omega\Http\redirect_route;
 
 #[CoversClass(Router::class)]
 #[CoversClass(TestResponse::class)]
-#[CoversFunction('Omega\Http\redirect')]
-#[CoversFunction('Omega\Http\redirect_route')]
 final class HelperTest extends TestCase
 {
     public function testRedirectToCorrectUrl(): void

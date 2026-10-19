@@ -1,38 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render contains_list validation')
-    ->expect(vr()->contains_list('one', 'two'))
-    ->toEqual('contains_list,one;two')
-;
+final class ContainsListTest extends TestCase
+{
+    public function testCanRenderContainsListValidation(): void
+    {
+        $this->assertEquals('contains_list,one;two', vr()->contains_list('one', 'two'));
+    }
 
-it('can render invert contains_list validation')
-    ->expect(vr()->not()->contains_list('one', 'two'))
-    ->toEqual('invert_contains_list,one;two')
-;
+    public function testCanRenderInvertContainsListValidation(): void
+    {
+        $this->assertEquals('invert_contains_list,one;two', vr()->not()->contains_list('one', 'two'));
+    }
 
-$correct = [
-    'test1' => 'one',
-    'test2' => 'with space',
-    'test3' => '',
-];
-$incorrect = [
-    'test' => 'three',
-];
+    public function testCanValidateContainsListWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate contains_list with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->field('test1', 'test2', 'test3')->contains_list('one', 'two', 'with space');
 
-    $val->field('test1', 'test2', 'test3')->contains_list('one', 'two', 'with space');
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateContainsListWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-it('can validate contains_list with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $val->field('test')->contains_list('one', 'two');
 
-    $val->field('test')->contains_list('one', 'two');
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'one',
+            'test2' => 'with space',
+            'test3' => '',
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test' => 'three',
+        ];
+    }
+}

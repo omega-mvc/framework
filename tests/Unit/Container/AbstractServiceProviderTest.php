@@ -8,9 +8,7 @@ use Exception;
 use Omega\Application\Application;
 use Omega\Application\ApplicationInterface;
 use Omega\Container\AbstractServiceProvider;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
-
 use function chmod;
 use function copy;
 use function dirname;
@@ -23,10 +21,18 @@ use function is_dir;
 use function mkdir;
 use function rmdir;
 use function unlink;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(AbstractServiceProvider::class)]
 final class AbstractServiceProviderTest extends TestCase
 {
+
+
     private string $basePath;
 
     protected function setUp(): void
@@ -558,4 +564,6 @@ final class AbstractServiceProviderTest extends TestCase
 
         $this->assertFalse($result);
     }
+
+
 }

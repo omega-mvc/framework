@@ -1,59 +1,72 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_array_size_lesser validation')
-    ->expect(vr()->valid_array_size_lesser(1))
-    ->toEqual('valid_array_size_lesser,1')
-;
+final class ValidArraySizeLesserTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => [1, 2, 3],
+        'test2' => '',
+    ];
 
-it('can render invert valid_array_size_lesser validation')
-    ->expect(vr()->not()->valid_array_size_lesser(1))
-    ->toEqual('invert_valid_array_size_lesser,1')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = ['test' => [1, 2]];
 
-$correct   = [
-    'test1' => [1, 2, 3],
-    'test2' => '',
-];
-$incorrect = ['test' => [1, 2]];
+    public function testCanRenderValidArraySizeLesserValidation(): void
+    {
+        $this->assertEquals('valid_array_size_lesser,1', vr()->valid_array_size_lesser(1));
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidArraySizeLesserValidation(): void
+    {
+        $this->assertEquals('invert_valid_array_size_lesser,1', vr()->not()->valid_array_size_lesser(1));
+    }
 
-it('can validate valid_array_size_lesser with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidArraySizeLesserWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $val->test1->valid_array_size_lesser(3);
-    $val->test1->valid_array_size_lesser(4);
-    $val->test2->valid_array_size_lesser(3);
+        $val->test1->valid_array_size_lesser(3);
+        $val->test1->valid_array_size_lesser(4);
+        $val->test2->valid_array_size_lesser(3);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_array_size_lesser (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidArraySizeLesserNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $val->test1->not->valid_array_size_lesser(3);
-    $val->test1->not->valid_array_size_lesser(4);
-    $val->test2->not->valid_array_size_lesser(3);
+        $val->test1->not->valid_array_size_lesser(3);
+        $val->test1->not->valid_array_size_lesser(4);
+        $val->test2->not->valid_array_size_lesser(3);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidArraySizeLesserWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_array_size_lesser with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $val->test->valid_array_size_lesser(1);
 
-    $val->test->valid_array_size_lesser(1);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateRegexNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate regex (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $val->test->not->valid_array_size_lesser(1);
 
-    $val->test->not->valid_array_size_lesser(1);
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

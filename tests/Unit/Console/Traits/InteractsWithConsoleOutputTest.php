@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace Tests\Console\Traits;
 
 use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
-use PHPUnit\Framework\Attributes\CoversTrait;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Console\Fixtures\OutputStyler;
 use Tests\TestCase;
-
 use function rtrim;
 use function str_repeat;
 use function strlen;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversTrait(InteractsWithConsoleOutputTrait::class)]
 final class InteractsWithConsoleOutputTest extends TestCase
 {
+
     public function testReturnsTheTerminalWidth(): void
     {
         $styler = new OutputStyler(new BufferedOutput());
@@ -107,4 +112,5 @@ final class InteractsWithConsoleOutputTest extends TestCase
         $this->assertStringEndsWith($right . '  ', $display);
         $this->assertStringContainsString('..', $display);
     }
+
 }

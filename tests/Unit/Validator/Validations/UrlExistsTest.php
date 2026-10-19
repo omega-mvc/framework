@@ -1,41 +1,48 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render url_exists validation', function () {
-    expect(vr()->url_exists())
-        ->toEqual('url_exists')
-    ;
-});
+final class UrlExistsTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = ['test' => 'https://google.com/'];
 
-it('can render invert url_exists validation', function () {
-    expect(vr()->not()->url_exists())
-        ->toEqual('invert_url_exists')
-    ;
-});
+    public function testCanRenderUrlExistsValidation(): void
+    {
+        $this->assertEquals('url_exists', vr()->url_exists());
+    }
 
-// provider
-$correct   = ['test'  => 'https://google.com/'];
-$incorrect = ['test'  => ''];
+    public function testCanRenderInvertUrlExistsValidation(): void
+    {
+        $this->assertEquals('invert_url_exists', vr()->not()->url_exists());
+    }
 
-// validate with correct input field
+    public function testCanValidateUrlExistsWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-it('can validate url_exists with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test->url_exists();
 
-    $val->test->url_exists();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateUrlExistsNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-it('can validate url_exists (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test->not()->url_exists();
 
-    $val->test->not()->url_exists();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    // validate with incorrect input field
 
-// validate with incorrect input field
-
-// FIXME: url exis validation for incorrect url always return true
+    // FIXME: url exis validation for incorrect url always return true
+}

@@ -1,63 +1,76 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_name validation')
-    ->expect(vr()->valid_name())
-    ->toEqual('valid_name')
-;
+final class ValidNameTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 'taylorotwell',
+        'tets2' => '',
+    ];
 
-it('can render invert valid_name validation')
-    ->expect(vr()->not()->valid_name())
-    ->toEqual('invert_valid_name')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'tets1' => 'sa`ad',
+        'tets2' => 's@ad',
+        'test3' => 'Mr. Sigurd Heller MD',
+    ];
 
-$correct = [
-    'test1' => 'taylorotwell',
-    'tets2' => '',
-];
-$incorrect = [
-    'tets1' => 'sa`ad',
-    'tets2' => 's@ad',
-    'test3' => 'Mr. Sigurd Heller MD',
-];
+    public function testCanRenderValidNameValidation(): void
+    {
+        $this->assertEquals('valid_name', vr()->valid_name());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidNameValidation(): void
+    {
+        $this->assertEquals('invert_valid_name', vr()->not()->valid_name());
+    }
 
-it('can validate valid_name with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidNameWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_name();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_name();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_name (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidNameNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_name();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_name();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidNameWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_name with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_name();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_name();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidNameNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_name (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_name();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_name();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

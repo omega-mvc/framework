@@ -1,67 +1,80 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render float validation')
-    ->expect(vr()->float())
-    ->toEqual('float')
-;
+final class ValidFloatTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 0,
+        'test2' => 1.1,
+        'test3' => '1.1',
+        'test4' => -1.1,
+        'test5' => '-1.1',
+    ];
 
-it('can render invert float validation')
-    ->expect(vr()->not()->float())
-    ->toEqual('invert_float')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test1' => '1,1',
+        'test2' => '1.0,0',
+        'test3' => '1,0.0',
+        'test4' => 'text',
+    ];
 
-$correct = [
-    'test1' => 0,
-    'test2' => 1.1,
-    'test3' => '1.1',
-    'test4' => -1.1,
-    'test5' => '-1.1',
-];
-$incorrect = [
-    'test1' => '1,1',
-    'test2' => '1.0,0',
-    'test3' => '1,0.0',
-    'test4' => 'text',
-];
+    public function testCanRenderFloatValidation(): void
+    {
+        $this->assertEquals('float', vr()->float());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertFloatValidation(): void
+    {
+        $this->assertEquals('invert_float', vr()->not()->float());
+    }
 
-it('can validate float with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateFloatWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->float();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->float();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate float (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateFloatNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->float();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->float();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateFloatWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate float with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->float();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->float();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateIbanNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate iban (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->float();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->float();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

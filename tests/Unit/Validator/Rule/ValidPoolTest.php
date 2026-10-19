@@ -1,119 +1,132 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Rule;
+
+use Omega\Validator\Rule\Valid;
 use Omega\Validator\Rule\ValidPool;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can add valid using __get', function () {
-    $pool = new ValidPool();
+#[CoversClass(ValidPool::class)]
+final class ValidPoolTest extends TestCase
+{
+    public function testCanAddValidUsingMagicGet(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->test->required();
+        $pool->test->required();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required'], $pool->getPool());
+    }
 
-it('can add valid using __get with exist rule', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingMagicGetWithExistRule(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->test->required();
-    $pool->test->alpha();
+        $pool->test->required();
+        $pool->test->alpha();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required|alpha',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required|alpha'], $pool->getPool());
+    }
 
-it('can add valid using __set', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingMagicSet(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->test = 'required';
+        $pool->test = 'required';
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required'], $pool->getPool());
+    }
 
-it('can add valid using __set with exist rule', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingMagicSetWithExistRule(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->test = 'required';
-    $pool->test = 'alpha';
+        $pool->test = 'required';
+        $pool->test = 'alpha';
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required|alpha',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required|alpha'], $pool->getPool());
+    }
 
-it('can add valid using __invoke', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingInvoke(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool('test')->required();
+        $pool('test')->required();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required'], $pool->getPool());
+    }
 
-it('can add valid using __invoke with exist rule', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingInvokeWithExistRule(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool('test')->required();
-    $pool('test')->alpha();
+        $pool('test')->required();
+        $pool('test')->alpha();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required|alpha',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required|alpha'], $pool->getPool());
+    }
 
-it('can add valid using __invoke (multy)', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingInvokeMulty(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool('test', 'test2')->required();
+        $pool('test', 'test2')->required();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'required',
-        'test2' => 'required',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'required',
+            'test2' => 'required',
+        ], $pool->getPool());
+    }
 
-it('can add valid using rule', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingRule(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->rule('test')->required();
+        $pool->rule('test')->required();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required'], $pool->getPool());
+    }
 
-it('can add valid using rule with exist rule', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingRuleWithExistRule(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->rule('test')->required();
-    $pool->rule('test')->alpha();
+        $pool->rule('test')->required();
+        $pool->rule('test')->alpha();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'required|alpha',
-    ]);
-});
+        $this->assertRulePool(['test' => 'required|alpha'], $pool->getPool());
+    }
 
-it('can add valid using rule (multy)', function () {
-    $pool = new ValidPool();
+    public function testCanAddValidUsingRuleMulty(): void
+    {
+        $pool = new ValidPool();
 
-    // rule
-    $pool->rule('test', 'test2')->required();
+        $pool->rule('test', 'test2')->required();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'required',
-        'test2' => 'required',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'required',
+            'test2' => 'required',
+        ], $pool->getPool());
+    }
+
+    /**
+     * Assert that every expected field/rule pair is present in the valid pool.
+     *
+     * Mirrors Pest's `toMatchArray()`: each expected key must exist and its value
+     * must be loosely equal (the pool stores {@see Valid} objects that cast to
+     * their raw rule string).
+     *
+     * @param array<string, string>    $expected Expected field => rule pairs
+     * @param array<int|string, Valid> $actual   Pool returned by ValidPool::getPool()
+     */
+    private function assertRulePool(array $expected, array $actual): void
+    {
+        foreach ($expected as $field => $rule) {
+            $this->assertArrayHasKey($field, $actual);
+            $this->assertEquals($rule, $actual[$field]);
+        }
+    }
+}

@@ -12,64 +12,92 @@ use Omega\Http\Response;
 use Omega\Middleware\CsrfMiddleware;
 use Omega\Session\SessionManager;
 use Omega\Session\Storage\ArrayStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(ArrayStorage::class)]
+#[CoversClass(Csrf::class)]
+#[CoversClass(CsrfMiddleware::class)]
+#[CoversClass(InvalidCsrfTokenException::class)]
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+#[CoversClass(SessionManager::class)]
+final class CsrfMiddlewareTest extends TestCase
+{
+    private Csrf $csrf;
 
-covers(ArrayStorage::class);
-covers(Csrf::class);
-covers(CsrfMiddleware::class);
-covers(InvalidCsrfTokenException::class);
-covers(Request::class);
-covers(Response::class);
-covers(SessionManager::class);
+    private CsrfMiddleware $middleware;
 
-beforeEach(function (): void {
-    $session          = new SessionManager('array', new ArrayStorage());
-    $this->csrf       = new Csrf($session);
-    $this->middleware = new CsrfMiddleware($this->csrf);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('passes safe request methods without a token', function (string $method): void {
-    $response = new Response('ok');
-    $handled  = $this->middleware->handle(
-        new Request('/', [], [], [], [], [], [], $method),
-        fn (Request $request) => $response
-    );
+        $session          = new SessionManager('array', new ArrayStorage());
+        $this->csrf       = new Csrf($session);
+        $this->middleware = new CsrfMiddleware($this->csrf);
+    }
 
-    expect($handled)->toBe($response);
-})->with(['GET', 'HEAD', 'OPTIONS']);
+    /** @return array<int, array<int, string>> */
+    public static function safeMethodProvider(): array
+    {
+        return [['GET'], ['HEAD'], ['OPTIONS']];
+    }
 
-it('throws an exception when a POST request lacks a token', function (): void {
-    $this->middleware->handle(
-        new Request('/', [], [], [], [], [], [], 'POST'),
-        fn (Request $request) => new Response('ok')
-    );
-})->throws(InvalidCsrfTokenException::class);
+    #[DataProvider('safeMethodProvider')]
+    public function testPassesSafeRequestMethodsWithoutAToken(string $method): void
+    {
+        $response = new Response('ok');
+        $handled  = $this->middleware->handle(
+            new Request('/', [], [], [], [], [], [], $method),
+            fn (Request $request) => $response
+        );
 
-it('throws an exception when a POST request sends an invalid token', function (): void {
-    $this->middleware->handle(
-        new Request('/', [], ['_csrf_token' => 'invalid'], [], [], [], [], 'POST'),
-        fn (Request $request) => new Response('ok')
-    );
-})->throws(InvalidCsrfTokenException::class);
+        $this->assertSame($response, $handled);
+    }
 
-it('passes a POST request carrying a valid token', function (): void {
-    $token = $this->csrf->generateToken();
+    public function testThrowsAnExceptionWhenAPostRequestLacksAToken(): void
+    {
+        $this->expectException(InvalidCsrfTokenException::class);
 
-    $response = new Response('ok');
-    $handled  = $this->middleware->handle(
-        new Request('/', [], ['_csrf_token' => $token], [], [], [], [], 'POST'),
-        fn (Request $request) => $response
-    );
+        $this->middleware->handle(
+            new Request('/', [], [], [], [], [], [], 'POST'),
+            fn (Request $request) => new Response('ok')
+        );
+    }
 
-    expect($handled)->toBe($response);
-});
+    public function testThrowsAnExceptionWhenAPostRequestSendsAnInvalidToken(): void
+    {
+        $this->expectException(InvalidCsrfTokenException::class);
 
-it('throws an exception when the next middleware does not return a Response', function (): void {
-    $token = $this->csrf->generateToken();
+        $this->middleware->handle(
+            new Request('/', [], ['_csrf_token' => 'invalid'], [], [], [], [], 'POST'),
+            fn (Request $request) => new Response('ok')
+        );
+    }
 
-    $this->middleware->handle(
-        new Request('/', [], ['_csrf_token' => $token], [], [], [], [], 'POST'),
-        fn (Request $request) => null
-    );
-})->throws(InvalidArgumentException::class);
+    public function testPassesAPostRequestCarryingAValidToken(): void
+    {
+        $token = $this->csrf->generateToken();
+
+        $response = new Response('ok');
+        $handled  = $this->middleware->handle(
+            new Request('/', [], ['_csrf_token' => $token], [], [], [], [], 'POST'),
+            fn (Request $request) => $response
+        );
+
+        $this->assertSame($response, $handled);
+    }
+
+    public function testThrowsAnExceptionWhenTheNextMiddlewareDoesNotReturnAResponse(): void
+    {
+        $token = $this->csrf->generateToken();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->middleware->handle(
+            new Request('/', [], ['_csrf_token' => $token], [], [], [], [], 'POST'),
+            fn (Request $request) => null
+        );
+    }
+}

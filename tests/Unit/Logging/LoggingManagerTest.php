@@ -7,105 +7,124 @@ namespace Tests\Logging;
 use Omega\Logging\Exception\UnknownDriverException;
 use Omega\Logging\LoggingManager;
 use Omega\Logging\Stream;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Tests\TestCase;
 
-use function count;
+#[CoversClass(LoggingManager::class)]
+final class LoggingManagerTest extends TestCase
+{
+    public function testRegistersTheDefaultDriverOnConstruction(): void
+    {
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $driver);
 
-covers(LoggingManager::class);
+        $this->assertSame($driver, $manager->getDriver());
+        $this->assertSame($driver, $manager->getDriver(null));
+        $this->assertSame($driver, $manager->getDriver('stream'));
+    }
 
-it('registers the default driver on construction', function (): void {
-    $driver  = $this->createStub(LoggerInterface::class);
-    $manager = new LoggingManager('stream', $driver);
+    public function testThrowsAnExceptionForAnUnknownDriver(): void
+    {
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
 
-    expect($manager->getDriver())->toBe($driver);
-    expect($manager->getDriver(null))->toBe($driver);
-    expect($manager->getDriver('stream'))->toBe($driver);
-});
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessage('The log driver "missing" could not be resolved or is not registered.');
 
-it('throws an exception for an unknown driver', function (): void {
-    $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
+        $manager->getDriver('missing');
+    }
 
-    $manager->getDriver('missing');
-})->throws(UnknownDriverException::class, 'The log driver "missing" could not be resolved or is not registered.');
+    public function testSetsADriverWithAnInstance(): void
+    {
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
 
-it('sets a driver with an instance', function (): void {
-    $driver  = $this->createStub(LoggerInterface::class);
-    $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
+        $this->assertSame($manager, $manager->setDriver('custom', $driver));
+        $this->assertSame($driver, $manager->getDriver('custom'));
+    }
 
-    expect($manager->setDriver('custom', $driver))->toBe($manager);
-    expect($manager->getDriver('custom'))->toBe($driver);
-});
+    public function testResolvesAClosureDriverLazilyAndCachesIt(): void
+    {
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
+        $calls   = 0;
 
-it('resolves a closure driver lazily and caches it', function (): void {
-    $driver  = $this->createStub(LoggerInterface::class);
-    $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
-    $calls   = 0;
+        $manager->setDriver('lazy', static function () use (&$calls, $driver): LoggerInterface {
+            ++$calls;
 
-    $manager->setDriver('lazy', static function () use (&$calls, $driver): LoggerInterface {
-        ++$calls;
+            return $driver;
+        });
 
-        return $driver;
-    });
+        $first  = $manager->getDriver('lazy');
+        $second = $manager->getDriver('lazy');
 
-    expect($manager->getDriver('lazy'))->toBe($driver);
-    expect($manager->getDriver('lazy'))->toBe($driver);
-    expect($calls)->toBe(1);
-});
+        $this->assertSame($driver, $first);
+        $this->assertSame($driver, $second);
+        $this->assertSame(1, $calls);
+    }
 
-it('sets the default driver', function (): void {
-    $initial = $this->createStub(LoggerInterface::class);
-    $driver  = $this->createStub(LoggerInterface::class);
-    $manager = new LoggingManager('stream', $initial);
+    public function testSetsTheDefaultDriver(): void
+    {
+        $initial = $this->createStub(LoggerInterface::class);
+        $driver  = $this->createStub(LoggerInterface::class);
+        $manager = new LoggingManager('stream', $initial);
 
-    expect($manager->setDefaultDriver($driver))->toBe($manager);
-    expect($manager->getDriver())->toBe($driver);
-});
+        $this->assertSame($manager, $manager->setDefaultDriver($driver));
+        $this->assertSame($driver, $manager->getDriver());
+    }
 
-it('throws an exception when a closure driver resolves to null', function (): void {
-    $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
-    $manager->setDriver('broken', static fn (): ?LoggerInterface => null);
+    public function testThrowsAnExceptionWhenAClosureDriverResolvesToNull(): void
+    {
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
+        $manager->setDriver('broken', static fn (): ?LoggerInterface => null);
 
-    $manager->getDriver('broken');
-})->throws(UnknownDriverException::class, 'The log driver "broken" could not be resolved or is not registered.');
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessage('The log driver "broken" could not be resolved or is not registered.');
 
-it('delegates psr-3 level methods to the default driver', function (): void {
-    $driver = $this->createMock(LoggerInterface::class);
+        $manager->getDriver('broken');
+    }
 
-    $driver->expects($this->once())->method('emergency')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('alert')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('critical')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('error')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('warning')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('notice')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('info')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('debug')->with('msg', ['a' => 1]);
-    $driver->expects($this->once())->method('log')->with(LogLevel::WARNING, 'msg', ['a' => 1]);
+    public function testDelegatesPsr3LevelMethodsToTheDefaultDriver(): void
+    {
+        $driver = $this->createMock(LoggerInterface::class);
 
-    $manager = new LoggingManager('stream', $driver);
+        $driver->expects($this->once())->method('emergency')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('alert')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('critical')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('error')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('warning')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('notice')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('info')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('debug')->with('msg', ['a' => 1]);
+        $driver->expects($this->once())->method('log')->with(LogLevel::WARNING, 'msg', ['a' => 1]);
 
-    $manager->emergency('msg', ['a' => 1]);
-    $manager->alert('msg', ['a' => 1]);
-    $manager->critical('msg', ['a' => 1]);
-    $manager->error('msg', ['a' => 1]);
-    $manager->warning('msg', ['a' => 1]);
-    $manager->notice('msg', ['a' => 1]);
-    $manager->info('msg', ['a' => 1]);
-    $manager->debug('msg', ['a' => 1]);
-    $manager->log(LogLevel::WARNING, 'msg', ['a' => 1]);
-});
+        $manager = new LoggingManager('stream', $driver);
 
-it('forwards magic method calls to the default driver', function (): void {
-    $driver = $this->getMockBuilder(Stream::class)
-        ->disableOriginalConstructor()
-        ->onlyMethods(['getLogFilePath'])
-        ->getMock();
+        $manager->emergency('msg', ['a' => 1]);
+        $manager->alert('msg', ['a' => 1]);
+        $manager->critical('msg', ['a' => 1]);
+        $manager->error('msg', ['a' => 1]);
+        $manager->warning('msg', ['a' => 1]);
+        $manager->notice('msg', ['a' => 1]);
+        $manager->info('msg', ['a' => 1]);
+        $manager->debug('msg', ['a' => 1]);
+        $manager->log(LogLevel::WARNING, 'msg', ['a' => 1]);
+    }
 
-    $driver->expects($this->once())
-        ->method('getLogFilePath')
-        ->willReturn('/tmp/omega.log');
+    public function testForwardsMagicMethodCallsToTheDefaultDriver(): void
+    {
+        $driver = $this->getMockBuilder(Stream::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getLogFilePath'])
+            ->getMock();
 
-    $manager = new LoggingManager('stream', $driver);
+        $driver->expects($this->once())
+            ->method('getLogFilePath')
+            ->willReturn('/tmp/omega.log');
 
-    expect($manager->getLogFilePath())->toBe('/tmp/omega.log');
-});
+        $manager = new LoggingManager('stream', $driver);
+
+        $this->assertSame('/tmp/omega.log', $manager->getLogFilePath());
+    }
+}

@@ -1,62 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_ipv6 validation')
-    ->expect(vr()->valid_ipv6())
-    ->toEqual('valid_ipv6')
-;
+final class ValidIpv6Test extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test' => '2001:0db8:85a3:08d3:1319:8a2e:0370:7334',
+    ];
 
-it('can render invert valid_ipv6 validation')
-    ->expect(vr()->not()->valid_ipv6())
-    ->toEqual('invert_valid_ipv6')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'tets1' => '2001;0db8;85a3;08d3;1319;8a2e;0370;7334',
+        'tets2' => '0,0,0,0',
+        'tets3' => '256.0.0.0',
+    ];
 
-$correct = [
-    'test' => '2001:0db8:85a3:08d3:1319:8a2e:0370:7334',
-];
-$incorrect = [
-    'tets1' => '2001;0db8;85a3;08d3;1319;8a2e;0370;7334',
-    'tets2' => '0,0,0,0',
-    'tets3' => '256.0.0.0',
-];
+    public function testCanRenderValidIpv6Validation(): void
+    {
+        $this->assertEquals('valid_ipv6', vr()->valid_ipv6());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidIpv6Validation(): void
+    {
+        $this->assertEquals('invert_valid_ipv6', vr()->not()->valid_ipv6());
+    }
 
-it('can validate valid_ipv6 with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpv6WithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_ipv6();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_ipv6();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_ipv6 (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpv6NotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_ipv6();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_ipv6();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidIpv6WithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ipv6 with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_ipv6();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_ipv6();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidIpv6NotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ipv6 (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_ipv6();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_ipv6();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

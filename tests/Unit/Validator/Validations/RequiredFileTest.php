@@ -1,65 +1,80 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render required_file validation')
-    ->expect(vr()->required_file())
-    ->toEqual('required_file')
-;
-
-it('can render invert required_file validation')
-    ->expect(vr()->not()->required_file())
-    ->toEqual('invert_required_file')
-;
-
-$correct = [
-    'files' => [
-        'test' => [
-            'name'     => 'screenshot.png',
-            'type'     => 'image/png',
-            'tmp_name' => '/tmp/phphjatI9',
-            'error'    => 0,
-            'size'     => 22068,
-        ],
-    ],
-];
-$incorrect = [
-    'files' => [],
-];
-
-/**
- * @param array<string, mixed> $input
- */
-function validTest(array $input, bool $use_not = false): bool
+final class RequiredFileTest extends TestCase
 {
-    $val = new Omega\Validator\Validator($input);
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'files' => [
+            'test' => [
+                'name'     => 'screenshot.png',
+                'type'     => 'image/png',
+                'tmp_name' => '/tmp/phphjatI9',
+                'error'    => 0,
+                'size'     => 22068,
+            ],
+        ],
+    ];
 
-    if ($use_not === false) {
-        $val->field('files.test')->required_file();
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'files' => [],
+    ];
+
+    public function testCanRenderRequiredFileValidation(): void
+    {
+        $this->assertEquals('required_file', vr()->required_file());
+    }
+
+    public function testCanRenderInvertRequiredFileValidation(): void
+    {
+        $this->assertEquals('invert_required_file', vr()->not()->required_file());
+    }
+
+    public function testCanValidateRequiredFileWithCorrectInput(): void
+    {
+        $this->assertTrue($this->validTest(self::CORRECT));
+    }
+
+    public function testCanValidateRequiredFileNotWithCorrectInput(): void
+    {
+        $this->assertFalse($this->validTest(self::CORRECT, true));
+    }
+
+    public function testCanValidateRequiredFileWithIncorrectInput(): void
+    {
+        $this->assertFalse($this->validTest(self::INCORRECT));
+    }
+
+    public function testCanValidateRequiredFileNotWithIncorrectInput(): void
+    {
+        $this->assertTrue($this->validTest(self::INCORRECT, true));
+    }
+
+    /**
+     * @param array<string, mixed> $input
+     */
+    private function validTest(array $input, bool $useNot = false): bool
+    {
+        $val = new Validator($input);
+
+        if ($useNot === false) {
+            $val->field('files.test')->required_file();
+
+            return $val->isValid();
+        }
+
+        // use not
+        $val->field('files.test')->not()->required();
 
         return $val->isValid();
     }
-
-    // use not
-    $val->field('files.test')->not()->required();
-
-    return $val->isValid();
 }
-
-// validate with correct input field
-it('can validate required_file with correct input', function () use ($correct) {
-    expect(validTest($correct))->toBeTrue();
-});
-
-it('can validate required_file (not) with correct input', function () use ($correct) {
-    expect(validTest($correct, true))->toBeFalse();
-});
-
-// validate with incorrect input field
-it('can validate required_file with incorrect input', function () use ($incorrect) {
-    expect(validTest($incorrect))->toBeFalse();
-});
-
-it('can validate required_file (not) with incorrect input', function () use ($incorrect) {
-    expect(validTest($incorrect, true))->toBeTrue();
-});

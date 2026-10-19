@@ -1,114 +1,128 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can validate with normal behavior', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
+final class FilterValidRuleValidationTest extends TestCase
+{
+    public function testCanValidateWithNormalBehavior(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
 
-    expect($v->isValid())->toBeFalse();
-});
+        $this->assertFalse($v->isValid());
+    }
 
-it('can filter valid rule with allowed field', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
+    public function testCanFilterValidRuleWithAllowedField(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
 
-    $v->only(['test1', 'test2']);
+        $v->only(['test1', 'test2']);
 
-    expect($v->isValid())->toBeTrue();
-});
+        $this->assertTrue($v->isValid());
+    }
 
-it('can filter valid rule with allowed field (false)', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
-    $v->only(['test3']);
+    public function testCanFilterValidRuleWithAllowedFieldFalse(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
+        $v->only(['test3']);
 
-    expect($v->isValid())->toBeFalse();
-});
+        $this->assertFalse($v->isValid());
+    }
 
-it('can filter valid rule with allowed field (but not exis)', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
+    public function testCanFilterValidRuleWithAllowedFieldButNotExis(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
 
-    $v->only(['test4']);
+        $v->only(['test4']);
 
-    expect($v->isValid())->toBeTrue();
-});
+        $this->assertTrue($v->isValid());
+    }
 
-it('can filter valid rule with excepted field', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
+    public function testCanFilterValidRuleWithExceptedField(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
 
-    $v->except(['test1', 'test2']);
+        $v->except(['test1', 'test2']);
 
-    expect($v->isValid())->toBeFalse();
-});
+        $this->assertFalse($v->isValid());
+    }
 
-it('can filter valid rule with excepted field (but not exis)', function () {
-    $v = Validator::make(
-        [
-            'test1' => 'test',
-            'test2' => 'test',
-            'test3' => '',
-        ],
-        fn (ValidPool $v) => [
-            $v('test1')->required(),
-            $v('test2')->required(),
-            $v('test3')->required(),
-        ]
-    );
-    $v->except(['test4']);
+    public function testCanFilterValidRuleWithExceptedFieldButNotExis(): void
+    {
+        $v = Validator::make(
+            [
+                'test1' => 'test',
+                'test2' => 'test',
+                'test3' => '',
+            ],
+            fn (ValidPool $v): array => [
+                $v('test1')->required(),
+                $v('test2')->required(),
+                $v('test3')->required(),
+            ]
+        );
+        $v->except(['test4']);
 
-    expect($v->isValid())->toBeFalse();
-});
+        $this->assertFalse($v->isValid());
+    }
+}

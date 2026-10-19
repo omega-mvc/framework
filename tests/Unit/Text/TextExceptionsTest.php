@@ -9,39 +9,54 @@ use Omega\Text\Exceptions\AbstractTextException;
 use Omega\Text\Exceptions\NoReturnException;
 use Omega\Text\Exceptions\PropertyNotExistException;
 use Omega\Text\Exceptions\TextExceptionInterface;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function class_implements;
 use function class_parents;
-use function expect;
 
-covers(AbstractTextException::class);
-covers(NoReturnException::class);
-covers(PropertyNotExistException::class);
+#[CoversClass(AbstractTextException::class)]
+#[CoversClass(NoReturnException::class)]
+#[CoversClass(PropertyNotExistException::class)]
+final class TextExceptionsTest extends TestCase
+{
+    public function testThrowsAFormattedNoReturnExceptionMessage(): void
+    {
+        $exception = new NoReturnException('slug', '-~+-');
 
-it('throws a formatted NoReturnException message', function (): void {
-    $exception = new NoReturnException('slug', '-~+-');
+        $this->assertSame(
+            'The method slug called with -~+- did not return anything.',
+            $exception->getMessage()
+        );
+    }
 
-    expect($exception->getMessage())->toBe('The method slug called with -~+- did not return anything.');
-});
+    public function testExtendsTheAbstractTextException(): void
+    {
+        $this->assertContains(AbstractTextException::class, class_parents(NoReturnException::class));
+    }
 
-it('extends the abstract text exception', function (): void {
-    expect(class_parents(NoReturnException::class))->toContain(AbstractTextException::class);
-});
+    public function testIsAnInvalidArgumentException(): void
+    {
+        $this->assertContains(InvalidArgumentException::class, class_parents(NoReturnException::class));
+    }
 
-it('is an invalid argument exception', function (): void {
-    expect(class_parents(NoReturnException::class))->toContain(InvalidArgumentException::class);
-});
+    public function testImplementsTheTextExceptionInterface(): void
+    {
+        $this->assertContains(TextExceptionInterface::class, class_implements(NoReturnException::class));
+    }
 
-it('implements the text exception interface', function (): void {
-    expect(class_implements(NoReturnException::class))->toContain(TextExceptionInterface::class);
-});
+    public function testThrowsAFormattedPropertyNotExistExceptionMessage(): void
+    {
+        $exception = new PropertyNotExistException('foo');
 
-it('throws a formatted PropertyNotExistException message', function (): void {
-    $exception = new PropertyNotExistException('foo');
+        $this->assertSame('Property `foo` not exist.', $exception->getMessage());
+    }
 
-    expect($exception->getMessage())->toBe('Property `foo` not exist.');
-});
-
-it('is a proper property exception', function (): void {
-    expect(class_parents(PropertyNotExistException::class))->toContain(AbstractTextException::class);
-});
+    public function testIsAProperPropertyException(): void
+    {
+        $this->assertContains(
+            AbstractTextException::class,
+            class_parents(PropertyNotExistException::class)
+        );
+    }
+}

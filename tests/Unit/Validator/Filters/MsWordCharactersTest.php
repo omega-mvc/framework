@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander ms_word_characters', function () {
-    expect(fr()->ms_word_characters())
-        ->toEqual('ms_word_characters')
-    ;
-});
+final class MsWordCharactersTest extends TestCase
+{
+    public function testCanRanderMsWordCharacters(): void
+    {
+        $this->assertEquals('ms_word_characters', fr()->ms_word_characters());
+    }
 
-it('can filter ms_word_characters', function () {
-    $fr = new Omega\Validator\Validator(['field' => '“test”,‘test’,–,…']);
+    public function testCanFilterMsWordCharacters(): void
+    {
+        $fr = new Validator(['field' => '“test”,‘test’,–,…']);
 
-    $fr->filter('field')->ms_word_characters();
+        $fr->filter('field')->ms_word_characters();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => '"test",\'test\',-,...'])
-    ;
-});
+        $this->assertEquals(['field' => '"test",\'test\',-,...'], $fr->filterOut());
+    }
+}

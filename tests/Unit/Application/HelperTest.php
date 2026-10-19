@@ -21,14 +21,6 @@ use function Omega\Application\set_path;
 use function Omega\Application\slash;
 
 #[CoversClass(Application::class)]
-#[CoversFunction('Omega\Application\app')]
-#[CoversFunction('Omega\Application\get_path')]
-#[CoversFunction('Omega\Application\is_dev')]
-#[CoversFunction('Omega\Application\is_production')]
-#[CoversFunction('Omega\Application\os_detect')]
-#[CoversFunction('Omega\Application\path')]
-#[CoversFunction('Omega\Application\set_path')]
-#[CoversFunction('Omega\Application\slash')]
 final class HelperTest extends TestCase
 {
     public function testThrowsErrorAfterFlushingTheApplication(): void

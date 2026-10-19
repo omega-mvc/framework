@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander htmlencode', function () {
-    expect(fr()->htmlencode())
-        ->toEqual('htmlencode')
-    ;
-});
+final class HtmlEncodeTest extends TestCase
+{
+    public function testCanRanderHtmlencode(): void
+    {
+        $this->assertEquals('htmlencode', fr()->htmlencode());
+    }
 
-it('can filter htmlencode', function () {
-    $fr = new Omega\Validator\Validator(['field' => '<html>html tag</html>']);
+    public function testCanFilterHtmlencode(): void
+    {
+        $fr = new Validator(['field' => '<html>html tag</html>']);
 
-    $fr->filter('field')->htmlencode();
+        $fr->filter('field')->htmlencode();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => '&#60;html&#62;html tag&#60;/html&#62;'])
-    ;
-});
+        $this->assertEquals(['field' => '&#60;html&#62;html tag&#60;/html&#62;'], $fr->filterOut());
+    }
+}

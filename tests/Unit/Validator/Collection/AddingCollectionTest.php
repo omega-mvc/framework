@@ -1,58 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Collection;
+
 use Omega\Collection\Collection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can add array using __construct', function () {
-    $collection = new Collection(['key' => 'value']);
+#[CoversClass(Collection::class)]
+final class AddingCollectionTest extends TestCase
+{
+    public function testCanAddArrayUsingConstruct(): void
+    {
+        $collection = new Collection(['key' => 'value']);
 
-    expect($collection)->key->toEqual('value');
-});
+        $this->assertEquals('value', $collection->key);
+    }
 
-it('can add array using make', function () {
-    expect(new Collection(['key' => 'value']))->key->toEqual('value');
-});
+    public function testCanAddArrayUsingMake(): void
+    {
+        $this->assertEquals('value', (new Collection(['key' => 'value']))->key);
+    }
 
-it('can add array using replace', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection([]);
+    public function testCanAddArrayUsingReplace(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection([]);
 
-    expect($collection)
-        ->replace(['key' => 'value'])
-        ->key->toEqual('value');
-});
+        $this->assertEquals('value', $collection->replace(['key' => 'value'])->key);
+    }
 
-it('can add array using set', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection([]);
+    public function testCanAddArrayUsingSet(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection([]);
 
-    expect($collection)
-        ->set('key', 'value')
-        ->key->toEqual('value');
-});
+        $this->assertEquals('value', $collection->set('key', 'value')->key);
+    }
 
-it('can edit exist array using set', function () {
-    $collection = new Collection(['key' => 'value']);
+    public function testCanEditExistArrayUsingSet(): void
+    {
+        $collection = new Collection(['key' => 'value']);
 
-    expect($collection)
-        ->set('key', 'new value')
-        ->key->toEqual('new value');
-});
+        $this->assertEquals('new value', $collection->set('key', 'new value')->key);
+    }
 
-it('can add array using __set', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection([]);
+    public function testCanAddArrayUsingMagicSet(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection([]);
 
-    $collection->key = 'value';
+        $collection->key = 'value';
 
-    expect($collection)
-        ->key->toEqual('value');
-});
+        $this->assertEquals('value', $collection->key);
+    }
 
-it('can edit exist array using __set', function () {
-    $collection = new Collection(['key' => 'value']);
+    public function testCanEditExistArrayUsingMagicSet(): void
+    {
+        $collection = new Collection(['key' => 'value']);
 
-    $collection->key = 'new value';
+        $collection->key = 'new value';
 
-    expect($collection)
-        ->key->toEqual('new value');
-});
+        $this->assertEquals('new value', $collection->key);
+    }
+}

@@ -1,63 +1,83 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
+use function array_keys;
 use function Omega\Validator\vr;
 
-it('can render iban validation')
-    ->expect(vr()->iban())
-    ->toEqual('iban')
-;
+final class IbanTest extends TestCase
+{
+    public function testCanRenderIbanValidation(): void
+    {
+        $this->assertEquals('iban', vr()->iban());
+    }
 
-it('can render invert iban validation')
-    ->expect(vr()->not()->iban())
-    ->toEqual('invert_iban')
-;
+    public function testCanRenderInvertIbanValidation(): void
+    {
+        $this->assertEquals('invert_iban', vr()->not()->iban());
+    }
 
-$correct = [
-    'test1' => 'FR7630006000011234567890189',
-    'test2' => 'ES7921000813610123456789',
-];
-$incorrect = [
-    'test1' => 'FR7630006000011234567890181',
-    'test2' => 'E7921000813610123456789',
-    'test3' => 'text',
-];
+    public function testCanValidateIbanWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->iban();
 
-it('can validate iban with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->iban();
+    public function testCanValidateGuidv4NotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->not->iban();
 
-it('can validate guidv4 (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->iban();
+    public function testCanValidateIbanWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->iban();
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate iban with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateIbanNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->iban();
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->not->iban();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate iban (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'FR7630006000011234567890189',
+            'test2' => 'ES7921000813610123456789',
+        ];
+    }
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->iban();
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test1' => 'FR7630006000011234567890181',
+            'test2' => 'E7921000813610123456789',
+            'test3' => 'text',
+        ];
+    }
+}

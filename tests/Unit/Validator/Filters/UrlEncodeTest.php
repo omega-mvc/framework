@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander urlencode', function () {
-    expect(fr()->urlencode())
-        ->toEqual('urlencode')
-    ;
-});
+final class UrlEncodeTest extends TestCase
+{
+    public function testCanRanderUrlencode(): void
+    {
+        $this->assertEquals('urlencode', fr()->urlencode());
+    }
 
-it('can filter urlencode', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'test.com/true/right?one=1#2']);
+    public function testCanFilterUrlencode(): void
+    {
+        $fr = new Validator(['field' => 'test.com/true/right?one=1#2']);
 
-    $fr->filter('field')->urlencode();
+        $fr->filter('field')->urlencode();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'test.com%2Ftrue%2Fright%3Fone%3D1%232'])
-    ;
-});
+        $this->assertEquals(['field' => 'test.com%2Ftrue%2Fright%3Fone%3D1%232'], $fr->filterOut());
+    }
+}

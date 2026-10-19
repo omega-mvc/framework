@@ -1,60 +1,79 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render max_numeric validation')
-    ->expect(vr()->max_numeric(50))
-    ->toEqual('max_numeric,50')
-;
+final class MaxNumericTest extends TestCase
+{
+    public function testCanRenderMaxNumericValidation(): void
+    {
+        $this->assertEquals('max_numeric,50', vr()->max_numeric(50));
+    }
 
-it('can render invert max_numeric validation')
-    ->expect(vr()->not()->max_numeric(50))
-    ->toEqual('invert_max_numeric,50')
-;
+    public function testCanRenderInvertMaxNumericValidation(): void
+    {
+        $this->assertEquals('invert_max_numeric,50', vr()->not()->max_numeric(50));
+    }
 
-$correct = [
-    'test1' => 2,
-    'test2' => 1,
-    'test3' => '',
-];
-$incorrect = [
-    'test' => 3,
-];
+    public function testCanValidateMaxNumericWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $val->field('test1', 'test2', 'test3')->max_numeric(2);
 
-it('can validate max_numeric with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->field('test1', 'test2', 'test3')->max_numeric(2);
+    public function testCanValidateMaxNumericNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->field('test1', 'test2', 'test3')->not->max_numeric(2);
 
-it('can validate max_numeric (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->field('test1', 'test2', 'test3')->not->max_numeric(2);
+    public function testCanValidateMaxNumericWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        // more
+        $val->test->max_numeric(2);
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate max_numeric with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateMaxNumericNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    // more
-    $val->test->max_numeric(2);
+        // more
+        $val->test->not->max_numeric(2);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate max_numeric (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, int|string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 2,
+            'test2' => 1,
+            'test3' => '',
+        ];
+    }
 
-    // more
-    $val->test->not->max_numeric(2);
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, int> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test' => 3,
+        ];
+    }
+}

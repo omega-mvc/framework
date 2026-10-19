@@ -1,62 +1,81 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render contains validation')
-    ->expect(vr()->contains('one', 'two'))
-    ->toEqual('contains,one;two')
-;
+final class ContainsTest extends TestCase
+{
+    public function testCanRenderContainsValidation(): void
+    {
+        $this->assertEquals('contains,one;two', vr()->contains('one', 'two'));
+    }
 
-it('can render invert contains validation')
-    ->expect(vr()->not()->contains('one', 'two'))
-    ->toEqual('invert_contains,one;two')
-;
+    public function testCanRenderInvertContainsValidation(): void
+    {
+        $this->assertEquals('invert_contains,one;two', vr()->not()->contains('one', 'two'));
+    }
 
-$correct = [
-    'test1' => 'one',
-    'test2' => 'with space',
-];
-$incorrect = [
-    'test1' => 'two',
-    'test2' => 'with space',
-];
+    public function testCanValidateContainsWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $val->test->contains('one', 'two');
+        $val->test2->contains('one', 'two', 'with space');
 
-it('can validate contains with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test->contains('one', 'two');
-    $val->test2->contains('one', 'two', 'with space');
+    public function testCanValidateContainsNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->test->not->contains('one', 'two');
+        $val->test2->not->contains('one', 'two', 'with space');
 
-it('can validate contains (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->test->not->contains('one', 'two');
-    $val->test2->not->contains('one', 'two', 'with space');
+    public function testCanValidateContainsWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test->contains('one');
+        $val->test2->contains('one', 'with spac');
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate contains with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateContainsNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $val->test->contains('one');
-    $val->test2->contains('one', 'with spac');
+        $val->test->not->contains('one');
+        $val->test2->not->contains('one', 'with spec');
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate contains (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'one',
+            'test2' => 'with space',
+        ];
+    }
 
-    $val->test->not->contains('one');
-    $val->test2->not->contains('one', 'with spec');
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test1' => 'two',
+            'test2' => 'with space',
+        ];
+    }
+}

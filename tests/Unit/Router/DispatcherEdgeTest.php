@@ -1,232 +1,239 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
 
 use Omega\Router\Route;
 use Omega\Router\RouteDispatcher;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function call_user_func_array;
 
-covers(Route::class);
-covers(RouteDispatcher::class);
-
-/**
- * Build a trivial route definition.
- *
- * @param string $expression Route URI expression.
- * @param string $method     Allowed HTTP method(s).
- * @return Route
- */
-function edgeRoute(string $expression, string $method = 'GET'): Route
+#[CoversClass(Route::class)]
+#[CoversClass(RouteDispatcher::class)]
+final class DispatcherEdgeTest extends TestCase
 {
-    return new Route([
-        'method'     => $method,
-        'expression' => $expression,
-        'function'   => fn (): string => 'handler-' . $expression,
-    ]);
-}
+    public function testTreatsAUrlWithoutAPathComponentAsRoot(): void
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom('http://localhost', 'GET', [$this->edgeRoute('/')]);
 
-it('treats a url without a path component as root', function (): void {
-    $dispatcher = RouteDispatcher::dispatchFrom('http://localhost', 'GET', [edgeRoute('/')]);
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params) => 'root',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params) => 'root',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('root', call_user_func_array($dispatch['callable'], $dispatch['params']));
+    }
 
-    expect(call_user_func_array($dispatch['callable'], $dispatch['params']))->toBe('root');
-});
+    public function testTrimsTrailingSlashesByDefault(): void
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom('/foo/', 'GET', [$this->edgeRoute('/foo')]);
 
-it('trims trailing slashes by default', function (): void {
-    $dispatcher = RouteDispatcher::dispatchFrom('/foo/', 'GET', [edgeRoute('/foo')]);
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('handler-/foo', call_user_func_array($dispatch['callable'], $dispatch['params']));
+    }
 
-    expect(call_user_func_array($dispatch['callable'], $dispatch['params']))->toBe('handler-/foo');
-});
+    public function testKeepsTrailingSlashesWhenTrailingSlashMattersIsEnabled(): void
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom('/foo/', 'GET', [$this->edgeRoute('/foo')])
+            ->trailingSlashMatters(true);
 
-it('keeps trailing slashes when trailingSlashMatters is enabled', function (): void {
-    $dispatcher = RouteDispatcher::dispatchFrom('/foo/', 'GET', [edgeRoute('/foo')])
-        ->trailingSlashMatters(true);
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('not-found', call_user_func_array($dispatch['callable'], $dispatch['params']));
+    }
 
-    expect(call_user_func_array($dispatch['callable'], $dispatch['params']))->toBe('not-found');
-});
+    public function testMatchesCaseInsensitivelyByDefaultAndStrictlyWhenCaseMattersIsEnabled(): void
+    {
+        $routes = [$this->edgeRoute('/Case/Sensitive')];
 
-it('matches case insensitively by default and strictly when caseMatters is enabled', function (): void {
-    $routes = [edgeRoute('/Case/Sensitive')];
+        $default = RouteDispatcher::dispatchFrom('/case/sensitive', 'GET', $routes);
+        $strict  = RouteDispatcher::dispatchFrom('/case/sensitive', 'GET', $routes)->caseMatters(true);
 
-    $default = RouteDispatcher::dispatchFrom('/case/sensitive', 'GET', $routes);
-    $strict  = RouteDispatcher::dispatchFrom('/case/sensitive', 'GET', $routes)->caseMatters(true);
+        $defaultDispatch = $default->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $defaultDispatch = $default->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('found', call_user_func_array($defaultDispatch['callable'], $defaultDispatch['params']));
 
-    expect(call_user_func_array($defaultDispatch['callable'], $defaultDispatch['params']))->toBe('found');
+        $strictDispatch = $strict->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $strictDispatch = $strict->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('not-found', call_user_func_array($strictDispatch['callable'], $strictDispatch['params']));
+    }
 
-    expect(call_user_func_array($strictDispatch['callable'], $strictDispatch['params']))->toBe('not-found');
-});
+    public function testCombinesBasePathWithTheRouteExpressionWhenMatching(): void
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom('/api/users', 'GET', [$this->edgeRoute('/users')])
+            ->basePath('/api');
 
-it('combines basePath with the route expression when matching', function (): void {
-    $dispatcher = RouteDispatcher::dispatchFrom('/api/users', 'GET', [edgeRoute('/users')])
-        ->basePath('/api');
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame('handler-/users', call_user_func_array($dispatch['callable'], $dispatch['params']));
+    }
 
-    expect(call_user_func_array($dispatch['callable'], $dispatch['params']))->toBe('handler-/users');
-});
+    public function testReturnsTheLastMatchingRouteInMultiMatchMode(): void
+    {
+        $routes = [
+            $this->edgeRoute('/multi'),
+            $this->edgeRoute('/multi'),
+        ];
 
-it('returns the last matching route in multiMatch mode', function (): void {
-    $routes = [
-        edgeRoute('/multi'),
-        edgeRoute('/multi'),
-    ];
+        $single = RouteDispatcher::dispatchFrom('/multi', 'GET', $routes)->multiMatch(false);
+        $multi  = RouteDispatcher::dispatchFrom('/multi', 'GET', $routes)->multiMatch(true);
 
-    $single = RouteDispatcher::dispatchFrom('/multi', 'GET', $routes)->multiMatch(false);
-    $multi  = RouteDispatcher::dispatchFrom('/multi', 'GET', $routes)->multiMatch(true);
+        $singleDispatch = $single->run(
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $singleDispatch = $single->run(
-        fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $this->assertSame(
+            'handler-/multi',
+            call_user_func_array($singleDispatch['callable'], $singleDispatch['params'])
+        );
 
-    expect(call_user_func_array($singleDispatch['callable'], $singleDispatch['params']))->toBe('handler-/multi');
+        $multiDispatch = $multi->run(
+            fn (callable $callable, array $params) => call_user_func_array($callable, $params),
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $multiDispatch = $multi->run(
-        fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $multiResult = call_user_func_array($multiDispatch['callable'], $multiDispatch['params']);
 
-    $multiResult = call_user_func_array($multiDispatch['callable'], $multiDispatch['params']);
+        $this->assertSame('handler-/multi', $multiResult);
+        $this->assertSame($routes[1], $multi->current());
+    }
 
-    expect($multiResult)->toBe('handler-/multi');
-    expect($multi->current())->toBe($routes[1]);
-});
+    public function testResolvesNamedParametersDuringDispatch(): void
+    {
+        $captured = null;
 
-it('resolves named parameters during dispatch', function (): void {
-    $captured = null;
+        $dispatcher = RouteDispatcher::dispatchFrom('/user/42', 'GET', [
+            new Route([
+                'method'     => 'GET',
+                'expression' => '/user/(?P<id>\d+)',
+                'function'   => fn (string $id): string => 'user-' . $id,
+            ]),
+        ]);
 
-    $dispatcher = RouteDispatcher::dispatchFrom('/user/42', 'GET', [
-        new Route([
+        $dispatch = $dispatcher->run(
+            function (callable $callable, array $params) use (&$captured) {
+                $captured = $params;
+
+                return call_user_func_array($callable, $params);
+            },
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
+
+        $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
+
+        $this->assertSame(['id' => '42'], $captured);
+        $this->assertSame('user-42', $result);
+    }
+
+    public function testAppliesPerRoutePatternsDuringDispatch(): void
+    {
+        $route = new Route([
             'method'     => 'GET',
-            'expression' => '/user/(?P<id>\d+)',
-            'function'   => fn (string $id): string => 'user-' . $id,
-        ]),
-    ]);
+            'expression' => '/post/{id}',
+            'patterns'   => ['{id}' => '\d+'],
+            'function'   => fn (): string => 'post',
+        ]);
 
-    $dispatch = $dispatcher->run(
-        function (callable $callable, array $params) use (&$captured) {
-            $captured = $params;
+        $matching = RouteDispatcher::dispatchFrom('/post/123', 'GET', [$route]);
+        $failing  = RouteDispatcher::dispatchFrom('/post/abc', 'GET', [$route]);
 
-            return call_user_func_array($callable, $params);
-        },
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $foundDispatch = $matching->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
+        $this->assertSame('found', call_user_func_array($foundDispatch['callable'], $foundDispatch['params']));
 
-    expect($captured)->toBe(['id' => '42']);
-    expect($result)->toBe('user-42');
-});
+        $missingDispatch = $failing->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-it('applies per route patterns during dispatch', function (): void {
-    $route = new Route([
-        'method'     => 'GET',
-        'expression' => '/post/{id}',
-        'patterns'   => ['{id}' => '\d+'],
-        'function'   => fn (): string => 'post',
-    ]);
+        $this->assertSame('not-found', call_user_func_array($missingDispatch['callable'], $missingDispatch['params']));
+    }
 
-    $matching = RouteDispatcher::dispatchFrom('/post/123', 'GET', [$route]);
-    $failing  = RouteDispatcher::dispatchFrom('/post/abc', 'GET', [$route]);
+    public function testSkipsNonMatchingMethodsAndDispatchesOnTheFirstAvailable(): void
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom('/multi-method', 'POST', [
+            new Route([
+                'method'     => ['get', 'post'],
+                'expression' => '/multi-method',
+                'function'   => fn (): string => 'handled',
+            ]),
+        ]);
 
-    $foundDispatch = $matching->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-    expect(call_user_func_array($foundDispatch['callable'], $foundDispatch['params']))->toBe('found');
+        $this->assertSame('found', call_user_func_array($dispatch['callable'], $dispatch['params']));
+    }
 
-    $missingDispatch = $failing->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
+    public function testSetsTheCurrentRouteExpressionFromTheOriginalExpression(): void
+    {
+        $route      = new Route([
+            'method'     => 'GET',
+            'expression' => '/about',
+            'function'   => fn (): string => 'about',
+        ]);
+        $dispatcher = RouteDispatcher::dispatchFrom('/about', 'GET', [$route]);
 
-    expect(call_user_func_array($missingDispatch['callable'], $missingDispatch['params']))->toBe('not-found');
-});
+        $dispatcher->run(
+            fn (callable $callable, array $params) => 'found',
+            fn ($path) => 'not-found',
+            fn ($path, $method) => 'not-allowed',
+        );
 
-it('skips non matching methods and dispatches on the first available', function (): void {
-    $dispatcher = RouteDispatcher::dispatchFrom('/multi-method', 'POST', [
-        new Route([
-            'method'     => ['get', 'post'],
-            'expression' => '/multi-method',
-            'function'   => fn (): string => 'handled',
-        ]),
-    ]);
+        $this->assertInstanceOf(Route::class, $dispatcher->current());
+        $this->assertSame('^/about$', $dispatcher->current()['expression'] ?? null);
+    }
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
-
-    expect(call_user_func_array($dispatch['callable'], $dispatch['params']))->toBe('found');
-});
-
-it('sets the current route expression from the original expression', function (): void {
-    $route     = new Route([
-        'method'     => 'GET',
-        'expression' => '/about',
-        'function'   => fn (): string => 'about',
-    ]);
-    $dispatcher = RouteDispatcher::dispatchFrom('/about', 'GET', [$route]);
-
-    $dispatcher->run(
-        fn (callable $callable, array $params) => 'found',
-        fn ($path) => 'not-found',
-        fn ($path, $method) => 'not-allowed',
-    );
-
-    expect($dispatcher->current())->toBeInstanceOf(Route::class);
-    expect($dispatcher->current()['expression'] ?? null)->toBe('^/about$');
-});
+    /**
+     * Build a trivial route definition.
+     *
+     * @param string $expression Route URI expression.
+     * @param string $method     Allowed HTTP method(s).
+     * @return Route
+     */
+    private function edgeRoute(string $expression, string $method = 'GET'): Route
+    {
+        return new Route([
+            'method'     => $method,
+            'expression' => $expression,
+            'function'   => fn (): string => 'handler-' . $expression,
+        ]);
+    }
+}

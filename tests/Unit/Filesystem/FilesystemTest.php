@@ -5,182 +5,240 @@ declare(strict_types=1);
 namespace Tests\Filesystem;
 
 use InvalidArgumentException;
-use LogicException;
+use Omega\Filesystem\Adapter\Memory\InMemory;
 use Omega\Filesystem\Exception\FileAlreadyExistsException;
 use Omega\Filesystem\Exception\FileNotFoundException;
 use Omega\Filesystem\Exception\UnexpectedFileExcption;
-use Omega\Filesystem\Adapter\Memory\InMemory;
-use Omega\Filesystem\File;
 use Omega\Filesystem\Filesystem;
 use Omega\Filesystem\Stream\InMemoryBuffer;
-use Omega\Filesystem\Stream\StreamInterface;
-use RuntimeException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Filesystem::class);
+#[CoversClass(Filesystem::class)]
+final class FilesystemTest extends TestCase
+{
+    private InMemory $adapter;
 
-beforeEach(function (): void {
-    $this->adapter = new InMemory();
-    $this->fs = new Filesystem($this->adapter);
-});
+    private Filesystem $fs;
 
-it('returns the adapter', function (): void {
-    expect($this->fs->getAdapter())->toBe($this->adapter);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('checks if key exists', function (): void {
-    $this->adapter->write('file.txt', 'content');
-    expect($this->fs->has('file.txt'))->toBeTrue();
-    expect($this->fs->has('missing.txt'))->toBeFalse();
-});
+        $this->adapter = new InMemory();
+        $this->fs      = new Filesystem($this->adapter);
+    }
 
-it('throws on empty key', function (): void {
-    $this->fs->has('');
-})->throws(InvalidArgumentException::class, 'Object path is empty.');
+    public function testReturnsTheAdapter(): void
+    {
+        $this->assertSame($this->adapter, $this->fs->getAdapter());
+    }
 
-it('writes a new file and returns byte count', function (): void {
-    $bytes = $this->fs->write('new.txt', 'hello');
-    expect($bytes)->toBe(5);
-    expect($this->fs->read('new.txt'))->toBe('hello');
-});
+    public function testChecksIfKeyExists(): void
+    {
+        $this->adapter->write('file.txt', 'content');
+        $this->assertTrue($this->fs->has('file.txt'));
+        $this->assertFalse($this->fs->has('missing.txt'));
+    }
 
-it('throws when writing existing file without overwrite', function (): void {
-    $this->fs->write('file.txt', 'content');
-    $this->fs->write('file.txt', 'new content');
-})->throws(FileAlreadyExistsException::class);
+    public function testThrowsOnEmptyKey(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessageIsOrContains('Object path is empty.');
 
-it('overwrites existing file when overwrite is true', function (): void {
-    $this->fs->write('file.txt', 'old');
-    $this->fs->write('file.txt', 'new', true);
-    expect($this->fs->read('file.txt'))->toBe('new');
-});
+        $this->fs->has('');
+    }
 
-it('reads an existing file', function (): void {
-    $this->fs->write('file.txt', 'content');
-    expect($this->fs->read('file.txt'))->toBe('content');
-});
+    public function testWritesANewFileAndReturnsByteCount(): void
+    {
+        $bytes = $this->fs->write('new.txt', 'hello');
+        $this->assertSame(5, $bytes);
+        $this->assertSame('hello', $this->fs->read('new.txt'));
+    }
 
-it('throws when reading non-existent file', function (): void {
-    $this->fs->read('missing.txt');
-})->throws(FileNotFoundException::class);
+    public function testThrowsWhenWritingExistingFileWithoutOverwrite(): void
+    {
+        $this->fs->write('file.txt', 'content');
 
-it('deletes an existing file', function (): void {
-    $this->fs->write('file.txt', 'content');
-    expect($this->fs->delete('file.txt'))->toBeTrue();
-    expect($this->fs->has('file.txt'))->toBeFalse();
-});
+        $this->expectException(FileAlreadyExistsException::class);
 
-it('throws when deleting non-existent file', function (): void {
-    $this->fs->delete('missing.txt');
-})->throws(FileNotFoundException::class);
+        $this->fs->write('file.txt', 'new content');
+    }
 
-it('gets a file object', function (): void {
-    $this->fs->write('file.txt', 'content');
-    $file = $this->fs->get('file.txt');
-    expect($file->getKey())->toBe('file.txt');
-});
+    public function testOverwritesExistingFileWhenOverwriteIsTrue(): void
+    {
+        $this->fs->write('file.txt', 'old');
+        $this->fs->write('file.txt', 'new', true);
+        $this->assertSame('new', $this->fs->read('file.txt'));
+    }
 
-it('gets a file with create flag', function (): void {
-    $file = $this->fs->get('new.txt', true);
-    expect($file->getKey())->toBe('new.txt');
-});
+    public function testReadsAnExistingFile(): void
+    {
+        $this->fs->write('file.txt', 'content');
+        $this->assertSame('content', $this->fs->read('file.txt'));
+    }
 
-it('throws when getting non-existent file without create', function (): void {
-    $this->fs->get('missing.txt');
-})->throws(FileNotFoundException::class);
+    public function testThrowsWhenReadingNonExistentFile(): void
+    {
+        $this->expectException(FileNotFoundException::class);
 
-it('gets a file from register', function (): void {
-    $file1 = $this->fs->get('file.txt', true);
-    $file2 = $this->fs->get('file.txt', true);
-    expect($file1)->toBe($file2);
-});
+        $this->fs->read('missing.txt');
+    }
 
-it('returns keys', function (): void {
-    $this->fs->write('a.txt', 'a');
-    $this->fs->write('b.txt', 'b');
-    $keys = $this->fs->keys();
-    expect($keys)->toHaveCount(2);
-});
+    public function testDeletesAnExistingFile(): void
+    {
+        $this->fs->write('file.txt', 'content');
+        $this->assertTrue($this->fs->delete('file.txt'));
+        $this->assertFalse($this->fs->has('file.txt'));
+    }
 
-it('lists keys with prefix', function (): void {
-    $this->fs->write('dir/file.txt', 'content');
-    $this->fs->write('other.txt', 'other');
-    $result = $this->fs->listKeys('dir/');
-    expect($result['keys'])->toContain('dir/file.txt');
-});
+    public function testThrowsWhenDeletingNonExistentFile(): void
+    {
+        $this->expectException(FileNotFoundException::class);
 
-it('returns modification time', function (): void {
-    $this->fs->write('file.txt', 'content');
-    $mtime = $this->fs->mtime('file.txt');
-    expect($mtime)->toBeGreaterThanOrEqual(0);
-});
+        $this->fs->delete('missing.txt');
+    }
 
-it('throws when getting mtime of non-existent file', function (): void {
-    $this->fs->mtime('missing.txt');
-})->throws(FileNotFoundException::class);
+    public function testGetsAFileObject(): void
+    {
+        $this->fs->write('file.txt', 'content');
+        $file = $this->fs->get('file.txt');
+        $this->assertSame('file.txt', $file->getKey());
+    }
 
-it('computes checksum', function (): void {
-    $this->fs->write('file.txt', 'hello');
-    $checksum = $this->fs->checksum('file.txt');
-    expect($checksum)->toBe(md5('hello'));
-});
+    public function testGetsAFileWithCreateFlag(): void
+    {
+        $file = $this->fs->get('new.txt', true);
+        $this->assertSame('new.txt', $file->getKey());
+    }
 
-it('computes size', function (): void {
-    $this->fs->write('file.txt', 'hello');
-    expect($this->fs->size('file.txt'))->toBe(5);
-});
+    public function testThrowsWhenGettingNonExistentFileWithoutCreate(): void
+    {
+        $this->expectException(FileNotFoundException::class);
 
-it('creates a stream for non-stream adapter', function (): void {
-    $this->fs->write('file.txt', 'content');
-    $stream = $this->fs->createStream('file.txt');
-    expect($stream)->toBeInstanceOf(InMemoryBuffer::class);
-});
+        $this->fs->get('missing.txt');
+    }
 
-it('creates a file object', function (): void {
-    $file = $this->fs->createFile('file.txt');
-    expect($file->getKey())->toBe('file.txt');
-});
+    public function testGetsAFileFromRegister(): void
+    {
+        $file1 = $this->fs->get('file.txt', true);
+        $file2 = $this->fs->get('file.txt', true);
+        $this->assertSame($file1, $file2);
+    }
 
-it('returns mime type for file with mime provider', function (): void {
-    $this->fs->write('file.txt', 'hello');
-    $mimeType = $this->fs->mimeType('file.txt');
-    expect($mimeType)->not->toBeEmpty();
-});
+    public function testReturnsKeys(): void
+    {
+        $this->fs->write('a.txt', 'a');
+        $this->fs->write('b.txt', 'b');
+        $keys = $this->fs->keys();
+        $this->assertCount(2, $keys);
+    }
 
-it('throws when getting mime type of non-existent file', function (): void {
-    $this->fs->mimeType('missing.txt');
-})->throws(FileNotFoundException::class);
+    public function testListsKeysWithPrefix(): void
+    {
+        $this->fs->write('dir/file.txt', 'content');
+        $this->fs->write('other.txt', 'other');
+        $result = $this->fs->listKeys('dir/');
+        $this->assertContains('dir/file.txt', $result['keys']);
+    }
 
-it('checks if key is a directory', function (): void {
-    expect($this->fs->isDirectory('anything'))->toBeFalse();
-});
+    public function testReturnsModificationTime(): void
+    {
+        $this->fs->write('file.txt', 'content');
+        $mtime = $this->fs->mtime('file.txt');
+        $this->assertGreaterThanOrEqual(0, $mtime);
+    }
 
-it('clears file register', function (): void {
-    $file1 = $this->fs->get('file.txt', true);
-    $this->fs->clearFileRegister();
-    $file2 = $this->fs->createFile('file.txt');
-    expect($file1)->not->toBe($file2);
-});
+    public function testThrowsWhenGettingMtimeOfNonExistentFile(): void
+    {
+        $this->expectException(FileNotFoundException::class);
 
-it('removes from register', function (): void {
-    $file1 = $this->fs->get('file.txt', true);
-    $this->fs->removeFromRegister('file.txt');
-    $file2 = $this->fs->createFile('file.txt');
-    expect($file1)->not->toBe($file2);
-});
+        $this->fs->mtime('missing.txt');
+    }
 
-it('rename moves a file', function (): void {
-    $this->fs->write('old.txt', 'content');
-    expect($this->fs->rename('old.txt', 'new.txt'))->toBeTrue();
-    expect($this->fs->has('new.txt'))->toBeTrue();
-    expect($this->fs->has('old.txt'))->toBeFalse();
-});
+    public function testComputesChecksum(): void
+    {
+        $this->fs->write('file.txt', 'hello');
+        $checksum = $this->fs->checksum('file.txt');
+        $this->assertSame(md5('hello'), $checksum);
+    }
 
-it('rename throws when target exists', function (): void {
-    $this->fs->write('old.txt', 'content');
-    $this->fs->write('new.txt', 'other');
-    $this->fs->rename('old.txt', 'new.txt');
-})->throws(UnexpectedFileExcption::class);
+    public function testComputesSize(): void
+    {
+        $this->fs->write('file.txt', 'hello');
+        $this->assertSame(5, $this->fs->size('file.txt'));
+    }
 
-it('rename throws when source not found', function (): void {
-    $this->fs->rename('missing.txt', 'new.txt');
-})->throws(FileNotFoundException::class);
+    public function testCreatesAStreamForNonStreamAdapter(): void
+    {
+        $this->fs->write('file.txt', 'content');
+        $stream = $this->fs->createStream('file.txt');
+        $this->assertInstanceOf(InMemoryBuffer::class, $stream);
+    }
+
+    public function testCreatesAFileObject(): void
+    {
+        $file = $this->fs->createFile('file.txt');
+        $this->assertSame('file.txt', $file->getKey());
+    }
+
+    public function testReturnsMimeTypeForFileWithMimeProvider(): void
+    {
+        $this->fs->write('file.txt', 'hello');
+        $mimeType = $this->fs->mimeType('file.txt');
+        $this->assertNotEmpty($mimeType);
+    }
+
+    public function testThrowsWhenGettingMimeTypeOfNonExistentFile(): void
+    {
+        $this->expectException(FileNotFoundException::class);
+
+        $this->fs->mimeType('missing.txt');
+    }
+
+    public function testChecksIfKeyIsADirectory(): void
+    {
+        $this->assertFalse($this->fs->isDirectory('anything'));
+    }
+
+    public function testClearsFileRegister(): void
+    {
+        $file1 = $this->fs->get('file.txt', true);
+        $this->fs->clearFileRegister();
+        $file2 = $this->fs->createFile('file.txt');
+        $this->assertNotSame($file1, $file2);
+    }
+
+    public function testRemovesFromRegister(): void
+    {
+        $file1 = $this->fs->get('file.txt', true);
+        $this->fs->removeFromRegister('file.txt');
+        $file2 = $this->fs->createFile('file.txt');
+        $this->assertNotSame($file1, $file2);
+    }
+
+    public function testRenameMovesAFile(): void
+    {
+        $this->fs->write('old.txt', 'content');
+        $this->assertTrue($this->fs->rename('old.txt', 'new.txt'));
+        $this->assertTrue($this->fs->has('new.txt'));
+        $this->assertFalse($this->fs->has('old.txt'));
+    }
+
+    public function testRenameThrowsWhenTargetExists(): void
+    {
+        $this->fs->write('old.txt', 'content');
+        $this->fs->write('new.txt', 'other');
+
+        $this->expectException(UnexpectedFileExcption::class);
+
+        $this->fs->rename('old.txt', 'new.txt');
+    }
+
+    public function testRenameThrowsWhenSourceNotFound(): void
+    {
+        $this->expectException(FileNotFoundException::class);
+
+        $this->fs->rename('missing.txt', 'new.txt');
+    }
+}

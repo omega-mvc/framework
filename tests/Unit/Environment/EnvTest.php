@@ -6,53 +6,53 @@ namespace Tests\Environment;
 
 use Omega\Environment\Env;
 use ReflectionClass;
-
 use function putenv;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
 
-covers(Env::class);
+final class EnvTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        $this->fixturePath = __DIR__ . '/fixtures/support/';
+    }
 
+    protected function tearDown(): void
+    {
+        $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
+        $valuesProp->setValue(null, []);
+    }
 
-beforeEach(function (): void {
-    $this->fixturePath = __DIR__ . '/fixtures/support/';
-});
+#[Test]
 
-afterEach(function (): void {
-    $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
-    $valuesProp->setValue(null, []);
-});
-
-it('can create immutable dotenv instance and load values', function (): void {
+public function test_can_create_immutable_dotenv_instance_and_load_values(): void {
     Env::load($this->fixturePath, '.env.test');
 
-    expect(Env::get('APP_NAME'))->toBe('Omega');
-});
+    $this->assertSame('Omega', Env::get('APP_NAME'));
+    }
 
-it('returns default value when key not found', function (): void {
+
+#[Test]
+
+public function test_returns_default_value_when_key_not_found(): void {
     $default = 'default_value';
 
-    expect(Env::get('NON_EXISTING_KEY', $default))->toBe($default);
-});
+    $this->assertSame($default, Env::get('NON_EXISTING_KEY', $default));
+    }
 
-it('converts string representations to native types', function (string $key, mixed $rawValue, mixed $expected): void {
-    $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
-    $valuesProp->setValue(null, [$key => $rawValue]);
 
-    expect(Env::get($key))->toBe($expected);
-})->with([
-    ['BOOL_TRUE', 'true', true],
-    ['BOOL_FALSE', 'false', false],
-    ['NULL_VAL', 'null', null],
-    ['EMPTY_VAL', 'empty', ''],
-    ['NUMERIC_INT', '42', 42],
-    ['NUMERIC_FLOAT', '3.14', 3.14],
-    ['NORMAL_STRING', 'Omega', 'Omega'],
-    ['STRING_ALPHA', 'alpha', 'alpha'],
-    ['STRING_ZERO', '0', 0],
-    ['STRING_FLOAT_STRANGE', '10.50', 10.5],
-    ['STRING_EMPTY_SPACE', ' ', ' '],
-]);
 
-it('returns non-string values as is', function (): void {
+
+
+#[Test]
+
+public function test_returns_non_string_values_as_is(): void {
     $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
     $valuesProp->setValue(null, [
         'ARRAY_VAL' => [1, 2, 3],
@@ -61,14 +61,45 @@ it('returns non-string values as is', function (): void {
         'NULL_VAL'  => null,
     ]);
 
-    expect(Env::get('ARRAY_VAL'))->toEqual([1, 2, 3]);
-    expect(Env::get('INT_VAL'))->toBe(100);
-    expect(Env::get('BOOL_VAL'))->toBeFalse();
-    expect(Env::get('NULL_VAL'))->toBeNull();
-});
+    $this->assertEquals([1, 2, 3], Env::get('ARRAY_VAL'));
+    $this->assertSame(100, Env::get('INT_VAL'));
+    $this->assertFalse(Env::get('BOOL_VAL'));
+    $this->assertNull(Env::get('NULL_VAL'));
+    }
 
-it('falls back to getenv', function (): void {
+
+#[Test]
+
+public function test_falls_back_to_getenv(): void {
     putenv('SYSTEM_VAR=hello');
-    expect(Env::get('SYSTEM_VAR'))->toBe('hello');
+    $this->assertSame('hello', Env::get('SYSTEM_VAR'));
     putenv('SYSTEM_VAR');
-});
+    }
+
+    #[DataProvider('typeConversionProvider')]
+    public function test_converts_string_representations_to_native_types(string $key, mixed $rawValue, mixed $expected): void
+    {
+        $valuesProp = (new ReflectionClass(Env::class))->getProperty('values');
+        $valuesProp->setValue(null, [$key => $rawValue]);
+
+        $this->assertSame($expected, Env::get($key));
+    }
+
+    public static function typeConversionProvider(): array
+    {
+        return [
+            ['BOOL_TRUE', 'true', true],
+            ['BOOL_FALSE', 'false', false],
+            ['NULL_VAL', 'null', null],
+            ['EMPTY_VAL', 'empty', ''],
+            ['NUMERIC_INT', '42', 42],
+            ['NUMERIC_FLOAT', '3.14', 3.14],
+            ['NORMAL_STRING', 'Omega', 'Omega'],
+            ['STRING_ALPHA', 'alpha', 'alpha'],
+            ['STRING_ZERO', '0', 0],
+            ['STRING_FLOAT_STRANGE', '10.50', 10.5],
+            ['STRING_EMPTY_SPACE', ' ', ' '],
+        ];
+    }
+
+}

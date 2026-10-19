@@ -5,150 +5,165 @@ declare(strict_types=1);
 namespace Tests\DocBlockGenerator\VarExport;
 
 use Omega\DocBlockGenerator\VarExport;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function str_replace;
 
-covers(VarExport::class);
+#[CoversClass(VarExport::class)]
+final class BasicTypesTest extends TestCase
+{
+    public function testCompilesAPositiveIntegerCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([123]);
 
-it('compiles a positive integer correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([123]);
+        $expected = <<<'PHP'
+        [
+            0 => 123,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 123,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesANegativeIntegerCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([-456]);
 
-it('compiles a negative integer correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([-456]);
+        $expected = <<<'PHP'
+        [
+            0 => -456,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => -456,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesAZeroIntegerCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([0]);
 
-it('compiles a zero integer correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([0]);
+        $expected = <<<'PHP'
+        [
+            0 => 0,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 0,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesAPositiveFloatCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([123.45]);
 
-it('compiles a positive float correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([123.45]);
+        $expected = <<<'PHP'
+        [
+            0 => 123.45,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 123.45,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesANegativeFloatCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([-67.89]);
 
-it('compiles a negative float correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([-67.89]);
+        $expected = <<<'PHP'
+        [
+            0 => -67.89,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => -67.89,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesAFloatWithADecimalPartCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([10.0]);
 
-it('compiles a float with a decimal part correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([10.0]);
+        $expected = <<<'PHP'
+        [
+            0 => 10.0,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 10.0,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesAWholeNumberFloatCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([10.0]);
 
-it('compiles a whole number float correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([10.0]);
+        $expected = <<<'PHP'
+        [
+            0 => 10.0,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 10.0,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesAFloatInScientificNotationCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([1.23e4]);
 
-it('compiles a float in scientific notation correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([1.23e4]);
+        $expected = <<<'PHP'
+        [
+            0 => 12300.0,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => 12300.0,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesABooleanTrueCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([true]);
 
-it('compiles a boolean true correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([true]);
+        $expected = <<<'PHP'
+        [
+            0 => true,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => true,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesABooleanFalseCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([false]);
 
-it('compiles a boolean false correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([false]);
+        $expected = <<<'PHP'
+        [
+            0 => false,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => false,
-]
-PHP;
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
 
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+    public function testCompilesNullCorrectly(): void
+    {
+        $varExport = new VarExport();
+        $output    = $varExport->export([null]);
 
-it('compiles null correctly', function (): void {
-    $varExport = new VarExport();
-    $output    = $varExport->export([null]);
+        $expected = <<<'PHP'
+        [
+            0 => null,
+        ]
+        PHP;
 
-    $expected = <<<'PHP'
-[
-    0 => null,
-]
-PHP;
-
-    expect(str_replace(["\r\n", "\r"], "\n", $expected))->toEqual(str_replace(["\r\n", "\r"], "\n", $output));
-});
+        $this->assertEquals(str_replace(["\r\n", "\r"], "\n", $expected), str_replace(["\r\n", "\r"], "\n", $output));
+    }
+}

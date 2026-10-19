@@ -1,57 +1,72 @@
 <?php
 
-use function Omega\Validator\fr;
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
 
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can render filer rule using method where (true)', function () {
-    expect(fr()->trim()->where(fn () => true))->toEqual('trim');
-});
+use function Omega\Validator\fr;
 
-it('can render filter rule using method where (false)', function () {
-    expect(fr()->trim()->where(fn () => false))->toEqual('');
-});
+final class WhereTest extends TestCase
+{
+    public function testCanRenderFilerRuleUsingMethodWhereTrue(): void
+    {
+        $this->assertEquals('trim', fr()->trim()->where(fn () => true));
+    }
 
-it('can reset filter rule using method where (true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanRenderFilterRuleUsingMethodWhereFalse(): void
+    {
+        $this->assertEquals('', fr()->trim()->where(fn () => false));
+    }
 
-    $val->filter('test')->trim()->where(fn () => true);
+    public function testCanResetFilterRuleUsingMethodWhereTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $val->filter('test')->trim()->where(fn () => true);
 
-it('can reset filter rule using method where (false)', function () {
-    $val = new Validator(['test' => ' trim ']);
+        $this->assertEquals(['test' => 'trim'], $val->filterOut());
+    }
 
-    $val->filter('test')->trim()->where(fn () => false);
+    public function testCanResetFilterRuleUsingMethodWhereFalse(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $val->filter('test')->trim()->where(fn () => false);
 
-it('can reset filter rule using method where (no return)', function () {
-    $val = new Validator(['test' => ' trim ']);
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-    $val->filter('test')->trim()->where(function () {
-        // no return
-    });
-})->throws('Condition closure not return boolean');
+    public function testCanResetFilterRuleUsingMethodWhereNoReturn(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
 
-it('can reset filter rule using method where (no boolean)', function () {
-    $val = new Validator(['test' => ' trim ']);
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->trim()->where(fn () => 'test');
-})->throws('Condition closure not return boolean');
+        $val->filter('test')->trim()->where(function () {
+            // no return
+        });
+    }
 
-it('can execute rule combine with submitted method', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanResetFilterRuleUsingMethodWhereNoBoolean(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
 
-    $val->filter('test')->trim()->where(fn () => $val->submitted());
+        $val = new Validator(['test' => ' trim ']);
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $val->filter('test')->trim()->where(fn () => 'test');
+    }
+
+    public function testCanExecuteRuleCombineWithSubmittedMethod(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
+
+        $val->filter('test')->trim()->where(fn () => $val->submitted());
+
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
+}

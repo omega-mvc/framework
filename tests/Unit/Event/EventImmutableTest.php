@@ -6,35 +6,47 @@ namespace Tests\Event;
 
 use Omega\Event\EventImmutable;
 use Omega\Event\Exceptions\EventImmutableException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(EventImmutable::class);
-covers(EventImmutableException::class);
+#[CoversClass(EventImmutable::class)]
+#[CoversClass(EventImmutableException::class)]
+final class EventImmutableTest extends TestCase
+{
+    public function testCreatesAnImmutableEventWithArguments(): void
+    {
+        $event = new EventImmutable('route.before', ['uri' => '/home', 'method' => 'GET']);
 
-it('creates an immutable event with arguments', function (): void {
-    $event = new EventImmutable('route.before', ['uri' => '/home', 'method' => 'GET']);
+        $this->assertSame('route.before', $event->getName());
+        $this->assertEquals(['uri' => '/home', 'method' => 'GET'], $event->getArguments());
+        $this->assertSame('/home', $event->getArgument('uri'));
+        $this->assertTrue($event->hasArgument('method'));
+    }
 
-    expect($event->getName())->toBe('route.before');
-    expect($event->getArguments())->toEqual(['uri' => '/home', 'method' => 'GET']);
-    expect($event->getArgument('uri'))->toBe('/home');
-    expect($event->hasArgument('method'))->toBeTrue();
-});
+    public function testRejectsSettingAnArgument(): void
+    {
+        $event = new EventImmutable('route.before', ['uri' => '/home']);
 
-it('rejects setting an argument', function (): void {
-    $event = new EventImmutable('route.before', ['uri' => '/home']);
+        $this->expectException(EventImmutableException::class);
 
-    expect(fn () => $event['uri'] = '/admin')->toThrow(EventImmutableException::class);
-});
+        $event['uri'] = '/admin';
+    }
 
-it('rejects removing an argument', function (): void {
-    $event = new EventImmutable('route.before', ['uri' => '/home']);
+    public function testRejectsRemovingAnArgument(): void
+    {
+        $event = new EventImmutable('route.before', ['uri' => '/home']);
 
-    expect(function () use ($event): void {
+        $this->expectException(EventImmutableException::class);
+
         unset($event['uri']);
-    })->toThrow(EventImmutableException::class);
-});
+    }
 
-it('rejects reconstruction of the immutable event', function (): void {
-    $event = new EventImmutable('route.before', ['uri' => '/home']);
+    public function testRejectsReconstructionOfTheImmutableEvent(): void
+    {
+        $event = new EventImmutable('route.before', ['uri' => '/home']);
 
-    expect(fn () => $event->__construct('route.after'))->toThrow(EventImmutableException::class);
-});
+        $this->expectException(EventImmutableException::class);
+
+        $event->__construct('route.after');
+    }
+}

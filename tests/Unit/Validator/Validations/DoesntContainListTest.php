@@ -1,53 +1,79 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render doesnt_contain_list validation')
-    ->expect(vr()->doesnt_contain_list('one', 'two'))
-    ->toEqual('doesnt_contain_list,one;two')
-;
+final class DoesntContainListTest extends TestCase
+{
+    public function testCanRenderDoesntContainListValidation(): void
+    {
+        $this->assertEquals('doesnt_contain_list,one;two', vr()->doesnt_contain_list('one', 'two'));
+    }
 
-it('can render invert doesnt_contain_list validation')
-    ->expect(vr()->not()->doesnt_contain_list('one', 'two'))
-    ->toEqual('invert_doesnt_contain_list,one;two')
-;
+    public function testCanRenderInvertDoesntContainListValidation(): void
+    {
+        $this->assertEquals(
+            'invert_doesnt_contain_list,one;two',
+            vr()->not()->doesnt_contain_list('one', 'two')
+        );
+    }
 
-$correct = [
-    'test1' => 'three',
-    'test2' => 'four',
-];
-$incorrect = [
-    'test' => 'one',
-];
+    public function testCanValidateDoesntContainListWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate doesnt_contain_list with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->field('test1', 'test2')->doesnt_contain_list('one', 'two');
 
-    $val->field('test1', 'test2')->doesnt_contain_list('one', 'two');
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateDoesntContainListNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate doesnt_contain_list (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->field('test1', 'test2')->not->doesnt_contain_list('one', 'two');
 
-    $val->field('test1', 'test2')->not->doesnt_contain_list('one', 'two');
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateDoesntContainListWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-it('can validate doesnt_contain_list with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $val->field('test')->doesnt_contain_list('one', 'two');
 
-    $val->field('test')->doesnt_contain_list('one', 'two');
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateDoesntContainListNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-it('can validate doesnt_contain_list (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $val->field('test')->not->doesnt_contain_list('one', 'two');
 
-    $val->field('test')->not->doesnt_contain_list('one', 'two');
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'three',
+            'test2' => 'four',
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test' => 'one',
+        ];
+    }
+}

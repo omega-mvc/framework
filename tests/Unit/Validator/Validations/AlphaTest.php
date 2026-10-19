@@ -1,44 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render alpha validation')
-    ->expect(vr()->alpha())
-    ->toEqual('alpha');
+final class AlphaTest extends TestCase
+{
+    public function testCanRenderAlphaValidation(): void
+    {
+        $this->assertEquals('alpha', vr()->alpha());
+    }
 
-it('can render invert alpha validation')
-    ->expect(vr()->not()->alpha())
-    ->toEqual('invert_alpha');
+    public function testCanRenderInvertAlphaValidation(): void
+    {
+        $this->assertEquals('invert_alpha', vr()->not()->alpha());
+    }
 
-$correct   = ['test' => 'azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
-$incorrect = ['test' => '123azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
+    public function testCanValidateAlphaWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->alpha();
 
-// validate with correct input field
-it('can validate alpha with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->alpha();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateAlphaNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->not()->alpha();
 
-it('can validate alpha (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->not()->alpha();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->alpha();
 
-// validate with incorrect input field
-it('can validate alpha with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->alpha();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->not()->alpha();
 
-it('can validate alpha (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->not()->alpha();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => 'azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => '123azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
+    }
+}

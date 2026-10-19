@@ -6,31 +6,41 @@ namespace Tests\Text;
 
 use Omega\Macroable\Exceptions\MacroNotFoundException;
 use Omega\Text\Str;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(MacroNotFoundException::class)]
+#[CoversClass(Str::class)]
+final class StrMacroTest extends TestCase
+{
+    public function testCanRegisterStringMacro(): void
+    {
+        Str::macro('addPrefix', fn (string $text, string $prefix): string => $prefix . $text);
 
-covers(MacroNotFoundException::class);
-covers(Str::class);
+        $this->assertSame('i love laravel', Str::addPrefix('laravel', 'i love '));
 
-it('can register string macro', function (): void {
-    Str::macro('addPrefix', fn (string $text, string $prefix) => $prefix . $text);
+        Str::resetMacro();
+    }
 
-    expect(Str::addPrefix('laravel', 'i love '))->toBe('i love laravel');
+    public function testCanThrowErrorWhenMacroNotFound(): void
+    {
+        $this->expectException(MacroNotFoundException::class);
 
-    Str::resetMacro();
-});
+        Str::hay();
+    }
 
-it('can throw error when macro not found', function (): void {
-    Str::hay();
-})->throws(MacroNotFoundException::class);
+    public function testCanResetStringMacro(): void
+    {
+        Str::macro('addPrefix', fn (string $text, string $prefix): string => $prefix . $text);
 
-it('can reset string macro', function (): void {
-    Str::macro('addPrefix', fn (string $text, string $prefix) => $prefix . $text);
+        $addPrefix = Str::addPrefix('a', 'b');
+        $this->assertSame('ba', $addPrefix);
+        Str::resetMacro();
 
-    $addPrefix = Str::addPrefix('a', 'b');
-    expect($addPrefix)->toBe('ba');
-    Str::resetMacro();
+        $this->expectException(MacroNotFoundException::class);
 
-    Str::addPrefix('a', 'b');
-    Str::resetMacro();
-})->throws(MacroNotFoundException::class);
+        Str::addPrefix('a', 'b');
+
+        Str::resetMacro();
+    }
+}

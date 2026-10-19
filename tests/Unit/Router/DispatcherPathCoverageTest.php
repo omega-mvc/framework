@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -17,253 +7,291 @@ namespace Tests\Router;
 use Omega\Router\Route;
 use Omega\Router\RouteDispatcher;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionMethod;
 use ReflectionProperty;
+use Tests\TestCase;
 
 use function call_user_func_array;
 
-covers(Route::class);
-covers(RouteDispatcher::class);
-covers(Router::class);
-
-beforeEach(function (): void {
-    Router::reset();
-});
-
-afterEach(function (): void {
-    Router::reset();
-});
-
-/**
- * Dispatch the given routes and return the triggered outcome label.
- *
- * @param Route[]                                                    $routes  Route instances to dispatch against.
- * @param string                                                     $uri     Request URI.
- * @param string                                                     $method  Request HTTP method.
- * @param array{basePath?: string, caseMatters?: bool, trailingSlashMatters?: bool, multiMatch?: bool} $options Dispatcher options.
- * @return string One of: found, notFound, methodNotAllowed.
- */
-function dispatchOutcome(array $routes, string $uri, string $method, array $options = []): string
+#[CoversClass(Route::class)]
+#[CoversClass(RouteDispatcher::class)]
+#[CoversClass(Router::class)]
+final class DispatcherPathCoverageTest extends TestCase
 {
-    $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, $routes)
-        ->basePath($options['basePath'] ?? '')
-        ->caseMatters($options['caseMatters'] ?? false)
-        ->trailingSlashMatters($options['trailingSlashMatters'] ?? false)
-        ->multiMatch($options['multiMatch'] ?? false);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-    $dispatch = $dispatcher->run(
-        fn (callable $callable, array $params): string => 'found',
-        fn (string $path): string => 'notFound',
-        fn (string $path, string $method): string => 'methodNotAllowed',
-    );
-
-    $outcome = call_user_func_array($dispatch['callable'], $dispatch['params']);
-
-    if (!is_string($outcome)) {
-        throw new \LogicException('Dispatcher callbacks must return a string outcome label.');
+        Router::reset();
     }
 
-    return $outcome;
-}
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-/**
- * Build a route instance from a partial definition.
- *
- * @param array{method?: string|array<int, string>, uri?: string, expression?: string, function?: mixed,
- *   patterns?: array<string, string>, middleware?: array<int, class-string>, name?: string} $data Route definition.
- * @return Route
- */
-function dispatchRoute(array $data): Route
-{
-    return new Route($data + [
-        'method'   => 'get',
-        'function' => static fn (): string => 'route',
-    ]);
-}
+        parent::tearDown();
+    }
 
-it('triggers notFound when the route table is empty', function (): void {
-    $_SERVER['REQUEST_URI'] = '/anything';
+    public function testTriggersNotFoundWhenTheRouteTableIsEmpty(): void
+    {
+        $_SERVER['REQUEST_URI'] = '/anything';
 
-    expect(dispatchOutcome([], '/anything', 'GET'))->toBe('notFound');
-});
+        $this->assertSame('notFound', $this->dispatchOutcome([], '/anything', 'GET'));
+    }
 
-it('matches a plain route with a string method', function (): void {
-    $route = dispatchRoute(['expression' => '/plain']);
+    public function testMatchesAPlainRouteWithAStringMethod(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/plain']);
 
-    expect(dispatchOutcome([$route], '/plain', 'GET'))->toBe('found');
-    expect(dispatchOutcome([$route], '/plain', 'POST'))->toBe('methodNotAllowed');
-});
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/plain', 'GET'));
+        $this->assertSame('methodNotAllowed', $this->dispatchOutcome([$route], '/plain', 'POST'));
+    }
 
-it('matches a route whose method list needs several iterations', function (): void {
-    $route = dispatchRoute(['expression' => '/list', 'method' => ['post', 'put', 'get']]);
+    public function testMatchesARouteWhoseMethodListNeedsSeveralIterations(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/list', 'method' => ['post', 'put', 'get']]);
 
-    expect(dispatchOutcome([$route], '/list', 'PUT'))->toBe('found');
-});
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/list', 'PUT'));
+    }
 
-it('does not enter the method loop for an empty method list', function (): void {
-    $route = dispatchRoute(['expression' => '/empty-methods', 'method' => []]);
+    public function testDoesNotEnterTheMethodLoopForAnEmptyMethodList(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/empty-methods', 'method' => []]);
 
-    expect(dispatchOutcome([$route], '/empty-methods', 'GET'))->toBe('methodNotAllowed');
-});
+        $this->assertSame('methodNotAllowed', $this->dispatchOutcome([$route], '/empty-methods', 'GET'));
+    }
 
-it('continues over non matching routes before finding a match', function (): void {
-    $routes = [
-        dispatchRoute(['expression' => '/first']),
-        dispatchRoute(['expression' => '/second']),
-    ];
+    public function testContinuesOverNonMatchingRoutesBeforeFindingAMatch(): void
+    {
+        $routes = [
+            $this->dispatchRoute(['expression' => '/first']),
+            $this->dispatchRoute(['expression' => '/second']),
+        ];
 
-    expect(dispatchOutcome($routes, '/second', 'GET'))->toBe('found');
-});
+        $this->assertSame('found', $this->dispatchOutcome($routes, '/second', 'GET'));
+    }
 
-it('stops at the first match unless multiMatch is enabled', function (): void {
-    $first  = dispatchRoute(['expression' => '/multi']);
-    $second = dispatchRoute(['expression' => '/multi']);
+    public function testStopsAtTheFirstMatchUnlessMultiMatchIsEnabled(): void
+    {
+        $first  = $this->dispatchRoute(['expression' => '/multi']);
+        $second = $this->dispatchRoute(['expression' => '/multi']);
 
-    expect(dispatchOutcome([$first, $second], '/multi', 'GET'))->toBe('found');
+        $this->assertSame('found', $this->dispatchOutcome([$first, $second], '/multi', 'GET'));
 
-    $dispatcher = RouteDispatcher::dispatchFrom('/multi', 'GET', [$first, $second])->multiMatch(true);
-    $dispatcher->run(
-        fn (callable $callable, array $params): string => 'found',
-        fn (string $path): string => 'notFound',
-        fn (string $path, string $method): string => 'methodNotAllowed',
-    );
+        $dispatcher = RouteDispatcher::dispatchFrom('/multi', 'GET', [$first, $second])->multiMatch(true);
+        $dispatcher->run(
+            fn (callable $callable, array $params): string => 'found',
+            fn (string $path): string => 'notFound',
+            fn (string $path, string $method): string => 'methodNotAllowed',
+        );
 
-    expect($dispatcher->current())->toBe($second);
-});
+        $this->assertSame($second, $dispatcher->current());
+    }
 
-it('applies a base path prefix during matching', function (): void {
-    $route = dispatchRoute(['expression' => '/users']);
+    public function testAppliesABasePathPrefixDuringMatching(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/users']);
 
-    expect(dispatchOutcome([$route], '/api/users', 'GET', ['basePath' => '/api']))->toBe('found');
-    expect(dispatchOutcome([$route], 'api/users', 'GET', ['basePath' => 'api']))->toBe('notFound');
-    expect(dispatchOutcome([$route], '/users', 'GET', ['basePath' => '/']))->toBe('found');
-    expect(dispatchOutcome([$route], '/users', 'GET'))->toBe('found');
-});
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/api/users', 'GET', ['basePath' => '/api']));
+        $this->assertSame('notFound', $this->dispatchOutcome([$route], 'api/users', 'GET', ['basePath' => 'api']));
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/users', 'GET', ['basePath' => '/']));
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/users', 'GET'));
+    }
 
-it('honours case sensitivity while matching', function (): void {
-    $route = dispatchRoute(['expression' => '/CaseSensitive']);
+    public function testHonoursCaseSensitivityWhileMatching(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/CaseSensitive']);
 
-    expect(dispatchOutcome([$route], '/casesensitive', 'GET', ['caseMatters' => true]))
-        ->toBe('notFound');
-    expect(dispatchOutcome([$route], '/casesensitive', 'GET'))
-        ->toBe('found');
-});
+        $this->assertSame(
+            'notFound',
+            $this->dispatchOutcome([$route], '/casesensitive', 'GET', ['caseMatters' => true])
+        );
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/casesensitive', 'GET'));
+    }
 
-it('honours trailing slash significance while matching', function (): void {
-    $route = dispatchRoute(['expression' => '/trailing']);
+    public function testHonoursTrailingSlashSignificanceWhileMatching(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/trailing']);
 
-    expect(dispatchOutcome([$route], '/trailing/', 'GET', ['trailingSlashMatters' => true]))
-        ->toBe('notFound');
-    expect(dispatchOutcome([$route], '/trailing/', 'GET'))
-        ->toBe('found');
-});
+        $this->assertSame(
+            'notFound',
+            $this->dispatchOutcome([$route], '/trailing/', 'GET', ['trailingSlashMatters' => true])
+        );
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/trailing/', 'GET'));
+    }
 
-it('keeps the bare base path unchanged when the request path equals it with a trailing slash', function (): void {
-    $route = dispatchRoute(['expression' => '/users']);
+    public function testKeepsTheBareBasePathUnchangedWhenTheRequestPathEqualsItWithATrailingSlash(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/users']);
 
-    expect(dispatchOutcome([$route], '/api/', 'GET', ['basePath' => '/api']))
-        ->toBe('notFound');
-});
+        $this->assertSame(
+            'notFound',
+            $this->dispatchOutcome([$route], '/api/', 'GET', ['basePath' => '/api'])
+        );
+    }
 
-it('strips the query string before matching and tolerates missing paths', function (): void {
-    $route = dispatchRoute(['expression' => '/query']);
+    public function testStripsTheQueryStringBeforeMatchingAndToleratesMissingPaths(): void
+    {
+        $route = $this->dispatchRoute(['expression' => '/query']);
 
-    expect(dispatchOutcome([$route], '/query?a=1&b=2', 'GET'))->toBe('found');
-    expect(dispatchOutcome([$route], '', 'GET'))->toBe('notFound');
-    expect(dispatchOutcome([$route], 'http://', 'GET'))->toBe('notFound');
-});
+        $this->assertSame('found', $this->dispatchOutcome([$route], '/query?a=1&b=2', 'GET'));
+        $this->assertSame('notFound', $this->dispatchOutcome([$route], '', 'GET'));
+        $this->assertSame('notFound', $this->dispatchOutcome([$route], 'http://', 'GET'));
+    }
 
-it('resolves named parameters and per route patterns', function (): void {
-    $named = new Route([
-        'expression' => '/user/((\d+))',
-        'method'     => 'get',
-        'function'   => static fn (string $id): string => 'user-' . $id,
-    ]);
+    public function testResolvesNamedParametersAndPerRoutePatterns(): void
+    {
+        $named = new Route([
+            'expression' => '/user/((\d+))',
+            'method'     => 'get',
+            'function'   => static fn (string $id): string => 'user-' . $id,
+        ]);
 
-    expect(dispatchOutcome([$named], '/user/42', 'GET'))->toBe('found');
+        $this->assertSame('found', $this->dispatchOutcome([$named], '/user/42', 'GET'));
 
-    $patterned = dispatchRoute(['expression' => '/item/(:num)', 'patterns' => ['(:num)' => '(\d+)']]);
-    expect(dispatchOutcome([$patterned], '/item/7', 'GET'))->toBe('found');
-});
+        $patterned = $this->dispatchRoute(['expression' => '/item/(:num)', 'patterns' => ['(:num)' => '(\d+)']]);
+        $this->assertSame('found', $this->dispatchOutcome([$patterned], '/item/7', 'GET'));
+    }
 
-it('triggers notFound and methodNotAllowed with null callbacks via reflection', function (): void {
-    $missingRoute = dispatchRoute(['expression' => '/exists', 'method' => 'post']);
+    public function testTriggersNotFoundAndMethodNotAllowedWithNullCallbacksViaReflection(): void
+    {
+        $missingRoute = $this->dispatchRoute(['expression' => '/exists', 'method' => 'post']);
 
-    $dispatcher = RouteDispatcher::dispatchFrom('/exists', 'GET', [$missingRoute]);
+        $dispatcher = RouteDispatcher::dispatchFrom('/exists', 'GET', [$missingRoute]);
 
-    (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($dispatcher, null);
-    (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($dispatcher, null);
+        (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($dispatcher, null);
+        (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($dispatcher, null);
 
-    $method = new ReflectionMethod(RouteDispatcher::class, 'dispatch');
-    $method->invoke($dispatcher, '', false, false, false);
+        $method = new ReflectionMethod(RouteDispatcher::class, 'dispatch');
+        $method->invoke($dispatcher, '', false, false, false);
 
-    expect($dispatcher->current())->toBeNull();
+        $this->assertNull($dispatcher->current());
 
-    $noRoute = RouteDispatcher::dispatchFrom('/missing', 'GET', []);
+        $noRoute = RouteDispatcher::dispatchFrom('/missing', 'GET', []);
 
-    (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($noRoute, null);
-    (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($noRoute, null);
+        (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($noRoute, null);
+        (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($noRoute, null);
 
-    (new ReflectionMethod(RouteDispatcher::class, 'dispatch'))->invoke($noRoute, '', false, false, false);
+        (new ReflectionMethod(RouteDispatcher::class, 'dispatch'))->invoke($noRoute, '', false, false, false);
 
-    expect($noRoute->current())->toBeNull();
-});
+        $this->assertNull($noRoute->current());
+    }
 
-it('covers every fallback callback combination via reflection', function (): void {
-    $pathMatch    = dispatchRoute(['expression' => '/hit', 'method' => 'post']);
-    $pathMismatch = dispatchRoute(['expression' => '/miss']);
+    public function testCoversEveryFallbackCallbackCombinationViaReflection(): void
+    {
+        $pathMatch    = $this->dispatchRoute(['expression' => '/hit', 'method' => 'post']);
+        $pathMismatch = $this->dispatchRoute(['expression' => '/miss']);
 
-    $scenarios = [
-        'pathMatch, methodNotAllowed null'    => ['/hit', [$pathMatch], 'GET', null, fn (): string => 'nf'],
-        'pathMatch, notFound null'            => ['/hit', [$pathMatch], 'GET', fn (): string => 'mna', null],
-        'pathMatch, all null'                 => ['/hit', [$pathMatch], 'GET', null, null],
-        'pathMismatch, both null'             => ['/nope', [$pathMismatch], 'GET', null, null],
-        'pathMismatch, methodNotAllowed null' => ['/nope', [$pathMismatch], 'GET', null, fn (): string => 'nf'],
-        'pathMismatch, all callable'          => ['/nope', [$pathMismatch], 'GET', fn (): string => 'mna', fn (): string => 'nf'],
-    ];
+        $scenarios = [
+            'pathMatch, methodNotAllowed null'    => ['/hit', [$pathMatch], 'GET', null, fn (): string => 'nf'],
+            'pathMatch, notFound null'            => ['/hit', [$pathMatch], 'GET', fn (): string => 'mna', null],
+            'pathMatch, all null'                 => ['/hit', [$pathMatch], 'GET', null, null],
+            'pathMismatch, both null'             => ['/nope', [$pathMismatch], 'GET', null, null],
+            'pathMismatch, methodNotAllowed null' => ['/nope', [$pathMismatch], 'GET', null, fn (): string => 'nf'],
+            'pathMismatch, all callable'          => ['/nope', [$pathMismatch], 'GET', fn (): string => 'mna', fn (): string => 'nf'],
+        ];
 
-    // Several identical rounds accumulate consecutive traces for every shape.
-    foreach (range(1, 6) as $round) {
-        foreach ($scenarios as $scenario => [$uri, $routes, $method, $mna, $nf]) {
-            $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, $routes);
+        // Several identical rounds accumulate consecutive traces for every shape.
+        foreach (range(1, 6) as $round) {
+            foreach ($scenarios as $scenario => [$uri, $routes, $method, $mna, $nf]) {
+                $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, $routes);
 
-            (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($dispatcher, $mna);
-            (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($dispatcher, $nf);
+                (new ReflectionProperty(RouteDispatcher::class, 'methodNotAllowed'))->setValue($dispatcher, $mna);
+                (new ReflectionProperty(RouteDispatcher::class, 'notFound'))->setValue($dispatcher, $nf);
 
-            (new ReflectionMethod(RouteDispatcher::class, 'dispatch'))->invoke($dispatcher, '', false, false, false);
+                (new ReflectionMethod(RouteDispatcher::class, 'dispatch'))->invoke(
+                    $dispatcher,
+                    '',
+                    false,
+                    false,
+                    false
+                );
+            }
+        }
+
+        $this->assertCount(6, $scenarios);
+    }
+
+    public function testMatchesOnlyTheLastOfSeveralConsecutiveNonMatchingRoutes(): void
+    {
+        $routes = array_map(
+            fn (int $i): Route => $this->dispatchRoute(['expression' => "/miss-{$i}"]),
+            range(1, 5)
+        );
+
+        $routes[] = $this->dispatchRoute(['expression' => '/hit']);
+
+        $this->assertSame('found', $this->dispatchOutcome($routes, '/hit', 'GET'));
+    }
+
+    public function testAccumulatesConsecutiveMethodNotAllowedAndNotFoundDispatches(): void
+    {
+        $postOnly = $this->dispatchRoute(['expression' => '/post-only', 'method' => 'post']);
+        $plain    = $this->dispatchRoute(['expression' => '/plain']);
+
+        foreach (range(1, 6) as $round) {
+            $this->assertSame('methodNotAllowed', $this->dispatchOutcome([$postOnly], '/post-only', 'GET'));
+            $this->assertSame('notFound', $this->dispatchOutcome([$plain], '/missing', 'GET'));
         }
     }
 
-    expect(count($scenarios))->toBe(6);
-});
+    public function testMatchesARouteWhoseExpressionKeyIsMissingAndExposesMiddleware(): void
+    {
+        $route = new Route([
+            'method'     => 'get',
+            'function'   => static fn (): string => 'x',
+            'middleware' => [Support\TestMiddleware::class],
+        ]);
 
-it('matches only the last of several consecutive non-matching routes', function (): void {
-    $routes = array_map(
-        static fn (int $i): Route => dispatchRoute(['expression' => "/miss-{$i}"]),
-        range(1, 5)
-    );
-
-    $routes[] = dispatchRoute(['expression' => '/hit']);
-
-    expect(dispatchOutcome($routes, '/hit', 'GET'))->toBe('found');
-});
-
-it('accumulates consecutive method-not-allowed and not-found dispatches', function (): void {
-    $postOnly = dispatchRoute(['expression' => '/post-only', 'method' => 'post']);
-    $plain    = dispatchRoute(['expression' => '/plain']);
-
-    foreach (range(1, 6) as $round) {
-        expect(dispatchOutcome([$postOnly], '/post-only', 'GET'))->toBe('methodNotAllowed');
-        expect(dispatchOutcome([$plain], '/missing', 'GET'))->toBe('notFound');
+        $this->assertSame('found', $this->dispatchOutcome([$route], '', 'GET'));
     }
-});
 
-it('matches a route whose expression key is missing and exposes middleware', function (): void {
-    $route = new Route([
-        'method'     => 'get',
-        'function'   => static fn (): string => 'x',
-        'middleware' => [Support\TestMiddleware::class],
-    ]);
+    /**
+     * Dispatch the given routes and return the triggered outcome label.
+     *
+     * @param Route[] $routes Route instances to dispatch against.
+     * @param string  $uri    Request URI.
+     * @param string  $method Request HTTP method.
+     * @param array{basePath?: string, caseMatters?: bool, trailingSlashMatters?: bool, multiMatch?: bool} $options
+     *                       Dispatcher options.
+     * @return string One of: found, notFound, methodNotAllowed.
+     */
+    private function dispatchOutcome(array $routes, string $uri, string $method, array $options = []): string
+    {
+        $dispatcher = RouteDispatcher::dispatchFrom($uri, $method, $routes)
+            ->basePath($options['basePath'] ?? '')
+            ->caseMatters($options['caseMatters'] ?? false)
+            ->trailingSlashMatters($options['trailingSlashMatters'] ?? false)
+            ->multiMatch($options['multiMatch'] ?? false);
 
-    expect(dispatchOutcome([$route], '', 'GET'))->toBe('found');
-});
+        $dispatch = $dispatcher->run(
+            fn (callable $callable, array $params): string => 'found',
+            fn (string $path): string => 'notFound',
+            fn (string $path, string $method): string => 'methodNotAllowed',
+        );
+
+        $outcome = call_user_func_array($dispatch['callable'], $dispatch['params']);
+
+        if (!is_string($outcome)) {
+            throw new \LogicException('Dispatcher callbacks must return a string outcome label.');
+        }
+
+        return $outcome;
+    }
+
+    /**
+     * Build a route instance from a partial definition.
+     *
+     * @param array{method?: string|array<int, string>, uri?: string, expression?: string, function?: mixed,
+     *   patterns?: array<string, string>, middleware?: array<int, class-string>, name?: string} $data Route definition.
+     * @return Route
+     */
+    private function dispatchRoute(array $data): Route
+    {
+        return new Route($data + [
+            'method'   => 'get',
+            'function' => static fn (): string => 'route',
+        ]);
+    }
+}

@@ -1,95 +1,98 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session\Storage Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session\Storage;
 
 use Omega\Session\Storage\DatabaseStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Console\Commands\Fixtures\ScriptedConnection;
+use Tests\TestCase;
 
-use function expect;
 use function preg_match;
 
-covers(DatabaseStorage::class);
+#[CoversClass(DatabaseStorage::class)]
+final class DatabaseStorageTest extends TestCase
+{
+    public function testReadsSessionDataFromTheDatabase(): void
+    {
+        $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => '{"foo":"bar"}']]);
+        $storage = new DatabaseStorage($pdo);
 
-it('reads session data from the database', function (): void {
-    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => '{"foo":"bar"}']]);
-    $storage = new DatabaseStorage($pdo);
+        $this->assertSame('{"foo":"bar"}', $storage->read('abc123'));
+    }
 
-    expect($storage->read('abc123'))->toBe('{"foo":"bar"}');
-});
+    public function testReturnsFalseWhenNoSessionRowMatches(): void
+    {
+        $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', []);
+        $storage = new DatabaseStorage($pdo);
 
-it('returns false when no session row matches', function (): void {
-    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', []);
-    $storage = new DatabaseStorage($pdo);
+        $this->assertFalse($storage->read('abc123'));
+    }
 
-    expect($storage->read('abc123'))->toBeFalse();
-});
+    public function testReturnsFalseWhenTheStoredPayloadIsNotAString(): void
+    {
+        $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => 123]]);
+        $storage = new DatabaseStorage($pdo);
 
-it('returns false when the stored payload is not a string', function (): void {
-    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => 123]]);
-    $storage = new DatabaseStorage($pdo);
+        $this->assertFalse($storage->read('abc123'));
+    }
 
-    expect($storage->read('abc123'))->toBeFalse();
-});
+    public function testReturnsFalseWhenTheStoredPayloadIsEmpty(): void
+    {
+        $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => '']]);
+        $storage = new DatabaseStorage($pdo);
 
-it('returns false when the stored payload is empty', function (): void {
-    $pdo     = (new ScriptedConnection())->whenQueryContains('SELECT data', [['data' => '']]);
-    $storage = new DatabaseStorage($pdo);
+        $this->assertFalse($storage->read('abc123'));
+    }
 
-    expect($storage->read('abc123'))->toBeFalse();
-});
+    public function testWritesSessionDataByReplacingTheRow(): void
+    {
+        $pdo     = new ScriptedConnection();
+        $storage = new DatabaseStorage($pdo);
 
-it('writes session data by replacing the row', function (): void {
-    $pdo     = new ScriptedConnection();
-    $storage = new DatabaseStorage($pdo);
+        $this->assertTrue($storage->write('abc123', '{"foo":"bar"}'));
 
-    expect($storage->write('abc123', '{"foo":"bar"}'))->toBeTrue();
+        $this->assertCount(2, $pdo->queries);
+        $this->assertStringContainsString('DELETE FROM sessions', $pdo->queries[0]);
+        $this->assertStringContainsString('INSERT INTO sessions', $pdo->queries[1]);
+    }
 
-    expect($pdo->queries)->toHaveCount(2);
-    expect($pdo->queries[0])->toContain('DELETE FROM sessions');
-    expect($pdo->queries[1])->toContain('INSERT INTO sessions');
-});
+    public function testDestroysASessionRow(): void
+    {
+        $pdo     = new ScriptedConnection();
+        $storage = new DatabaseStorage($pdo);
 
-it('destroys a session row', function (): void {
-    $pdo     = new ScriptedConnection();
-    $storage = new DatabaseStorage($pdo);
+        $this->assertTrue($storage->destroy('abc123'));
 
-    expect($storage->destroy('abc123'))->toBeTrue();
+        $this->assertStringContainsString('DELETE FROM sessions WHERE id = :id', $pdo->queries[0]);
+    }
 
-    expect($pdo->queries[0])->toContain('DELETE FROM sessions WHERE id = :id');
-});
+    public function testGarbageCollectsExpiredSessions(): void
+    {
+        $pdo     = new ScriptedConnection();
+        $storage = new DatabaseStorage($pdo);
 
-it('garbage collects expired sessions', function (): void {
-    $pdo     = new ScriptedConnection();
-    $storage = new DatabaseStorage($pdo);
+        $this->assertSame(1, $storage->gc(7200));
 
-    expect($storage->gc(7200))->toBe(1);
+        $this->assertStringContainsString('DELETE FROM sessions WHERE last_activity < :expiry', $pdo->queries[0]);
+    }
 
-    expect($pdo->queries[0])->toContain('DELETE FROM sessions WHERE last_activity < :expiry');
-});
+    public function testCreatesA32CharacterHexadecimalSessionId(): void
+    {
+        $pdo     = new ScriptedConnection();
+        $storage = new DatabaseStorage($pdo);
+        $id      = $storage->createId();
 
-it('creates a 32-character hexadecimal session id', function (): void {
-    $pdo     = new ScriptedConnection();
-    $storage = new DatabaseStorage($pdo);
-    $id      = $storage->createId();
+        $this->assertSame(1, preg_match('/^[0-9a-f]{32}$/', $id));
+        $this->assertNotSame($id, $storage->createId());
+    }
 
-    expect(preg_match('/^[0-9a-f]{32}$/', $id))->toBe(1);
-    expect($storage->createId())->not->toBe($id);
-});
+    public function testClosesTheStorageBackend(): void
+    {
+        $pdo     = new ScriptedConnection();
+        $storage = new DatabaseStorage($pdo);
 
-it('closes the storage backend', function (): void {
-    $pdo     = new ScriptedConnection();
-    $storage = new DatabaseStorage($pdo);
-
-    expect($storage->close())->toBeTrue();
-});
+        $this->assertTrue($storage->close());
+    }
+}

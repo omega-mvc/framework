@@ -1,25 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can add costume filter', function () {
-    $validation = new Validator(['test' => 'test']);
+final class CostumeFilterTest extends TestCase
+{
+    public function testCanAddCostumeFilter(): void
+    {
+        $validation = new Validator(['test' => 'test']);
 
-    $validation->filter('test')->filter(fn ($value, $param = []) => 'ok ' . $value);
+        $validation->filter('test')->filter(fn ($value, $param = []) => 'ok ' . $value);
 
-    expect($validation->filters->all())->toMatchArray([
-        'test' => 'ok test',
-    ]);
-});
+        $this->assertEquals(['test' => 'ok test'], $validation->filters->all());
+    }
 
-it('can add costume filter combine with other', function () {
-    $validation = new Validator(['test' => 'test']);
+    public function testCanAddCostumeFilterCombineWithOther(): void
+    {
+        $validation = new Validator(['test' => 'test']);
 
-    $validation->filter('test')
-        ->filter(fn ($value, $param = []) => 'ok ' . $value)
-        ->upper_case();
+        $validation->filter('test')
+            ->filter(fn ($value, $param = []) => 'ok ' . $value)
+            ->upper_case();
 
-    expect($validation->filters->all())->toMatchArray([
-        'test' => 'OK TEST',
-    ]);
-});
+        $this->assertEquals(['test' => 'OK TEST'], $validation->filters->all());
+    }
+}

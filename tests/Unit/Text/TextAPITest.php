@@ -6,151 +6,206 @@ namespace Tests\Text;
 
 use Omega\Text\Exceptions\NoReturnException;
 use Omega\Text\Text;
+use ReflectionMethod;
+use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-use function expect;
+final class TextAPITest extends TestCase
+{
 
-covers(Text::class);
 
-beforeEach(function (): void {
-    $this->text = new Text('i love symfony');
-});
+    private Text $text;
 
-afterEach(function (): void {
-    $this->text->reset();
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('can return chart at', function (): void {
-    expect((string) $this->text->charAt(3))->toBe('o');
-});
+        $this->text = new Text('i love symfony');
+    }
 
-it('executes with a non string value', function (): void {
-    $method = new \ReflectionMethod(Text::class, 'execute');
+    protected function tearDown(): void
+    {
+        $this->text->reset();
 
-    $method->invoke($this->text, ['foo'], 'test');
+        parent::tearDown();
+    }
 
-    expect($this->text->logs())->toHaveCount(2);
-});
+    public function testCanReturnChartAt(): void
+    {
+        $this->assertSame('o', (string) $this->text->charAt(3));
+    }
 
-it('can return slice', function (): void {
-    expect((string) $this->text->slice(7))->toBe('symfony');
-});
+    public function testExecutesWithANonStringValue(): void
+    {
+        $method = new ReflectionMethod(Text::class, 'execute');
 
-it('does not throw when slice is not empty and throwOnFailure is enabled', function (): void {
-    expect((string) $this->text->throwOnFailure(true)->slice(1))->toBe(' love symfony');
-});
+        $method->invoke($this->text, ['foo'], 'test');
 
-it('throws when slice returns empty and throwOnFailure is enabled', function (): void {
-    $this->text->throwOnFailure(true)->slice(0, 0);
-})->throws(NoReturnException::class, 'did not return anything');
+        $this->assertCount(2, $this->text->logs());
+    }
 
-it('can return lower', function (): void {
-    expect((string) $this->text->lower())->toBe('i love symfony');
-});
+    public function testCanReturnSlice(): void
+    {
+        $this->assertSame('symfony', (string) $this->text->slice(7));
+    }
 
-it('can return upper', function (): void {
-    expect((string) $this->text->upper())->toBe('I LOVE SYMFONY');
-});
+    public function testDoesNotThrowWhenSliceIsNotEmptyAndThrowOnFailureIsEnabled(): void
+    {
+        $this->assertSame(' love symfony', (string) $this->text->throwOnFailure(true)->slice(1));
+    }
 
-it('can return first upper', function (): void {
-    expect((string) $this->text->firstUpper())->toBe('I love symfony');
-});
+    public function testThrowsWhenSliceReturnsEmptyAndThrowOnFailureIsEnabled(): void
+    {
+        $this->expectException(NoReturnException::class);
+        $this->expectExceptionMessage('did not return anything');
 
-it('can return first upper all', function (): void {
-    expect((string) $this->text->firstUpperAll())->toBe('I Love Symfony');
-});
+        $this->text->throwOnFailure(true)->slice(0, 0);
+    }
 
-it('can return snake', function (): void {
-    expect((string) $this->text->snake())->toBe('i_love_symfony');
-});
+    public function testCanReturnLower(): void
+    {
+        $this->assertSame('i love symfony', (string) $this->text->lower());
+    }
 
-it('can return kebab', function (): void {
-    expect((string) $this->text->kebab())->toBe('i-love-symfony');
-});
+    public function testCanReturnUpper(): void
+    {
+        $this->assertSame('I LOVE SYMFONY', (string) $this->text->upper());
+    }
 
-it('can return pascal', function (): void {
-    expect((string) $this->text->pascal())->toBe('ILoveSymfony');
-});
+    public function testCanReturnFirstUpper(): void
+    {
+        $this->assertSame('I love symfony', (string) $this->text->firstUpper());
+    }
 
-it('can return camel', function (): void {
-    expect((string) $this->text->camel())->toBe('iLoveSymfony');
-});
+    public function testCanReturnFirstUpperAll(): void
+    {
+        $this->assertSame('I Love Symfony', (string) $this->text->firstUpperAll());
+    }
 
-it('can return slug', function (): void {
-    expect((string) $this->text->slug())->toBe('i-love-symfony');
-});
+    public function testCanReturnSnake(): void
+    {
+        $this->assertSame('i_love_symfony', (string) $this->text->snake());
+    }
 
-it('can return is empty', function (): void {
-    expect($this->text->isEmpty())->toBeFalse();
-});
+    public function testCanReturnKebab(): void
+    {
+        $this->assertSame('i-love-symfony', (string) $this->text->kebab());
+    }
 
-it('can return is', function (): void {
-    expect($this->text->is('/^[A-Za-z]{1}[A-Za-z0-9]{3,16}$/'))->toBeFalse();
-});
+    public function testCanReturnPascal(): void
+    {
+        $this->assertSame('ILoveSymfony', (string) $this->text->pascal());
+    }
 
-it('can return contains', function (): void {
-    expect($this->text->contains('love'))->toBeTrue();
-});
+    public function testCanReturnCamel(): void
+    {
+        $this->assertSame('iLoveSymfony', (string) $this->text->camel());
+    }
 
-it('can return starts with', function (): void {
-    expect($this->text->startsWith('i love'))->toBeTrue();
-});
+    public function testCanReturnSlug(): void
+    {
+        $this->assertSame('i-love-symfony', (string) $this->text->slug());
+    }
 
-it('can return ends with', function (): void {
-    expect($this->text->endsWith('symfony'))->toBeTrue();
-});
+    public function testCanReturnIsEmpty(): void
+    {
+        $this->assertFalse($this->text->isEmpty());
+    }
 
-it('can return length', function (): void {
-    expect($this->text->length())->toBe(14);
-});
+    public function testCanReturnIs(): void
+    {
+        $this->assertFalse($this->text->is('/^[A-Za-z]{1}[A-Za-z0-9]{3,16}$/'));
+    }
 
-it('can return index of', function (): void {
-    expect($this->text->indexOf('symfony'))->toBe(7);
-});
+    public function testCanReturnContains(): void
+    {
+        $this->assertTrue($this->text->contains('love'));
+    }
 
-it('can return last index of', function (): void {
-    expect($this->text->lastIndexOf('y'))->toBe(13);
-});
+    public function testCanReturnStartsWith(): void
+    {
+        $this->assertTrue($this->text->startsWith('i love'));
+    }
 
-it('returns false when last index of is not found', function (): void {
-    expect($this->text->lastIndexOf('x'))->toBeFalse();
-});
+    public function testCanReturnEndsWith(): void
+    {
+        $this->assertTrue($this->text->endsWith('symfony'));
+    }
 
-it('can return is match', function (): void {
-    expect($this->text->isMatch('/^i love/'))->toBeTrue();
-});
+    public function testCanReturnLength(): void
+    {
+        $this->assertSame(14, $this->text->length());
+    }
 
-it('returns false when is match does not match', function (): void {
-    expect($this->text->isMatch('/^z/'))->toBeFalse();
-});
+    public function testCanReturnIndexOf(): void
+    {
+        $this->assertSame(7, $this->text->indexOf('symfony'));
+    }
 
-it('can return fill', function (): void {
-    $this->text->text('1234');
-    expect((string) $this->text->fill('0', 6))->toBe('001234');
-});
+    public function testCanReturnLastIndexOf(): void
+    {
+        $this->assertSame(13, $this->text->lastIndexOf('y'));
+    }
 
-it('can return fill end', function (): void {
-    $this->text->text('1234');
-    expect((string) $this->text->fillEnd('0', 6))->toBe('123400');
-});
+    public function testReturnsFalseWhenLastIndexOfIsNotFound(): void
+    {
+        $this->assertFalse($this->text->lastIndexOf('x'));
+    }
 
-it('can return mask', function (): void {
-    $this->text->text('laravel');
-    expect((string) $this->text->mask('*', 1, 4))->toBe('l****el');
+    public function testCanReturnIsMatch(): void
+    {
+        $this->assertTrue($this->text->isMatch('/^i love/'));
+    }
 
-    $this->text->text('laravel');
-    expect((string) $this->text->mask('*', 1))->toBe('l******');
+    public function testReturnsFalseWhenIsMatchDoesNotMatch(): void
+    {
+        $this->assertFalse($this->text->isMatch('/^z/'));
+    }
 
-    $this->text->text('laravel');
-    expect((string) $this->text->mask('*', -3, 1))->toBe('lara*el');
+    public function testCanReturnFill(): void
+    {
+        $this->text->text('1234');
 
-    $this->text->text('laravel');
-    expect((string) $this->text->mask('*', -3))->toBe('lara***');
-});
+        $this->assertSame('001234', (string) $this->text->fill('0', 6));
+    }
 
-it('can return limit', function (): void {
-    expect((string) $this->text->limit(7))->toBe('i love ...');
-});
+    public function testCanReturnFillEnd(): void
+    {
+        $this->text->text('1234');
 
-it('can return after text', function (): void {
-    expect($this->text->after('love ')->__toString())->toBe('symfony');
-});
+        $this->assertSame('123400', (string) $this->text->fillEnd('0', 6));
+    }
+
+    public function testCanReturnMask(): void
+    {
+        $this->text->text('laravel');
+        $this->assertSame('l****el', (string) $this->text->mask('*', 1, 4));
+
+        $this->text->text('laravel');
+        $this->assertSame('l******', (string) $this->text->mask('*', 1));
+
+        $this->text->text('laravel');
+        $this->assertSame('lara*el', (string) $this->text->mask('*', -3, 1));
+
+        $this->text->text('laravel');
+        $this->assertSame('lara***', (string) $this->text->mask('*', -3));
+    }
+
+    public function testCanReturnLimit(): void
+    {
+        $this->assertSame('i love ...', (string) $this->text->limit(7));
+    }
+
+    public function testCanReturnAfterText(): void
+    {
+        $this->assertSame('symfony', $this->text->after('love ')->__toString());
+    }
+
+
+}

@@ -1,71 +1,93 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render exact_len validation')
-    ->expect(vr()->exact_len(240))
-    ->toEqual('exact_len,240')
-;
+final class ExactLenTest extends TestCase
+{
+    public function testCanRenderExactLenValidation(): void
+    {
+        $this->assertEquals('exact_len,240', vr()->exact_len(240));
+    }
 
-it('can render invert exact_len validation')
-    ->expect(vr()->not()->exact_len(240))
-    ->toEqual('invert_exact_len,240')
-;
+    public function testCanRenderInvertExactLenValidation(): void
+    {
+        $this->assertEquals('invert_exact_len,240', vr()->not()->exact_len(240));
+    }
 
-$correct   = ['test' => 'ñándú'];
-$incorrect = ['test' => 'ñán'];
-// validate with correct input field
+    public function testCanValidateExactLenWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate exact_len with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test->exact_len(5);
 
-    $val->test->exact_len(5);
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateExactLenNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate exact_len (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test->not->exact_len(5);
 
-    $val->test->not->exact_len(5);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateExactLenWithIncorrectInputLessThat(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-// validate with incorrect input field
+        // less that
+        $val->test->exact_len(2);
 
-it('can validate exact_len with incorrect input - less that', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertFalse($val->isValid());
+    }
 
-    // less that
-    $val->test->exact_len(2);
+    public function testCanValidateExactLenWithIncorrectInputMoreThat(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        // more that
+        $val->test->exact_len(4);
 
-it('can validate exact_len with incorrect input - more that', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertFalse($val->isValid());
+    }
 
-    // more that
-    $val->test->exact_len(4);
+    public function testCanValidateExactLenNotWithIncorrectInputLessThat(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        // less that
+        $val->test->not->exact_len(2);
 
-it('can validate exact_len (not) with incorrect input - less that', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertTrue($val->isValid());
+    }
 
-    // less that
-    $val->test->not->exact_len(2);
+    public function testCanValidateExactLenNotWithIncorrectInputMoreThat(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        // more that
+        $val->test->not->exact_len(4);
 
-it('can validate exact_len (not) with incorrect input - more that', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertTrue($val->isValid());
+    }
 
-    // more that
-    $val->test->not->exact_len(4);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => 'ñándú'];
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => 'ñán'];
+    }
+}

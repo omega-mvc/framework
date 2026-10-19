@@ -7,52 +7,61 @@ namespace Tests\Security\Hashing;
 use Omega\Security\Hashing\BcryptHasher;
 use Omega\Security\Hashing\DefaultHasher;
 use Omega\Security\Hashing\HashManager;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(BcryptHasher::class);
-covers(HashManager::class);
+#[CoversClass(BcryptHasher::class)]
+#[CoversClass(HashManager::class)]
+final class HasherMangerTest extends TestCase
+{
+    public function testCanHashDefaultHasher(): void
+    {
+        $hasher = new HashManager();
+        $hash   = $hasher->make('password');
 
-it('can hash default hasher', function (): void {
-    $hasher = new HashManager();
-    $hash   = $hasher->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->verify('password', $hash));
+        $this->assertTrue($hasher->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->verify('password', $hash))->toBeTrue();
-    expect($hasher->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testCanUseDriver(): void
+    {
+        $hasher = new HashManager();
+        $hasher->setDriver('bcrypt', new BcryptHasher());
 
-it('can use driver', function (): void {
-    $hasher = new HashManager();
-    $hasher->setDriver('bcrypt', new BcryptHasher());
+        $hash = $hasher->driver('bcrypt')->make('password');
 
-    $hash = $hasher->driver('bcrypt')->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->driver('bcrypt')->verify('password', $hash));
+        $this->assertTrue($hasher->driver('bcrypt')->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->driver('bcrypt')->verify('password', $hash))->toBeTrue();
-    expect($hasher->driver('bcrypt')->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testCanDelegateInfoToTheDefaultDriver(): void
+    {
+        $hasher = new HashManager();
+        $hash   = $hasher->make('password');
 
-it('can delegate info to the default driver', function (): void {
-    $hasher = new HashManager();
-    $hash   = $hasher->make('password');
+        $this->assertSame('bcrypt', $hasher->info($hash)['algoName']);
+    }
 
-    expect($hasher->info($hash)['algoName'])->toBe('bcrypt');
-});
+    public function testReturnsTheDefaultDriverForAnUnknownDriverName(): void
+    {
+        $hasher = new HashManager();
+        $hasher->setDriver('bcrypt', new BcryptHasher());
 
-it('returns the default driver for an unknown driver name', function (): void {
-    $hasher = new HashManager();
-    $hasher->setDriver('bcrypt', new BcryptHasher());
+        $this->assertInstanceOf(DefaultHasher::class, $hasher->driver('unknown'));
+    }
 
-    expect($hasher->driver('unknown'))->toBeInstanceOf(DefaultHasher::class);
-});
+    public function testCanSetTheDefaultDriver(): void
+    {
+        $hasher = new HashManager();
+        $bcrypt = new BcryptHasher();
 
-it('can set the default driver', function (): void {
-    $hasher = new HashManager();
-    $bcrypt = new BcryptHasher();
+        $this->assertSame($hasher, $hasher->setDefaultDriver($bcrypt));
 
-    expect($hasher->setDefaultDriver($bcrypt))->toBe($hasher);
+        $hash = $hasher->make('password');
 
-    $hash = $hasher->make('password');
-
-    expect($hasher->driver())->toBe($bcrypt);
-    expect($hasher->info($hash)['algoName'])->toBe('bcrypt');
-});
+        $this->assertSame($bcrypt, $hasher->driver());
+        $this->assertSame('bcrypt', $hasher->info($hash)['algoName']);
+    }
+}

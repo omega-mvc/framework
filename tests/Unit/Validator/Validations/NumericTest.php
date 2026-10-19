@@ -1,64 +1,78 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render numeric validation')
-    ->expect(vr()->numeric())
-    ->toEqual('numeric')
-;
+final class NumericTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 123,
+        'test2' => 1.2,
+        'test3' => 0,
+        'test4' => '0',
+        'test5' => -1,
+        'test6' => '123',
+        'test7' => '-1',
+        'test8' => '',
+    ];
 
-it('can render invert numeric validation')
-    ->expect(vr()->not()->numeric())
-    ->toEqual('invert_numeric')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test' => 'n0t',
+    ];
 
-$correct = [
-    'test1' => 123,
-    'test2' => 1.2,
-    'test3' => 0,
-    'test4' => '0',
-    'test5' => -1,
-    'test6' => '123',
-    'test7' => '-1',
-    'test8' => '',
-];
-$incorrect = [
-    'test' => 'n0t',
-];
-// validate with correct input field
+    public function testCanRenderNumericValidation(): void
+    {
+        $this->assertEquals('numeric', vr()->numeric());
+    }
 
-it('can validate numeric with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanRenderInvertNumericValidation(): void
+    {
+        $this->assertEquals('invert_numeric', vr()->not()->numeric());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->numeric();
+    public function testCanValidateNumericWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->numeric();
 
-it('can validate numeric (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->numeric();
+    public function testCanValidateNumericNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->numeric();
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate numeric with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateNumericWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->numeric();
+        $val->test->numeric();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate numeric (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateNumericNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->not->numeric();
+        $val->test->not->numeric();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

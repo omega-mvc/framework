@@ -1,75 +1,92 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Messages;
+
 use Omega\Validator\Messages\Message;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can add message (__get)', function () {
-    $message           = new Message();
-    $message->required = 'test';
+#[CoversClass(Message::class)]
+final class MessageTest extends TestCase
+{
+    public function testCanAddMessageUsingMagicGet(): void
+    {
+        $message           = new Message();
+        $message->required = 'test';
 
-    expect($message->messages())->toMatchArray([
-        'required' => 'test',
-    ]);
-});
+        $this->assertArrayHasKey('required', $message->messages());
+        $this->assertEquals('test', $message->messages()['required']);
+    }
 
-it('can add message (array set)', function () {
-    $message             = new Message();
-    $message['required'] = 'test';
+    public function testCanAddMessageArraySet(): void
+    {
+        $message             = new Message();
+        $message['required'] = 'test';
 
-    expect($message->messages())->toMatchArray([
-        'required' => 'test',
-    ]);
-});
+        $this->assertArrayHasKey('required', $message->messages());
+        $this->assertEquals('test', $message->messages()['required']);
+    }
 
-it('can list message (Message())', function () {
-    $message            = new Message();
-    $message->required  = 'test';
-    $message->alpha     = 'test';
+    public function testCanListMessage(): void
+    {
+        $message           = new Message();
+        $message->required = 'test';
+        $message->alpha    = 'test';
 
-    expect($message->messages())->toMatchArray([
-        'required' => 'test',
-        'alpha'    => 'test',
-    ]);
-});
+        $messages = $message->messages();
 
-it('can get message (array)', function () {
-    $message                = new Message();
-    $message['required']    = 'test';
+        $this->assertArrayHasKey('required', $messages);
+        $this->assertEquals('test', $messages['required']);
+        $this->assertArrayHasKey('alpha', $messages);
+        $this->assertEquals('test', $messages['alpha']);
+    }
 
-    expect($message['required'])->toEqual('test');
-});
+    public function testCanGetMessageArray(): void
+    {
+        $message             = new Message();
+        $message['required'] = 'test';
 
-it('can check message exists (array)', function () {
-    $message             = new Message();
-    $message['required'] = 'test';
+        $this->assertEquals('test', $message['required']);
+    }
 
-    expect(isset($message['required']))->toBeTrue();
-    expect(isset($message['alpha']))->toBeFalse();
-});
+    public function testCanCheckMessageExistsArray(): void
+    {
+        $message             = new Message();
+        $message['required'] = 'test';
 
-it('can unset message (array)', function () {
-    $message             = new Message();
-    $message['required'] = 'test';
+        $this->assertTrue(isset($message['required']));
+        $this->assertFalse(isset($message['alpha']));
+    }
 
-    unset($message['required']);
+    public function testCanUnsetMessageArray(): void
+    {
+        $message             = new Message();
+        $message['required'] = 'test';
 
-    expect(isset($message['required']))->toBeFalse();
-    expect($message->messages())->toBe([]);
-});
+        unset($message['required']);
 
-it('can add message using add method', function () {
-    $message = new Message();
+        $this->assertFalse(isset($message['required']));
+        $this->assertSame([], $message->messages());
+    }
 
-    $message->add(['required' => 'test']);
+    public function testCanAddMessageUsingAddMethod(): void
+    {
+        $message = new Message();
 
-    expect($message->messages())->toMatchArray([
-        'required' => 'test',
-    ]);
-});
+        $message->add(['required' => 'test']);
 
-it('can add empty messages using add method', function () {
-    $message = new Message();
+        $this->assertArrayHasKey('required', $message->messages());
+        $this->assertEquals('test', $message->messages()['required']);
+    }
 
-    $message->add([]);
+    public function testCanAddEmptyMessagesUsingAddMethod(): void
+    {
+        $message = new Message();
 
-    expect($message->messages())->toBe([]);
-});
+        $message->add([]);
+
+        $this->assertSame([], $message->messages());
+    }
+}

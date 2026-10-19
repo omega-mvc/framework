@@ -7,12 +7,19 @@ namespace Tests\Database\Query;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\Query\Query;
 use Omega\Database\Schema\SchemaConnection;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(Query::class)]
 final class LimitTest extends TestCase
 {
+
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -119,4 +126,6 @@ final class LimitTest extends TestCase
             $select->__toString()
         );
     }
+
+
 }

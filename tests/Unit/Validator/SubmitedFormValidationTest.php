@@ -1,21 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Validator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('submitted from form (not method)', function () {
-    unset($_SERVER);
+#[CoversClass(Validator::class)]
+final class SubmitedFormValidationTest extends TestCase
+{
+    public function testSubmittedFromFormNotMethod(): void
+    {
+        unset($_SERVER);
 
-    expect(Validator::make())->submitted()->toBeFalse();
-});
+        $this->assertFalse(Validator::make()->submitted());
+    }
 
-it('submitted from form (method GET)', function () {
-    $_SERVER['REQUEST_METHOD'] = 'GET';
+    public function testSubmittedFromFormMethodGet(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
 
-    expect(Validator::make())->submitted()->toBeFalse();
-});
+        $this->assertFalse(Validator::make()->submitted());
+    }
 
-it('submitted from form (method POST)', function () {
-    $_SERVER['REQUEST_METHOD'] = 'POST';
+    public function testSubmittedFromFormMethodPost(): void
+    {
+        $_SERVER['REQUEST_METHOD'] = 'POST';
 
-    expect(Validator::make())->submitted()->toBeTrue();
-});
+        $this->assertTrue(Validator::make()->submitted());
+    }
+}

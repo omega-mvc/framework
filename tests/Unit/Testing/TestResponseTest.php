@@ -8,75 +8,91 @@ use LogicException;
 use Omega\Http\Response;
 use Omega\Testing\TestResponse;
 use Omega\Testing\Traits\ResponseStatusTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Response::class);
-covers(TestResponse::class);
-covers(ResponseStatusTrait::class);
+#[CoversClass(Response::class)]
+#[CoversClass(TestResponse::class)]
+#[CoversClass(ResponseStatusTrait::class)]
+final class TestResponseTest extends TestCase
+{
+    public function testCanRespondAssert(): void
+    {
+        $response = new TestResponse(new Response('test', 200, []));
 
-it('can respond assert', function (): void {
-    $response = new TestResponse(new Response('test', 200, []));
+        $this->assertSame('test', $response->getContent());
+        $response->assertSee('test');
+        $response->assertStatusCode(200);
+    }
 
-    expect($response->getContent())->toBe('test');
-    $response->assertSee('test');
-    $response->assertStatusCode(200);
-});
+    public function testChecksOffsetExistsAndGet(): void
+    {
+        $response = new TestResponse(new Response(['foo' => 'bar', 'baz' => 123], 200, []));
 
-it('checks offset exists and get', function (): void {
-    $response = new TestResponse(new Response(['foo' => 'bar', 'baz' => 123], 200, []));
+        $this->assertTrue(isset($response['foo']));
+        $this->assertFalse(isset($response['nonexistent']));
 
-    expect(isset($response['foo']))->toBeTrue();
-    expect(isset($response['nonexistent']))->toBeFalse();
+        $this->assertSame('bar', $response['foo']);
+        $this->assertSame(123, $response['baz']);
+        $this->assertNull($response['nonexistent']);
+    }
 
-    expect($response['foo'])->toBe('bar');
-    expect($response['baz'])->toBe(123);
-    expect($response['nonexistent'])->toBeNull();
-});
+    public function testThrowsLogicExceptionOnOffsetSet(): void
+    {
+        $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
 
-it('throws logic exception on offset set', function (): void {
-    $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('TestResponse is read-only.');
 
-    expect(fn () => $response['foo'] = 'new value')
-        ->toThrow(LogicException::class, 'TestResponse is read-only.');
-});
+        $response['foo'] = 'new value';
+    }
 
-it('throws logic exception on offset unset', function (): void {
-    $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
+    public function testThrowsLogicExceptionOnOffsetUnset(): void
+    {
+        $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
 
-    expect(function () use ($response): void {
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessage('TestResponse is read-only.');
+
         unset($response['foo']);
-    })->toThrow(LogicException::class, 'TestResponse is read-only.');
-});
+    }
 
-it('returns the original response', function (): void {
-    $original = new Response(['hello' => 'world'], 200, []);
-    $response = new TestResponse($original);
+    public function testReturnsTheOriginalResponse(): void
+    {
+        $original = new Response(['hello' => 'world'], 200, []);
+        $response = new TestResponse($original);
 
-    expect($response->getResponse())->toBe($original);
-});
+        $this->assertSame($original, $response->getResponse());
+    }
 
-it('handles invalid json or non array content', function (): void {
-    $response = new TestResponse(new Response('non-json', 200, []));
+    public function testHandlesInvalidJsonOrNonArrayContent(): void
+    {
+        $response = new TestResponse(new Response('non-json', 200, []));
 
-    expect($response['nonexistent'] ?? [])->toBeArray();
-    expect($response['nonexistent'])->toBeNull();
-});
+        $this->assertIsArray($response['nonexistent'] ?? []);
+        $this->assertNull($response['nonexistent']);
+    }
 
-it('gets content with array content', function (): void {
-    $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
+    public function testGetsContentWithArrayContent(): void
+    {
+        $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
 
-    expect($response->getContent())->toContain('"foo":"bar"');
-});
+        $this->assertStringContainsString('"foo":"bar"', $response->getContent());
+    }
 
-it('sets empty decoded array for invalid json', function (): void {
-    $response = new TestResponse(new Response('invalid-json', 200, []));
+    public function testSetsEmptyDecodedArrayForInvalidJson(): void
+    {
+        $response = new TestResponse(new Response('invalid-json', 200, []));
 
-    expect(isset($response['anything']))->toBeFalse();
-    expect($response['anything'])->toBeNull();
-});
+        $this->assertFalse(isset($response['anything']));
+        $this->assertNull($response['anything']);
+    }
 
-it('decodes a valid json string', function (): void {
-    $response = new TestResponse(new Response('{"foo":"bar"}', 200, []));
+    public function testDecodesAValidJsonString(): void
+    {
+        $response = new TestResponse(new Response('{"foo":"bar"}', 200, []));
 
-    expect(isset($response['foo']))->toBeTrue();
-    expect($response['foo'])->toBe('bar');
-});
+        $this->assertTrue(isset($response['foo']));
+        $this->assertSame('bar', $response['foo']);
+    }
+}

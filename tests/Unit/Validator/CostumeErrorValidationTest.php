@@ -1,146 +1,174 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Messages\MessagePool;
 use Omega\Validator\Rule;
 use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can change supported language', function () {
-    $val = new Validator(['test' => null]);
+final class CostumeErrorValidationTest extends TestCase
+{
+    public function testCanChangeSupportedLanguage(): void
+    {
+        $val = new Validator(['test' => null]);
 
-    // change lang before run validation
-    $val
-        ->lang('id')
-        ->field('test')->required()
-    ;
+        // change lang before run validation
+        $val
+            ->lang('id')
+            ->field('test')->required()
+        ;
 
-    expect($val->getError())->toBe(['test' => 'Bagian Test harus diisi']);
-});
+        $this->assertSame(['test' => 'Bagian Test harus diisi'], $val->getError());
+    }
 
-it('change supported language after run validator doesn\'t perform anything', function () {
-    $val = new Validator(['test' => null]);
+    public function testChangeSupportedLanguageAfterRunValidatorDoesntPerformAnything(): void
+    {
+        $val = new Validator(['test' => null]);
 
-    $val->field('test')->required();
-    $err = $val->getError();
-    // change lang after run validation
-    $val->lang('id');
+        $val->field('test')->required();
+        $err = $val->getError();
+        // change lang after run validation
+        $val->lang('id');
 
-    expect($err)->toBe(['test' => 'The Test field is required']);
-});
+        $this->assertSame(['test' => 'The Test field is required'], $err);
+    }
 
-it('can create costume error', function () {
-    Rule::set_error_message('required', '{field} can\'t be null');
+    public function testCanCreateCostumeError(): void
+    {
+        Rule::set_error_message('required', '{field} can\'t be null');
 
-    $val = new Validator(['tets' => null]);
-    $val->test->required();
+        $val = new Validator(['tets' => null]);
+        $val->test->required();
 
-    expect($val->errors()->test)->toEqual('Test can\'t be null');
-});
+        $this->assertEquals('Test can\'t be null', $val->errors()->test);
+    }
 
-it('can create costume error (containt \'not\' method)', function () {
-    Rule::set_error_message('required', '{field} can\'t be null');
+    public function testCanCreateCostumeErrorContaintNotMethod(): void
+    {
+        Rule::set_error_message('required', '{field} can\'t be null');
 
-    $val = new Validator(['test' => 'null']);
-    $val->test->not()->required();
+        $val = new Validator(['test' => 'null']);
+        $val->test->not()->required();
 
-    expect($val->errors()->test)->toEqual('Test can\'t be null');
-});
+        $this->assertEquals('Test can\'t be null', $val->errors()->test);
+    }
 
-it('can create costume error multy', function () {
-    Rule::set_error_messages([
-        'required' => '{field} can\'t be null',
-        'min_len'  => '{field} less that 2',
-    ]);
+    public function testCanCreateCostumeErrorMulty(): void
+    {
+        Rule::set_error_messages([
+            'required' => '{field} can\'t be null',
+            'min_len'  => '{field} less that 2',
+        ]);
 
-    $val = new Validator([
-        'tets' => null, 'test2' => 'abc',
-    ]);
-    $val->test->required();
-    $val->field('test2')->min_len(4);
+        $val = new Validator([
+            'tets' => null, 'test2' => 'abc',
+        ]);
+        $val->test->required();
+        $val->field('test2')->min_len(4);
 
-    expect($val->getError())->toMatchArray([
-        'test'  => 'Test can\'t be null',
-        'test2' => 'Test2 less that 2',
-    ]);
-});
+        $errors = $val->getError();
 
-it('can costume field error message', function () {
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ]);
-    $v->messages()->test->required = 'costume required message';
+        $this->assertEquals('Test can\'t be null', $errors['test']);
+        $this->assertEquals('Test2 less that 2', $errors['test2']);
+    }
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-});
+    public function testCanCostumeFieldErrorMessage(): void
+    {
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ]);
+        $v->messages()->test->required = 'costume required message';
 
-it('can costume field error message (overide global costume error)', function () {
-    Rule::set_error_message('required', '{field} can\'t be null');
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+    }
 
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ]);
+    public function testCanCostumeFieldErrorMessageOverideGlobalCostumeError(): void
+    {
+        Rule::set_error_message('required', '{field} can\'t be null');
 
-    $v->messages()->test->required = 'costume required message';
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ]);
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-});
+        $v->messages()->test->required = 'costume required message';
 
-it('can costume field error message (use messsage array)', function () {
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ]);
-    $v->messages()->test = [
-        'required' => 'costume required message',
-    ];
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+    }
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-});
-
-it('can costume field error message using setMessage', function () {
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ]);
-    $v->setErrorMessages([
-        'test' => [
+    public function testCanCostumeFieldErrorMessageUseMesssageArray(): void
+    {
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ]);
+        $v->messages()->test = [
             'required' => 'costume required message',
-        ],
-    ]);
+        ];
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-});
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+    }
 
-it('can costume error message using message poll with dinamic property in field', function () {
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-    ]);
-    $v->messages()->field('test')->required = 'costume required message';
+    public function testCanCostumeFieldErrorMessageUsingSetMessage(): void
+    {
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ]);
+        $v->setErrorMessages([
+            'test' => [
+                'required' => 'costume required message',
+            ],
+        ]);
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-});
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+    }
 
-it('can costume error message using messages with callback', function () {
-    $v = Validator::make()->validation(fn (ValidPool $v) => [
-        $v('test')->required(),
-        $v('test2')->required(),
-    ]);
-    $v->messages(static function (MessagePool $message) {
-        $message->field('test')->required = 'costume required message';
-    })->field('test2')->required = 'costume required message';
+    public function testCanCostumeErrorMessageUsingMessagePollWithDinamicPropertyInField(): void
+    {
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+        ]);
+        $v->messages()->field('test')->required = 'costume required message';
 
-    expect($v->errors->test)->toEqual(
-        'costume required message'
-    );
-    expect($v->errors->test2)->toEqual(
-        'costume required message'
-    );
-});
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+    }
+
+    public function testCanCostumeErrorMessageUsingMessagesWithCallback(): void
+    {
+        $v = Validator::make()->validation(fn (ValidPool $v): array => [
+            $v('test')->required(),
+            $v('test2')->required(),
+        ]);
+        $v->messages(static function (MessagePool $message): MessagePool {
+            $message->field('test')->required = 'costume required message';
+
+            return $message;
+        })->field('test2')->required = 'costume required message';
+
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test
+        );
+        $this->assertEquals(
+            'costume required message',
+            $v->errors->test2
+        );
+    }
+}

@@ -1,127 +1,132 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can execute method using if (true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+final class IfMethodTest extends TestCase
+{
+    public function testCanExecuteMethodUsingIfTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => true)->trim();
+        $val->filter('test')->if(fn () => true)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertEquals(['test' => 'trim'], $val->filterOut());
+    }
 
-it('can execute method using if (false)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfFalse(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => false)->trim();
+        $val->filter('test')->if(fn () => false)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-it('can execute method using if (true, true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfTrueTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => true)->trim()->if(fn () => true)->upper_case();
+        $val->filter('test')->if(fn () => true)->trim()->if(fn () => true)->upper_case();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'TRIM',
-    ]);
-});
+        $this->assertEquals(['test' => 'TRIM'], $val->filterOut());
+    }
 
-it('can execute method using if (true, false)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfTrueFalse(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => true)->trim()->if(fn () => false)->upper_case();
+        $val->filter('test')->if(fn () => true)->trim()->if(fn () => false)->upper_case();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertEquals(['test' => 'trim'], $val->filterOut());
+    }
 
-it('can execute method using if (false, true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfFalseTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => false)->trim()->if(fn () => true)->upper_case();
+        $val->filter('test')->if(fn () => false)->trim()->if(fn () => true)->upper_case();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' TRIM ',
-    ]);
-});
+        $this->assertEquals(['test' => ' TRIM '], $val->filterOut());
+    }
 
-it('can execute method using if (false, false)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfFalseFalse(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => false)->trim()->if(fn () => false)->upper_case();
+        $val->filter('test')->if(fn () => false)->trim()->if(fn () => false)->upper_case();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-it('can execute method using if-contiune (true, true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfContiuneTrueTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => true)->if(fn () => true)->trim();
+        $val->filter('test')->if(fn () => true)->if(fn () => true)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertEquals(['test' => 'trim'], $val->filterOut());
+    }
 
-it('can execute method using if-contiune (true, false) x', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfContiuneTrueFalseX(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => true)->if(fn () => false)->trim();
+        $val->filter('test')->if(fn () => true)->if(fn () => false)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-it('can execute method using if-contiune (false, false)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfContiuneFalseFalse(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => false)->if(fn () => false)->trim();
+        $val->filter('test')->if(fn () => false)->if(fn () => false)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-it('can execute method using if-contiune (false, true)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfContiuneFalseTrue(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => false)->if(fn () => true)->trim();
+        $val->filter('test')->if(fn () => false)->if(fn () => true)->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertEquals(['test' => 'trim'], $val->filterOut());
+    }
 
-it('can execute rule combine with submitted method', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteRuleCombineWithSubmittedMethod(): void
+    {
+        $val = new Validator(['test' => ' trim ']);
 
-    $val->filter('test')->if(fn () => $val->submitted())->trim();
+        $val->filter('test')->if(fn () => $val->submitted())->trim();
 
-    expect($val->filterOut())->toMatchArray([
-        'test' => ' trim ',
-    ]);
-});
+        $this->assertEquals(['test' => ' trim '], $val->filterOut());
+    }
 
-it('can execute method using if (no return)', function () {
-    $val = new Validator(['test' => ' trim ']);
+    public function testCanExecuteMethodUsingIfNoReturn(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
 
-    $val->filter('test')->if(function () {
-        // no return
-    })->trim();
-})->throws('Condition closure not return boolean');
+        $val = new Validator(['test' => ' trim ']);
 
-it('can execute method using if (no boolean)', function () {
-    $val = new Validator(['test' => ' trim ']);
+        $val->filter('test')->if(function () {
+            // no return
+        })->trim();
+    }
 
-    $val->filter('test')->if(fn () => 'test')->trim();
-})->throws('Condition closure not return boolean');
+    public function testCanExecuteMethodUsingIfNoBoolean(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
+
+        $val = new Validator(['test' => ' trim ']);
+
+        $val->filter('test')->if(fn () => 'test')->trim();
+    }
+}

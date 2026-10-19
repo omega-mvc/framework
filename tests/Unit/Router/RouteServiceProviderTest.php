@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -18,210 +8,229 @@ use Omega\Application\Application;
 use Omega\Middleware\MaintenanceMiddleware;
 use Omega\Router\RouteServiceProvider;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
 use Tests\Router\Support\SomeClass;
+use Tests\TestCase;
 
 use function Tests\Router\Support\dispatcher;
 
 require_once __DIR__ . '/Support/Dispatcher.php';
 
-covers(RouteServiceProvider::class);
-
-afterEach(function (): void {
-    Router::reset();
-    unset($GLOBALS['router_schedule_count']);
-});
-
-/**
- * Reset the once-per-process schedule flag so every test controls its own boot cycle.
- *
- * @return void
- */
-function resetScheduleFlag(): void
+#[CoversClass(RouteServiceProvider::class)]
+final class RouteServiceProviderTest extends TestCase
 {
-    (new ReflectionProperty(RouteServiceProvider::class, 'scheduleLoaded'))->setValue(null, false);
-}
+    protected function tearDown(): void
+    {
+        Router::reset();
+        unset($GLOBALS['router_schedule_count']);
 
-/**
- * Build a fresh application rooted at the given Router fixture directory.
- *
- * @param string $baseType The fixtures' base directory name.
- * @return Application
- */
-function routerProviderApp(string $baseType): Application
-{
-    return new Application(__DIR__ . '/fixtures/' . $baseType);
-}
-
-it('boot registers the web routes and loads the schedule exactly once', function (): void {
-    resetScheduleFlag();
-
-    $app      = routerProviderApp('support-no-cache');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->boot();
-
-    expect(Router::getRoutesRaw())->toHaveCount(1);
-    expect(Router::getRoutesRaw()[0]['uri'])->toBe('/web');
-
-    $provider->boot();
-
-    expect($GLOBALS['router_schedule_count'])->toBe(1);
-
-    $app->flush();
-});
-
-it('boot skips the schedule when its file is missing', function (): void {
-    resetScheduleFlag();
-
-    $app      = routerProviderApp('empty');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->boot();
-
-    expect($GLOBALS['router_schedule_count'] ?? null)->toBeNull();
-    expect(Router::getRoutesRaw())->toBe([]);
-
-    $app->flush();
-});
-
-it('registerWebRoutes loads cached route definitions', function (): void {
-    $app      = routerProviderApp('support');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    $routes = Router::getRoutesRaw();
-
-    expect($routes)->toHaveCount(4);
-
-    $methods     = array_map(static fn ($route): mixed => $route['method'], $routes);
-    $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
-
-    expect($methods)->toContain('get');
-    expect($methods)->toContain('head');
-    expect($expressions)->toContain('/closure');
-    expect($expressions)->toContain('/strlen');
-    expect($expressions)->toContain('/mixed');
-
-    $app->flush();
-});
-
-it('registerWebRoutes ignores a cache file that does not return an array', function (): void {
-    $app      = routerProviderApp('support-null-cache');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    expect(Router::getRoutesRaw())->toBe([]);
-
-    $app->flush();
-});
-
-it('registerWebRoutes falls back to the web routes file when no cache exists', function (): void {
-    $app      = routerProviderApp('support-no-cache');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    $routes = Router::getRoutesRaw();
-
-    expect($routes)->toHaveCount(1);
-    expect($routes[0]['uri'])->toBe('/web');
-    expect($routes[0]['middleware'])->toBe([MaintenanceMiddleware::class]);
-
-    $app->flush();
-});
-
-it('registerWebRoutes returns early when both the cache and the web routes file are missing', function (): void {
-    $app      = routerProviderApp('empty');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    expect(Router::getRoutesRaw())->toBe([]);
-
-    $app->flush();
-});
-
-it('registerWebRoutes returns early when the base path does not resolve to a string', function (): void {
-    $app = routerProviderApp('support-no-cache');
-    $app->set('path.base', ['/unexpected/path']);
-
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    expect(Router::getRoutesRaw())->toBe([]);
-
-    $app->flush();
-});
-
-it('boot skips the schedule when the base path does not resolve to a string', function (): void {
-    resetScheduleFlag();
-
-    $app = routerProviderApp('support-no-cache');
-    $app->set('path.base', ['/unexpected/path']);
-
-    $provider = new RouteServiceProvider($app);
-
-    $provider->boot();
-
-    expect(Router::getRoutesRaw())->toBe([]);
-    expect($GLOBALS['router_schedule_count'] ?? null)->toBeNull();
-
-    $app->flush();
-});
-
-it('drops cached routes whose method is neither a string nor an array', function (): void {
-    $app      = routerProviderApp('support');
-    $provider = new RouteServiceProvider($app);
-
-    $provider->registerWebRoutes();
-
-    $expressions = array_map(static fn ($route): mixed => $route['expression'], Router::getRoutesRaw());
-
-    expect($expressions)->not->toContain('/numeric-method');
-    expect($expressions)->toHaveCount(4);
-
-    $app->flush();
-});
-
-it('re-registers the same cached definitions across several requests', function (): void {
-    $app      = routerProviderApp('support');
-    $provider = new RouteServiceProvider($app);
-
-    foreach (range(1, 6) as $round) {
-        $provider->registerWebRoutes();
+        parent::tearDown();
     }
 
-    expect(Router::getRoutesRaw())->toHaveCount(24);
+    public function testBootRegistersTheWebRoutesAndLoadsTheScheduleExactlyOnce(): void
+    {
+        $this->resetScheduleFlag();
 
-    $app->flush();
-});
+        $app      = $this->routerProviderApp('support-no-cache');
+        $provider = new RouteServiceProvider($app);
 
-it('registerWebRoutes keeps a cached controller pair and drops malformed handler arrays', function (): void {
-    $app      = routerProviderApp('support-controller-cache');
-    $provider = new RouteServiceProvider($app);
+        $provider->boot();
 
-    $provider->registerWebRoutes();
+        $this->assertCount(1, Router::getRoutesRaw());
+        $this->assertSame('/web', Router::getRoutesRaw()[0]['uri']);
 
-    $routes      = Router::getRoutesRaw();
-    $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+        $provider->boot();
 
-    expect($expressions)->toBe(['/controller']);
-    expect($routes[0]['function'])->toBe([SomeClass::class, 'foo']);
+        $this->assertSame(1, $GLOBALS['router_schedule_count']);
 
-    $app->flush();
-});
+        $app->flush();
+    }
 
-it('dispatches a cached controller pair through an instance method', function (): void {
-    $app      = routerProviderApp('support-controller-cache');
-    $provider = new RouteServiceProvider($app);
+    public function testBootSkipsTheScheduleWhenItsFileIsMissing(): void
+    {
+        $this->resetScheduleFlag();
 
-    $provider->registerWebRoutes();
+        $app      = $this->routerProviderApp('empty');
+        $provider = new RouteServiceProvider($app);
 
-    expect(dispatcher('/controller', 'get'))->toBe('bar');
+        $provider->boot();
 
-    $app->flush();
-});
+        $this->assertNull($GLOBALS['router_schedule_count'] ?? null);
+        $this->assertSame([], Router::getRoutesRaw());
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesLoadsCachedRouteDefinitions(): void
+    {
+        $app      = $this->routerProviderApp('support');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $routes = Router::getRoutesRaw();
+
+        $this->assertCount(4, $routes);
+
+        $methods     = array_map(static fn ($route): mixed => $route['method'], $routes);
+        $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+
+        $this->assertContains('get', $methods);
+        $this->assertContains('head', $methods);
+        $this->assertContains('/closure', $expressions);
+        $this->assertContains('/strlen', $expressions);
+        $this->assertContains('/mixed', $expressions);
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesIgnoresACacheFileThatDoesNotReturnAnArray(): void
+    {
+        $app      = $this->routerProviderApp('support-null-cache');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $this->assertSame([], Router::getRoutesRaw());
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesFallsBackToTheWebRoutesFileWhenNoCacheExists(): void
+    {
+        $app      = $this->routerProviderApp('support-no-cache');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $routes = Router::getRoutesRaw();
+
+        $this->assertCount(1, $routes);
+        $this->assertSame('/web', $routes[0]['uri']);
+        $this->assertSame([MaintenanceMiddleware::class], $routes[0]['middleware']);
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesReturnsEarlyWhenBothTheCacheAndTheWebRoutesFileAreMissing(): void
+    {
+        $app      = $this->routerProviderApp('empty');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $this->assertSame([], Router::getRoutesRaw());
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesReturnsEarlyWhenTheBasePathDoesNotResolveToAString(): void
+    {
+        $app = $this->routerProviderApp('support-no-cache');
+        $app->set('path.base', ['/unexpected/path']);
+
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $this->assertSame([], Router::getRoutesRaw());
+
+        $app->flush();
+    }
+
+    public function testBootSkipsTheScheduleWhenTheBasePathDoesNotResolveToAString(): void
+    {
+        $this->resetScheduleFlag();
+
+        $app = $this->routerProviderApp('support-no-cache');
+        $app->set('path.base', ['/unexpected/path']);
+
+        $provider = new RouteServiceProvider($app);
+
+        $provider->boot();
+
+        $this->assertSame([], Router::getRoutesRaw());
+        $this->assertNull($GLOBALS['router_schedule_count'] ?? null);
+
+        $app->flush();
+    }
+
+    public function testDropsCachedRoutesWhoseMethodIsNeitherAStringNorAnArray(): void
+    {
+        $app      = $this->routerProviderApp('support');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $expressions = array_map(static fn ($route): mixed => $route['expression'], Router::getRoutesRaw());
+
+        $this->assertNotContains('/numeric-method', $expressions);
+        $this->assertCount(4, $expressions);
+
+        $app->flush();
+    }
+
+    public function testReRegistersTheSameCachedDefinitionsAcrossSeveralRequests(): void
+    {
+        $app      = $this->routerProviderApp('support');
+        $provider = new RouteServiceProvider($app);
+
+        foreach (range(1, 6) as $round) {
+            $provider->registerWebRoutes();
+        }
+
+        $this->assertCount(24, Router::getRoutesRaw());
+
+        $app->flush();
+    }
+
+    public function testRegisterWebRoutesKeepsACachedControllerPairAndDropsMalformedHandlerArrays(): void
+    {
+        $app      = $this->routerProviderApp('support-controller-cache');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $routes      = Router::getRoutesRaw();
+        $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+
+        $this->assertSame(['/controller'], $expressions);
+        $this->assertSame([SomeClass::class, 'foo'], $routes[0]['function']);
+
+        $app->flush();
+    }
+
+    public function testDispatchesACachedControllerPairThroughAnInstanceMethod(): void
+    {
+        $app      = $this->routerProviderApp('support-controller-cache');
+        $provider = new RouteServiceProvider($app);
+
+        $provider->registerWebRoutes();
+
+        $this->assertSame('bar', dispatcher('/controller', 'get'));
+
+        $app->flush();
+    }
+
+    /**
+     * Reset the once-per-process schedule flag so every test controls its own boot cycle.
+     *
+     * @return void
+     */
+    private function resetScheduleFlag(): void
+    {
+        (new ReflectionProperty(RouteServiceProvider::class, 'scheduleLoaded'))->setValue(null, false);
+    }
+
+    /**
+     * Build a fresh application rooted at the given Router fixture directory.
+     *
+     * @param string $baseType The fixtures' base directory name.
+     * @return Application
+     */
+    private function routerProviderApp(string $baseType): Application
+    {
+        return new Application(__DIR__ . '/fixtures/' . $baseType);
+    }
+}

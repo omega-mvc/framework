@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -19,125 +9,148 @@ use Omega\Router\Exceptions\RouteNotFoundException;
 use Omega\Router\Route;
 use Omega\Router\Router;
 use Omega\Router\RouteUrlBuilder;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
-covers(AbstractRouter::class);
-covers(Route::class);
-covers(Router::class);
-covers(RouteUrlBuilder::class);
+#[CoversClass(AbstractRouter::class)]
+#[CoversClass(Route::class)]
+#[CoversClass(Router::class)]
+#[CoversClass(RouteUrlBuilder::class)]
+final class PathCoverageTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    Router::reset();
-});
+        Router::reset();
+    }
 
-afterEach(function (): void {
-    Router::reset();
-});
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-it('walks getRoutes for empty and growing route collections', function (): void {
-    expect(Router::getRoutes())->toBe([]);
+        parent::tearDown();
+    }
 
-    Router::get('/one', fn () => 1);
-    expect(Router::getRoutes())->toHaveCount(1);
+    public function testWalksGetRoutesForEmptyAndGrowingRouteCollections(): void
+    {
+        $this->assertSame([], Router::getRoutes());
 
-    Router::get('/two', fn () => 2);
-    expect(Router::getRoutes())->toHaveCount(2);
+        Router::get('/one', fn () => 1);
+        $this->assertCount(1, Router::getRoutes());
 
-    Router::get('/three', fn () => 3);
-    expect(Router::getRoutes())->toHaveCount(3);
-});
+        Router::get('/two', fn () => 2);
+        $this->assertCount(2, Router::getRoutes());
 
-it('groups routes with a name but without a middleware key', function (): void {
-    Router::group(['as' => 'named.'], function (): void {
-        Router::get('/named', fn () => 'n')->name('item');
-    });
+        Router::get('/three', fn () => 3);
+        $this->assertCount(3, Router::getRoutes());
+    }
 
-    expect(Router::getRoutes()[0]['name'])->toBe('named.item');
-});
+    public function testGroupsRoutesWithANameButWithoutAMiddlewareKey(): void
+    {
+        Router::group(['as' => 'named.'], function (): void {
+            Router::get('/named', fn () => 'n')->name('item');
+        });
 
-it('groups routes with an empty middleware list and no name key', function (): void {
-    Router::group(['middleware' => []], function (): void {
-        Router::get('/empty-mw', fn () => 'e');
-    });
+        $this->assertSame('named.item', Router::getRoutes()[0]['name']);
+    }
 
-    expect(Router::getRoutes()[0]['middleware'] ?? [])->toBe([]);
-});
+    public function testGroupsRoutesWithAnEmptyMiddlewareListAndNoNameKey(): void
+    {
+        Router::group(['middleware' => []], function (): void {
+            Router::get('/empty-mw', fn () => 'e');
+        });
 
-it('groups routes with several middleware entries and no setup keys', function (): void {
-    Router::group([], function (): void {
-        Router::get('/plain-group', fn () => 'p');
-    });
+        $this->assertSame([], Router::getRoutes()[0]['middleware'] ?? []);
+    }
 
-    Router::group([
-        'middleware' => [TestMiddleware::class, TestMiddleware::class],
-    ], function (): void {
-        Router::get('/multi-mw', fn () => 'm');
-    });
+    public function testGroupsRoutesWithSeveralMiddlewareEntriesAndNoSetupKeys(): void
+    {
+        Router::group([], function (): void {
+            Router::get('/plain-group', fn () => 'p');
+        });
 
-    $routes = Router::getRoutes();
+        Router::group([
+            'middleware' => [TestMiddleware::class, TestMiddleware::class],
+        ], function (): void {
+            Router::get('/multi-mw', fn () => 'm');
+        });
 
-    expect($routes[0]['uri'] ?? null)->toBe('/plain-group');
-    expect($routes[1]['middleware'] ?? [])->toBe([TestMiddleware::class, TestMiddleware::class]);
-});
+        $routes = Router::getRoutes();
 
-it('redirect scans an empty route table, a middle route and a last route', function (): void {
-    expect(fn () => Router::redirect('missing'))->toThrow(RouteNotFoundException::class);
+        $this->assertSame('/plain-group', $routes[0]['uri'] ?? null);
+        $this->assertSame([TestMiddleware::class, TestMiddleware::class], $routes[1]['middleware'] ?? []);
+    }
 
-    Router::get('/first', fn () => 1)->name('first');
-    Router::get('/second', fn () => 2)->name('second');
-    Router::get('/third', fn () => 3)->name('third');
+    public function testRedirectScansAnEmptyRouteTableAMiddleRouteAndALastRoute(): void
+    {
+        try {
+            Router::redirect('missing');
+            $this->fail('Expected RouteNotFoundException to be thrown.');
+        } catch (RouteNotFoundException) {
+            // expected
+        }
 
-    expect(Router::redirect('second')['uri'])->toBe('/second');
-    expect(Router::redirect('third')['uri'])->toBe('/third');
-});
+        Router::get('/first', fn () => 1)->name('first');
+        Router::get('/second', fn () => 2)->name('second');
+        Router::get('/third', fn () => 3)->name('third');
 
-it('merges middleware into an existing list and accepts empty additions', function (): void {
-    $route = new Route(['uri' => '/mw', 'middleware' => [TestMiddleware::class]]);
+        $this->assertSame('/second', Router::redirect('second')['uri']);
+        $this->assertSame('/third', Router::redirect('third')['uri']);
+    }
 
-    $route->middleware([]);
-    expect($route['middleware'])->toBe([TestMiddleware::class]);
+    public function testMergesMiddlewareIntoAnExistingListAndAcceptsEmptyAdditions(): void
+    {
+        $route = new Route(['uri' => '/mw', 'middleware' => [TestMiddleware::class]]);
 
-    $route->middleware([TestMiddleware::class, Route::class]);
-    expect($route['middleware'])->toBe([TestMiddleware::class, TestMiddleware::class, Route::class]);
-});
+        $route->middleware([]);
+        $this->assertSame([TestMiddleware::class], $route['middleware']);
 
-it('builds urls with non array, mixed and multi pattern maps', function (): void {
-    $builder = new RouteUrlBuilder(['(:id)' => '(\d+)']);
+        $route->middleware([TestMiddleware::class, Route::class]);
+        $this->assertSame([TestMiddleware::class, TestMiddleware::class, Route::class], $route['middleware']);
+    }
 
-    $nonArrayRoute = new Route(['uri' => '/u/(:id)']);
-    $nonArrayRoute['patterns'] = 'nope';
+    public function testBuildsUrlsWithNonArrayMixedAndMultiPatternMaps(): void
+    {
+        $builder = new RouteUrlBuilder(['(:id)' => '(\d+)']);
 
-    expect($builder->buildUrl($nonArrayRoute, [1]))->toBe('/u/1');
-    expect($builder->buildUrl(new Route(['uri' => '/u/x']), []))->toBe('/u/x');
+        $nonArrayRoute = new Route(['uri' => '/u/(:id)']);
+        $nonArrayRoute['patterns'] = 'nope';
 
-    $mixedRoute = new Route(['uri' => '/u/(:id)/(:id)']);
-    $mixedRoute['patterns'] = [0 => 1, '(:id)' => '(\d+)'];
+        $this->assertSame('/u/1', $builder->buildUrl($nonArrayRoute, [1]));
+        $this->assertSame('/u/x', $builder->buildUrl(new Route(['uri' => '/u/x']), []));
 
-    expect($builder->buildUrl($mixedRoute, [1, 2]))->toBe('/u/1/2');
-    expect($builder->buildUrl(
-        new Route(['uri' => '/u/(:id)']),
-        ['other' => 'zz', 0 => 5]
-    ))->toBe('/u/5');
-});
+        $mixedRoute = new Route(['uri' => '/u/(:id)/(:id)']);
+        $mixedRoute['patterns'] = [0 => 1, '(:id)' => '(\d+)'];
 
-it('replaces every occurrence of a pattern and skips absent ones', function (): void {
-    $builder = new RouteUrlBuilder([
-        '(:a)' => '(\d+)',
-        '(:b)' => '([a-z]+)',
-        '(:c)' => '([A-Z]+)',
-    ]);
+        $this->assertSame('/u/1/2', $builder->buildUrl($mixedRoute, [1, 2]));
+        $this->assertSame('/u/5', $builder->buildUrl(
+            new Route(['uri' => '/u/(:id)']),
+            ['other' => 'zz', 0 => 5]
+        ));
+    }
 
-    expect($builder->buildUrl(new Route(['uri' => '/(a:a)/(a:a)/(b:b)']), [1, 2, 'x']))
-        ->toBe('/1/2/x');
-    expect($builder->buildUrl(new Route(['uri' => '/static']), []))->toBe('/static');
-});
+    public function testReplacesEveryOccurrenceOfAPatternAndSkipsAbsentOnes(): void
+    {
+        $builder = new RouteUrlBuilder([
+            '(:a)' => '(\d+)',
+            '(:b)' => '([a-z]+)',
+            '(:c)' => '([A-Z]+)',
+        ]);
 
-it('validates a clean url against a multi pattern map', function (): void {
-    $builder = new RouteUrlBuilder([
-        '(:a)' => '(\d+)',
-        '(:b)' => '([a-z]+)',
-        '(:c)' => '([A-Z]+)',
-    ]);
+        $this->assertSame('/1/2/x', $builder->buildUrl(new Route(['uri' => '/(a:a)/(a:a)/(b:b)']), [1, 2, 'x']));
+        $this->assertSame('/static', $builder->buildUrl(new Route(['uri' => '/static']), []));
+    }
 
-    expect($builder->buildUrl(new Route(['uri' => '/plain']), []))->toBe('/plain');
-});
+    public function testValidatesACleanUrlAgainstAMultiPatternMap(): void
+    {
+        $builder = new RouteUrlBuilder([
+            '(:a)' => '(\d+)',
+            '(:b)' => '([a-z]+)',
+            '(:c)' => '([A-Z]+)',
+        ]);
+
+        $this->assertSame('/plain', $builder->buildUrl(new Route(['uri' => '/plain']), []));
+    }
+}

@@ -1,118 +1,117 @@
 <?php
 
-/**
- * Part of Omega - Tests\Queue Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Queue;
 
 use Omega\Queue\Job;
 use Omega\SerializableClosure\UnsignedSerializableClosure;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
 use function is_object;
 use function method_exists;
 use function serialize;
 
-covers(Job::class);
+#[CoversClass(Job::class)]
+final class JobTest extends TestCase
+{
+    public function testExposesThePropertiesPassedToTheConstructor(): void
+    {
+        $job = new Job(
+            id: 7,
+            queue: 'mail',
+            payload: 'payload-data',
+            attempts: 3,
+            reservedAt: '2026-01-02 10:00:00',
+            availableAt: null,
+            createdAt: '2026-01-01 10:00:00',
+        );
 
-it('exposes the properties passed to the constructor', function (): void {
-    $job = new Job(
-        id: 7,
-        queue: 'mail',
-        payload: 'payload-data',
-        attempts: 3,
-        reservedAt: '2026-01-02 10:00:00',
-        availableAt: null,
-        createdAt: '2026-01-01 10:00:00',
-    );
-
-    expect($job->getId())->toBe(7);
-    expect($job->getQueue())->toBe('mail');
-    expect($job->getPayload())->toBe('payload-data');
-    expect($job->getAttempts())->toBe(3);
-    expect($job->getReservedAt())->toBe('2026-01-02 10:00:00');
-    expect($job->getAvailableAt())->toBeNull();
-    expect($job->getCreatedAt())->toBe('2026-01-01 10:00:00');
-});
-
-it('resolves a serialized closure from the payload', function (): void {
-    $job = new Job(
-        id: 1,
-        queue: 'default',
-        payload: serialize(new UnsignedSerializableClosure(fn (): string => 'lavorato')),
-        attempts: 0,
-        reservedAt: null,
-        availableAt: null,
-        createdAt: '2026-01-01 00:00:00',
-    );
-
-    $body = $job->getRawBody();
-
-    expect(is_object($body))->toBeTrue();
-
-    if (is_object($body)) {
-        expect(method_exists($body, '__invoke'))->toBeTrue();
+        $this->assertSame(7, $job->getId());
+        $this->assertSame('mail', $job->getQueue());
+        $this->assertSame('payload-data', $job->getPayload());
+        $this->assertSame(3, $job->getAttempts());
+        $this->assertSame('2026-01-02 10:00:00', $job->getReservedAt());
+        $this->assertNull($job->getAvailableAt());
+        $this->assertSame('2026-01-01 10:00:00', $job->getCreatedAt());
     }
 
-    if ($body instanceof UnsignedSerializableClosure) {
-        expect($body())->toBe('lavorato');
+    public function testResolvesASerializedClosureFromThePayload(): void
+    {
+        $job = new Job(
+            id: 1,
+            queue: 'default',
+            payload: serialize(new UnsignedSerializableClosure(fn (): string => 'lavorato')),
+            attempts: 0,
+            reservedAt: null,
+            availableAt: null,
+            createdAt: '2026-01-01 00:00:00',
+        );
+
+        $body = $job->getRawBody();
+
+        $this->assertTrue(is_object($body));
+
+        if (is_object($body)) {
+            $this->assertTrue(method_exists($body, '__invoke'));
+        }
+
+        if ($body instanceof UnsignedSerializableClosure) {
+            $this->assertSame('lavorato', $body());
+        }
     }
-});
 
-it('unserializes an array payload as-is', function (): void {
-    $job = new Job(
-        id: 2,
-        queue: 'default',
-        payload: serialize(['x' => 1]),
-        attempts: 0,
-        reservedAt: null,
-        availableAt: null,
-        createdAt: '2026-01-01 00:00:00',
-    );
+    public function testUnserializesAnArrayPayloadAsIs(): void
+    {
+        $job = new Job(
+            id: 2,
+            queue: 'default',
+            payload: serialize(['x' => 1]),
+            attempts: 0,
+            reservedAt: null,
+            availableAt: null,
+            createdAt: '2026-01-01 00:00:00',
+        );
 
-    expect($job->getRawBody())->toBe(['x' => 1]);
-});
+        $this->assertSame(['x' => 1], $job->getRawBody());
+    }
 
-it('tracks the deleted state of a job', function (): void {
-    $job = new Job(
-        id: 1,
-        queue: 'default',
-        payload: 'payload',
-        attempts: 0,
-        reservedAt: null,
-        availableAt: null,
-        createdAt: '2026-01-01 00:00:00',
-    );
+    public function testTracksTheDeletedStateOfAJob(): void
+    {
+        $job = new Job(
+            id: 1,
+            queue: 'default',
+            payload: 'payload',
+            attempts: 0,
+            reservedAt: null,
+            availableAt: null,
+            createdAt: '2026-01-01 00:00:00',
+        );
 
-    expect($job->isDeleted())->toBeFalse();
+        $this->assertFalse($job->isDeleted());
 
-    $job->markDeleted();
+        $job->markDeleted();
 
-    expect($job->isDeleted())->toBeTrue();
-});
+        $this->assertTrue($job->isDeleted());
+    }
 
-it('tracks the released state of a job', function (): void {
-    $job = new Job(
-        id: 1,
-        queue: 'default',
-        payload: 'payload',
-        attempts: 0,
-        reservedAt: null,
-        availableAt: null,
-        createdAt: '2026-01-01 00:00:00',
-    );
+    public function testTracksTheReleasedStateOfAJob(): void
+    {
+        $job = new Job(
+            id: 1,
+            queue: 'default',
+            payload: 'payload',
+            attempts: 0,
+            reservedAt: null,
+            availableAt: null,
+            createdAt: '2026-01-01 00:00:00',
+        );
 
-    expect($job->isReleased())->toBeFalse();
+        $this->assertFalse($job->isReleased());
 
-    $job->markReleased();
+        $job->markReleased();
 
-    expect($job->isReleased())->toBeTrue();
-});
+        $this->assertTrue($job->isReleased());
+    }
+}

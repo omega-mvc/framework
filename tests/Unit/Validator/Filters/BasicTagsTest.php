@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander basic_tags', function () {
-    expect(fr()->basic_tags())
-        ->toEqual('basic_tags')
-    ;
-});
+final class BasicTagsTest extends TestCase
+{
+    public function testCanRanderBasicTags(): void
+    {
+        $this->assertEquals('basic_tags', fr()->basic_tags());
+    }
 
-it('can filter basic_tags', function () {
-    $fr = new Omega\Validator\Validator(['field' => '<script>link</script>']);
+    public function testCanFilterBasicTags(): void
+    {
+        $fr = new Validator(['field' => '<script>link</script>']);
 
-    $fr->filter('field')->basic_tags();
+        $fr->filter('field')->basic_tags();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'link'])
-    ;
-});
+        $this->assertEquals(['field' => 'link'], $fr->filterOut());
+    }
+}

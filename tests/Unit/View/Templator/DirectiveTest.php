@@ -4,104 +4,133 @@ declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
-use Exception;
 use Omega\View\Exceptions\DirectiveCanNotBeRegisterException;
 use Omega\View\Exceptions\DirectiveNotRegisterException;
 use Omega\View\Templator;
 use Omega\View\Templator\DirectiveTemplator;
 use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
 use Stringable;
+use Tests\TestCase;
 
+#[CoversClass(DirectiveCanNotBeRegisterException::class)]
+#[CoversClass(DirectiveNotRegisterException::class)]
+#[CoversClass(Templator::class)]
+#[CoversClass(DirectiveTemplator::class)]
+#[CoversClass(TemplatorFinder::class)]
+final class DirectiveTest extends TestCase
+{
+    private Templator $templator;
 
-covers(DirectiveCanNotBeRegisterException::class);
-covers(DirectiveNotRegisterException::class);
-covers(Templator::class);
-covers(DirectiveTemplator::class);
-covers(TemplatorFinder::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->templator = new Templator(
-        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
-        __DIR__ . '/../fixtures/view/templator/'
-    );
-});
+        $this->templator = new Templator(
+            new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+            __DIR__ . '/../fixtures/view/templator/'
+        );
+    }
 
-it('can render each break', function (): void {
-    DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
-    $out = $this->templator->templates('<html><head></head><body>{% sum(1, 2) %}</body></html>');
-    expect($out)->toEqual(
-        "<html><head></head><body>"
-        . "<?php echo Omega\View\Templator\DirectiveTemplator::call('sum', 1, 2); ?>"
-        . "</body></html>"
-    );
-});
+    public function testCanRenderEachBreak(): void
+    {
+        DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
 
-it('throw exception due directive not register', function (): void {
-    $this->expectException(DirectiveNotRegisterException::class);
-    DirectiveTemplator::call('unknow', 0);
-});
+        $out = $this->templator->templates('<html><head></head><body>{% sum(1, 2) %}</body></html>');
 
-it('can not register directive', function (): void {
-    $this->expectException(DirectiveCanNotBeRegisterException::class);
-    DirectiveTemplator::register('include', fn (string $file): string => $file);
-});
+        $this->assertEquals(
+            "<html><head></head><body>"
+            . "<?php echo Omega\View\Templator\DirectiveTemplator::call('sum', 1, 2); ?>"
+            . "</body></html>",
+            $out
+        );
+    }
 
-it('can register and call directive', function (): void {
-    DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
-    expect(DirectiveTemplator::call('sum', 1, 1))->toEqual(2);
-});
+    public function testThrowExceptionDueDirectiveNotRegister(): void
+    {
+        $this->expectException(DirectiveNotRegisterException::class);
 
-it('skips reserved directive in parse', function (): void {
-    $finder = new TemplatorFinder([]);
-    $directive = new DirectiveTemplator($finder, '/tmp');
+        DirectiveTemplator::call('unknow', 0);
+    }
 
-    $template = '{% include("file") %}';
-    $out = $directive->parse($template);
+    public function testCanNotRegisterDirective(): void
+    {
+        $this->expectException(DirectiveCanNotBeRegisterException::class);
 
-    expect($out)->toEqual('{% include("file") %}');
-});
+        DirectiveTemplator::register('include', fn (string $file): string => $file);
+    }
 
-it('can reset registered directives', function (): void {
-    DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
+    public function testCanRegisterAndCallDirective(): void
+    {
+        DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
 
-    DirectiveTemplator::reset();
-    DirectiveTemplator::call('sum', 1, 1);
-})->throws(DirectiveNotRegisterException::class);
+        $this->assertEquals(2, DirectiveTemplator::call('sum', 1, 1));
+    }
 
-it('call returns string result directly', function (): void {
-    DirectiveTemplator::register('stringify', fn (): string => 'converted');
+    public function testSkipsReservedDirectiveInParse(): void
+    {
+        $finder    = new TemplatorFinder([]);
+        $directive = new DirectiveTemplator($finder, '/tmp');
 
-    expect(DirectiveTemplator::call('stringify'))->toBe('converted');
-});
+        $template = '{% include("file") %}';
+        $out      = $directive->parse($template);
 
-it('call throws when directive returns a non scalar value', function (): void {
-    DirectiveTemplator::register('arrayify', fn (): array => []);
+        $this->assertEquals('{% include("file") %}', $out);
+    }
 
-    DirectiveTemplator::call('arrayify');
-})->throws(RuntimeException::class, 'must return a string or scalar value');
+    public function testCanResetRegisteredDirectives(): void
+    {
+        $this->expectException(DirectiveNotRegisterException::class);
 
-it('call casts a float result to string', function (): void {
-    DirectiveTemplator::register('floatify', fn (): float => 1.5);
+        DirectiveTemplator::register('sum', fn (int $a, int $b): int => $a + $b);
 
-    expect(DirectiveTemplator::call('floatify'))->toBe('1.5');
-});
+        DirectiveTemplator::reset();
+        DirectiveTemplator::call('sum', 1, 1);
+    }
 
-it('call casts a boolean result to string', function (): void {
-    DirectiveTemplator::register('boolify', fn (): bool => true);
+    public function testCallReturnsStringResultDirectly(): void
+    {
+        DirectiveTemplator::register('stringify', fn (): string => 'converted');
 
-    expect(DirectiveTemplator::call('boolify'))->toBe('1');
-});
+        $this->assertSame('converted', DirectiveTemplator::call('stringify'));
+    }
 
-it('call casts a stringable result to string', function (): void {
-    $stringable = new class () implements Stringable {
-        public function __toString(): string
-        {
-            return 'stringable';
-        }
-    };
+    public function testCallThrowsWhenDirectiveReturnsANonScalarValue(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageIsOrContains('must return a string or scalar value');
 
-    DirectiveTemplator::register('stringableify', fn (): Stringable => $stringable);
+        DirectiveTemplator::register('arrayify', fn (): array => []);
 
-    expect(DirectiveTemplator::call('stringableify'))->toBe('stringable');
-});
+        DirectiveTemplator::call('arrayify');
+    }
+
+    public function testCallCastsAFloatResultToString(): void
+    {
+        DirectiveTemplator::register('floatify', fn (): float => 1.5);
+
+        $this->assertSame('1.5', DirectiveTemplator::call('floatify'));
+    }
+
+    public function testCallCastsABooleanResultToString(): void
+    {
+        DirectiveTemplator::register('boolify', fn (): bool => true);
+
+        $this->assertSame('1', DirectiveTemplator::call('boolify'));
+    }
+
+    public function testCallCastsAStringableResultToString(): void
+    {
+        $stringable = new class () implements Stringable {
+            public function __toString(): string
+            {
+                return 'stringable';
+            }
+        };
+
+        DirectiveTemplator::register('stringableify', fn (): Stringable => $stringable);
+
+        $this->assertSame('stringable', DirectiveTemplator::call('stringableify'));
+    }
+}

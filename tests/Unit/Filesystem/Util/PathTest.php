@@ -5,73 +5,94 @@ declare(strict_types=1);
 namespace Tests\Filesystem\Util;
 
 use Omega\Filesystem\Util\Path;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Path::class);
+#[CoversClass(Path::class)]
+final class PathTest extends TestCase
+{
+    public function testNormalizesAPathWithDoubleDots(): void
+    {
+        $this->assertSame('/home/etc', Path::normalize('/home/user/docs/../../etc'));
+    }
 
-it('normalizes a path with double dots', function (): void {
-    expect(Path::normalize('/home/user/docs/../../etc'))->toBe('/home/etc');
-});
+    public function testNormalizesAPathWithSingleDots(): void
+    {
+        $this->assertSame('/home/user/test', Path::normalize('/home/./user/test'));
+    }
 
-it('normalizes a path with single dots', function (): void {
-    expect(Path::normalize('/home/./user/test'))->toBe('/home/user/test');
-});
+    public function testNormalizesAPathWithDoubleSlashes(): void
+    {
+        $this->assertSame('/home/user/test', Path::normalize('/home//user//test'));
+    }
 
-it('normalizes a path with double slashes', function (): void {
-    expect(Path::normalize('/home//user//test'))->toBe('/home/user/test');
-});
+    public function testNormalizesAPathWithBackslashes(): void
+    {
+        $this->assertSame('c:/Users/test', Path::normalize('C:\\Users\\test'));
+    }
 
-it('normalizes a path with backslashes', function (): void {
-    expect(Path::normalize('C:\\Users\\test'))->toBe('c:/Users/test');
-});
+    public function testNormalizesARelativePathWithDots(): void
+    {
+        $this->assertSame('other', Path::normalize('relative/../other'));
+    }
 
-it('normalizes a relative path with dots', function (): void {
-    expect(Path::normalize('relative/../other'))->toBe('other');
-});
+    public function testNormalizesComplexPathWithMixedSegments(): void
+    {
+        $this->assertSame('/a/b/d', Path::normalize('/a/b/./c/../d'));
+    }
 
-it('normalizes complex path with mixed segments', function (): void {
-    expect(Path::normalize('/a/b/./c/../d'))->toBe('/a/b/d');
-});
+    public function testHandlesRootPathWithDots(): void
+    {
+        $this->assertSame('/', Path::normalize('/..'));
+    }
 
-it('handles root path with dots', function (): void {
-    expect(Path::normalize('/..'))->toBe('/');
-});
+    public function testDetectsAbsoluteUnixPaths(): void
+    {
+        $this->assertTrue(Path::isAbsolute('/home/user'));
+    }
 
-it('detects absolute unix paths', function (): void {
-    expect(Path::isAbsolute('/home/user'))->toBeTrue();
-});
+    public function testDetectsRelativePaths(): void
+    {
+        $this->assertFalse(Path::isAbsolute('relative/path'));
+    }
 
-it('detects relative paths', function (): void {
-    expect(Path::isAbsolute('relative/path'))->toBeFalse();
-});
+    public function testDetectsWindowsDriveLetterPaths(): void
+    {
+        $this->assertTrue(Path::isAbsolute('C:\\Users'));
+    }
 
-it('detects windows drive letter paths', function (): void {
-    expect(Path::isAbsolute('C:\\Users'))->toBeTrue();
-});
+    public function testDetectsUncPaths(): void
+    {
+        $this->assertTrue(Path::isAbsolute('//server/share'));
+    }
 
-it('detects UNC paths', function (): void {
-    expect(Path::isAbsolute('//server/share'))->toBeTrue();
-});
+    public function testReturnsEmptyPrefixForRelativePaths(): void
+    {
+        $this->assertSame('', Path::getAbsolutePrefix('relative/path'));
+    }
 
-it('returns empty prefix for relative paths', function (): void {
-    expect(Path::getAbsolutePrefix('relative/path'))->toBe('');
-});
+    public function testReturnsSlashPrefixForUnixPaths(): void
+    {
+        $this->assertSame('/', Path::getAbsolutePrefix('/home/user'));
+    }
 
-it('returns slash prefix for unix paths', function (): void {
-    expect(Path::getAbsolutePrefix('/home/user'))->toBe('/');
-});
+    public function testReturnsLowercaseDrivePrefixForWindowsPaths(): void
+    {
+        $this->assertSame('c:', Path::getAbsolutePrefix('C:\\Users'));
+    }
 
-it('returns lowercase drive prefix for windows paths', function (): void {
-    expect(Path::getAbsolutePrefix('C:\\Users'))->toBe('c:');
-});
+    public function testReturnsDoubleSlashPrefixForUncPaths(): void
+    {
+        $this->assertSame('//', Path::getAbsolutePrefix('//server/share'));
+    }
 
-it('returns double slash prefix for UNC paths', function (): void {
-    expect(Path::getAbsolutePrefix('//server/share'))->toBe('//');
-});
+    public function testReturnsNormalizedDirname(): void
+    {
+        $this->assertSame('/a/b', Path::dirname('/a/b/c.txt'));
+    }
 
-it('returns normalized dirname', function (): void {
-    expect(Path::dirname('/a/b/c.txt'))->toBe('/a/b');
-});
-
-it('normalizes backslashes in dirname', function (): void {
-    expect(Path::dirname('C:\\a\\b\\c.txt'))->toBe('C:/a/b');
-});
+    public function testNormalizesBackslashesInDirname(): void
+    {
+        $this->assertSame('C:/a/b', Path::dirname('C:\\a\\b\\c.txt'));
+    }
+}

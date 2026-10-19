@@ -1,61 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render min_len validation')
-    ->expect(vr()->min_len(240))
-    ->toEqual('min_len,240')
-;
+final class MinLenTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 'ñándú',
+        'test2' => 'ñán',
+        'test3' => '',
+    ];
 
-it('can render invert min_len validation')
-    ->expect(vr()->not()->min_len(240))
-    ->toEqual('invert_min_len,240')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test' => 'ñ',
+    ];
 
-$correct = [
-    'test1' => 'ñándú',
-    'test2' => 'ñán',
-    'test3' => '',
-];
-$incorrect = [
-    'test' => 'ñ',
-];
-// validate with correct input field
+    public function testCanRenderMinLenValidation(): void
+    {
+        $this->assertEquals('min_len,240', vr()->min_len(240));
+    }
 
-it('can validate min_len with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanRenderInvertMinLenValidation(): void
+    {
+        $this->assertEquals('invert_min_len,240', vr()->not()->min_len(240));
+    }
 
-    $val->test1->min_len(5);
-    $val->test2->min_len(2);
-    $val->test3->min_len(2);
+    public function testCanValidateMinLenWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->test1->min_len(5);
+        $val->test2->min_len(2);
+        $val->test3->min_len(2);
 
-it('can validate min_len (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test1->not->min_len(5);
-    $val->test2->not->min_len(2);
-    $val->test3->not->min_len(2);
+    public function testCanValidateMinLenNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test1->not->min_len(5);
+        $val->test2->not->min_len(2);
+        $val->test3->not->min_len(2);
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate min_len with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateMinLenWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->min_len(2);
+        $val->test->min_len(2);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate min_len (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateMinLenNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $val->test->not()->min_len(2);
+        $val->test->not()->min_len(2);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

@@ -1,62 +1,81 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render max_len validation')
-    ->expect(vr()->max_len(240))
-    ->toEqual('max_len,240')
-;
+final class MaxLenTest extends TestCase
+{
+    public function testCanRenderMaxLenValidation(): void
+    {
+        $this->assertEquals('max_len,240', vr()->max_len(240));
+    }
 
-it('can render invert max_len validation')
-    ->expect(vr()->not()->max_len(240))
-    ->toEqual('invert_max_len,240')
-;
+    public function testCanRenderInvertMaxLenValidation(): void
+    {
+        $this->assertEquals('invert_max_len,240', vr()->not()->max_len(240));
+    }
 
-$correct = [
-    'test1' => 'ñándú',
-    'test2' => 'ñ',
-    'test3' => '',
-];
-$incorrect = [
-    'test' => 'ñán',
-];
+    public function testCanValidateMaxLenWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $val->test1->max_len(5);
+        $val->test2->max_len(2);
+        $val->test3->max_len(2);
 
-it('can validate max_len with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test1->max_len(5);
-    $val->test2->max_len(2);
-    $val->test3->max_len(2);
+    public function testCanValidateMaxLenNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->test1->not->max_len(5);
+        $val->test2->not->max_len(2);
+        $val->test3->not->max_len(2);
 
-it('can validate max_len (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->test1->not->max_len(5);
-    $val->test2->not->max_len(2);
-    $val->test3->not->max_len(2);
+    public function testCanValidateMaxLenWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test->max_len(2);
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate max_len with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateMaxLenNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $val->test->max_len(2);
+        $val->test->not->max_len(2);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate max_len (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'ñándú',
+            'test2' => 'ñ',
+            'test3' => '',
+        ];
+    }
 
-    $val->test->not->max_len(2);
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test' => 'ñán',
+        ];
+    }
+}

@@ -1,86 +1,96 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Rule\FilterPool;
 use Omega\Validator\Validator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-// run filter
-it('can run filter using method filterOut', function () {
-    $valid = new Validator([
-        'test1' => 'test',
-        'test2' => 'test',
-    ]);
+#[CoversClass(Validator::class)]
+final class RunFilterValidationTest extends TestCase
+{
+    public function testCanRunFilterUsingMethodFilterOut(): void
+    {
+        $valid = new Validator([
+            'test1' => 'test',
+            'test2' => 'test',
+        ]);
 
-    $valid->filter('test1')->upper_case();
+        $valid->filter('test1')->upper_case();
 
-    expect($valid->filterOut())
-        ->toEqual([
+        $this->assertEquals([
             'test1' => 'TEST',
             'test2' => 'test',
-        ])
-    ;
-});
+        ], $valid->filterOut());
+    }
 
-it('can run filter using method filterOut without filter rules', function () {
-    $field = [
-        'test1' => 'test',
-        'test2' => 'test',
-        'files' => [
-            'test' => [
-                'name'  => 'test',
-                'error' => 4,
+    public function testCanRunFilterUsingMethodFilterOutWithoutFilterRules(): void
+    {
+        $field = [
+            'test1' => 'test',
+            'test2' => 'test',
+            'files' => [
+                'test' => [
+                    'name'  => 'test',
+                    'error' => 4,
+                ],
             ],
-        ],
-    ];
+        ];
 
-    $valid = new Validator($field);
+        $valid = new Validator($field);
 
-    expect($valid->filterOut())->toEqual($field)
-    ;
-});
+        $this->assertEquals($field, $valid->filterOut());
+    }
 
-it('can run filter using method filterOut with closure (param)', function () {
-    $valid = new Validator([
-        'test1' => 'test',
-        'test2' => ' test ',
-        'test3' => 'TEST',
-        'test4' => ' test ',
-        'test5' => ' test ',
-        'test6' => ' test ',
-        'test7' => ' test ',
-    ]);
+    public function testCanRunFilterUsingMethodFilterOutWithClosureParam(): void
+    {
+        $valid = new Validator([
+            'test1' => 'test',
+            'test2' => ' test ',
+            'test3' => 'TEST',
+            'test4' => ' test ',
+            'test5' => ' test ',
+            'test6' => ' test ',
+            'test7' => ' test ',
+        ]);
 
-    expect(
-        $valid->filterOut(function (FilterPool $pool) {
+        $result = $valid->filterOut(function (FilterPool $pool): FilterPool {
             $pool->rule('test1')->upper_case();
             $pool->test2->trim();
             $pool('test3')->lower_case();
             $pool->rule('test4', 'test5')->trim();
             $pool('test6', 'test7')->trim();
-        })
-    )->toEqual([
-        'test1' => 'TEST',
-        'test2' => 'test',
-        'test3' => 'test',
-        'test4' => 'test',
-        'test5' => 'test',
-        'test6' => 'test',
-        'test7' => 'test',
-    ]);
-});
 
-it('can run filter using method filterOut with closure (return)', function () {
-    $valid = new Validator([
-        'test1' => 'test',
-        'test2' => ' test ',
-        'test3' => 'TEST',
-        'test4' => ' test ',
-        'test5' => ' test ',
-        'test6' => ' test ',
-        'test7' => ' test ',
-    ]);
+            return $pool;
+        });
 
-    expect(
-        $valid->filterOut(function () {
+        $this->assertEquals([
+            'test1' => 'TEST',
+            'test2' => 'test',
+            'test3' => 'test',
+            'test4' => 'test',
+            'test5' => 'test',
+            'test6' => 'test',
+            'test7' => 'test',
+        ], $result);
+    }
+
+    public function testCanRunFilterUsingMethodFilterOutWithClosureReturn(): void
+    {
+        $valid = new Validator([
+            'test1' => 'test',
+            'test2' => ' test ',
+            'test3' => 'TEST',
+            'test4' => ' test ',
+            'test5' => ' test ',
+            'test6' => ' test ',
+            'test7' => ' test ',
+        ]);
+
+        $result = $valid->filterOut(function (): FilterPool {
             $pool = new FilterPool();
             $pool->rule('test1')->upper_case();
             $pool->test2->trim();
@@ -89,53 +99,59 @@ it('can run filter using method filterOut with closure (return)', function () {
             $pool('test6', 'test7')->trim();
 
             return $pool;
-        })
-    )->toEqual([
-        'test1' => 'TEST',
-        'test2' => 'test',
-        'test3' => 'test',
-        'test4' => 'test',
-        'test5' => 'test',
-        'test6' => 'test',
-        'test7' => 'test',
-    ]);
-});
+        });
 
-it('can run filter using method filterOut with closure (param) but no rules', function () {
-    $valid = new Validator(['field' => 'trim']);
+        $this->assertEquals([
+            'test1' => 'TEST',
+            'test2' => 'test',
+            'test3' => 'test',
+            'test4' => 'test',
+            'test5' => 'test',
+            'test6' => 'test',
+            'test7' => 'test',
+        ], $result);
+    }
 
-    expect($valid->filterOut(static function (): FilterPool {
-        return new FilterPool();
-    }))->toEqual(['field' => 'trim']);
-});
+    public function testCanRunFilterUsingMethodFilterOutWithClosureParamButNoRules(): void
+    {
+        $valid = new Validator(['field' => 'trim']);
 
-it('can run filter using method failedOrFilter', function () {
-    $valid = new Validator(['test' => 'test']);
+        $result = $valid->filterOut(static function (): FilterPool {
+            return new FilterPool();
+        });
 
-    $valid->field('test')->required();
-    $valid->filter('test')->upper_case();
+        $this->assertEquals(['field' => 'trim'], $result);
+    }
 
-    expect($valid->failedOrFilter())
-        ->toEqual(['test' => 'TEST'])
-    ;
-});
+    public function testCanRunFilterUsingMethodFailedOrFilter(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-it('can run filter using method failedOrFilter but not valid', function () {
-    $valid = new Validator(['test' => 'test']);
+        $valid->field('test')->required();
+        $valid->filter('test')->upper_case();
 
-    $valid->field('test')->min_len(5);
-    $valid->filter('test')->upper_case();
+        $this->assertEquals(['test' => 'TEST'], $valid->failedOrFilter());
+    }
 
-    expect($valid->failedOrFilter())->toBeTrue();
-});
+    public function testCanRunFilterUsingMethodFailedOrFilterButNotValid(): void
+    {
+        $valid = new Validator(['test' => 'test']);
 
-it('can get filterOut using filters propterty', function () {
-    $valid = new Validator(['test' => 'test']);
+        $valid->field('test')->min_len(5);
+        $valid->filter('test')->upper_case();
 
-    $valid->filter('test')->upper_case();
+        $this->assertTrue($valid->failedOrFilter());
+    }
 
-    expect($valid->filters)
-        ->has('test')->toBeTrue()
-        ->get('test')->toEqual('TEST')
-    ;
-});
+    public function testCanGetFilterOutUsingFiltersProperty(): void
+    {
+        $valid = new Validator(['test' => 'test']);
+
+        $valid->filter('test')->upper_case();
+
+        $filters = $valid->filters;
+
+        $this->assertTrue($filters->has('test'));
+        $this->assertEquals('TEST', $filters->get('test'));
+    }
+}

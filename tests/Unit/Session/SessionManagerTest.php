@@ -1,672 +1,731 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session;
 
 use Omega\Session\SessionManager;
 use Omega\Session\Storage\ArrayStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionProperty;
+use Tests\TestCase;
 
-use function expect;
 use function preg_match;
 
-covers(SessionManager::class);
-
-beforeEach(function (): void {
-    $this->storage = new ArrayStorage();
-    $this->manager = new SessionManager('array', $this->storage);
-    $this->manager->setId('test-session-id');
-    $this->manager->start();
-});
-
-it('starts the session, creating a persisted id and loading data', function (): void {
-    $manager = new SessionManager('array', $this->storage);
-
-    expect($manager->start())->toBeTrue();
-
-    $id = $manager->getId();
-
-    expect($id)->not->toBeNull();
-    expect(preg_match('/^[0-9a-f]{32}$/', (string) $id))->toBe(1);
-
-    $manager->put('theme', 'dark');
-    $manager->save();
-
-    $reloaded = new SessionManager('array', $this->storage);
-    $reloaded->setId((string) $id);
-    $reloaded->start();
-
-    expect($reloaded->get('theme'))->toBe('dark');
-});
-
-it('registers drivers and resolves the default one', function (): void {
-    expect($this->manager->getDriver())->toBe($this->storage);
-
-    $driver = new ArrayStorage();
-
-    expect($this->manager->setDriver('cache', $driver))->toBe($this->manager);
-});
-
-it('stores, reads, checks, forgets and flushes session data', function (): void {
-    expect($this->manager->has('user'))->toBeFalse();
-
-    $this->manager->put('user', 'alice');
-
-    expect($this->manager->has('user'))->toBeTrue();
-    expect($this->manager->get('user'))->toBe('alice');
-    expect($this->manager->get('missing', 'fallback'))->toBe('fallback');
-    expect($this->manager->all())->toEqual(['user' => 'alice']);
-
-    $this->manager->forget('user');
-
-    expect($this->manager->has('user'))->toBeFalse();
-
-    $this->manager->put('a', 1);
-    $this->manager->put('b', 2);
-    $this->manager->flush();
-
-    expect($this->manager->all())->toBeEmpty();
-});
-
-it('exposes flashed values to the following request then expires them', function (): void {
-    $this->manager->flash('status', 'ok');
-
-    expect($this->manager->hasFlash('status'))->toBeTrue();
-    expect($this->manager->getFlash('status'))->toBe('ok');
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('status'))->toBeTrue();
-    expect($next->getFlash('status'))->toBe('ok');
-
-    $next->save();
-
-    $third = new SessionManager('array', $this->storage);
-    $third->setId('test-session-id');
-    $third->start();
-
-    expect($third->hasFlash('status'))->toBeFalse();
-    expect($third->has('status'))->toBeFalse();
-    expect($third->getFlash('status', 'gone'))->toBe('gone');
-});
-
-it('flashes a value only for the current request', function (): void {
-    $this->manager->now('notice', 'hello');
-
-    expect($this->manager->hasFlash('notice'))->toBeTrue();
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('notice'))->toBeFalse();
-    expect($next->getFlash('notice', 'gone'))->toBe('gone');
-});
-
-it('reflash keeps current flash data available', function (): void {
-    $this->manager->flash('alert', 'warn');
-    $this->manager->reflash();
-
-    expect($this->manager->hasFlash('alert'))->toBeTrue();
-    expect($this->manager->getFlash('alert'))->toBe('warn');
-});
-
-it('clears all flash data', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->now('b', 2);
-
-    $this->manager->clearFlash();
-
-    expect($this->manager->hasFlash('a'))->toBeFalse();
-    expect($this->manager->hasFlash('b'))->toBeFalse();
-    expect($this->manager->has('a'))->toBeFalse();
-    expect($this->manager->has('b'))->toBeFalse();
-});
-
-it('caches session bags that share the manager data', function (): void {
-    $first  = $this->manager->bag('cart');
-    $second = $this->manager->bag('cart');
-
-    expect($second)->toBe($first);
-    expect($first->getName())->toBe('cart');
-
-    $first->put('item', 'sku-1');
-
-    expect($this->manager->get('cart'))->toEqual(['item' => 'sku-1']);
-});
-
-it('regenerates the session id while keeping the data', function (): void {
-    $this->manager->put('user', 'alice');
-    $previous = $this->manager->getId();
-
-    expect($this->manager->regenerate())->toBeTrue();
-
-    expect($this->manager->getId())->not->toBe($previous);
-    expect($this->manager->get('user'))->toBe('alice');
-});
-
-it('regenerates the session id and destroys the previous storage entry', function (): void {
-    $this->manager->put('user', 'alice');
-    $previous = (string) $this->manager->getId();
-    $this->manager->save();
-
-    expect($this->manager->regenerate(true))->toBeTrue();
-
-    expect($this->storage->read($previous))->toBeFalse();
-    expect($this->manager->get('user'))->toBe('alice');
-});
-
-it('destroys the session and removes its stored data', function (): void {
-    $id = (string) $this->manager->getId();
-    $this->manager->getDriver()->write($id, '{"user":"alice"}');
-    $this->manager->put('user', 'alice');
-
-    expect($this->manager->destroy())->toBeTrue();
-
-    expect($this->manager->getId())->toBeNull();
-    expect($this->manager->get('user'))->toBeNull();
-    expect($this->storage->read($id))->toBeFalse();
-});
-
-it('does not destroy a session that has not started', function (): void {
-    $manager = new SessionManager('array', $this->storage);
-
-    expect($manager->destroy())->toBeFalse();
-
-    $manager->setId('orphan-id');
-
-    expect($manager->destroy())->toBeFalse();
-});
-
-it('does not save when the session was never started', function (): void {
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('untouched-id');
-    $manager->put('key', 'value');
-    $manager->save();
-
-    expect($this->storage->read('untouched-id'))->toBeFalse();
-});
-
-it('returns true when the session is already started', function (): void {
-    expect($this->manager->start())->toBeTrue();
-});
-
-it('clears flash with no flashed keys', function (): void {
-    $this->manager->clearFlash();
-
-    expect($this->manager->hasFlash('anything'))->toBeFalse();
-});
-
-it('clears a single flash key', function (): void {
-    $this->manager->flash('a', 1);
-
-    $this->manager->clearFlash();
-
-    expect($this->manager->hasFlash('a'))->toBeFalse();
-    expect($this->manager->has('a'))->toBeFalse();
-});
-
-it('removes the matching key from the new flash slice', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->now('a', 2);
-
-    expect($this->manager->hasFlash('a'))->toBeTrue();
-    expect($this->manager->getFlash('a'))->toBe(2);
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('a'))->toBeFalse();
-    expect($next->getFlash('a'))->toBeNull();
-});
-
-it('keeps unrelated new flash keys when flashing now', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->flash('b', 3);
-    $this->manager->now('a', 2);
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('a'))->toBeFalse();
-    expect($next->hasFlash('b'))->toBeTrue();
-});
-
-it('filters bag data to string keys', function (): void {
-    $this->manager->put('cart', ['item' => 'sku-1', 7 => 'ignored']);
-
-    $bag = $this->manager->bag('cart');
-
-    expect($bag->get('item'))->toBe('sku-1');
-    expect($bag->get('7'))->toBeNull();
-    expect($this->manager->get('cart'))->toEqual(['item' => 'sku-1']);
-});
-
-it('does not regenerate a session without an id', function (): void {
-    $manager = new SessionManager('array', $this->storage);
-
-    expect($manager->regenerate())->toBeFalse();
-});
-
-it('loads session data without flash information', function (): void {
-    $this->storage->write('seed-id', '{"user":"alice","theme":"dark"}');
-
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
-
-    expect($manager->get('user'))->toBe('alice');
-    expect($manager->get('theme'))->toBe('dark');
-    expect($manager->has('_flash'))->toBeFalse();
-});
-
-it('drops non-string keys from loaded session data', function (): void {
-    $this->storage->write('seed-id', '[10,20]');
-
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
-
-    expect($manager->all())->toBeEmpty();
-});
-
-it('resets the data when the stored payload is not a json object', function (): void {
-    $this->storage->write('seed-id', 'null');
-
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
-
-    expect($manager->all())->toBeEmpty();
-});
-
-it('restores multiple flash keys from the stored payload', function (): void {
-    $this->storage->write('seed-id', '{"a":"x","_flash":{"new":["n","m","k"],"old":[]}}');
-
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
-
-    expect($manager->get('a'))->toBe('x');
-    expect($manager->has('_flash'))->toBeFalse();
-    expect($manager->hasFlash('n'))->toBeTrue();
-    expect($manager->hasFlash('m'))->toBeTrue();
-    expect($manager->hasFlash('k'))->toBeTrue();
-});
-
-it('resolves a closure-backed driver lazily', function (): void {
-    $this->manager->setDriver('array', fn (): ArrayStorage => new ArrayStorage());
-
-    $driver = $this->manager->getDriver();
-
-    expect($driver)->toBeInstanceOf(ArrayStorage::class);
-    expect($this->manager->getDriver())->toBe($driver);
-});
-
-it('filters many new flash keys when flashing now', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->flash('b', 2);
-    $this->manager->flash('c', 3);
-    $this->manager->flash('d', 4);
-    $this->manager->now('b', 9);
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('a'))->toBeTrue();
-    expect($next->hasFlash('b'))->toBeFalse();
-    expect($next->hasFlash('c'))->toBeTrue();
-    expect($next->hasFlash('d'))->toBeTrue();
-});
-
-it('filters matching and duplicated keys when flashing now', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->flash('b', 2);
-    $this->manager->now('a', 9);
-    $this->manager->now('a', 10);
-
-    expect($this->manager->getFlash('a'))->toBe(10);
-    expect($this->manager->getFlash('b'))->toBe(2);
-
-    $this->manager->save();
-
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
-
-    expect($next->hasFlash('b'))->toBeTrue();
-});
-
-it('clears a flashed key moved to the old slice', function (): void {
-    $this->manager->now('o', 1);
-
-    $this->manager->clearFlash();
-
-    expect($this->manager->hasFlash('o'))->toBeFalse();
-    expect($this->manager->has('o'))->toBeFalse();
-});
-
-it('clears duplicated flash keys across slices', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->now('a', 2);
-
-    $this->manager->clearFlash();
-
-    expect($this->manager->hasFlash('a'))->toBeFalse();
-    expect($this->manager->has('a'))->toBeFalse();
-});
-
-it('clears multiple flash keys spread across both slices', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->flash('b', 2);
-    $this->manager->now('c', 3);
-    $this->manager->now('d', 4);
-
-    $this->manager->clearFlash();
-
-    foreach (['a', 'b', 'c', 'd'] as $key) {
-        expect($this->manager->hasFlash($key))->toBeFalse();
-        expect($this->manager->has($key))->toBeFalse();
+#[CoversClass(SessionManager::class)]
+final class SessionManagerTest extends TestCase
+{
+    private ArrayStorage $storage;
+
+    private SessionManager $manager;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->storage = new ArrayStorage();
+        $this->manager = new SessionManager('array', $this->storage);
+        $this->manager->setId('test-session-id');
+        $this->manager->start();
     }
-});
 
-it('clears flash data repeatedly', function (): void {
-    $this->manager->flash('a', 1);
-    $this->manager->clearFlash();
-    $this->manager->clearFlash();
+    public function testStartsTheSessionCreatingAPersistedIdAndLoadingData(): void
+    {
+        $manager = new SessionManager('array', $this->storage);
 
-    expect($this->manager->hasFlash('a'))->toBeFalse();
-});
+        $this->assertTrue($manager->start());
 
-it('starts a bag from scalar session data', function (): void {
-    $this->manager->put('cart', 'not-an-array');
+        $id = $manager->getId();
 
-    $bag = $this->manager->bag('cart');
+        $this->assertNotNull($id);
+        $this->assertSame(1, preg_match('/^[0-9a-f]{32}$/', (string) $id));
 
-    expect($bag->getName())->toBe('cart');
-    expect($this->manager->get('cart'))->toEqual([]);
-});
+        $manager->put('theme', 'dark');
+        $manager->save();
 
-it('starts a bag from an empty array', function (): void {
-    $this->manager->put('cart', []);
+        $reloaded = new SessionManager('array', $this->storage);
+        $reloaded->setId((string) $id);
+        $reloaded->start();
 
-    $bag = $this->manager->bag('cart');
+        $this->assertSame('dark', $reloaded->get('theme'));
+    }
 
-    expect($bag->all())->toEqual([]);
-});
+    public function testRegistersDriversAndResolvesTheDefaultOne(): void
+    {
+        $this->assertSame($this->storage, $this->manager->getDriver());
 
-it('starts a bag from a single string key', function (): void {
-    $this->manager->put('cart', ['item' => 'x']);
+        $driver = new ArrayStorage();
 
-    $bag = $this->manager->bag('cart');
+        $this->assertSame($this->manager, $this->manager->setDriver('cache', $driver));
+    }
 
-    expect($bag->get('item'))->toBe('x');
-});
+    public function testStoresReadsChecksForgetsAndFlushesSessionData(): void
+    {
+        $this->assertFalse($this->manager->has('user'));
 
-it('starts a bag from three string keys', function (): void {
-    $this->manager->put('cart', ['a' => 1, 'b' => 2, 'c' => 3]);
+        $this->manager->put('user', 'alice');
 
-    $bag = $this->manager->bag('cart');
+        $this->assertTrue($this->manager->has('user'));
+        $this->assertSame('alice', $this->manager->get('user'));
+        $this->assertSame('fallback', $this->manager->get('missing', 'fallback'));
+        $this->assertEquals(['user' => 'alice'], $this->manager->all());
 
-    expect($bag->all())->toEqual(['a' => 1, 'b' => 2, 'c' => 3]);
-});
+        $this->manager->forget('user');
 
-it('starts a bag from four string keys and drops numeric ones', function (): void {
-    $this->manager->put('cart', [0 => 'zero', 1 => 'one', 'a' => 1, 'b' => 2]);
+        $this->assertFalse($this->manager->has('user'));
 
-    $bag = $this->manager->bag('cart');
+        $this->manager->put('a', 1);
+        $this->manager->put('b', 2);
+        $this->manager->flush();
 
-    expect($bag->all())->toEqual(['a' => 1, 'b' => 2]);
-});
+        $this->assertEmpty($this->manager->all());
+    }
 
-it('starts a bag from several string keys', function (): void {
-    $this->manager->put('cart', [
-        'a' => 1,
-        'b' => 2,
-        'c' => 3,
-        'd' => 4,
-        'e' => 5,
-    ]);
+    public function testExposesFlashedValuesToTheFollowingRequestThenExpiresThem(): void
+    {
+        $this->manager->flash('status', 'ok');
 
-    $bag = $this->manager->bag('cart');
+        $this->assertTrue($this->manager->hasFlash('status'));
+        $this->assertSame('ok', $this->manager->getFlash('status'));
 
-    expect($bag->get('e'))->toBe(5);
-});
+        $this->manager->save();
 
-it('destroys the session after a save and restart cycle', function (): void {
-    $this->manager->save();
-    $this->manager->start();
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
 
-    expect($this->manager->destroy())->toBeTrue();
-    expect($this->manager->getId())->toBeNull();
-});
+        $this->assertTrue($next->hasFlash('status'));
+        $this->assertSame('ok', $next->getFlash('status'));
 
-it('does not destroy the session twice', function (): void {
-    expect($this->manager->destroy())->toBeTrue();
-    expect($this->manager->destroy())->toBeFalse();
-});
+        $next->save();
 
-it('saves the session twice across restarts', function (): void {
-    $this->manager->put('a', 1);
-    $this->manager->save();
+        $third = new SessionManager('array', $this->storage);
+        $third->setId('test-session-id');
+        $third->start();
 
-    $this->manager->start();
-    $this->manager->save();
+        $this->assertFalse($third->hasFlash('status'));
+        $this->assertFalse($third->has('status'));
+        $this->assertSame('gone', $third->getFlash('status', 'gone'));
+    }
 
-    expect($this->storage->read('test-session-id'))->not->toBeFalse();
-});
+    public function testFlashesAValueOnlyForTheCurrentRequest(): void
+    {
+        $this->manager->now('notice', 'hello');
 
-it('does not save after the session was destroyed', function (): void {
-    $this->manager->destroy();
-    $this->manager->save();
+        $this->assertTrue($this->manager->hasFlash('notice'));
 
-    expect($this->storage->read('test-session-id'))->toBeFalse();
-});
+        $this->manager->save();
 
-it('loads no data when the stored payload is an empty string', function (): void {
-    $this->storage->write('seed-id', '');
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertFalse($next->hasFlash('notice'));
+        $this->assertSame('gone', $next->getFlash('notice', 'gone'));
+    }
 
-    expect($manager->all())->toBeEmpty();
-});
+    public function testReflashKeepsCurrentFlashDataAvailable(): void
+    {
+        $this->manager->flash('alert', 'warn');
+        $this->manager->reflash();
 
-it('loads a single session key', function (): void {
-    $this->storage->write('seed-id', '{"user":"alice"}');
+        $this->assertTrue($this->manager->hasFlash('alert'));
+        $this->assertSame('warn', $this->manager->getFlash('alert'));
+    }
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+    public function testClearsAllFlashData(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->now('b', 2);
 
-    expect($manager->get('user'))->toBe('alice');
-});
+        $this->manager->clearFlash();
 
-it('loads three session keys without flash information', function (): void {
-    $this->storage->write('seed-id', '{"a":1,"b":2,"c":3}');
+        $this->assertFalse($this->manager->hasFlash('a'));
+        $this->assertFalse($this->manager->hasFlash('b'));
+        $this->assertFalse($this->manager->has('a'));
+        $this->assertFalse($this->manager->has('b'));
+    }
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+    public function testCachesSessionBagsThatShareTheManagerData(): void
+    {
+        $first  = $this->manager->bag('cart');
+        $second = $this->manager->bag('cart');
 
-    expect($manager->all())->toEqual(['a' => 1, 'b' => 2, 'c' => 3]);
-});
+        $this->assertSame($first, $second);
+        $this->assertSame('cart', $first->getName());
 
-it('loads five session keys without flash information', function (): void {
-    $this->storage->write('seed-id', '{"a":1,"b":2,"c":3,"d":4,"e":5}');
+        $first->put('item', 'sku-1');
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertEquals(['item' => 'sku-1'], $this->manager->get('cart'));
+    }
 
-    expect($manager->get('a'))->toBe(1);
-    expect($manager->get('e'))->toBe(5);
-});
+    public function testRegeneratesTheSessionIdWhileKeepingTheData(): void
+    {
+        $this->manager->put('user', 'alice');
+        $previous = $this->manager->getId();
 
-it('restores a flash slice alongside several session keys', function (): void {
-    $this->storage->write('seed-id', '{"a":1,"b":2,"c":3,"d":4,"e":5,"_flash":{"new":["x"],"old":[]}}');
+        $this->assertTrue($this->manager->regenerate());
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertNotSame($previous, $this->manager->getId());
+        $this->assertSame('alice', $this->manager->get('user'));
+    }
 
-    expect($manager->get('a'))->toBe(1);
-    expect($manager->get('e'))->toBe(5);
-    expect($manager->hasFlash('x'))->toBeTrue();
-});
+    public function testRegeneratesTheSessionIdAndDestroysThePreviousStorageEntry(): void
+    {
+        $this->manager->put('user', 'alice');
+        $previous = (string) $this->manager->getId();
+        $this->manager->save();
 
-it('restores a flash slice when the payload contains only flash data', function (): void {
-    $this->storage->write('seed-id', '{"_flash":{"new":["x"],"old":[]}}');
+        $this->assertTrue($this->manager->regenerate(true));
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertFalse($this->storage->read($previous));
+        $this->assertSame('alice', $this->manager->get('user'));
+    }
 
-    expect($manager->hasFlash('x'))->toBeTrue();
-    expect($manager->has('_flash'))->toBeFalse();
-});
+    public function testDestroysTheSessionAndRemovesItsStoredData(): void
+    {
+        $id = (string) $this->manager->getId();
+        $this->manager->getDriver()->write($id, '{"user":"alice"}');
+        $this->manager->put('user', 'alice');
 
-it('restores an empty flash slice alongside session keys', function (): void {
-    $this->storage->write('seed-id', '{"a":1,"_flash":{"new":[],"old":[]}}');
+        $this->assertTrue($this->manager->destroy());
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertNull($this->manager->getId());
+        $this->assertNull($this->manager->get('user'));
+        $this->assertFalse($this->storage->read($id));
+    }
 
-    expect($manager->get('a'))->toBe(1);
-    expect($manager->hasFlash('a'))->toBeFalse();
-});
+    public function testDoesNotDestroyASessionThatHasNotStarted(): void
+    {
+        $manager = new SessionManager('array', $this->storage);
 
-it('restores a single new flash key from the stored payload', function (): void {
-    $this->storage->write('seed-id', '{"_flash":{"new":["single"],"old":[]}}');
+        $this->assertFalse($manager->destroy());
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $manager->setId('orphan-id');
 
-    expect($manager->hasFlash('single'))->toBeTrue();
-});
+        $this->assertFalse($manager->destroy());
+    }
 
-it('expires a single old flash key from the stored payload', function (): void {
-    $this->storage->write('seed-id', '{"_flash":{"new":[],"old":["oldkey"]}}');
+    public function testDoesNotSaveWhenTheSessionWasNeverStarted(): void
+    {
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('untouched-id');
+        $manager->put('key', 'value');
+        $manager->save();
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertFalse($this->storage->read('untouched-id'));
+    }
 
-    expect($manager->hasFlash('oldkey'))->toBeFalse();
+    public function testReturnsTrueWhenTheSessionIsAlreadyStarted(): void
+    {
+        $this->assertTrue($this->manager->start());
+    }
 
-    $manager->save();
+    public function testClearsFlashWithNoFlashedKeys(): void
+    {
+        $this->manager->clearFlash();
 
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('seed-id');
-    $next->start();
+        $this->assertFalse($this->manager->hasFlash('anything'));
+    }
 
-    expect($next->hasFlash('oldkey'))->toBeFalse();
-});
+    public function testClearsASingleFlashKey(): void
+    {
+        $this->manager->flash('a', 1);
 
-it('restores flash keys ignoring non string values', function (): void {
-    $this->storage->write('seed-id', '{"_flash":{"new":["x",7,false,"y"],"old":["z"]}}');
+        $this->manager->clearFlash();
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertFalse($this->manager->hasFlash('a'));
+        $this->assertFalse($this->manager->has('a'));
+    }
 
-    expect($manager->hasFlash('x'))->toBeTrue();
-    expect($manager->hasFlash('y'))->toBeTrue();
-    expect($manager->hasFlash('z'))->toBeFalse();
-});
+    public function testRemovesTheMatchingKeyFromTheNewFlashSlice(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->now('a', 2);
 
-it('loads a json object containing an array value', function (): void {
-    $this->storage->write('seed-id', '{"tags":["a","b"],"user":"u"}');
+        $this->assertTrue($this->manager->hasFlash('a'));
+        $this->assertSame(2, $this->manager->getFlash('a'));
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->manager->save();
 
-    expect($manager->get('tags'))->toEqual(['a', 'b']);
-});
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
 
-it('expires multiple old flash keys on the next request', function (): void {
-    $this->manager->now('a', 1);
-    $this->manager->now('b', 2);
-    $this->manager->save();
+        $this->assertFalse($next->hasFlash('a'));
+        $this->assertNull($next->getFlash('a'));
+    }
 
-    $next = new SessionManager('array', $this->storage);
-    $next->setId('test-session-id');
-    $next->start();
+    public function testKeepsUnrelatedNewFlashKeysWhenFlashingNow(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->flash('b', 3);
+        $this->manager->now('a', 2);
 
-    expect($next->hasFlash('a'))->toBeFalse();
-    expect($next->hasFlash('b'))->toBeFalse();
-});
+        $this->manager->save();
 
-it('ignores non string flash keys when restoring the new slice', function (): void {
-    $this->storage->write('seed-id', '{"_flash":{"new":[7],"old":[]}}');
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertFalse($next->hasFlash('a'));
+        $this->assertTrue($next->hasFlash('b'));
+    }
 
-    expect($manager->hasFlash('7'))->toBeFalse();
-    expect($manager->hasFlash('_flash'))->toBeFalse();
-});
+    public function testFiltersBagDataToStringKeys(): void
+    {
+        $this->manager->put('cart', ['item' => 'sku-1', 7 => 'ignored']);
 
-it('loads no data when the stored payload is an empty object', function (): void {
-    $this->storage->write('seed-id', '{}');
+        $bag = $this->manager->bag('cart');
 
-    $manager = new SessionManager('array', $this->storage);
-    $manager->setId('seed-id');
-    $manager->start();
+        $this->assertSame('sku-1', $bag->get('item'));
+        $this->assertNull($bag->get('7'));
+        $this->assertEquals(['item' => 'sku-1'], $this->manager->get('cart'));
+    }
 
-    expect($manager->all())->toBeEmpty();
-});
+    public function testDoesNotRegenerateASessionWithoutAnId(): void
+    {
+        $manager = new SessionManager('array', $this->storage);
 
-it('starts a bag from a single numeric key', function (): void {
-    $this->manager->put('cart', [7]);
+        $this->assertFalse($manager->regenerate());
+    }
 
-    $bag = $this->manager->bag('cart');
+    public function testLoadsSessionDataWithoutFlashInformation(): void
+    {
+        $this->storage->write('seed-id', '{"user":"alice","theme":"dark"}');
 
-    expect($bag->all())->toEqual([]);
-});
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
 
-it('does not destroy a session whose id has been cleared', function (): void {
-    $property = new ReflectionProperty(SessionManager::class, 'id');
-    $property->setValue($this->manager, null);
+        $this->assertSame('alice', $manager->get('user'));
+        $this->assertSame('dark', $manager->get('theme'));
+        $this->assertFalse($manager->has('_flash'));
+    }
 
-    expect($this->manager->destroy())->toBeFalse();
-});
+    public function testDropsNonStringKeysFromLoadedSessionData(): void
+    {
+        $this->storage->write('seed-id', '[10,20]');
 
-it('does not save a session whose id has been cleared', function (): void {
-    $property = new ReflectionProperty(SessionManager::class, 'id');
-    $property->setValue($this->manager, null);
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
 
-    $this->manager->save();
+        $this->assertEmpty($manager->all());
+    }
 
-    expect($this->storage->read('test-session-id'))->toBeFalse();
-});
+    public function testResetsTheDataWhenTheStoredPayloadIsNotAJsonObject(): void
+    {
+        $this->storage->write('seed-id', 'null');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertEmpty($manager->all());
+    }
+
+    public function testRestoresMultipleFlashKeysFromTheStoredPayload(): void
+    {
+        $this->storage->write('seed-id', '{"a":"x","_flash":{"new":["n","m","k"],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertSame('x', $manager->get('a'));
+        $this->assertFalse($manager->has('_flash'));
+        $this->assertTrue($manager->hasFlash('n'));
+        $this->assertTrue($manager->hasFlash('m'));
+        $this->assertTrue($manager->hasFlash('k'));
+    }
+
+    public function testResolvesAClosureBackedDriverLazily(): void
+    {
+        $this->manager->setDriver('array', fn (): ArrayStorage => new ArrayStorage());
+
+        $driver = $this->manager->getDriver();
+
+        $this->assertInstanceOf(ArrayStorage::class, $driver);
+        $this->assertSame($driver, $this->manager->getDriver());
+    }
+
+    public function testFiltersManyNewFlashKeysWhenFlashingNow(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->flash('b', 2);
+        $this->manager->flash('c', 3);
+        $this->manager->flash('d', 4);
+        $this->manager->now('b', 9);
+
+        $this->manager->save();
+
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
+
+        $this->assertTrue($next->hasFlash('a'));
+        $this->assertFalse($next->hasFlash('b'));
+        $this->assertTrue($next->hasFlash('c'));
+        $this->assertTrue($next->hasFlash('d'));
+    }
+
+    public function testFiltersMatchingAndDuplicatedKeysWhenFlashingNow(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->flash('b', 2);
+        $this->manager->now('a', 9);
+        $this->manager->now('a', 10);
+
+        $this->assertSame(10, $this->manager->getFlash('a'));
+        $this->assertSame(2, $this->manager->getFlash('b'));
+
+        $this->manager->save();
+
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
+
+        $this->assertTrue($next->hasFlash('b'));
+    }
+
+    public function testClearsAFlashedKeyMovedToTheOldSlice(): void
+    {
+        $this->manager->now('o', 1);
+
+        $this->manager->clearFlash();
+
+        $this->assertFalse($this->manager->hasFlash('o'));
+        $this->assertFalse($this->manager->has('o'));
+    }
+
+    public function testClearsDuplicatedFlashKeysAcrossSlices(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->now('a', 2);
+
+        $this->manager->clearFlash();
+
+        $this->assertFalse($this->manager->hasFlash('a'));
+        $this->assertFalse($this->manager->has('a'));
+    }
+
+    public function testClearsMultipleFlashKeysSpreadAcrossBothSlices(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->flash('b', 2);
+        $this->manager->now('c', 3);
+        $this->manager->now('d', 4);
+
+        $this->manager->clearFlash();
+
+        foreach (['a', 'b', 'c', 'd'] as $key) {
+            $this->assertFalse($this->manager->hasFlash($key));
+            $this->assertFalse($this->manager->has($key));
+        }
+    }
+
+    public function testClearsFlashDataRepeatedly(): void
+    {
+        $this->manager->flash('a', 1);
+        $this->manager->clearFlash();
+        $this->manager->clearFlash();
+
+        $this->assertFalse($this->manager->hasFlash('a'));
+    }
+
+    public function testStartsABagFromScalarSessionData(): void
+    {
+        $this->manager->put('cart', 'not-an-array');
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertSame('cart', $bag->getName());
+        $this->assertEquals([], $this->manager->get('cart'));
+    }
+
+    public function testStartsABagFromAnEmptyArray(): void
+    {
+        $this->manager->put('cart', []);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertEquals([], $bag->all());
+    }
+
+    public function testStartsABagFromASingleStringKey(): void
+    {
+        $this->manager->put('cart', ['item' => 'x']);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertSame('x', $bag->get('item'));
+    }
+
+    public function testStartsABagFromThreeStringKeys(): void
+    {
+        $this->manager->put('cart', ['a' => 1, 'b' => 2, 'c' => 3]);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertEquals(['a' => 1, 'b' => 2, 'c' => 3], $bag->all());
+    }
+
+    public function testStartsABagFromFourStringKeysAndDropsNumericOnes(): void
+    {
+        $this->manager->put('cart', [0 => 'zero', 1 => 'one', 'a' => 1, 'b' => 2]);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertEquals(['a' => 1, 'b' => 2], $bag->all());
+    }
+
+    public function testStartsABagFromSeveralStringKeys(): void
+    {
+        $this->manager->put('cart', [
+            'a' => 1,
+            'b' => 2,
+            'c' => 3,
+            'd' => 4,
+            'e' => 5,
+        ]);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertSame(5, $bag->get('e'));
+    }
+
+    public function testDestroysTheSessionAfterASaveAndRestartCycle(): void
+    {
+        $this->manager->save();
+        $this->manager->start();
+
+        $this->assertTrue($this->manager->destroy());
+        $this->assertNull($this->manager->getId());
+    }
+
+    public function testDoesNotDestroyTheSessionTwice(): void
+    {
+        $this->assertTrue($this->manager->destroy());
+        $this->assertFalse($this->manager->destroy());
+    }
+
+    public function testSavesTheSessionTwiceAcrossRestarts(): void
+    {
+        $this->manager->put('a', 1);
+        $this->manager->save();
+
+        $this->manager->start();
+        $this->manager->save();
+
+        $this->assertNotFalse($this->storage->read('test-session-id'));
+    }
+
+    public function testDoesNotSaveAfterTheSessionWasDestroyed(): void
+    {
+        $this->manager->destroy();
+        $this->manager->save();
+
+        $this->assertFalse($this->storage->read('test-session-id'));
+    }
+
+    public function testLoadsNoDataWhenTheStoredPayloadIsAnEmptyString(): void
+    {
+        $this->storage->write('seed-id', '');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertEmpty($manager->all());
+    }
+
+    public function testLoadsASingleSessionKey(): void
+    {
+        $this->storage->write('seed-id', '{"user":"alice"}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertSame('alice', $manager->get('user'));
+    }
+
+    public function testLoadsThreeSessionKeysWithoutFlashInformation(): void
+    {
+        $this->storage->write('seed-id', '{"a":1,"b":2,"c":3}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertEquals(['a' => 1, 'b' => 2, 'c' => 3], $manager->all());
+    }
+
+    public function testLoadsFiveSessionKeysWithoutFlashInformation(): void
+    {
+        $this->storage->write('seed-id', '{"a":1,"b":2,"c":3,"d":4,"e":5}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertSame(1, $manager->get('a'));
+        $this->assertSame(5, $manager->get('e'));
+    }
+
+    public function testRestoresAFlashSliceAlongsideSeveralSessionKeys(): void
+    {
+        $this->storage->write('seed-id', '{"a":1,"b":2,"c":3,"d":4,"e":5,"_flash":{"new":["x"],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertSame(1, $manager->get('a'));
+        $this->assertSame(5, $manager->get('e'));
+        $this->assertTrue($manager->hasFlash('x'));
+    }
+
+    public function testRestoresAFlashSliceWhenThePayloadContainsOnlyFlashData(): void
+    {
+        $this->storage->write('seed-id', '{"_flash":{"new":["x"],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertTrue($manager->hasFlash('x'));
+        $this->assertFalse($manager->has('_flash'));
+    }
+
+    public function testRestoresAnEmptyFlashSliceAlongsideSessionKeys(): void
+    {
+        $this->storage->write('seed-id', '{"a":1,"_flash":{"new":[],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertSame(1, $manager->get('a'));
+        $this->assertFalse($manager->hasFlash('a'));
+    }
+
+    public function testRestoresASingleNewFlashKeyFromTheStoredPayload(): void
+    {
+        $this->storage->write('seed-id', '{"_flash":{"new":["single"],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertTrue($manager->hasFlash('single'));
+    }
+
+    public function testExpiresASingleOldFlashKeyFromTheStoredPayload(): void
+    {
+        $this->storage->write('seed-id', '{"_flash":{"new":[],"old":["oldkey"]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertFalse($manager->hasFlash('oldkey'));
+
+        $manager->save();
+
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('seed-id');
+        $next->start();
+
+        $this->assertFalse($next->hasFlash('oldkey'));
+    }
+
+    public function testRestoresFlashKeysIgnoringNonStringValues(): void
+    {
+        $this->storage->write('seed-id', '{"_flash":{"new":["x",7,false,"y"],"old":["z"]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertTrue($manager->hasFlash('x'));
+        $this->assertTrue($manager->hasFlash('y'));
+        $this->assertFalse($manager->hasFlash('z'));
+    }
+
+    public function testLoadsAJsonObjectContainingAnArrayValue(): void
+    {
+        $this->storage->write('seed-id', '{"tags":["a","b"],"user":"u"}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertEquals(['a', 'b'], $manager->get('tags'));
+    }
+
+    public function testExpiresMultipleOldFlashKeysOnTheNextRequest(): void
+    {
+        $this->manager->now('a', 1);
+        $this->manager->now('b', 2);
+        $this->manager->save();
+
+        $next = new SessionManager('array', $this->storage);
+        $next->setId('test-session-id');
+        $next->start();
+
+        $this->assertFalse($next->hasFlash('a'));
+        $this->assertFalse($next->hasFlash('b'));
+    }
+
+    public function testIgnoresNonStringFlashKeysWhenRestoringTheNewSlice(): void
+    {
+        $this->storage->write('seed-id', '{"_flash":{"new":[7],"old":[]}}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertFalse($manager->hasFlash('7'));
+        $this->assertFalse($manager->hasFlash('_flash'));
+    }
+
+    public function testLoadsNoDataWhenTheStoredPayloadIsAnEmptyObject(): void
+    {
+        $this->storage->write('seed-id', '{}');
+
+        $manager = new SessionManager('array', $this->storage);
+        $manager->setId('seed-id');
+        $manager->start();
+
+        $this->assertEmpty($manager->all());
+    }
+
+    public function testStartsABagFromASingleNumericKey(): void
+    {
+        $this->manager->put('cart', [7]);
+
+        $bag = $this->manager->bag('cart');
+
+        $this->assertEquals([], $bag->all());
+    }
+
+    public function testDoesNotDestroyASessionWhoseIdHasBeenCleared(): void
+    {
+        $property = new ReflectionProperty(SessionManager::class, 'id');
+        $property->setValue($this->manager, null);
+
+        $this->assertFalse($this->manager->destroy());
+    }
+
+    public function testDoesNotSaveASessionWhoseIdHasBeenCleared(): void
+    {
+        $property = new ReflectionProperty(SessionManager::class, 'id');
+        $property->setValue($this->manager, null);
+
+        $this->manager->save();
+
+        $this->assertFalse($this->storage->read('test-session-id'));
+    }
+}

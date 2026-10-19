@@ -8,118 +8,135 @@ use Omega\Security\Hashing\Argon2IdHasher;
 use Omega\Security\Hashing\ArgonHasher;
 use Omega\Security\Hashing\BcryptHasher;
 use Omega\Security\Hashing\DefaultHasher;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Argon2IdHasher::class);
-covers(ArgonHasher::class);
-covers(BcryptHasher::class);
-covers(DefaultHasher::class);
+#[CoversClass(Argon2IdHasher::class)]
+#[CoversClass(ArgonHasher::class)]
+#[CoversClass(BcryptHasher::class)]
+#[CoversClass(DefaultHasher::class)]
+final class HasherTest extends TestCase
+{
+    public function testCanHashDefaultHasher(): void
+    {
+        $hasher = new DefaultHasher();
+        $hash   = $hasher->make('password');
 
-it('can hash default hasher', function (): void {
-    $hasher = new DefaultHasher();
-    $hash   = $hasher->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->verify('password', $hash));
+        $this->assertTrue($hasher->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->verify('password', $hash))->toBeTrue();
-    expect($hasher->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testRejectsANonBcryptHashOnTheDefaultHasher(): void
+    {
+        $hasher = new DefaultHasher();
+        $argon  = password_hash('password', PASSWORD_ARGON2I);
 
-it('rejects a non-bcrypt hash on the default hasher', function (): void {
-    $hasher = new DefaultHasher();
-    $argon  = password_hash('password', PASSWORD_ARGON2I);
+        $this->assertFalse($hasher->isValidAlgorithm($argon));
+    }
 
-    expect($hasher->isValidAlgorithm($argon))->toBeFalse();
-});
+    public function testCanHashBcryptHasher(): void
+    {
+        $hasher = new BcryptHasher();
+        $hash   = $hasher->make('password');
 
-it('can hash bcrypt hasher', function (): void {
-    $hasher = new BcryptHasher();
-    $hash   = $hasher->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->verify('password', $hash));
+        $this->assertTrue($hasher->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->verify('password', $hash))->toBeTrue();
-    expect($hasher->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testCanConfigureBcryptHasherRounds(): void
+    {
+        $hasher = new BcryptHasher();
 
-it('can configure bcrypt hasher rounds', function (): void {
-    $hasher = new BcryptHasher();
+        $this->assertSame($hasher, $hasher->setRounds(10));
 
-    expect($hasher->setRounds(10))->toBe($hasher);
+        $hash = $hasher->make('password');
 
-    $hash = $hasher->make('password');
+        $this->assertSame(10, $hasher->info($hash)['options']['cost']);
+    }
 
-    expect($hasher->info($hash)['options']['cost'])->toBe(10);
-});
+    public function testCanHashBcryptHasherWithInlineRoundsOption(): void
+    {
+        $hasher = new BcryptHasher();
 
-it('can hash bcrypt hasher with inline rounds option', function (): void {
-    $hasher = new BcryptHasher();
+        $hash = $hasher->make('password', ['rounds' => 9]);
 
-    $hash = $hasher->make('password', ['rounds' => 9]);
+        $this->assertSame(9, $hasher->info($hash)['options']['cost']);
+    }
 
-    expect($hasher->info($hash)['options']['cost'])->toBe(9);
-});
+    public function testRejectsANonBcryptHashOnTheBcryptHasher(): void
+    {
+        $hasher = new BcryptHasher();
+        $argon  = password_hash('password', PASSWORD_ARGON2I);
 
-it('rejects a non-bcrypt hash on the bcrypt hasher', function (): void {
-    $hasher = new BcryptHasher();
-    $argon  = password_hash('password', PASSWORD_ARGON2I);
+        $this->assertFalse($hasher->isValidAlgorithm($argon));
+    }
 
-    expect($hasher->isValidAlgorithm($argon))->toBeFalse();
-});
+    public function testCanConfigureArgonHasher(): void
+    {
+        $hasher = new ArgonHasher();
 
-it('can configure argon hasher', function (): void {
-    $hasher = new ArgonHasher();
+        $this->assertSame($hasher, $hasher->setMemory(2048));
+        $this->assertSame($hasher, $hasher->setTime(4));
+        $this->assertSame($hasher, $hasher->setThreads(4));
 
-    expect($hasher->setMemory(2048))->toBe($hasher);
-    expect($hasher->setTime(4))->toBe($hasher);
-    expect($hasher->setThreads(4))->toBe($hasher);
+        $hash = $hasher->make('password');
 
-    $hash = $hasher->make('password');
+        $this->assertTrue($hasher->verify('password', $hash));
+    }
 
-    expect($hasher->verify('password', $hash))->toBeTrue();
-});
+    public function testCanHashArgonHasherWithInlineOptions(): void
+    {
+        $hasher = new ArgonHasher();
 
-it('can hash argon hasher with inline options', function (): void {
-    $hasher = new ArgonHasher();
+        $hash = $hasher->make('password', ['memory' => 1024, 'time' => 2, 'threads' => 2]);
 
-    $hash = $hasher->make('password', ['memory' => 1024, 'time' => 2, 'threads' => 2]);
+        $this->assertTrue($hasher->verify('password', $hash));
+    }
 
-    expect($hasher->verify('password', $hash))->toBeTrue();
-});
+    public function testRejectsANonArgon2iHashOnTheArgonHasher(): void
+    {
+        $hasher = new ArgonHasher();
+        $bcrypt = password_hash('password', PASSWORD_BCRYPT);
 
-it('rejects a non-argon2i hash on the argon hasher', function (): void {
-    $hasher = new ArgonHasher();
-    $bcrypt = password_hash('password', PASSWORD_BCRYPT);
+        $this->assertFalse($hasher->isValidAlgorithm($bcrypt));
+    }
 
-    expect($hasher->isValidAlgorithm($bcrypt))->toBeFalse();
-});
+    public function testCanHashArgonHasher(): void
+    {
+        $hasher = new ArgonHasher();
+        $hash   = $hasher->make('password');
 
-it('can hash argon hasher', function (): void {
-    $hasher = new ArgonHasher();
-    $hash   = $hasher->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->verify('password', $hash));
+        $this->assertTrue($hasher->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->verify('password', $hash))->toBeTrue();
-    expect($hasher->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testCanHashArgon2IdHasher(): void
+    {
+        $hasher = new Argon2IdHasher();
+        $hash   = $hasher->make('password');
 
-it('can hash argon 2 id hasher', function (): void {
-    $hasher = new Argon2IdHasher();
-    $hash   = $hasher->make('password');
+        $this->assertNotSame('password', $hash);
+        $this->assertTrue($hasher->verify('password', $hash));
+        $this->assertTrue($hasher->isValidAlgorithm($hash));
+    }
 
-    expect($hash)->not->toBe('password');
-    expect($hasher->verify('password', $hash))->toBeTrue();
-    expect($hasher->isValidAlgorithm($hash))->toBeTrue();
-});
+    public function testCanHashArgon2IdHasherWithInlineOptions(): void
+    {
+        $hasher = new Argon2IdHasher();
 
-it('can hash argon 2 id hasher with inline options', function (): void {
-    $hasher = new Argon2IdHasher();
+        $hash = $hasher->make('password', ['memory' => 1024, 'time' => 2, 'threads' => 2]);
 
-    $hash = $hasher->make('password', ['memory' => 1024, 'time' => 2, 'threads' => 2]);
+        $this->assertTrue($hasher->verify('password', $hash));
+    }
 
-    expect($hasher->verify('password', $hash))->toBeTrue();
-});
+    public function testRejectsANonArgon2idHashOnTheArgon2IdHasher(): void
+    {
+        $hasher = new Argon2IdHasher();
+        $bcrypt = password_hash('password', PASSWORD_BCRYPT);
 
-it('rejects a non-argon2id hash on the argon 2 id hasher', function (): void {
-    $hasher = new Argon2IdHasher();
-    $bcrypt = password_hash('password', PASSWORD_BCRYPT);
-
-    expect($hasher->isValidAlgorithm($bcrypt))->toBeFalse();
-});
+        $this->assertFalse($hasher->isValidAlgorithm($bcrypt));
+    }
+}

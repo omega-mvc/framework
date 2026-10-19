@@ -1,13 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Validator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-// other property
-it('property \'not\' same result with method \'not()\'', function () {
-    $val = new Validator();
+#[CoversClass(Validator::class)]
+final class OtherPropertyValidationTest extends TestCase
+{
+    public function testPropertyNotSameResultWithMethodNot(): void
+    {
+        $val = new Validator();
 
-    $val->field('test')->not->required();
-    $val->test2->not->required();
+        $val->field('test')->not->required();
+        $val->test2->not->required();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

@@ -1,63 +1,69 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session\Storage Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session\Storage;
 
 use Omega\Session\Storage\ArrayStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
 use function preg_match;
 
-covers(ArrayStorage::class);
+#[CoversClass(ArrayStorage::class)]
+final class ArrayStorageTest extends TestCase
+{
+    private ArrayStorage $storage;
 
-beforeEach(function (): void {
-    $this->storage = new ArrayStorage();
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('returns false when reading a missing session', function (): void {
-    expect($this->storage->read('missing-id'))->toBeFalse();
-});
+        $this->storage = new ArrayStorage();
+    }
 
-it('writes and reads session data', function (): void {
-    expect($this->storage->write('abc', '{"foo":"bar"}'))->toBeTrue();
-    expect($this->storage->read('abc'))->toBe('{"foo":"bar"}');
-});
+    public function testReturnsFalseWhenReadingAMissingSession(): void
+    {
+        $this->assertFalse($this->storage->read('missing-id'));
+    }
 
-it('overwrites existing session data', function (): void {
-    $this->storage->write('abc', '{"foo":"bar"}');
-    $this->storage->write('abc', '{"baz":"qux"}');
+    public function testWritesAndReadsSessionData(): void
+    {
+        $this->assertTrue($this->storage->write('abc', '{"foo":"bar"}'));
+        $this->assertSame('{"foo":"bar"}', $this->storage->read('abc'));
+    }
 
-    expect($this->storage->read('abc'))->toBe('{"baz":"qux"}');
-});
+    public function testOverwritesExistingSessionData(): void
+    {
+        $this->storage->write('abc', '{"foo":"bar"}');
+        $this->storage->write('abc', '{"baz":"qux"}');
 
-it('destroys a session entry', function (): void {
-    $this->storage->write('abc', '{"foo":"bar"}');
+        $this->assertSame('{"baz":"qux"}', $this->storage->read('abc'));
+    }
 
-    expect($this->storage->destroy('abc'))->toBeTrue();
-    expect($this->storage->read('abc'))->toBeFalse();
-});
+    public function testDestroysASessionEntry(): void
+    {
+        $this->storage->write('abc', '{"foo":"bar"}');
 
-it('garbage collection reports zero deleted entries', function (): void {
-    expect($this->storage->gc(3600))->toBe(0);
-});
+        $this->assertTrue($this->storage->destroy('abc'));
+        $this->assertFalse($this->storage->read('abc'));
+    }
 
-it('creates a 32-character hexadecimal session id', function (): void {
-    $id = $this->storage->createId();
+    public function testGarbageCollectionReportsZeroDeletedEntries(): void
+    {
+        $this->assertSame(0, $this->storage->gc(3600));
+    }
 
-    expect(preg_match('/^[0-9a-f]{32}$/', $id))->toBe(1);
-    expect($this->storage->createId())->not->toBe($id);
-});
+    public function testCreatesA32CharacterHexadecimalSessionId(): void
+    {
+        $id = $this->storage->createId();
 
-it('closes the storage backend', function (): void {
-    expect($this->storage->close())->toBeTrue();
-});
+        $this->assertSame(1, preg_match('/^[0-9a-f]{32}$/', $id));
+        $this->assertNotSame($id, $this->storage->createId());
+    }
+
+    public function testClosesTheStorageBackend(): void
+    {
+        $this->assertTrue($this->storage->close());
+    }
+}

@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander sanitize_string', function () {
-    expect(fr()->sanitize_string())
-        ->toEqual('sanitize_string')
-    ;
-});
+final class SanitizeStringTest extends TestCase
+{
+    public function testCanRanderSanitizeString(): void
+    {
+        $this->assertEquals('sanitize_string', fr()->sanitize_string());
+    }
 
-it('can filter sanitize_string', function () {
-    $fr = new Omega\Validator\Validator(['field' => '<h1>Hello World!</h1>']);
+    public function testCanFilterSanitizeString(): void
+    {
+        $fr = new Validator(['field' => '<h1>Hello World!</h1>']);
 
-    $fr->filter('field')->sanitize_string();
+        $fr->filter('field')->sanitize_string();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'Hello World!'])
-    ;
-});
+        $this->assertEquals(['field' => 'Hello World!'], $fr->filterOut());
+    }
+}

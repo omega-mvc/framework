@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander sanitize_numbers', function () {
-    expect(fr()->sanitize_numbers())
-        ->toEqual('sanitize_numbers')
-    ;
-});
+final class SanitizeNumbersTest extends TestCase
+{
+    public function testCanRanderSanitizeNumbers(): void
+    {
+        $this->assertEquals('sanitize_numbers', fr()->sanitize_numbers());
+    }
 
-it('can filter sanitize_numbers', function () {
-    $fr = new Omega\Validator\Validator(['field' => '5-2+3pp']);
+    public function testCanFilterSanitizeNumbers(): void
+    {
+        $fr = new Validator(['field' => '5-2+3pp']);
 
-    $fr->filter('field')->sanitize_numbers();
+        $fr->filter('field')->sanitize_numbers();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => '5-2+3'])
-    ;
-});
+        $this->assertEquals(['field' => '5-2+3'], $fr->filterOut());
+    }
+}

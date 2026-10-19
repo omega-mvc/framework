@@ -1,101 +1,129 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
+use function array_keys;
 use function Omega\Validator\vr;
 
-it('can render boolean validation')
-    ->expect(vr()->boolean(false))
-    ->toEqual('boolean')
-;
+final class BooleanTest extends TestCase
+{
+    public function testCanRenderBooleanValidation(): void
+    {
+        $this->assertEquals('boolean', vr()->boolean(false));
+    }
 
-it('can render boolean validation (strict)')
-    ->expect(vr()->boolean(true))
-    ->toEqual('boolean,strict')
-;
+    public function testCanRenderBooleanValidationStrict(): void
+    {
+        $this->assertEquals('boolean,strict', vr()->boolean(true));
+    }
 
-it('can render invert boolean validation')
-    ->expect(vr()->not->boolean(false))
-    ->toEqual('invert_boolean')
-;
+    public function testCanRenderInvertBooleanValidation(): void
+    {
+        $this->assertEquals('invert_boolean', vr()->not->boolean(false));
+    }
 
-it('can render invert boolean validation (strict)')
-    ->expect(vr()->not->boolean(true))
-    ->toEqual('invert_boolean,strict')
-;
+    public function testCanRenderInvertBooleanValidationStrict(): void
+    {
+        $this->assertEquals('invert_boolean,strict', vr()->not->boolean(true));
+    }
 
-$correct = [
-    'test1' => 'true',
-    'test2' => 'false',
-    'test3' => 'on',
-    'test4' => 'off',
-    'test5' => '1',
-    'test6' => '0',
-    'test7' => 'yes',
-    'test8' => 'no',
-];
-$correct_strict = [
-    'test1' => true,
-    'test2' => false,
-];
-$incorrect = [
-    'test1' => 'randomString',
-    'test2' => 111,
-    'test3' => 'TRUE',
-    'test4' => 'False',
-];
+    public function testCanValidateBooleanWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
-it('can validate boolean with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->boolean(false);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->boolean(false);
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateBooleanWithCorrectInputStrict(): void
+    {
+        $val = new Validator($this->correctStrictInput());
 
-it('can validate boolean with correct input (strict)', function () use ($correct_strict) {
-    $val = new Omega\Validator\Validator($correct_strict);
+        $val->test1->boolean(true);
+        $val->test2->boolean(true);
 
-    $val->test1->boolean(true);
-    $val->test2->boolean(true);
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateBooleanNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate boolean (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->not->boolean(false);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->boolean(false);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateBooleanNotWithCorrectInputStrict(): void
+    {
+        $val = new Validator($this->correctStrictInput());
 
-it('can validate boolean (not) with correct input (strict)', function () use ($correct_strict) {
-    $val = new Omega\Validator\Validator($correct_strict);
+        $val->test1->not->boolean(true);
+        $val->test2->not->boolean(true);
 
-    $val->test1->not->boolean(true);
-    $val->test2->not->boolean(true);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateBooleanWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-// validate with incorrect input field
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->boolean(false);
 
-it('can validate boolean with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertFalse($val->isValid());
+    }
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->boolean(false);
+    public function testCanValidateBooleanNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->not->boolean(false);
 
-it('can validate boolean (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->boolean(false);
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'true',
+            'test2' => 'false',
+            'test3' => 'on',
+            'test4' => 'off',
+            'test5' => '1',
+            'test6' => '0',
+            'test7' => 'yes',
+            'test8' => 'no',
+        ];
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, bool> */
+    private function correctStrictInput(): array
+    {
+        return [
+            'test1' => true,
+            'test2' => false,
+        ];
+    }
+
+    /** @return array<string, int|string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test1' => 'randomString',
+            'test2' => 111,
+            'test3' => 'TRUE',
+            'test4' => 'False',
+        ];
+    }
+}

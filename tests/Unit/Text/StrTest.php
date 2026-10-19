@@ -6,306 +6,405 @@ namespace Tests\Text;
 
 use Omega\Text\Exceptions\NoReturnException;
 use Omega\Text\Str;
+use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-use function expect;
+final class StrTest extends TestCase
+{
 
-covers(Str::class);
 
-it('return character specified position', function (): void {
-    $text = 'i love laravel';
-    expect(Str::charAt($text, 3))->toBe('o');
-});
+    public function testReturnCharacterSpecifiedPosition(): void
+    {
+        $text = 'i love laravel';
 
-it('join two or more string into once', function (): void {
-    $text = ['i', 'love', 'laravel'];
-    expect(Str::concat($text))->toBe('i love laravel');
-    expect(Str::concat($text, ' ', 'and'))->toBe('i love and laravel');
-});
+        $this->assertSame('o', Str::charAt($text, 3));
+    }
 
-it('can find index of string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::indexOf($text, 'l'))->toBe(2);
-});
+    public function testJoinTwoOrMoreStringIntoOnce(): void
+    {
+        $text = ['i', 'love', 'laravel'];
 
-it('can find last index of string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::lastIndexOf($text, 'l'))->toBe(13);
-});
+        $this->assertSame('i love laravel', Str::concat($text));
+        $this->assertSame('i love and laravel', Str::concat($text, ' ', 'and'));
+    }
 
-it('can find matches from pattern', function (): void {
-    $text    = 'i love laravel';
-    $matches = Str::match($text, '/love/');
-    expect($matches)->toContain('love');
+    public function testCanFindIndexOfString(): void
+    {
+        $text = 'i love laravel';
 
-    $matches = Str::match($text, '/rust/');
-    expect($matches)->toBeNull();
-});
+        $this->assertSame(2, Str::indexOf($text, 'l'));
+    }
 
-it('can search text', function (): void {
-    $text = 'i love laravel';
-    expect(Str::indexOf($text, 'laravel'))->toBe(7);
-    expect(Str::indexOf($text, 'rust'))->toBeFalse();
-});
+    public function testCanFindLastIndexOfString(): void
+    {
+        $text = 'i love laravel';
 
-it('can search text with search method', function (): void {
-    $text = 'i love laravel';
-    expect(Str::search($text, 'laravel'))->toBe(7);
-    expect(Str::search($text, 'rust'))->toBeFalse();
-});
+        $this->assertSame(13, Str::lastIndexOf($text, 'l'));
+    }
 
-it('can slice string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::slice($text, 7))->toBe('laravel');
-    expect(Str::slice($text, 7, 4))->toBe('lara');
-    expect(Str::slice($text, 7, -1))->toBe('larave');
-    expect(Str::slice($text, 15))->toBe('');
-});
+    public function testCanFindMatchesFromPattern(): void
+    {
+        $text    = 'i love laravel';
+        $matches = Str::match($text, '/love/');
 
-it('can split string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::split($text, ' '))->toBe(['i', 'love', 'laravel']);
-    expect(Str::split($text, ' ', 2))->toBe(['i', 'love laravel']);
-});
+        $this->assertNotNull($matches);
+        $this->assertContains('love', $matches);
 
-it('can split string into characters with empty separator', function (): void {
-    expect(Str::split('abc'))->toBe(['a', 'b', 'c']);
-});
+        $matches = Str::match($text, '/rust/');
 
-it('can find and replace text', function (): void {
-    $text = 'i love laravel';
-    expect(Str::replace($text, 'laravel', 'php'))->toBe('i love php');
-});
+        $this->assertNull($matches);
+    }
 
-it('can uppercase string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::toUpperCase($text))->toBe('I LOVE LARAVEL');
-});
+    public function testCanSearchText(): void
+    {
+        $text = 'i love laravel';
 
-it('can lowercase string', function (): void {
-    $text = 'I LOVE LARAVEL';
-    expect(Str::toLowerCase($text))->toBe('i love laravel');
-});
+        $this->assertSame(7, Str::indexOf($text, 'laravel'));
+        $this->assertFalse(Str::indexOf($text, 'rust'));
+    }
 
-it('can uc first string', function (): void {
-    $text = 'laravel';
-    expect(Str::firstUpper($text))->toBe('Laravel');
-});
+    public function testCanSearchTextWithSearchMethod(): void
+    {
+        $text = 'i love laravel';
 
-it('can uc word string', function (): void {
-    $text = 'i love laravel';
-    expect(Str::firstUpperAll($text))->toBe('I Love Laravel');
-});
+        $this->assertSame(7, Str::search($text, 'laravel'));
+        $this->assertFalse(Str::search($text, 'rust'));
+    }
 
-it('can snake case', function (): void {
-    expect(Str::toSnakeCase('i love laravel'))->toBe('i_love_laravel');
-    expect(Str::toSnakeCase('i-love-laravel'))->toBe('i_love_laravel');
-    expect(Str::toSnakeCase('i_love_laravel'))->toBe('i_love_laravel');
-    expect(Str::toSnakeCase('i+love+laravel'))->toBe('i_love_laravel');
-    expect(Str::toSnakeCase('i+love_laravel'))->toBe('i_love_laravel');
-});
+    public function testCanSliceString(): void
+    {
+        $text = 'i love laravel';
 
-it('can kebab case', function (): void {
-    expect(Str::toKebabCase('i love laravel'))->toBe('i-love-laravel');
-    expect(Str::toKebabCase('i-love-laravel'))->toBe('i-love-laravel');
-    expect(Str::toKebabCase('i_love_laravel'))->toBe('i-love-laravel');
-    expect(Str::toKebabCase('i+love+laravel'))->toBe('i-love-laravel');
-    expect(Str::toKebabCase('i+love_laravel'))->toBe('i-love-laravel');
-});
+        $this->assertSame('laravel', Str::slice($text, 7));
+        $this->assertSame('lara', Str::slice($text, 7, 4));
+        $this->assertSame('larave', Str::slice($text, 7, -1));
+        $this->assertSame('', Str::slice($text, 15));
+    }
 
-it('can kebab case from all uppercase string', function (): void {
-    expect(Str::toKebabCase('I LOVE LARAVEL'))->toBe('i love laravel');
-});
+    public function testCanSplitString(): void
+    {
+        $text = 'i love laravel';
 
-it('can kebab case from camelCase string', function (): void {
-    expect(Str::toKebabCase('iLoveLaravel'))->toBe('i-love-laravel');
-});
+        $this->assertSame(['i', 'love', 'laravel'], Str::split($text, ' '));
+        $this->assertSame(['i', 'love laravel'], Str::split($text, ' ', 2));
+    }
 
-it('can pascal case', function (): void {
-    expect(Str::toPascalCase('i love laravel'))->toBe('ILoveLaravel');
-    expect(Str::toPascalCase('i-love-laravel'))->toBe('ILoveLaravel');
-    expect(Str::toPascalCase('i_love_laravel'))->toBe('ILoveLaravel');
-    expect(Str::toPascalCase('i+love+laravel'))->toBe('ILoveLaravel');
-    expect(Str::toPascalCase('i+love_laravel'))->toBe('ILoveLaravel');
-});
+    public function testCanSplitStringIntoCharactersWithEmptySeparator(): void
+    {
+        $this->assertSame(['a', 'b', 'c'], Str::split('abc'));
+    }
 
-it('can camel case', function (): void {
-    expect(Str::toCamelCase('i love laravel'))->toBe('iLoveLaravel');
-    expect(Str::toCamelCase('i-love-laravel'))->toBe('iLoveLaravel');
-    expect(Str::toCamelCase('i_love_laravel'))->toBe('iLoveLaravel');
-    expect(Str::toCamelCase('i+love+laravel'))->toBe('iLoveLaravel');
-    expect(Str::toCamelCase('i+love_laravel'))->toBe('iLoveLaravel');
-});
+    public function testCanFindAndReplaceText(): void
+    {
+        $text = 'i love laravel';
 
-it('can camel case from single word', function (): void {
-    expect(Str::toCamelCase('laravel'))->toBe('laravel');
-});
+        $this->assertSame('i love php', Str::replace($text, 'laravel', 'php'));
+    }
 
-it('can detect text contain with', function (): void {
-    $text = 'i love laravel';
-    expect(Str::contains($text, 'laravel'))->toBeTrue();
-    expect(Str::contains($text, 'symfony'))->toBeFalse();
-    expect(Str::contains($text, ''))->toBeTrue();
-});
+    public function testCanUppercaseString(): void
+    {
+        $text = 'i love laravel';
 
-it('can detect text starts with', function (): void {
-    $text = 'i love laravel';
-    expect(Str::startsWith($text, 'i'))->toBeTrue();
-    expect(Str::startsWith($text, 'love'))->toBeFalse();
-});
+        $this->assertSame('I LOVE LARAVEL', Str::toUpperCase($text));
+    }
 
-it('can detect text ends with', function (): void {
-    $text = 'i love laravel';
-    expect(Str::endsWith($text, 'laravel'))->toBeTrue();
-    expect(Str::endsWith($text, 'love'))->toBeFalse();
-});
+    public function testCanLowercaseString(): void
+    {
+        $text = 'I LOVE LARAVEL';
 
-it('can detect text ends with empty string', function (): void {
-    expect(Str::endsWith('i love laravel', ''))->toBeTrue();
-    expect(Str::endsWith('i love laravel', 'i love laravel'))->toBeTrue();
-    expect(Str::endsWith('i love laravel', 'laravel'))->toBeTrue();
-});
+        $this->assertSame('i love laravel', Str::toLowerCase($text));
+    }
 
-it('can detect empty text ends with', function (): void {
-    expect(Str::endsWith('', 'laravel'))->toBeFalse();
-});
+    public function testCanUcFirstString(): void
+    {
+        $text = 'laravel';
 
-it('can detect text ends with when needle is longer than text', function (): void {
-    expect(Str::endsWith('love', 'laravel'))->toBeFalse();
-});
+        $this->assertSame('Laravel', Str::firstUpper($text));
+    }
 
-it('can detect text is match', function (): void {
-    expect(Str::isMatch('i love laravel', '/love/'))->toBeTrue();
-    expect(Str::isMatch('i love laravel', '/rust/'))->toBeFalse();
-});
+    public function testCanUcWordString(): void
+    {
+        $text = 'i love laravel';
 
-it('can detect text is equal to pattern', function (): void {
-    expect(Str::is('i love laravel', '/love/'))->toBeTrue();
-    expect(Str::is('i love laravel', '/rust/'))->toBeFalse();
-});
+        $this->assertSame('I Love Laravel', Str::firstUpperAll($text));
+    }
 
-it('can make slugify from text', function (): void {
-    $text = 'i love laravel';
-    expect(Str::slug($text))->toBe('i-love-laravel');
-});
+    public function testCanSnakeCase(): void
+    {
+        $this->assertSame('i_love_laravel', Str::toSnakeCase('i love laravel'));
+        $this->assertSame('i_love_laravel', Str::toSnakeCase('i-love-laravel'));
+        $this->assertSame('i_love_laravel', Str::toSnakeCase('i_love_laravel'));
+        $this->assertSame('i_love_laravel', Str::toSnakeCase('i+love+laravel'));
+        $this->assertSame('i_love_laravel', Str::toSnakeCase('i+love_laravel'));
+    }
 
-it('throws when slug does not return anything', function (): void {
-    Str::slug('-~+-');
-})->throws(NoReturnException::class, 'did not return anything');
+    public function testCanKebabCase(): void
+    {
+        $this->assertSame('i-love-laravel', Str::toKebabCase('i love laravel'));
+        $this->assertSame('i-love-laravel', Str::toKebabCase('i-love-laravel'));
+        $this->assertSame('i-love-laravel', Str::toKebabCase('i_love_laravel'));
+        $this->assertSame('i-love-laravel', Str::toKebabCase('i+love+laravel'));
+        $this->assertSame('i-love-laravel', Str::toKebabCase('i+love_laravel'));
+    }
 
-it('can render template string', function (): void {
-    $template = 'i love {lang}';
-    $data     = ['lang' => 'laravel'];
-    expect(Str::template($template, $data))->toBe('i love laravel');
-});
+    public function testCanKebabCaseFromAllUppercaseString(): void
+    {
+        $this->assertSame('i love laravel', Str::toKebabCase('I LOVE LARAVEL'));
+    }
 
-it('can render template string with custom delimiters', function (): void {
-    $template = 'i love [[lang]]';
-    $data     = ['lang' => 'laravel'];
-    expect(Str::template($template, $data, '[[', ']]'))->toBe('i love laravel');
-});
+    public function testCanKebabCaseFromCamelCaseString(): void
+    {
+        $this->assertSame('i-love-laravel', Str::toKebabCase('iLoveLaravel'));
+    }
 
-it('can render template string with multiple keys', function (): void {
-    $template = '{lang} is the best {framework}';
-    $data     = ['lang' => 'php', 'framework' => 'laravel'];
-    expect(Str::template($template, $data))->toBe('php is the best laravel');
-});
+    public function testCanPascalCase(): void
+    {
+        $this->assertSame('ILoveLaravel', Str::toPascalCase('i love laravel'));
+        $this->assertSame('ILoveLaravel', Str::toPascalCase('i-love-laravel'));
+        $this->assertSame('ILoveLaravel', Str::toPascalCase('i_love_laravel'));
+        $this->assertSame('ILoveLaravel', Str::toPascalCase('i+love+laravel'));
+        $this->assertSame('ILoveLaravel', Str::toPascalCase('i+love_laravel'));
+    }
 
-it('can render template string with empty data', function (): void {
-    $template = 'i love laravel';
-    expect(Str::template($template, []))->toBe('i love laravel');
-});
+    public function testCanCamelCase(): void
+    {
+        $this->assertSame('iLoveLaravel', Str::toCamelCase('i love laravel'));
+        $this->assertSame('iLoveLaravel', Str::toCamelCase('i-love-laravel'));
+        $this->assertSame('iLoveLaravel', Str::toCamelCase('i_love_laravel'));
+        $this->assertSame('iLoveLaravel', Str::toCamelCase('i+love+laravel'));
+        $this->assertSame('iLoveLaravel', Str::toCamelCase('i+love_laravel'));
+    }
 
-it('can render template string with custom open delimiter and default close', function (): void {
-    $template = 'i love [lang}';
-    $data     = ['lang' => 'laravel'];
-    expect(Str::template($template, $data, '[', '}'))->toBe('i love laravel');
-});
+    public function testCanCamelCaseFromSingleWord(): void
+    {
+        $this->assertSame('laravel', Str::toCamelCase('laravel'));
+    }
 
-it('can render template string with default open delimiter and custom close', function (): void {
-    $template = 'i love {lang]';
-    $data     = ['lang' => 'laravel'];
-    expect(Str::template($template, $data, '{', ']'))->toBe('i love laravel');
-});
+    public function testCanDetectTextContainWith(): void
+    {
+        $text = 'i love laravel';
 
-it('can count text', function (): void {
-    $text = 'i love laravel';
-    expect(Str::length($text))->toBe(14);
-});
+        $this->assertTrue(Str::contains($text, 'laravel'));
+        $this->assertFalse(Str::contains($text, 'symfony'));
+        $this->assertTrue(Str::contains($text, ''));
+    }
 
-it('a repeat text', function (): void {
-    $text = 'Test';
-    expect(Str::repeat($text, 3))->toBe('TestTestTest');
-});
+    public function testCanDetectTextStartsWith(): void
+    {
+        $text = 'i love laravel';
 
-it('can detect string', function (): void {
-    expect(Str::isString('text'))->toBeTrue();
-});
+        $this->assertTrue(Str::startsWith($text, 'i'));
+        $this->assertFalse(Str::startsWith($text, 'love'));
+    }
 
-it('can detect empty string', function (): void {
-    expect(Str::isEmpty(''))->toBeTrue();
-    expect(Str::isEmpty('test'))->toBeFalse();
-});
+    public function testCanDetectTextEndsWith(): void
+    {
+        $text = 'i love laravel';
 
-it('can detect fill string in the start', function (): void {
-    expect(Str::fill('1212', '0', 6))->toBe('001212');
-});
+        $this->assertTrue(Str::endsWith($text, 'laravel'));
+        $this->assertFalse(Str::endsWith($text, 'love'));
+    }
 
-it('can detect fill string in the end', function (): void {
-    expect(Str::fillEnd('1212', '0', 6))->toBe('121200');
-});
+    public function testCanDetectTextEndsWithEmptyString(): void
+    {
+        $this->assertTrue(Str::endsWith('i love laravel', ''));
+        $this->assertTrue(Str::endsWith('i love laravel', 'i love laravel'));
+        $this->assertTrue(Str::endsWith('i love laravel', 'laravel'));
+    }
 
-it('can make mask', function (): void {
-    expect(Str::mask('laravel', '*', 1, 4))->toBe('l****el');
-    expect(Str::mask('laravel', '*', 1))->toBe('l******');
-    expect(Str::mask('laravel', '*', -3, 1))->toBe('lara*el');
-    expect(Str::mask('laravel', '*', -3))->toBe('lara***');
-});
+    public function testCanDetectEmptyTextEndsWith(): void
+    {
+        $this->assertFalse(Str::endsWith('', 'laravel'));
+    }
 
-it('can make mask from empty text with negative start', function (): void {
-    expect(Str::mask('', '*', -1))->toBe('');
-});
+    public function testCanDetectTextEndsWithWhenNeedleIsLongerThanText(): void
+    {
+        $this->assertFalse(Str::endsWith('love', 'laravel'));
+    }
 
-it('can make mask from empty text with positive start', function (): void {
-    expect(Str::mask('', '*', 0))->toBe('');
-});
+    public function testCanDetectTextIsMatch(): void
+    {
+        $this->assertTrue(Str::isMatch('i love laravel', '/love/'));
+        $this->assertFalse(Str::isMatch('i love laravel', '/rust/'));
+    }
 
-it('can make mask from single char when index is masked', function (): void {
-    expect(Str::mask('a', '*', 0, 2))->toBe('*');
-});
+    public function testCanDetectTextIsEqualToPattern(): void
+    {
+        $this->assertTrue(Str::is('i love laravel', '/love/'));
+        $this->assertFalse(Str::is('i love laravel', '/rust/'));
+    }
 
-it('can make mask from single char when index is below start', function (): void {
-    expect(Str::mask('a', '*', -2, 2))->toBe('*');
-});
+    public function testCanMakeSlugifyFromText(): void
+    {
+        $text = 'i love laravel';
 
-it('can make mask from single char when index is beyond mask length', function (): void {
-    expect(Str::mask('a', '*', 0, 0))->toBe('a');
-});
+        $this->assertSame('i-love-laravel', Str::slug($text));
+    }
 
-it('can make mask from single char when mask is below negative start', function (): void {
-    expect(Str::mask('a', '*', -2, 0))->toBe('a');
-});
-it('can make mask from single char when start covers the index', function (): void {
+    public function testThrowsWhenSlugDoesNotReturnAnything(): void
+    {
+        $this->expectException(NoReturnException::class);
+        $this->expectExceptionMessage('did not return anything');
 
-        expect(Str::mask('a', '*', 1))->toBe('a');
-    });
+        Str::slug('-~+-');
+    }
 
-    it('can make mask and continue through multiple chars', function (): void {
+    public function testCanRenderTemplateString(): void
+    {
+        $template = 'i love {lang}';
+        $data     = ['lang' => 'laravel'];
 
-        expect(Str::mask('ab', '*', 0, 1))->toBe('*b');
-    });
+        $this->assertSame('i love laravel', Str::template($template, $data));
+    }
 
-it('can make limit', function (): void {
-    expect(Str::limit('laravel best framework', 12))->toBe('laravel best...');
-});
+    public function testCanRenderTemplateStringWithCustomDelimiters(): void
+    {
+        $template = 'i love [[lang]]';
+        $data     = ['lang' => 'laravel'];
 
-it('can get text after', function (): void {
-    expect(Str::after('https://localhost:8000/test', ':'))->toBe(
-        '//localhost:8000/test'
-    );
-});
+        $this->assertSame('i love laravel', Str::template($template, $data, '[[', ']]'));
+    }
 
-it('can get text after must return back', function (): void {
-    expect(Str::after('https://localhost:8000/test', '~'))->toBe(
-        'https://localhost:8000/test'
-    );
-});
+    public function testCanRenderTemplateStringWithMultipleKeys(): void
+    {
+        $template = '{lang} is the best {framework}';
+        $data     = ['lang' => 'php', 'framework' => 'laravel'];
+
+        $this->assertSame('php is the best laravel', Str::template($template, $data));
+    }
+
+    public function testCanRenderTemplateStringWithEmptyData(): void
+    {
+        $template = 'i love laravel';
+
+        $this->assertSame('i love laravel', Str::template($template, []));
+    }
+
+    public function testCanRenderTemplateStringWithCustomOpenDelimiterAndDefaultClose(): void
+    {
+        $template = 'i love [lang}';
+        $data     = ['lang' => 'laravel'];
+
+        $this->assertSame('i love laravel', Str::template($template, $data, '[', '}'));
+    }
+
+    public function testCanRenderTemplateStringWithDefaultOpenDelimiterAndCustomClose(): void
+    {
+        $template = 'i love {lang]';
+        $data     = ['lang' => 'laravel'];
+
+        $this->assertSame('i love laravel', Str::template($template, $data, '{', ']'));
+    }
+
+    public function testCanCountText(): void
+    {
+        $text = 'i love laravel';
+
+        $this->assertSame(14, Str::length($text));
+    }
+
+    public function testARepeatText(): void
+    {
+        $text = 'Test';
+
+        $this->assertSame('TestTestTest', Str::repeat($text, 3));
+    }
+
+    public function testCanDetectString(): void
+    {
+        $this->assertTrue(Str::isString('text'));
+    }
+
+    public function testCanDetectEmptyString(): void
+    {
+        $this->assertTrue(Str::isEmpty(''));
+        $this->assertFalse(Str::isEmpty('test'));
+    }
+
+    public function testCanDetectFillStringInTheStart(): void
+    {
+        $this->assertSame('001212', Str::fill('1212', '0', 6));
+    }
+
+    public function testCanDetectFillStringInTheEnd(): void
+    {
+        $this->assertSame('121200', Str::fillEnd('1212', '0', 6));
+    }
+
+    public function testCanMakeMask(): void
+    {
+        $this->assertSame('l****el', Str::mask('laravel', '*', 1, 4));
+        $this->assertSame('l******', Str::mask('laravel', '*', 1));
+        $this->assertSame('lara*el', Str::mask('laravel', '*', -3, 1));
+        $this->assertSame('lara***', Str::mask('laravel', '*', -3));
+    }
+
+    public function testCanMakeMaskFromEmptyTextWithNegativeStart(): void
+    {
+        $this->assertSame('', Str::mask('', '*', -1));
+    }
+
+    public function testCanMakeMaskFromEmptyTextWithPositiveStart(): void
+    {
+        $this->assertSame('', Str::mask('', '*', 0));
+    }
+
+    public function testCanMakeMaskFromSingleCharWhenIndexIsMasked(): void
+    {
+        $this->assertSame('*', Str::mask('a', '*', 0, 2));
+    }
+
+    public function testCanMakeMaskFromSingleCharWhenIndexIsBelowStart(): void
+    {
+        $this->assertSame('*', Str::mask('a', '*', -2, 2));
+    }
+
+    public function testCanMakeMaskFromSingleCharWhenIndexIsBeyondMaskLength(): void
+    {
+        $this->assertSame('a', Str::mask('a', '*', 0, 0));
+    }
+
+    public function testCanMakeMaskFromSingleCharWhenMaskIsBelowNegativeStart(): void
+    {
+        $this->assertSame('a', Str::mask('a', '*', -2, 0));
+    }
+
+    public function testCanMakeMaskFromSingleCharWhenStartCoversTheIndex(): void
+    {
+        $this->assertSame('a', Str::mask('a', '*', 1));
+    }
+
+    public function testCanMakeMaskAndContinueThroughMultipleChars(): void
+    {
+        $this->assertSame('*b', Str::mask('ab', '*', 0, 1));
+    }
+
+    public function testCanMakeLimit(): void
+    {
+        $this->assertSame('laravel best...', Str::limit('laravel best framework', 12));
+    }
+
+    public function testCanGetTextAfter(): void
+    {
+        $this->assertSame(
+            '//localhost:8000/test',
+            Str::after('https://localhost:8000/test', ':')
+        );
+    }
+
+    public function testCanGetTextAfterMustReturnBack(): void
+    {
+        $this->assertSame(
+            'https://localhost:8000/test',
+            Str::after('https://localhost:8000/test', '~')
+        );
+    }
+
+
+}

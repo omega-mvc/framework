@@ -6,60 +6,69 @@ namespace Tests\Cron;
 
 use Omega\Cron\Schedule;
 use Omega\Cron\ScheduleTime;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function Omega\Time\now;
 
-covers(Schedule::class, ScheduleTime::class);
+#[CoversClass(Schedule::class)]
+#[CoversClass(ScheduleTime::class)]
+final class BasicCronTest extends TestCase
+{
+    public function testCorrectsScheduleClass(): void
+    {
+        $schedule = new Schedule(now()->getTimestamp());
+        $schedule->call(fn (): string => 'test')->justInTime();
 
-it('corrects schedule class', function (): void {
-    $schedule = new Schedule(now()->getTimestamp());
-    $schedule->call(fn (): string => 'test')->justInTime();
-
-    expect($schedule->getPools())->toHaveCount(1);
-    expect($schedule->getPools()[0]->eventName)->toBe('anonymously');
-});
-
-it('schedules run anonymously', function (): void {
-    $anonymously = new Schedule(now()->getTimestamp());
-    $anonymously
-        ->call(fn (): string => 'is run anonymously')
-        ->justInTime()
-        ->eventName('test 01')
-        ->anonymously();
-
-    $anonymously
-        ->call(fn (): string => 'is run anonymously')
-        ->hourly()
-        ->eventName('test 02')
-        ->anonymously();
-
-    foreach ($anonymously->getPools() as $scheduleItem) {
-        expect($scheduleItem->anonymously)->toBeTrue();
+        $this->assertCount(1, $schedule->getPools());
+        $this->assertSame('anonymously', $schedule->getPools()[0]->eventName);
     }
-});
 
-it('can add schedule', function (): void {
-    $cron1 = new Schedule(now()->getTimestamp());
-    $cron1->call(fn (): bool => true)->eventName('from1');
+    public function testSchedulesRunAnonymously(): void
+    {
+        $anonymously = new Schedule(now()->getTimestamp());
+        $anonymously
+            ->call(fn (): string => 'is run anonymously')
+            ->justInTime()
+            ->eventName('test 01')
+            ->anonymously();
 
-    $cron2 = new Schedule(now()->getTimestamp());
-    $cron2->call(fn (): bool => true)->eventName('from2');
+        $anonymously
+            ->call(fn (): string => 'is run anonymously')
+            ->hourly()
+            ->eventName('test 02')
+            ->anonymously();
 
-    $cron1->add($cron2);
+        foreach ($anonymously->getPools() as $scheduleItem) {
+            $this->assertTrue($scheduleItem->anonymously);
+        }
+    }
 
-    expect($cron1->getPools())->toHaveCount(2);
-    expect($cron1->getPools()[0]->eventName)->toBe('from1');
-    expect($cron1->getPools()[1]->eventName)->toBe('from2');
-});
+    public function testCanAddSchedule(): void
+    {
+        $cron1 = new Schedule(now()->getTimestamp());
+        $cron1->call(fn (): bool => true)->eventName('from1');
 
-it('can flush', function (): void {
-    $cron = new Schedule(now()->getTimestamp());
-    $cron->call(fn (): bool => true)->eventName('one');
-    $cron->call(fn (): bool => true)->eventName('two');
+        $cron2 = new Schedule(now()->getTimestamp());
+        $cron2->call(fn (): bool => true)->eventName('from2');
 
-    expect($cron->getPools())->toHaveCount(2);
+        $cron1->add($cron2);
 
-    $cron->flush();
+        $this->assertCount(2, $cron1->getPools());
+        $this->assertSame('from1', $cron1->getPools()[0]->eventName);
+        $this->assertSame('from2', $cron1->getPools()[1]->eventName);
+    }
 
-    expect($cron->getPools())->toHaveCount(0);
-});
+    public function testCanFlush(): void
+    {
+        $cron = new Schedule(now()->getTimestamp());
+        $cron->call(fn (): bool => true)->eventName('one');
+        $cron->call(fn (): bool => true)->eventName('two');
+
+        $this->assertCount(2, $cron->getPools());
+
+        $cron->flush();
+
+        $this->assertCount(0, $cron->getPools());
+    }
+}

@@ -1,18 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-// empty rule valdation rule
-it('empty rule not make runtime error', function () {
-    $valid = new Validator(['test' => 'test']);
-    // set empty rull
-    $valid->field('test');
-    expect($valid->isValid())->toBeTrue();
-});
+final class EmptyRuleValidationTest extends TestCase
+{
+    public function testEmptyRuleNotMakeRuntimeError(): void
+    {
+        $valid = new Validator(['test' => 'test']);
+        // set empty rull
+        $valid->field('test');
 
-it('using \'not\' with empty rule not make runtime error', function () {
-    $valid = new Validator(['test' => 'test']);
-    // set empty rull
-    $valid->field('test')->not();
-    expect($valid->isValid())->toBeTrue();
-});
+        $this->assertTrue($valid->isValid());
+    }
+
+    public function testUsingNotWithEmptyRuleNotMakeRuntimeError(): void
+    {
+        $valid = new Validator(['test' => 'test']);
+        // set empty rull
+        $valid->field('test')->not();
+
+        $this->assertTrue($valid->isValid());
+    }
+}

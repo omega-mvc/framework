@@ -6,39 +6,54 @@ namespace Tests\Security;
 
 use Omega\Security\Crypt;
 use Omega\Security\Exceptions\InvalidCipherDefinitionException;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use RuntimeException;
+use Tests\TestCase;
 
 use function Omega\Security\decrypt;
 use function Omega\Security\encrypt;
+final class HelperTest extends TestCase
+{
+    public function testEncryptHelperEncryptsDataWithAPassPhrase(): void
+    {
+        $encrypted = encrypt('secret-message', 'secret');
 
-covers('Omega\Security\encrypt');
-covers('Omega\Security\decrypt');
+        $this->assertNotSame('secret-message', $encrypted);
+    }
 
-it('encrypt helper encrypts data with a pass phrase', function (): void {
-    $encrypted = encrypt('secret-message', 'secret');
+    public function testEncryptHelperRequiresAPassPhrase(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('A pass phrase is required to encrypt data.');
 
-    expect($encrypted)->not->toBe('secret-message');
-});
+        encrypt('data');
+    }
 
-it('encrypt helper requires a pass phrase', function (): void {
-    encrypt('data');
-})->throws(RuntimeException::class, 'A pass phrase is required to encrypt data.');
+    public function testDecryptHelperRejectsPayloadsFromASeparateEncryptCall(): void
+    {
+        $encrypted = encrypt('secret-message', 'secret');
 
-it('decrypt helper rejects payloads from a separate encrypt call', function (): void {
-    $encrypted = encrypt('secret-message', 'secret');
+        $this->expectException(InvalidCipherDefinitionException::class);
+        $this->expectExceptionMessage('Unable to decrypt payload using the configured cipher.');
 
-    decrypt($encrypted, 'secret');
-})->throws(InvalidCipherDefinitionException::class, 'Unable to decrypt payload using the configured cipher.');
+        decrypt($encrypted, 'secret');
+    }
 
-it('decrypt helper requires a pass phrase', function (): void {
-    decrypt('data');
-})->throws(RuntimeException::class, 'A pass phrase is required to decrypt data.');
+    public function testDecryptHelperRequiresAPassPhrase(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('A pass phrase is required to decrypt data.');
 
-it('decrypt helper returns when the padding survives the mismatched iv', function (): void {
-    $plain     = str_repeat('message', 8);
-    $decrypted = decrypt(encrypt($plain, 'secret'), 'secret');
+        decrypt('data');
+    }
 
-    expect($decrypted)->not->toBe('')
-        ->and(strlen($decrypted))->toBe(strlen($plain))
-        ->and(substr($decrypted, 16))->toBe(substr($plain, 16));
-});
+    public function testDecryptHelperReturnsWhenThePaddingSurvivesTheMismatchedIv(): void
+    {
+        $plain     = str_repeat('message', 8);
+        $decrypted = decrypt(encrypt($plain, 'secret'), 'secret');
+
+        $this->assertNotSame('', $decrypted);
+        $this->assertSame(strlen($plain), strlen($decrypted));
+        $this->assertSame(substr($plain, 16), substr($decrypted, 16));
+    }
+}

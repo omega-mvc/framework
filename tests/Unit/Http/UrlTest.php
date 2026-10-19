@@ -12,7 +12,6 @@ use Tests\TestCase;
 
 #[CoversClass(Request::class)]
 #[CoversClass(Url::class)]
-#[CoversFunction('Omega\Application\path')]
 final class UrlTest extends TestCase
 {
     public function testUrlParse(): void

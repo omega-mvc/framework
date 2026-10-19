@@ -1,46 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render alpha_numeric validation')
-    ->expect(vr()->alpha_numeric())
-    ->toEqual('alpha_numeric')
-;
+final class AlphaNumericTest extends TestCase
+{
+    public function testCanRenderAlphaNumericValidation(): void
+    {
+        $this->assertEquals('alpha_numeric', vr()->alpha_numeric());
+    }
 
-it('can render invert alpha_numeric validation')
-    ->expect(vr()->not()->alpha_numeric())
-    ->toEqual('invert_alpha_numeric')
-;
+    public function testCanRenderInvertAlphaNumericValidation(): void
+    {
+        $this->assertEquals('invert_alpha_numeric', vr()->not()->alpha_numeric());
+    }
 
-$correct   = ['test' => '123azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
-$incorrect = ['test' => 'hello *(^*^*&\')'];
+    public function testCanValidateAlphaWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->alpha_numeric();
 
-// validate with correct input field
-it('can validate alpha with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->alpha_numeric();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateAlphaNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->not()->alpha_numeric();
 
-it('can validate alpha (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->not()->alpha_numeric();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->alpha_numeric();
 
-// validate with incorrect input field
-it('can validate alpha with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->alpha_numeric();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->not()->alpha_numeric();
 
-it('can validate alpha (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->not()->alpha_numeric();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => '123azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝÑàáâãäåçèéêëìíîïðòóôõöùúûüýÿñ'];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => 'hello *(^*^*&\')'];
+    }
+}

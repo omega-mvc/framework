@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander lower_case', function () {
-    expect(fr()->lower_case())
-        ->toEqual('lower_case')
-    ;
-});
+final class LowerCaseTest extends TestCase
+{
+    public function testCanRanderLowerCase(): void
+    {
+        $this->assertEquals('lower_case', fr()->lower_case());
+    }
 
-it('can filter lower_case', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'TEST']);
+    public function testCanFilterLowerCase(): void
+    {
+        $fr = new Validator(['field' => 'TEST']);
 
-    $fr->filter('field')->lower_case();
+        $fr->filter('field')->lower_case();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'test'])
-    ;
-});
+        $this->assertEquals(['field' => 'test'], $fr->filterOut());
+    }
+}

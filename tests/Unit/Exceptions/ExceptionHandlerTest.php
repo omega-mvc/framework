@@ -30,21 +30,23 @@ use function file;
 use function str_contains;
 
 
-covers(Application::class);
-covers(BindingResolutionException::class);
-covers(CircularAliasException::class);
-covers(EntryNotFoundException::class);
-covers(ExceptionHandler::class);
-covers(HttpException::class);
-covers(Http::class);
-covers(Request::class);
-covers(Response::class);
-covers(ApplicationManifest::class);
-covers(Str::class);
-covers(Templator::class);
-covers(TemplatorFinder::class);
+#[CoversClass(Application::class)]
+#[CoversClass(BindingResolutionException::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(EntryNotFoundException::class)]
+#[CoversClass(ExceptionHandler::class)]
+#[CoversClass(HttpException::class)]
+#[CoversClass(Http::class)]
+#[CoversClass(Request::class)]
+#[CoversClass(Response::class)]
+#[CoversClass(ApplicationManifest::class)]
+#[CoversClass(Str::class)]
+#[CoversClass(Templator::class)]
+#[CoversClass(TemplatorFinder::class)]
 
-beforeEach(function (): void {
+class ExceptionHandlerTest extends \Tests\TestCase
+{
+    protected function setUp(): void {
     LogStore::reset();
 
     $this->app = new Application(__DIR__ . '/fixtures/application-read/');
@@ -100,153 +102,166 @@ beforeEach(function (): void {
             LogStore::push($th->getMessage());
         }
     };
-});
+}
 
-afterEach(function (): void {
-    $this->app->flush();
-    LogStore::reset();
-    HandleExceptions::resetHandlersState();
-});
-
-it('can render an exception', function (): void {
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new \RuntimeException('Expected an Http instance.');
+    protected function tearDown(): void
+    {
+        $this->app->flush();
+        LogStore::reset();
+        HandleExceptions::resetHandlersState();
     }
 
-    $response = $http->handle(new Request('/test'));
+    #[Test]
+    public function test_can_render_an_exception(): void
+    {
+        $http = $this->app->make(Http::class);
 
-    expect($response->getContent())->toBe('Too Many Request');
-    expect($response->getStatusCode())->toBe(429);
-});
-
-it('can report an exception', function (): void {
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new \RuntimeException('Expected an Http instance.');
-    }
-
-    $http->handle(new Request('/test'));
-
-    expect(LogStore::all())->toEqual(['Too Many Request']);
-});
-
-it('can render an exception as json', function (): void {
-    $this->app->bootedCallback(fn () => $this->app->set('app.debug', false));
-
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new \RuntimeException('Expected an Http instance.');
-    }
-
-    $response = $http->handle(new Request('/test', [], [], [], [], [], [
-        'content-type' => 'application/json',
-    ]));
-
-    expect($response->getContent())->toEqual([
-        'code'     => 500,
-        'messages' => [
-            'message' => 'Internal Server Error',
-        ],
-    ]);
-    expect($response->getStatusCode())->toBe(429);
-});
-
-it('can render an exception as json for debug', function (): void {
-    $this->app->bootedCallback(fn () => $this->app->set('app.debug', true));
-
-    $http = $this->app->make(Http::class);
-
-    if (!$http instanceof Http) {
-        throw new \RuntimeException('Expected an Http instance.');
-    }
-
-    $response = $http->handle(new Request('/test', [], [], [], [], [], [
-        'content-type' => 'application/json',
-    ]));
-
-    $content = $response->getContent();
-    $this->assertIsArray($content);
-
-    $messages = $content['messages'];
-    $this->assertIsArray($messages);
-
-    expect($messages['message'])->toBe('Too Many Request');
-    expect($messages['exception'])->toBe('Omega\Http\Exceptions\HttpException');
-
-    $reflection = new ReflectionMethod($this->http, 'dispatcher');
-    $fileName   = $reflection->getFileName();
-    $source     = $fileName !== false ? file($fileName) : [];
-
-    $expectedLine = null;
-
-    foreach (($source ?: []) as $number => $line) {
-        if (str_contains((string) $line, 'throw new HttpException')) {
-            $expectedLine = $number + 1;
-            break;
+        if (!$http instanceof Http) {
+            throw new \RuntimeException('Expected an Http instance.');
         }
+
+        $response = $http->handle(new Request('/test'));
+
+        $this->assertSame('Too Many Request', $response->getContent());
+        $this->assertSame(429, $response->getStatusCode());
     }
 
-    $this->assertNotNull($expectedLine, 'Unable to detect HttpException throw line dynamically.');
+    #[Test]
+    public function test_can_report_an_exception(): void
+    {
+        $http = $this->app->make(Http::class);
 
-    expect($messages['line'])->toBe($expectedLine);
-    expect($response->getStatusCode())->toBe(429);
-});
+        if (!$http instanceof Http) {
+            throw new \RuntimeException('Expected an Http instance.');
+        }
 
-it('can render an http exception through a view', function (): void {
-    $app         = $this->app;
-    $fixturePath = __DIR__ . '/fixtures/exceptions';
+        $http->handle(new Request('/test'));
 
-    $app->set('path.view', __DIR__ . '/fixtures/exceptions/');
-    $app->set('paths.view', [
-        __DIR__ . '/fixtures/exceptions/',
-        __DIR__ . '/fixtures/exceptions/pages/',
-    ]);
-    $app->set(
-        TemplatorFinder::class,
-        fn () => new TemplatorFinder(
-            array_map(fn ($item) => is_string($item) ? $item : '', (array) ($app->get('paths.view') ?? [])),
-            ['.php', '.template.php']
-        )
-    );
+        $this->assertEquals(['Too Many Request'], LogStore::all());
+    }
 
-    $app->set(
-        'view.instance',
-        fn (TemplatorFinder $finder) => new Templator($finder, $fixturePath)
-    );
+    #[Test]
+    public function test_can_render_an_exception_as_json(): void
+    {
+        $this->app->bootedCallback(fn () => $this->app->set('app.debug', false));
 
-    $app->set(
-        'view.response',
-        fn () => function (string $viewPath, array $portal = []) use ($app, $fixturePath): Response {
-            $templator = $app->make('view.instance');
+        $http = $this->app->make(Http::class);
 
-            if (!$templator instanceof Templator) {
-                $finder = $app->make(TemplatorFinder::class);
-                $templator = $finder instanceof TemplatorFinder
-                    ? new Templator($finder, $fixturePath)
-                    : new Templator($fixturePath, $fixturePath);
+        if (!$http instanceof Http) {
+            throw new \RuntimeException('Expected an Http instance.');
+        }
+
+        $response = $http->handle(new Request('/test', [], [], [], [], [], [
+            'content-type' => 'application/json',
+        ]));
+
+        $decoded = $response->getContent();
+        $decoded = is_string($decoded) ? json_decode($decoded, true) : $decoded;
+        $this->assertEquals([
+            'code'     => 500,
+            'messages' => [
+                'message' => 'Internal Server Error',
+            ],
+        ], $decoded);
+        $this->assertSame(429, $response->getStatusCode());
+    }
+
+    #[Test]
+    public function test_can_render_an_exception_as_json_for_debug(): void
+    {
+        $this->app->bootedCallback(fn () => $this->app->set('app.debug', true));
+
+        $http = $this->app->make(Http::class);
+
+        if (!$http instanceof Http) {
+            throw new \RuntimeException('Expected an Http instance.');
+        }
+
+        $response = $http->handle(new Request('/test', [], [], [], [], [], [
+            'content-type' => 'application/json',
+        ]));
+
+        $content = $response->getContent();
+        $content = is_string($content) ? json_decode($content, true) : $content;
+        $this->assertIsArray($content);
+
+        $messages = $content['messages'];
+        $this->assertIsArray($messages);
+        $this->assertSame('Too Many Request', $messages['message']);
+        $this->assertSame('Omega\Http\Exceptions\HttpException', $messages['exception']);
+
+        $reflection = new ReflectionMethod($this->http, 'dispatcher');
+        $fileName   = $reflection->getFileName();
+        $source     = $fileName !== false ? file($fileName) : [];
+
+        $expectedLine = null;
+
+        foreach ($source as $number => $line) {
+            if (str_contains((string) $line, 'throw new HttpException')) {
+                $expectedLine = $number + 1;
+                break;
             }
-
-            /** @var array<string, mixed> $portal */
-            return new Response((string) $templator->render($viewPath, $portal));
         }
-    );
 
-    $app->set(ExceptionHandler::class, fn () => new ExceptionHandler($app));
-
-    $handler = $app->make(ExceptionHandler::class);
-
-    if (!$handler instanceof ExceptionHandler) {
-        throw new \RuntimeException('Expected an ExceptionHandler instance.');
+        $this->assertNotNull($expectedLine, 'Unable to detect HttpException throw line dynamically.');
+        $this->assertSame($expectedLine, $messages['line']);
+        $this->assertSame(429, $response->getStatusCode());
     }
 
-    $exception = new HttpException(429, 'Internal Error', null, []);
-    $render    = $handler->render(new Request('/test'), $exception);
+    #[Test]
+    public function test_can_render_an_http_exception_through_a_view(): void
+    {
+        $app         = $this->app;
+        $fixturePath = __DIR__ . '/fixtures/exceptions';
 
-    $content = $render->getContent();
+        $app->set('path.view', __DIR__ . '/fixtures/exceptions/');
+        $app->set('paths.view', [
+            __DIR__ . '/fixtures/exceptions/',
+            __DIR__ . '/fixtures/exceptions/pages/',
+        ]);
+        $app->set(
+            TemplatorFinder::class,
+            fn () => new TemplatorFinder(
+                array_map(fn ($item) => is_string($item) ? $item : '', (array) ($app->get('paths.view') ?? [])),
+                ['.php', '.template.php']
+            )
+        );
 
-    expect(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'))->toBeTrue();
-});
+        $app->set(
+            'view.instance',
+            fn (TemplatorFinder $finder) => new Templator($finder, $fixturePath)
+        );
+
+        $app->set(
+            'view.response',
+            fn () => function (string $viewPath, array $portal = []) use ($app, $fixturePath): Response {
+                $templator = $app->make('view.instance');
+
+                if (!$templator instanceof Templator) {
+                    $finder = $app->make(TemplatorFinder::class);
+                    $templator = $finder instanceof TemplatorFinder
+                        ? new Templator($finder, $fixturePath)
+                        : new Templator($fixturePath, $fixturePath);
+                }
+
+                /** @var array<string, mixed> $portal */
+                return new Response((string) $templator->render($viewPath, $portal));
+            }
+        );
+
+        $app->set(ExceptionHandler::class, fn () => new ExceptionHandler($app));
+
+        $handler = $app->make(ExceptionHandler::class);
+
+        if (!$handler instanceof ExceptionHandler) {
+            throw new \RuntimeException('Expected an ExceptionHandler instance.');
+        }
+
+        $exception = new HttpException(429, 'Internal Error', null, []);
+        $render    = $handler->render(new Request('/test'), $exception);
+
+        $content = $render->getContent();
+
+        $this->assertTrue(Str::contains(is_string($content) ? $content : '', '<h1>Too Many Request</h1>'));
+    }
+}

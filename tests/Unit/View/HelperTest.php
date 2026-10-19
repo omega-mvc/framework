@@ -4,80 +4,80 @@ declare(strict_types=1);
 
 namespace Tests\View;
 
-use Exception;
 use Omega\Application\Application;
-use Omega\Container\Exceptions\BindingResolutionException;
-use Omega\Container\Exceptions\CircularAliasException;
-use Omega\Container\Exceptions\EntryNotFoundException;
 use Omega\Http\Response;
 use Omega\Text\Str;
 use Omega\View\Templator;
 use Omega\View\TemplatorFinder;
 use Omega\View\View;
 use Omega\View\Vite;
-use Psr\Container\ContainerExceptionInterface;
-use ReflectionException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
 
 use function Omega\View\view;
 use function Omega\View\vite;
 
+#[CoversClass(Application::class)]
+#[CoversClass(View::class)]
+#[CoversClass(Vite::class)]
+final class HelperTest extends TestCase
+{
+    public function testViteHelperHandlesSingleAndMultipleEntryPoints(): void
+    {
+        $app = new Application(__DIR__);
+        $viteMock = $this->createMock(Vite::class);
+        $app->set('vite.gets', $viteMock);
 
-covers(Application::class);
-covers(View::class);
-covers(Vite::class);
+        $viteMock->expects($this->exactly(2))
+            ->method('gets')
+            ->willReturnOnConsecutiveCalls(
+                ['main.js' => 'url_string'],
+                ['a.js' => 'url_a', 'b.js' => 'url_b']
+            );
 
-it('vite helper handles single and multiple entry points', function (): void {
-    $app = new Application(__DIR__);
-    $viteMock = $this->createMock(Vite::class);
-    $app->set('vite.gets', $viteMock);
+        $this->assertSame('url_string', vite('main.js'));
 
-    $viteMock->expects($this->exactly(2))
-    ->method('gets')
-        ->willReturnOnConsecutiveCalls(
-            ['main.js' => 'url_string'],
-            ['a.js' => 'url_a', 'b.js' => 'url_b']
+        $resultArray = vite('a.js', 'b.js');
+        $this->assertIsArray($resultArray);
+        $this->assertCount(2, $resultArray);
+        $this->assertSame('url_a', $resultArray['a.js']);
+    }
+
+    public function testCanGetResponseFromContainer(): void
+    {
+        $app = new Application(__DIR__);
+
+        $app->set(
+            TemplatorFinder::class,
+            fn () => new TemplatorFinder([__DIR__ . '/fixtures/support/view'], ['.php'])
         );
 
-    expect(vite('main.js'))->toBe('url_string');
+        $app->set(
+            'view.instance',
+            fn (TemplatorFinder $finder) => new Templator($finder, __DIR__ . '/fixtures/support/cache')
+        );
 
-    $resultArray = vite('a.js', 'b.js');
-    $this->assertIsArray($resultArray);
-    expect($resultArray)->toHaveCount(2);
-    expect($resultArray['a.js'])->toBe('url_a');
-})->coversFunction('Omega\View\vite');
+        $app->set(
+            'view.response',
+            fn () => function (string $viewPath, array $portal = []) use ($app): Response {
+                /** @var Templator $templator */
+                $templator = $app->make(Templator::class);
 
-it('can get response from container', function (): void {
-    $app = new Application(__DIR__);
+                /** @var array<string, mixed> $portal */
+                return new Response($templator->render($viewPath, $portal));
+            }
+        );
 
-    $app->set(
-        TemplatorFinder::class,
-        fn () => new TemplatorFinder([__DIR__ . '/fixtures/support/view'], ['.php'])
-    );
+        $view = view('test', [], ['status' => 500]);
+        $this->assertEquals(500, $view->getStatusCode());
 
-    $app->set(
-        'view.instance',
-        fn (TemplatorFinder $finder) => new Templator($finder, __DIR__ . '/fixtures/support/cache')
-    );
-
-    $app->set(
-        'view.response',
-        fn () => function (string $viewPath, array $portal = []) use ($app): Response {
-            /** @var Templator $templator */
-            $templator = $app->make(Templator::class);
-
-            /** @var array<string, mixed> $portal */
-            return new Response($templator->render($viewPath, $portal));
+        $content = $view->getContent();
+        if (!is_string($content)) {
+            $this->fail('Expected string view content.');
         }
-    );
+        $this->assertTrue(Str::contains($content, 'omega'));
 
-    $view = view('test', [], ['status' => 500]);
-    expect($view->getStatusCode())->toEqual(500);
-
-    $content = $view->getContent();
-    if (!is_string($content)) {
-        $this->fail('Expected string view content.');
+        $app->flush();
     }
-    expect(Str::contains($content, 'omega'))->toBeTrue();
-
-    $app->flush();
-})->coversFunction('Omega\View\view');
+}

@@ -2,93 +2,106 @@
 
 declare(strict_types=1);
 
-namespace Tests\Filesystem\Util;
+namespace Tests\Filesystem\Stream;
 
 use Omega\Filesystem\Stream\StreamMode;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(StreamMode::class);
+#[CoversClass(StreamMode::class)]
+final class StreamModeTest extends TestCase
+{
+    public function testParsesReadMode(): void
+    {
+        $mode = new StreamMode('r');
+        $this->assertSame('r', $mode->getMode());
+        $this->assertTrue($mode->allowsRead());
+        $this->assertFalse($mode->allowsWrite());
+        $this->assertTrue($mode->allowsExistingFileOpening());
+        $this->assertFalse($mode->allowsNewFileOpening());
+        $this->assertFalse($mode->impliesExistingContentDeletion());
+        $this->assertTrue($mode->impliesPositioningCursorAtTheBeginning());
+        $this->assertFalse($mode->impliesPositioningCursorAtTheEnd());
+        $this->assertFalse($mode->isBinary());
+        $this->assertTrue($mode->isText());
+    }
 
-it('parses read mode', function (): void {
-    $mode = new StreamMode('r');
-    expect($mode->getMode())->toBe('r');
-    expect($mode->allowsRead())->toBeTrue();
-    expect($mode->allowsWrite())->toBeFalse();
-    expect($mode->allowsExistingFileOpening())->toBeTrue();
-    expect($mode->allowsNewFileOpening())->toBeFalse();
-    expect($mode->impliesExistingContentDeletion())->toBeFalse();
-    expect($mode->impliesPositioningCursorAtTheBeginning())->toBeTrue();
-    expect($mode->impliesPositioningCursorAtTheEnd())->toBeFalse();
-    expect($mode->isBinary())->toBeFalse();
-    expect($mode->isText())->toBeTrue();
-});
+    public function testParsesWriteMode(): void
+    {
+        $mode = new StreamMode('w');
+        $this->assertFalse($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->allowsExistingFileOpening());
+        $this->assertTrue($mode->allowsNewFileOpening());
+        $this->assertTrue($mode->impliesExistingContentDeletion());
+        $this->assertTrue($mode->impliesPositioningCursorAtTheBeginning());
+        $this->assertFalse($mode->impliesPositioningCursorAtTheEnd());
+    }
 
-it('parses write mode', function (): void {
-    $mode = new StreamMode('w');
-    expect($mode->allowsRead())->toBeFalse();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->allowsExistingFileOpening())->toBeTrue();
-    expect($mode->allowsNewFileOpening())->toBeTrue();
-    expect($mode->impliesExistingContentDeletion())->toBeTrue();
-    expect($mode->impliesPositioningCursorAtTheBeginning())->toBeTrue();
-    expect($mode->impliesPositioningCursorAtTheEnd())->toBeFalse();
-});
+    public function testParsesAppendMode(): void
+    {
+        $mode = new StreamMode('a');
+        $this->assertFalse($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->allowsExistingFileOpening());
+        $this->assertTrue($mode->allowsNewFileOpening());
+        $this->assertFalse($mode->impliesExistingContentDeletion());
+        $this->assertFalse($mode->impliesPositioningCursorAtTheBeginning());
+        $this->assertTrue($mode->impliesPositioningCursorAtTheEnd());
+    }
 
-it('parses append mode', function (): void {
-    $mode = new StreamMode('a');
-    expect($mode->allowsRead())->toBeFalse();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->allowsExistingFileOpening())->toBeTrue();
-    expect($mode->allowsNewFileOpening())->toBeTrue();
-    expect($mode->impliesExistingContentDeletion())->toBeFalse();
-    expect($mode->impliesPositioningCursorAtTheBeginning())->toBeFalse();
-    expect($mode->impliesPositioningCursorAtTheEnd())->toBeTrue();
-});
+    public function testParsesExclusiveCreateMode(): void
+    {
+        $mode = new StreamMode('x');
+        $this->assertFalse($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertFalse($mode->allowsExistingFileOpening());
+        $this->assertTrue($mode->allowsNewFileOpening());
+        $this->assertFalse($mode->impliesExistingContentDeletion());
+        $this->assertTrue($mode->impliesPositioningCursorAtTheBeginning());
+        $this->assertFalse($mode->impliesPositioningCursorAtTheEnd());
+    }
 
-it('parses exclusive create mode', function (): void {
-    $mode = new StreamMode('x');
-    expect($mode->allowsRead())->toBeFalse();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->allowsExistingFileOpening())->toBeFalse();
-    expect($mode->allowsNewFileOpening())->toBeTrue();
-    expect($mode->impliesExistingContentDeletion())->toBeFalse();
-    expect($mode->impliesPositioningCursorAtTheBeginning())->toBeTrue();
-    expect($mode->impliesPositioningCursorAtTheEnd())->toBeFalse();
-});
+    public function testParsesReadPlusMode(): void
+    {
+        $mode = new StreamMode('r+');
+        $this->assertTrue($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->allowsExistingFileOpening());
+        $this->assertFalse($mode->allowsNewFileOpening());
+        $this->assertFalse($mode->impliesExistingContentDeletion());
+    }
 
-it('parses read-plus mode', function (): void {
-    $mode = new StreamMode('r+');
-    expect($mode->allowsRead())->toBeTrue();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->allowsExistingFileOpening())->toBeTrue();
-    expect($mode->allowsNewFileOpening())->toBeFalse();
-    expect($mode->impliesExistingContentDeletion())->toBeFalse();
-});
+    public function testParsesWritePlusMode(): void
+    {
+        $mode = new StreamMode('w+');
+        $this->assertTrue($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->allowsNewFileOpening());
+        $this->assertTrue($mode->impliesExistingContentDeletion());
+    }
 
-it('parses write-plus mode', function (): void {
-    $mode = new StreamMode('w+');
-    expect($mode->allowsRead())->toBeTrue();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->allowsNewFileOpening())->toBeTrue();
-    expect($mode->impliesExistingContentDeletion())->toBeTrue();
-});
+    public function testParsesAppendPlusMode(): void
+    {
+        $mode = new StreamMode('a+');
+        $this->assertTrue($mode->allowsRead());
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->impliesPositioningCursorAtTheEnd());
+    }
 
-it('parses append-plus mode', function (): void {
-    $mode = new StreamMode('a+');
-    expect($mode->allowsRead())->toBeTrue();
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->impliesPositioningCursorAtTheEnd())->toBeTrue();
-});
+    public function testParsesBinaryReadMode(): void
+    {
+        $mode = new StreamMode('rb');
+        $this->assertSame('rb', $mode->getMode());
+        $this->assertTrue($mode->allowsRead());
+        $this->assertTrue($mode->isBinary());
+        $this->assertFalse($mode->isText());
+    }
 
-it('parses binary read mode', function (): void {
-    $mode = new StreamMode('rb');
-    expect($mode->getMode())->toBe('rb');
-    expect($mode->allowsRead())->toBeTrue();
-    expect($mode->isBinary())->toBeTrue();
-    expect($mode->isText())->toBeFalse();
-});
-
-it('parses binary write mode', function (): void {
-    $mode = new StreamMode('wb');
-    expect($mode->allowsWrite())->toBeTrue();
-    expect($mode->isBinary())->toBeTrue();
-});
+    public function testParsesBinaryWriteMode(): void
+    {
+        $mode = new StreamMode('wb');
+        $this->assertTrue($mode->allowsWrite());
+        $this->assertTrue($mode->isBinary());
+    }
+}

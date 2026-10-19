@@ -1,63 +1,76 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_json_string validation')
-    ->expect(vr()->valid_json_string())
-    ->toEqual('valid_json_string')
-;
+final class ValidJsonStringTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => '{}',
+        'test2' => '{"testing": true}',
+    ];
 
-it('can render invert valid_json_string validation')
-    ->expect(vr()->not()->valid_json_string())
-    ->toEqual('invert_valid_json_string')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'tets1' => '{}}',
+        'tets2' => '{test:true}',
+        'tets3' => '{"test":text}',
+    ];
 
-$correct = [
-    'test1' => '{}',
-    'test2' => '{"testing": true}',
-];
-$incorrect = [
-    'tets1' => '{}}',
-    'tets2' => '{test:true}',
-    'tets3' => '{"test":text}',
-];
+    public function testCanRenderValidJsonStringValidation(): void
+    {
+        $this->assertEquals('valid_json_string', vr()->valid_json_string());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidJsonStringValidation(): void
+    {
+        $this->assertEquals('invert_valid_json_string', vr()->not()->valid_json_string());
+    }
 
-it('can validate valid_json_string with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidJsonStringWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_json_string();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_json_string();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_json_string (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidJsonStringNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_json_string();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_json_string();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidJsonStringWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_json_string with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_json_string();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_json_string();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidJsonStringNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_json_string (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_json_string();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_json_string();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

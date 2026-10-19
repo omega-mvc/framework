@@ -8,13 +8,19 @@ use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Database\Schema\Table\Column;
 use Omega\Database\Schema\Table\Create;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(Column::class)]
-#[CoversClass(Create::class)]
 final class CreateTest extends TestCase
 {
+
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -205,4 +211,6 @@ final class CreateTest extends TestCase
             $schema->__toString()
         );
     }
+
+
 }

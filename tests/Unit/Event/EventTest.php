@@ -7,204 +7,233 @@ namespace Tests\Event;
 use Omega\Event\AbstractEvent;
 use Omega\Event\Event;
 use Omega\Event\Exceptions\InvalidEventArgumentNameException;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
+use UnexpectedValueException;
 
 use function count;
 use function serialize;
 use function unserialize;
 
-covers(AbstractEvent::class);
-covers(Event::class);
+#[CoversClass(AbstractEvent::class)]
+#[CoversClass(Event::class)]
+final class EventTest extends TestCase
+{
+    public function testReturnsTheEventName(): void
+    {
+        $event = new Event('order.created');
 
-it('returns the event name', function (): void {
-    $event = new Event('order.created');
-
-    expect($event->getName())->toBe('order.created');
-});
-
-it('returns an argument with its value', function (): void {
-    $event = new Event('order.created', ['orderId' => 42]);
-
-    expect($event->getArgument('orderId'))->toBe(42);
-});
-
-it('returns the default when an argument is missing', function (): void {
-    $event = new Event('order.created');
-
-    expect($event->getArgument('orderId', 0))->toBe(0);
-    expect($event->getArgument('orderId'))->toBeNull();
-});
-
-it('checks whether an argument exists', function (): void {
-    $event = new Event('order.created', ['orderId' => 42]);
-
-    expect($event->hasArgument('orderId'))->toBeTrue();
-    expect($event->hasArgument('missing'))->toBeFalse();
-});
-
-it('returns all arguments', function (): void {
-    $event = new Event('order.created', ['orderId' => 42]);
-
-    expect($event->getArguments())->toEqual(['orderId' => 42]);
-});
-
-it('keeps an existing argument when adding again', function (): void {
-    $event = (new Event('order.created'))->addArgument('orderId', 1);
-
-    $event->addArgument('orderId', 2);
-
-    expect($event->getArgument('orderId'))->toBe(1);
-});
-
-it('overrides an argument when setting again', function (): void {
-    $event = (new Event('order.created'))->setArgument('orderId', 1);
-
-    $event->setArgument('orderId', 2);
-
-    expect($event->getArgument('orderId'))->toBe(2);
-});
-
-it('removes an argument returning its previous value', function (): void {
-    $event = new Event('order.created', ['orderId' => 42, 'keep' => true]);
-
-    expect($event->removeArgument('orderId'))->toBe(42);
-    expect($event->hasArgument('orderId'))->toBeFalse();
-    expect($event->removeArgument('orderId'))->toBeNull();
-    expect($event->getArgument('keep'))->toBeTrue();
-});
-
-it('clears all arguments returning the previous set', function (): void {
-    $event = new Event('order.created', ['orderId' => 42]);
-
-    expect($event->clearArguments())->toEqual(['orderId' => 42]);
-    expect($event->getArguments())->toBeEmpty();
-});
-
-it('counts its arguments', function (): void {
-    $event = new Event('order.created', ['orderId' => 42, 'customer' => 'morpheus']);
-
-    expect(count($event))->toBe(2);
-});
-
-it('exposes arguments through array access', function (): void {
-    $event = new Event('order.created');
-
-    $event['orderId'] = 42;
-
-    expect(isset($event['orderId']))->toBeTrue();
-    expect($event['orderId'])->toBe(42);
-
-    unset($event['orderId']);
-
-    expect(isset($event['orderId']))->toBeFalse();
-    expect($event['orderId'])->toBeNull();
-});
-
-it('rejects a null argument name in array access', function (): void {
-    $event = new Event('order.created');
-
-    expect(fn () => $event->offsetSet(null, 42))->toThrow(InvalidEventArgumentNameException::class);
-});
-
-it('rejects an integer argument name in array access', function (): void {
-    $event = new Event('order.created');
-
-    expect(fn () => $event->offsetSet(1, 42))->toThrow(InvalidEventArgumentNameException::class);
-});
-
-it('returns null when reading an integer offset', function (): void {
-    $event = new Event('order.created', ['orderId' => 42]);
-
-    expect($event->offsetGet(0))->toBeNull();
-    expect($event->offsetExists(0))->toBeFalse();
-});
-
-it('controls propagation', function (): void {
-    $event = new Event('order.created');
-
-    expect($event->isStopped())->toBeFalse();
-
-    $event->stopPropagation();
-
-    expect($event->isStopped())->toBeTrue();
-});
-
-it('survives a serialization roundtrip', function (): void {
-    $event    = new Event('order.created', ['orderId' => 42]);
-    $restored = unserialize(serialize($event));
-
-    expect($restored)->toBeInstanceOf(Event::class);
-
-    if (!$restored instanceof Event) {
-        throw new \UnexpectedValueException('Failed to unserialize the event.');
+        $this->assertSame('order.created', $event->getName());
     }
 
-    expect($restored->getName())->toBe('order.created');
-    expect($restored->getArguments())->toEqual(['orderId' => 42]);
-    expect($restored->isStopped())->toBeFalse();
-});
+    public function testReturnsAnArgumentWithItsValue(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42]);
 
-it('restores the stopped flag after serialization', function (): void {
-    $event = new Event('order.created');
-    $event->stopPropagation();
-
-    $restored = unserialize(serialize($event));
-
-    expect($restored)->toBeInstanceOf(Event::class);
-
-    if (!$restored instanceof Event) {
-        throw new \UnexpectedValueException('Failed to unserialize the event.');
+        $this->assertSame(42, $event->getArgument('orderId'));
     }
 
-    expect($restored->isStopped())->toBeTrue();
-});
+    public function testReturnsTheDefaultWhenAnArgumentIsMissing(): void
+    {
+        $event = new Event('order.created');
 
-it('supports the legacy serialize roundtrip', function (): void {
-    $event    = new Event('order.created', ['orderId' => 42]);
-    $restored = new Event('temporary');
-    $restored->unserialize($event->serialize());
+        $this->assertSame(0, $event->getArgument('orderId', 0));
+        $this->assertNull($event->getArgument('orderId'));
+    }
 
-    expect($restored->getName())->toBe('order.created');
-    expect($restored->getArguments())->toEqual(['orderId' => 42]);
-});
+    public function testChecksWhetherAnArgumentExists(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42]);
 
-it('rejects a non-array payload', function (): void {
-    $event = new Event('temporary');
+        $this->assertTrue($event->hasArgument('orderId'));
+        $this->assertFalse($event->hasArgument('missing'));
+    }
 
-    expect(fn () => $event->unserialize(serialize(42)))->toThrow(\UnexpectedValueException::class);
-});
+    public function testReturnsAllArguments(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42]);
 
-it('rejects a malformed serialized event', function (): void {
-    $event = new Event('temporary');
+        $this->assertEquals(['orderId' => 42], $event->getArguments());
+    }
 
-    expect(fn () => $event->unserialize(serialize(['name' => 5, 'arguments' => [], 'stopped' => false])))
-        ->toThrow(\UnexpectedValueException::class);
-});
+    public function testKeepsAnExistingArgumentWhenAddingAgain(): void
+    {
+        $event = (new Event('order.created'))->addArgument('orderId', 1);
 
-it('rejects a non-string argument key during unserialization', function (): void {
-    $event = new Event('temporary');
+        $event->addArgument('orderId', 2);
 
-    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => [1 => 'value'], 'stopped' => false]))
-        ->toThrow(\UnexpectedValueException::class);
-});
+        $this->assertSame(1, $event->getArgument('orderId'));
+    }
 
-it('rejects non-array arguments during unserialization', function (): void {
-    $event = new Event('temporary');
+    public function testOverridesAnArgumentWhenSettingAgain(): void
+    {
+        $event = (new Event('order.created'))->setArgument('orderId', 1);
 
-    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => 'invalid', 'stopped' => false]))
-        ->toThrow(\UnexpectedValueException::class);
-});
+        $event->setArgument('orderId', 2);
 
-it('rejects a non-boolean stopped flag during unserialization', function (): void {
-    $event = new Event('temporary');
+        $this->assertSame(2, $event->getArgument('orderId'));
+    }
 
-    expect(fn () => $event->__unserialize(['name' => 'order.created', 'arguments' => [], 'stopped' => 1]))
-        ->toThrow(\UnexpectedValueException::class);
-});
+    public function testRemovesAnArgumentReturningItsPreviousValue(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42, 'keep' => true]);
 
-it('ignores non-string offsets when unsetting arguments', function (): void {
-    $event = new Event('temporary', ['a' => 1]);
+        $this->assertSame(42, $event->removeArgument('orderId'));
+        $this->assertFalse($event->hasArgument('orderId'));
+        $this->assertNull($event->removeArgument('orderId'));
+        $this->assertTrue($event->getArgument('keep'));
+    }
 
-    unset($event[5]);
+    public function testClearsAllArgumentsReturningThePreviousSet(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42]);
 
-    expect($event->hasArgument('a'))->toBeTrue();
-});
+        $this->assertEquals(['orderId' => 42], $event->clearArguments());
+        $this->assertEmpty($event->getArguments());
+    }
+
+    public function testCountsItsArguments(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42, 'customer' => 'morpheus']);
+
+        $this->assertSame(2, count($event));
+    }
+
+    public function testExposesArgumentsThroughArrayAccess(): void
+    {
+        $event = new Event('order.created');
+
+        $event['orderId'] = 42;
+
+        $this->assertTrue(isset($event['orderId']));
+        $this->assertSame(42, $event['orderId']);
+
+        unset($event['orderId']);
+
+        $this->assertFalse(isset($event['orderId']));
+        $this->assertNull($event['orderId']);
+    }
+
+    public function testRejectsANullArgumentNameInArrayAccess(): void
+    {
+        $event = new Event('order.created');
+
+        $this->expectException(InvalidEventArgumentNameException::class);
+
+        $event->offsetSet(null, 42);
+    }
+
+    public function testRejectsAnIntegerArgumentNameInArrayAccess(): void
+    {
+        $event = new Event('order.created');
+
+        $this->expectException(InvalidEventArgumentNameException::class);
+
+        $event->offsetSet(1, 42);
+    }
+
+    public function testReturnsNullWhenReadingAnIntegerOffset(): void
+    {
+        $event = new Event('order.created', ['orderId' => 42]);
+
+        $this->assertNull($event->offsetGet(0));
+        $this->assertFalse($event->offsetExists(0));
+    }
+
+    public function testControlsPropagation(): void
+    {
+        $event = new Event('order.created');
+
+        $this->assertFalse($event->isStopped());
+
+        $event->stopPropagation();
+
+        $this->assertTrue($event->isStopped());
+    }
+
+    public function testSurvivesASerializationRoundtrip(): void
+    {
+        $event    = new Event('order.created', ['orderId' => 42]);
+        $restored = unserialize(serialize($event));
+
+        $this->assertInstanceOf(Event::class, $restored);
+        $this->assertSame('order.created', $restored->getName());
+        $this->assertEquals(['orderId' => 42], $restored->getArguments());
+        $this->assertFalse($restored->isStopped());
+    }
+
+    public function testRestoresTheStoppedFlagAfterSerialization(): void
+    {
+        $event = new Event('order.created');
+        $event->stopPropagation();
+
+        $restored = unserialize(serialize($event));
+
+        $this->assertInstanceOf(Event::class, $restored);
+        $this->assertTrue($restored->isStopped());
+    }
+
+    public function testSupportsTheLegacySerializeRoundtrip(): void
+    {
+        $event    = new Event('order.created', ['orderId' => 42]);
+        $restored = new Event('temporary');
+        $restored->unserialize($event->serialize());
+
+        $this->assertSame('order.created', $restored->getName());
+        $this->assertEquals(['orderId' => 42], $restored->getArguments());
+    }
+
+    public function testRejectsANonArrayPayload(): void
+    {
+        $event = new Event('temporary');
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $event->unserialize(serialize(42));
+    }
+
+    public function testRejectsAMalformedSerializedEvent(): void
+    {
+        $event = new Event('temporary');
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $event->unserialize(serialize(['name' => 5, 'arguments' => [], 'stopped' => false]));
+    }
+
+    public function testRejectsANonStringArgumentKeyDuringUnserialization(): void
+    {
+        $event = new Event('temporary');
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $event->__unserialize(['name' => 'order.created', 'arguments' => [1 => 'value'], 'stopped' => false]);
+    }
+
+    public function testRejectsNonArrayArgumentsDuringUnserialization(): void
+    {
+        $event = new Event('temporary');
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $event->__unserialize(['name' => 'order.created', 'arguments' => 'invalid', 'stopped' => false]);
+    }
+
+    public function testRejectsANonBooleanStoppedFlagDuringUnserialization(): void
+    {
+        $event = new Event('temporary');
+
+        $this->expectException(UnexpectedValueException::class);
+
+        $event->__unserialize(['name' => 'order.created', 'arguments' => [], 'stopped' => 1]);
+    }
+
+    public function testIgnoresNonStringOffsetsWhenUnsettingArguments(): void
+    {
+        $event = new Event('temporary', ['a' => 1]);
+
+        unset($event[5]);
+
+        $this->assertTrue($event->hasArgument('a'));
+    }
+}

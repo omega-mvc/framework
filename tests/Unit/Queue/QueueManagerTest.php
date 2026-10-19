@@ -1,14 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Queue Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Queue;
@@ -16,137 +7,150 @@ namespace Tests\Queue;
 use Omega\Queue\Exception\UnknownDriverException;
 use Omega\Queue\Job;
 use Omega\Queue\QueueManager;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
 use Tests\Queue\Support\FakeQueueAdapter;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(QueueManager::class)]
+#[CoversClass(UnknownDriverException::class)]
+final class QueueManagerTest extends TestCase
+{
+    public function testReturnsTheDriverRegisteredAsDefault(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('default', $default);
 
-covers(QueueManager::class);
-covers(UnknownDriverException::class);
+        $this->assertSame($default, $manager->getDriver());
+    }
 
-it('returns the driver registered as default', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('default', $default);
+    public function testReturnsADriverRegisteredByName(): void
+    {
+        $default = new FakeQueueAdapter();
+        $mail    = new FakeQueueAdapter();
+        $manager = new QueueManager('default', $default)->setDriver('mail', $mail);
 
-    expect($manager->getDriver())->toBe($default);
-});
+        $this->assertSame($mail, $manager->getDriver('mail'));
+    }
 
-it('returns a driver registered by name', function (): void {
-    $default = new FakeQueueAdapter();
-    $mail    = new FakeQueueAdapter();
-    $manager = new QueueManager('default', $default)->setDriver('mail', $mail);
+    public function testThrowsWhenTheRequestedDriverIsNotRegistered(): void
+    {
+        $manager = new QueueManager('default', new FakeQueueAdapter());
 
-    expect($manager->getDriver('mail'))->toBe($mail);
-});
+        $this->expectException(UnknownDriverException::class);
 
-it('throws when the requested driver is not registered', function (): void {
-    $manager = new QueueManager('default', new FakeQueueAdapter());
+        $manager->getDriver('unknown');
+    }
 
-    expect(
-        fn () => $manager->getDriver('unknown'),
-    )->toThrow(UnknownDriverException::class);
-});
+    public function testExposesTheRegisteredDriverNames(): void
+    {
+        $manager = new QueueManager('default', new FakeQueueAdapter())
+            ->setDriver('mail', new FakeQueueAdapter());
 
-it('exposes the registered driver names', function (): void {
-    $manager = new QueueManager('default', new FakeQueueAdapter())
-        ->setDriver('mail', new FakeQueueAdapter());
+        $this->assertContains('default', $manager->getDriverNames());
+        $this->assertContains('mail', $manager->getDriverNames());
+    }
 
-    expect($manager->getDriverNames())->toContain('default');
-    expect($manager->getDriverNames())->toContain('mail');
-});
+    public function testReturnsTheDefaultDriverNameConfiguredInTheConstructor(): void
+    {
+        $manager = new QueueManager('primary', new FakeQueueAdapter());
 
-it('returns the default driver name configured in the constructor', function (): void {
-    $manager = new QueueManager('primary', new FakeQueueAdapter());
+        $this->assertSame('primary', $manager->getDefaultDriverName());
+    }
 
-    expect($manager->getDefaultDriverName())->toBe('primary');
-});
+    public function testResolvesClosureDriversOnceAndCachesTheResolvedInstance(): void
+    {
+        $resolved = 0;
+        $manager  = new QueueManager('default', new FakeQueueAdapter());
 
-it('resolves closure drivers once and caches the resolved instance', function (): void {
-    $resolved = 0;
-    $manager  = new QueueManager('default', new FakeQueueAdapter());
+        $manager->setDriver('lazy', static function () use (&$resolved): FakeQueueAdapter {
+            $resolved++;
 
-    $manager->setDriver('lazy', static function () use (&$resolved): FakeQueueAdapter {
-        $resolved++;
+            return new FakeQueueAdapter();
+        });
 
-        return new FakeQueueAdapter();
-    });
+        $first  = $manager->getDriver('lazy');
+        $second = $manager->getDriver('lazy');
 
-    $first  = $manager->getDriver('lazy');
-    $second = $manager->getDriver('lazy');
+        $this->assertSame(1, $resolved);
+        $this->assertSame($first, $second);
+    }
 
-    expect($resolved)->toBe(1);
-    expect($first)->toBe($second);
-});
+    public function testDelegatesPushWithAnExplicitQueueAndDelay(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('default', $default);
 
-it('delegates push with an explicit queue and delay', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('default', $default);
+        $job = $manager->push(static fn () => null, ['a' => 1], 'mail', 5);
 
-    $job = $manager->push(static fn () => null, ['a' => 1], 'mail', 5);
+        $this->assertSame(1, $job->getId());
+        $this->assertSame('mail', $job->getQueue());
+        $this->assertCount(1, $default->getPushed());
+        $this->assertSame('mail', $default->getPushed()[0]['queue']);
+        $this->assertSame(5, $default->getPushed()[0]['delay']);
+        $this->assertSame(['a' => 1], $default->getPushed()[0]['data']);
+    }
 
-    expect($job->getId())->toBe(1);
-    expect($job->getQueue())->toBe('mail');
-    expect($default->getPushed())->toHaveCount(1);
-    expect($default->getPushed()[0]['queue'])->toBe('mail');
-    expect($default->getPushed()[0]['delay'])->toBe(5);
-    expect($default->getPushed()[0]['data'])->toBe(['a' => 1]);
-});
+    public function testDelegatesPushUsingTheDefaultQueueWhenNoneIsGiven(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('primary', $default);
 
-it('delegates push using the default queue when none is given', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('primary', $default);
+        $manager->push(static fn () => null);
 
-    $manager->push(static fn () => null);
+        $this->assertCount(1, $default->getPushed());
+        $this->assertSame('primary', $default->getPushed()[0]['queue']);
+        $this->assertSame(0, $default->getPushed()[0]['delay']);
+    }
 
-    expect($default->getPushed())->toHaveCount(1);
-    expect($default->getPushed()[0]['queue'])->toBe('primary');
-    expect($default->getPushed()[0]['delay'])->toBe(0);
-});
+    public function testDelegatesShiftToTheDefaultDriver(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('default', $default);
+        $pushed  = $default->push(static fn () => null);
 
-it('delegates shift to the default driver', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('default', $default);
-    $pushed  = $default->push(static fn () => null);
+        $this->assertSame($pushed, $manager->shift());
+        $this->assertNull($manager->shift());
+    }
 
-    expect($manager->shift())->toBe($pushed);
-    expect($manager->shift())->toBeNull();
-});
+    public function testDelegatesSizeUsingTheDefaultQueueWhenNoneIsGiven(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('primary', $default);
 
-it('delegates size using the default queue when none is given', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('primary', $default);
+        $default->push(static fn () => null);
+        $default->push(static fn () => null);
 
-    $default->push(static fn () => null);
-    $default->push(static fn () => null);
+        $this->assertSame(2, $manager->size());
+        $this->assertSame(2, $manager->size('mail'));
+        $this->assertSame(['primary', 'mail'], $default->getSizeQueues());
+    }
 
-    expect($manager->size())->toBe(2);
-    expect($manager->size('mail'))->toBe(2);
-    expect($default->getSizeQueues())->toBe(['primary', 'mail']);
-});
+    public function testDelegatesDeleteReleaseAndFailedToTheDefaultDriver(): void
+    {
+        $default = new FakeQueueAdapter();
+        $manager = new QueueManager('default', $default);
+        $job     = new Job(
+            id: 1,
+            queue: 'default',
+            payload: 'payload',
+            attempts: 0,
+            reservedAt: null,
+            availableAt: null,
+            createdAt: '2026-01-01 00:00:00',
+        );
 
-it('delegates delete, release and failed to the default driver', function (): void {
-    $default = new FakeQueueAdapter();
-    $manager = new QueueManager('default', $default);
-    $job     = new Job(
-        id: 1,
-        queue: 'default',
-        payload: 'payload',
-        attempts: 0,
-        reservedAt: null,
-        availableAt: null,
-        createdAt: '2026-01-01 00:00:00',
-    );
+        $this->assertTrue($manager->delete($job));
+        $this->assertCount(1, $default->getDeletedJobs());
+        $this->assertSame($job, $default->getDeletedJobs()[0]);
 
-    expect($manager->delete($job))->toBeTrue();
-    expect($default->getDeletedJobs())->toHaveCount(1);
-    expect($default->getDeletedJobs()[0])->toBe($job);
+        $this->assertTrue($manager->release($job));
+        $this->assertCount(1, $default->getReleasedJobs());
+        $this->assertSame($job, $default->getReleasedJobs()[0]);
 
-    expect($manager->release($job))->toBeTrue();
-    expect($default->getReleasedJobs())->toHaveCount(1);
-    expect($default->getReleasedJobs()[0])->toBe($job);
+        $manager->failed($job, new RuntimeException('boom'));
 
-    $manager->failed($job, new RuntimeException('boom'));
-
-    expect($default->getFailedJobs())->toHaveCount(1);
-    expect($default->getFailedJobs()[0])->toBe($job);
-});
+        $this->assertCount(1, $default->getFailedJobs());
+        $this->assertSame($job, $default->getFailedJobs()[0]);
+    }
+}

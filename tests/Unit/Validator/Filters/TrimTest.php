@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander trim', function () {
-    expect(fr()->trim())
-        ->toEqual('trim')
-    ;
-});
+final class TrimTest extends TestCase
+{
+    public function testCanRanderTrim(): void
+    {
+        $this->assertEquals('trim', fr()->trim());
+    }
 
-it('can filter trim', function () {
-    $fr = new Omega\Validator\Validator(['field' => '  nomore space  ']);
+    public function testCanFilterTrim(): void
+    {
+        $fr = new Validator(['field' => '  nomore space  ']);
 
-    $fr->filter('field')->trim();
+        $fr->filter('field')->trim();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'nomore space'])
-    ;
-});
+        $this->assertEquals(['field' => 'nomore space'], $fr->filterOut());
+    }
+}

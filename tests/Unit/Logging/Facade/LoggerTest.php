@@ -10,7 +10,9 @@ use Omega\Facade\AbstractFacade;
 use Omega\Facade\Exceptions\FacadeObjectNotSetException;
 use Omega\Logging\Facade\Logger;
 use Omega\Logging\LoggingServiceProvider;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Log\LogLevel;
+use Tests\TestCase;
 
 use function array_diff;
 use function array_map;
@@ -24,80 +26,98 @@ use function uniqid;
 use function unlink;
 use function Omega\Application\slash;
 
-covers(Logger::class);
+#[CoversClass(Logger::class)]
+final class LoggerTest extends TestCase
+{
+    private string $tempDir;
 
-beforeEach(function (): void {
-    $this->tempDir = sys_get_temp_dir() . '/omega-log-facade-' . uniqid();
-    mkdir($this->tempDir, 0777, true);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-afterEach(function (): void {
-    AbstractFacade::setFacadeBase(null);
-    AbstractFacade::flushInstance();
-
-    if (isset($this->app)) {
-        $this->app->flush();
+        $this->tempDir = sys_get_temp_dir() . '/omega-log-facade-' . uniqid();
+        mkdir($this->tempDir, 0777, true);
     }
 
-    removeDirectory($this->tempDir);
-});
+    protected function tearDown(): void
+    {
+        AbstractFacade::setFacadeBase(null);
+        AbstractFacade::flushInstance();
 
-it('returns the facade accessor', function (): void {
-    expect(Logger::getFacadeAccessor())->toBe('logging');
-});
+        if (isset($this->app)) {
+            $this->app->flush();
+        }
 
-it('forwards static calls to the logging manager', function (): void {
-    $app = makeApp($this->tempDir);
-    $this->app = $app;
-    AbstractFacade::setFacadeBase($app);
+        $this->removeDirectory($this->tempDir);
 
-    Logger::info('hello facade');
+        parent::tearDown();
+    }
 
-    expect(file_get_contents($this->tempDir . '/omega.log'))->toContain('hello facade');
-});
+    public function testReturnsTheFacadeAccessor(): void
+    {
+        $this->assertSame('logging', Logger::getFacadeAccessor());
+    }
 
-it('throws an exception for a static call without an application', function (): void {
-    Logger::info('no application');
-})->throws(FacadeObjectNotSetException::class);
+    public function testForwardsStaticCallsToTheLoggingManager(): void
+    {
+        $app = $this->makeApp($this->tempDir);
+        $this->app = $app;
+        AbstractFacade::setFacadeBase($app);
 
-function makeApp(string $tempDir): Application
-{
-    $app = new Application(slash(__DIR__ . '/../fixtures/support/'));
-    $app->set('config', static fn () => new ConfigRepository([
-        'logging' => [
-            'default' => 'stream',
-            'stream'  => [
-                'type'    => 'stream',
-                'path'    => $tempDir . '/omega.log',
-                'minimum' => LogLevel::DEBUG,
-                'options' => ['appendContext' => true],
+        Logger::info('hello facade');
+
+        $this->assertStringContainsString(
+            'hello facade',
+            (string) file_get_contents($this->tempDir . '/omega.log')
+        );
+    }
+
+    public function testThrowsAnExceptionForAStaticCallWithoutAnApplication(): void
+    {
+        $this->expectException(FacadeObjectNotSetException::class);
+
+        Logger::info('no application');
+    }
+
+    private function makeApp(string $tempDir): Application
+    {
+        $app = new Application(slash(__DIR__ . '/../fixtures/support/'));
+        $app->set('config', static fn () => new ConfigRepository([
+            'logging' => [
+                'default' => 'stream',
+                'stream'  => [
+                    'type'    => 'stream',
+                    'path'    => $tempDir . '/omega.log',
+                    'minimum' => LogLevel::DEBUG,
+                    'options' => ['appendContext' => true],
+                ],
             ],
-        ],
-    ]));
+        ]));
 
-    (new LoggingServiceProvider($app))->boot();
+        (new LoggingServiceProvider($app))->boot();
 
-    return $app;
-}
-
-function removeDirectory(string $dir): void
-{
-    if (!is_dir($dir)) {
-        return;
+        return $app;
     }
 
-    array_map(
-        function (string $entry) use ($dir): void {
-            $path = $dir . slash(path: '/') . $entry;
+    private function removeDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
 
-            if (is_dir($path)) {
-                removeDirectory($path);
-            } else {
-                @unlink($path);
-            }
-        },
-        array_diff(scandir($dir), ['.', '..'])
-    );
+        array_map(
+            function (string $entry) use ($dir): void {
+                $path = $dir . slash(path: '/') . $entry;
 
-    @rmdir($dir);
+                if (is_dir($path)) {
+                    $this->removeDirectory($path);
+                } else {
+                    @unlink($path);
+                }
+            },
+            array_diff(scandir($dir), ['.', '..'])
+        );
+
+        @rmdir($dir);
+    }
 }

@@ -1,77 +1,76 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session;
 
 use Omega\Session\SessionBag;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(SessionBag::class)]
+final class SessionBagTest extends TestCase
+{
+    public function testReturnsTheBagName(): void
+    {
+        $data = [];
+        $bag  = new SessionBag('cart', $data);
 
-covers(SessionBag::class);
+        $this->assertSame('cart', $bag->getName());
+    }
 
-it('returns the bag name', function (): void {
-    $data = [];
-    $bag  = new SessionBag('cart', $data);
+    public function testStoresReadsAndChecksValuesWithADefault(): void
+    {
+        $data = [];
+        $bag  = new SessionBag('cart', $data);
 
-    expect($bag->getName())->toBe('cart');
-});
+        $this->assertFalse($bag->has('item'));
 
-it('stores, reads and checks values with a default', function (): void {
-    $data = [];
-    $bag  = new SessionBag('cart', $data);
+        $bag->put('item', 'sku-1');
 
-    expect($bag->has('item'))->toBeFalse();
+        $this->assertTrue($bag->has('item'));
+        $this->assertSame('sku-1', $bag->get('item'));
+        $this->assertSame('fallback', $bag->get('missing', 'fallback'));
+    }
 
-    $bag->put('item', 'sku-1');
+    public function testMutatesTheReferencedDataArray(): void
+    {
+        $data = [];
+        $bag  = new SessionBag('cart', $data);
 
-    expect($bag->has('item'))->toBeTrue();
-    expect($bag->get('item'))->toBe('sku-1');
-    expect($bag->get('missing', 'fallback'))->toBe('fallback');
-});
+        $bag->put('item', 'sku-1');
 
-it('mutates the referenced data array', function (): void {
-    $data = [];
-    $bag  = new SessionBag('cart', $data);
+        $this->assertEquals(['item' => 'sku-1'], $data);
+    }
 
-    $bag->put('item', 'sku-1');
+    public function testForgetsAValue(): void
+    {
+        $data = ['item' => 'sku-1', 'qty' => 2];
+        $bag  = new SessionBag('cart', $data);
 
-    expect($data)->toEqual(['item' => 'sku-1']);
-});
+        $bag->forget('item');
 
-it('forgets a value', function (): void {
-    $data = ['item' => 'sku-1', 'qty' => 2];
-    $bag  = new SessionBag('cart', $data);
+        $this->assertFalse($bag->has('item'));
+        $this->assertTrue($bag->has('qty'));
+        $this->assertEquals(['qty' => 2], $data);
+    }
 
-    $bag->forget('item');
+    public function testFlushesAllValues(): void
+    {
+        $data = ['item' => 'sku-1'];
+        $bag  = new SessionBag('cart', $data);
 
-    expect($bag->has('item'))->toBeFalse();
-    expect($bag->has('qty'))->toBeTrue();
-    expect($data)->toEqual(['qty' => 2]);
-});
+        $bag->flush();
 
-it('flushes all values', function (): void {
-    $data = ['item' => 'sku-1'];
-    $bag  = new SessionBag('cart', $data);
+        $this->assertEmpty($bag->all());
+        $this->assertEmpty($data);
+    }
 
-    $bag->flush();
+    public function testReturnsAllValues(): void
+    {
+        $data = ['a' => 1, 'b' => 2];
+        $bag  = new SessionBag('cart', $data);
 
-    expect($bag->all())->toBeEmpty();
-    expect($data)->toBeEmpty();
-});
-
-it('returns all values', function (): void {
-    $data = ['a' => 1, 'b' => 2];
-    $bag  = new SessionBag('cart', $data);
-
-    expect($bag->all())->toEqual(['a' => 1, 'b' => 2]);
-});
+        $this->assertEquals(['a' => 1, 'b' => 2], $bag->all());
+    }
+}

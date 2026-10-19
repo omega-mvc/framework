@@ -1,26 +1,36 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
+
 use Omega\Validator\Rule\Valid;
+use ReflectionProperty;
+use Tests\TestCase;
 
 use function Omega\Validator\vr;
 
-it('can render end_if validation')
-    ->expect(vr()->if(fn (): bool => true)->end_if()->required())
-    ->toEqual('required')
-;
+final class EndIfTest extends TestCase
+{
+    public function testCanRenderEndIfValidation(): void
+    {
+        $this->assertEquals('required', vr()->if(fn (): bool => true)->end_if()->required());
+    }
 
-it('can render both if and end_if validation')
-    ->expect(vr()->not()->if(fn (): bool => false)->end_if()->required())
-    ->toEqual('invert_required')
-;
+    public function testCanRenderBothIfAndEndIfValidation(): void
+    {
+        $this->assertEquals('invert_required', vr()->not()->if(fn (): bool => false)->end_if()->required());
+    }
 
-it('can directly append the end_if rule')
-    ->expect((new Valid())->end_if()->getValidation())
-    ->toBe('')
-;
+    public function testCanDirectlyAppendTheEndIfRule(): void
+    {
+        $this->assertEquals('', (new Valid())->end_if()->getValidation());
+    }
 
-it('appends the end_if marker to the validation rules array')
-    ->expect(fn () => (new ReflectionProperty(Valid::class, 'validation_rule'))
-        ->getValue((new Valid())->end_if()))
-    ->toBe(['end_if'])
-;
+    public function testAppendsTheEndIfMarkerToTheValidationRulesArray(): void
+    {
+        $property = new ReflectionProperty(Valid::class, 'validation_rule');
+
+        $this->assertSame(['end_if'], $property->getValue((new Valid())->end_if()));
+    }
+}

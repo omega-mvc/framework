@@ -8,8 +8,6 @@ use PHPUnit\Framework\Attributes\CoversFunction;
 use Tests\TestCase;
 
 use function Omega\Collection\data_get;
-
-#[CoversFunction('Omega\Collection\data_get')]
 final class DataGetTest extends TestCase
 {
     /** @var array<string, mixed> */

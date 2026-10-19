@@ -1,64 +1,75 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render street_address validation')
-    ->expect(vr()->street_address())
-    ->toEqual('street_address')
-;
+final class StreetAddressTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test'  => '6 Avondans Road',
+        'test2' => 'Calle Mediterráneo 2',
+    ];
 
-it('can render invert street_address validation')
-    ->expect(vr()->not()->street_address())
-    ->toEqual('invert_street_address')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test'  => 'Avondans Road',
+        'test2' => 'text',
+    ];
 
-// provider
-$correct = [
-    'test'  => '6 Avondans Road',
-    'test2' => 'Calle Mediterráneo 2',
-];
+    public function testCanRenderStreetAddressValidation(): void
+    {
+        $this->assertEquals('street_address', vr()->street_address());
+    }
 
-$incorrect = [
-    'test'  => 'Avondans Road',
-    'test2' => 'text',
-];
+    public function testCanRenderInvertStreetAddressValidation(): void
+    {
+        $this->assertEquals('invert_street_address', vr()->not()->street_address());
+    }
 
-// validate with correct input field
+    public function testCanValidateStreetAddressWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-it('can validate street_address with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->street_address();
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->street_address();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateStreetAddressNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-it('can validate street_address (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->street_address();
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->street_address();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateStreetAddressWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-// validate with incorrect input field
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->street_address();
 
-it('can validate street_address with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertFalse($val->isValid());
+    }
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->street_address();
+    public function testCanValidateStreetAddressNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->street_address();
 
-it('can validate street_address (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->street_address();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

@@ -1,108 +1,128 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Feature\Validator;
+
+use LogicException;
 use Omega\Validator\Rule\ValidPool;
 use Omega\Validator\Validator;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('validate using fields and validation', function () {
-    $input = [
-        'id'         => 1,
-        'user'       => 'teguh',
-        'name'       => 'teguh agus',
-        'favorite'   => ['manggo', 'durian', 'start fruite'],
-    ];
-    $val = new Validator($input);
+#[CoversClass(Validator::class)]
+final class ValidationTest extends TestCase
+{
+    public function testValidateUsingFieldsAndValidation(): void
+    {
+        $input = [
+            'id'       => 1,
+            'user'     => 'teguh',
+            'name'     => 'teguh agus',
+            'favorite' => ['manggo', 'durian', 'start fruite'],
+        ];
+        $val = new Validator($input);
 
-    $val->id->required()->integer();
-    $val->field('user')->required()->min_len(5);
-    $val('name')->required()->valid_name();
+        $val->id->required()->integer();
+        $val->field('user')->required()->min_len(5);
+        $val('name')->required()->valid_name();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('run validation condtion with valid condition', function () {
-    $input = [
-        'id'         => 1,
-        'user'       => 'teguh',
-        'name'       => 'teguh agus',
-        'favorite'   => ['manggo', 'durian', 'start fruite'],
-    ];
-    $val = new Validator($input);
+    public function testRunValidationConditionWithValidCondition(): void
+    {
+        $input = [
+            'id'       => 1,
+            'user'     => 'teguh',
+            'name'     => 'teguh agus',
+            'favorite' => ['manggo', 'durian', 'start fruite'],
+        ];
+        $val = new Validator($input);
 
-    $val->id->required()->integer();
-    $val->field('user')->required()->min_len(5);
-    $val('name')->required()->valid_name();
+        $val->id->required()->integer();
+        $val->field('user')->required()->min_len(5);
+        $val('name')->required()->valid_name();
 
-    $val->ifValid(function () use ($val) {
-        expect($val->isValid())->toBeTrue();
-    })->else(function ($err) {
-        // its mean have no error
-        expect($err)->toHaveCount(0);
-    });
-});
+        $val->ifValid(function () use ($val): void {
+            $this->assertTrue($val->isValid());
+        })->else(function (array $err): void {
+            // its mean have no error
+            $this->assertCount(0, $err);
+        });
+    }
 
-it('run validation condtion with valid failed condition', function () {
-    $input = [
-        'id'         => null,
-        'user'       => 'tgh',
-        'name'       => 'teguh agus',
-        'favorite'   => ['manggo', 'durian', 'start fruite'],
-    ];
-    $val = new Validator($input);
+    public function testRunValidationConditionWithValidFailedCondition(): void
+    {
+        $input = [
+            'id'       => null,
+            'user'     => 'tgh',
+            'name'     => 'teguh agus',
+            'favorite' => ['manggo', 'durian', 'start fruite'],
+        ];
+        $val = new Validator($input);
 
-    $val->id->required()->integer();
-    $val->field('user')->required()->min_len(5);
-    $val('name')->required()->valid_name();
+        $val->id->required()->integer();
+        $val->field('user')->required()->min_len(5);
+        $val('name')->required()->valid_name();
 
-    $val->ifValid(function () {
-        // skip, invalid validation
-        throw new \LogicException('This branch should never run for invalid input.');
-    })->else(function ($err) use ($val) {
-        expect($val->isValid())->toBeFalse();
-    });
-});
+        $val->ifValid(function (): void {
+            // skip, invalid validation
+            throw new LogicException('This branch should never run for invalid input.');
+        })->else(function (array $err) use ($val): void {
+            $this->assertFalse($val->isValid());
+        });
+    }
 
-it('can validate nesting array', function () {
-    $test = new Validator([
-        'name' => 'angger',
-        'nest' => [
-            'number' => 12,
-            'string' => 'a string',
-        ],
-        'users' => [
-            ['name' => 'ulfa', 'age' => 21],
-            ['name' => 'haikal', 'age' => 1],
-        ],
-    ]);
+    public function testCanValidateNestingArray(): void
+    {
+        $test = new Validator([
+            'name' => 'angger',
+            'nest' => [
+                'number' => 12,
+                'string' => 'a string',
+            ],
+            'users' => [
+                ['name' => 'ulfa', 'age' => 21],
+                ['name' => 'haikal', 'age' => 1],
+            ],
+        ]);
 
-    $valid = $test->isValid(function (ValidPool $valid) {
-        $valid('name')->required()->max_len(7);
-        $valid('nest.number')->required();
-        $valid('users.*.name')->required();
-    });
+        $valid = $test->isValid(function (ValidPool $valid): ValidPool {
+            $valid('name')->required()->max_len(7);
+            $valid('nest.number')->required();
+            $valid('users.*.name')->required();
 
-    expect($valid)->toBeTrue();
-});
+            return $valid;
+        });
 
-it('can validate invert nesting array', function () {
-    $test = new Validator([
-        // 'name' => 'angger',
-        'hoby' => 'plaing,game',
-        'nest' => [
-            'number' => 12,
-            'string' => 'a string',
-        ],
-        'users' => [
-            ['name' => 'ulfa', 'age' => 21],
-            ['name' => 'haikal', 'age' => 1],
-        ],
-    ]);
+        $this->assertTrue($valid);
+    }
 
-    $valid = $test->isValid(function (ValidPool $valid) {
-        $valid('name')->not()->required();
-        $valid('hoby')->not()->contains();
-        $valid('nest.number')->required();
-        $valid('users.*.name')->required();
-    });
+    public function testCanValidateInvertNestingArray(): void
+    {
+        $test = new Validator([
+            // 'name' => 'angger',
+            'hoby' => 'plaing,game',
+            'nest' => [
+                'number' => 12,
+                'string' => 'a string',
+            ],
+            'users' => [
+                ['name' => 'ulfa', 'age' => 21],
+                ['name' => 'haikal', 'age' => 1],
+            ],
+        ]);
 
-    expect($valid)->toBeTrue();
-});
+        $valid = $test->isValid(function (ValidPool $valid): ValidPool {
+            $valid('name')->not()->required();
+            $valid('hoby')->not()->contains();
+            $valid('nest.number')->required();
+            $valid('users.*.name')->required();
+
+            return $valid;
+        });
+
+        $this->assertTrue($valid);
+    }
+}

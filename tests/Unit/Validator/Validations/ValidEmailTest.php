@@ -1,63 +1,76 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_email validation')
-    ->expect(vr()->valid_email())
-    ->toEqual('valid_email')
-;
+final class ValidEmailTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 'test@gmail.com',
+        'test2' => 'test@yahoo.com',
+        'test3' => 'test@hotmail.com',
+    ];
 
-it('can render invert valid_email validation')
-    ->expect(vr()->not->valid_email())
-    ->toEqual('invert_valid_email')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test1' => 'test',
+        'test2' => 'test@gmail',
+    ];
 
-$correct = [
-    'test1' => 'test@gmail.com',
-    'test2' => 'test@yahoo.com',
-    'test3' => 'test@hotmail.com',
-];
-$incorrect = [
-    'test1' => 'test',
-    'test2' => 'test@gmail',
-];
+    public function testCanRenderValidEmailValidation(): void
+    {
+        $this->assertEquals('valid_email', vr()->valid_email());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidEmailValidation(): void
+    {
+        $this->assertEquals('invert_valid_email', vr()->not->valid_email());
+    }
 
-it('can validate valid_email with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidEmailWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_email();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_email();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_email (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidEmailNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_email();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_email();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidEmailWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_email with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_email();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_email();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidEmailNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_email (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_email();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_email();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

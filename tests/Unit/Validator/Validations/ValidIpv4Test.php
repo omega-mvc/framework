@@ -1,64 +1,77 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_ipv4 validation')
-    ->expect(vr()->valid_ipv4())
-    ->toEqual('valid_ipv4')
-;
+final class ValidIpv4Test extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => '127.0.0.1',
+        'test2' => '1.1.1.1',
+        'test3' => '255.255.255.255',
+    ];
 
-it('can render invert valid_ipv4 validation')
-    ->expect(vr()->not()->valid_ipv4())
-    ->toEqual('invert_valid_ipv4')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'tets1' => '2001:0zb8:85a3:08d3:1319:8a2e:0370:7334',
+        'tets2' => '0,0,0,0',
+        'tets3' => '256.0.0.0',
+    ];
 
-$correct = [
-    'test1' => '127.0.0.1',
-    'test2' => '1.1.1.1',
-    'test3' => '255.255.255.255',
-];
-$incorrect = [
-    'tets1' => '2001:0zb8:85a3:08d3:1319:8a2e:0370:7334',
-    'tets2' => '0,0,0,0',
-    'tets3' => '256.0.0.0',
-];
+    public function testCanRenderValidIpv4Validation(): void
+    {
+        $this->assertEquals('valid_ipv4', vr()->valid_ipv4());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidIpv4Validation(): void
+    {
+        $this->assertEquals('invert_valid_ipv4', vr()->not()->valid_ipv4());
+    }
 
-it('can validate valid_ipv4 with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpv4WithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_ipv4();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_ipv4();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_ipv4 (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpv4NotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_ipv4();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_ipv4();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidIpv4WithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ipv4 with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_ipv4();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_ipv4();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidIpv4NotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ipv4 (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_ipv4();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_ipv4();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

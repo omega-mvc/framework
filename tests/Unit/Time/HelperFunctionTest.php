@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Time Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Time;
@@ -17,45 +7,58 @@ namespace Tests\Time;
 use DateInvalidTimeZoneException;
 use DateMalformedStringException;
 use Omega\Time\Now;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
+use Tests\TestCase;
 
-use function Omega\Time\now;
 use function date_default_timezone_get;
+use function Omega\Time\now;
 use function strtotime;
 
-covers(Now::class);
+#[CoversClass(Now::class)]
+final class HelperFunctionTest extends TestCase
+{
+    public function testReturnsANowInstanceWithCurrentTimeByDefault(): void
+    {
+        $instance = now();
 
-it('returns a Now instance with current time by default', function (): void {
-    $instance = now();
+        $this->assertSame(Now::class, $instance::class);
+    }
+    public function testUsesCurrentDateAndDefaultTimezone(): void
+    {
+        $instance = now('now');
 
-    expect($instance::class)->toBe(Now::class);
-})->coversFunction('Omega\Time\now');
+        $this->assertEquals(date_default_timezone_get(), $instance->getTimeZone());
 
-it('uses current date and default timezone', function (): void {
-    $instance = now('now');
+        $timestamp = $instance->getTimestamp();
+        $this->assertGreaterThanOrEqual((int) strtotime('-1 minute'), $timestamp);
+        $this->assertLessThanOrEqual((int) strtotime('+1 minute'), $timestamp);
+    }
+    public function testAcceptsACustomDate(): void
+    {
+        $instance = now('2023-01-29');
 
-    expect($instance->getTimeZone())->toEqual(date_default_timezone_get());
-    expect($instance->getTimestamp())->toBeBetween((int) strtotime('-1 minute'), (int) strtotime('+1 minute'));
-})->coversFunction('Omega\Time\now');
+        $this->assertSame(2023, $instance->getYear());
+        $this->assertSame(1, $instance->getMonth());
+        $this->assertSame(29, $instance->getDay());
+    }
+    public function testAcceptsACustomDateAndTimezone(): void
+    {
+        $instance = now('2023-01-29', 'Europe/Rome');
 
-it('accepts a custom date', function (): void {
-    $instance = now('2023-01-29');
+        $this->assertSame(2023, $instance->getYear());
+        $this->assertSame('Europe/Rome', $instance->getTimeZone());
+    }
+    public function testThrowsDateMalformedStringExceptionWithAnInvalidDate(): void
+    {
+        $this->expectException(DateMalformedStringException::class);
 
-    expect($instance->getYear())->toBe(2023);
-    expect($instance->getMonth())->toBe(1);
-    expect($instance->getDay())->toBe(29);
-})->coversFunction('Omega\Time\now');
+        now('not-a-date');
+    }
+    public function testThrowsDateInvalidTimeZoneExceptionWithAnInvalidTimezone(): void
+    {
+        $this->expectException(DateInvalidTimeZoneException::class);
 
-it('accepts a custom date and timezone', function (): void {
-    $instance = now('2023-01-29', 'Europe/Rome');
-
-    expect($instance->getYear())->toBe(2023);
-    expect($instance->getTimeZone())->toBe('Europe/Rome');
-})->coversFunction('Omega\Time\now');
-
-it('throws DateMalformedStringException with an invalid date', function (): void {
-    now('not-a-date');
-})->throws(DateMalformedStringException::class)->coversFunction('Omega\Time\now');
-
-it('throws DateInvalidTimeZoneException with an invalid timezone', function (): void {
-    now('2023-01-29', 'Not/AZone');
-})->throws(DateInvalidTimeZoneException::class)->coversFunction('Omega\Time\now');
+        now('2023-01-29', 'Not/AZone');
+    }
+}

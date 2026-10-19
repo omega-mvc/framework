@@ -1,23 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can add filter rule using raw', function () {
-    $validation = new Validator([
-        'test' => 'test',
-    ]);
+final class RawTest extends TestCase
+{
+    public function testCanAddFilterRuleUsingRaw(): void
+    {
+        $validation = new Validator([
+            'test' => 'test',
+        ]);
 
-    $validation->filter('test')->raw('upper_case');
+        $validation->filter('test')->raw('upper_case');
 
-    expect($validation->filters->get('test'))->toEqual('TEST');
-});
+        $this->assertEquals('TEST', $validation->filters->get('test'));
+    }
 
-it('can add filter rule using raw combine with other', function () {
-    $validation = new Validator([
-        'test' => ' test ',
-    ]);
+    public function testCanAddFilterRuleUsingRawCombineWithOther(): void
+    {
+        $validation = new Validator([
+            'test' => ' test ',
+        ]);
 
-    $validation->filter('test')->raw('upper_case')->trim();
+        $validation->filter('test')->raw('upper_case')->trim();
 
-    expect($validation->filters->get('test'))->toEqual('TEST');
-});
+        $this->assertEquals('TEST', $validation->filters->get('test'));
+    }
+}

@@ -15,91 +15,106 @@ use Omega\Router\Attribute\Route\Post;
 use Omega\Router\Attribute\Route\Put;
 use Omega\Router\Attribute\Route\Route as RouteAttribute;
 use Omega\Router\Attribute\Where;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
-covers(Middleware::class);
-covers(Name::class);
-covers(Prefix::class);
-covers(Where::class);
-covers(Get::class);
-covers(Post::class);
-covers(Put::class);
-covers(Delete::class);
-covers(Head::class);
-covers(Option::class);
-covers(RouteAttribute::class);
+#[CoversClass(Middleware::class)]
+#[CoversClass(Name::class)]
+#[CoversClass(Prefix::class)]
+#[CoversClass(Where::class)]
+#[CoversClass(Get::class)]
+#[CoversClass(Post::class)]
+#[CoversClass(Put::class)]
+#[CoversClass(Delete::class)]
+#[CoversClass(Head::class)]
+#[CoversClass(Option::class)]
+#[CoversClass(RouteAttribute::class)]
+final class AttributeTest extends TestCase
+{
+    public function testCreatesABaseRouteAttribute(): void
+    {
+        $route = new RouteAttribute(['get', 'post'], '/users');
 
-it('creates a base route attribute', function (): void {
-    $route = new RouteAttribute(['get', 'post'], '/users');
+        $this->assertSame([
+            'method'     => ['get', 'post'],
+            'expression' => '/users',
+        ], $route->route);
+    }
 
-    expect($route->route)->toBe([
-        'method'     => ['get', 'post'],
-        'expression' => '/users',
-    ]);
-});
+    public function testCreatesAGetRouteAttribute(): void
+    {
+        $route = new Get('/users');
 
-it('creates a get route attribute', function (): void {
-    $route = new Get('/users');
+        $this->assertSame(['GET'], $route->route['method']);
+        $this->assertSame('/users', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['GET']);
-    expect($route->route['expression'])->toBe('/users');
-});
+    public function testCreatesAPostRouteAttribute(): void
+    {
+        $route = new Post('/users');
 
-it('creates a post route attribute', function (): void {
-    $route = new Post('/users');
+        $this->assertSame(['POST'], $route->route['method']);
+        $this->assertSame('/users', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['POST']);
-    expect($route->route['expression'])->toBe('/users');
-});
+    public function testCreatesAPutRouteAttribute(): void
+    {
+        $route = new Put('/users/{id}');
 
-it('creates a put route attribute', function (): void {
-    $route = new Put('/users/{id}');
+        $this->assertSame(['PUT'], $route->route['method']);
+        $this->assertSame('/users/{id}', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['PUT']);
-    expect($route->route['expression'])->toBe('/users/{id}');
-});
+    public function testCreatesADeleteRouteAttribute(): void
+    {
+        $route = new Delete('/users/{id}');
 
-it('creates a delete route attribute', function (): void {
-    $route = new Delete('/users/{id}');
+        $this->assertSame(['DELETE'], $route->route['method']);
+        $this->assertSame('/users/{id}', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['DELETE']);
-    expect($route->route['expression'])->toBe('/users/{id}');
-});
+    public function testCreatesAHeadRouteAttribute(): void
+    {
+        $route = new Head('/users');
 
-it('creates a head route attribute', function (): void {
-    $route = new Head('/users');
+        $this->assertSame(['HEAD'], $route->route['method']);
+        $this->assertSame('/users', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['HEAD']);
-    expect($route->route['expression'])->toBe('/users');
-});
+    public function testCreatesAnOptionsRouteAttribute(): void
+    {
+        $route = new Option('/users');
 
-it('creates an options route attribute', function (): void {
-    $route = new Option('/users');
+        $this->assertSame(['OPTION'], $route->route['method']);
+        $this->assertSame('/users', $route->route['expression']);
+    }
 
-    expect($route->route['method'])->toBe(['OPTION']);
-    expect($route->route['expression'])->toBe('/users');
-});
+    public function testCreatesAWhereAttribute(): void
+    {
+        $where = new Where(['id' => '\d+']);
 
-it('creates a where attribute', function (): void {
-    $where = new Where(['id' => '\d+']);
+        $this->assertSame(['id' => '\d+'], $where->pattern);
+    }
 
-    expect($where->pattern)->toBe(['id' => '\d+']);
-});
+    public function testCreatesANameAttribute(): void
+    {
+        $name = new Name('user.index');
 
-it('creates a name attribute', function (): void {
-    $name = new Name('user.index');
+        $this->assertSame('user.index', $name->name);
+    }
 
-    expect($name->name)->toBe('user.index');
-});
+    public function testCreatesAMiddlewareAttribute(): void
+    {
+        $middleware = new Middleware([TestMiddleware::class]);
 
-it('creates a middleware attribute', function (): void {
-    $middleware = new Middleware([TestMiddleware::class]);
+        $this->assertSame([TestMiddleware::class], $middleware->middleware);
+    }
 
-    expect($middleware->middleware)->toBe([TestMiddleware::class]);
-});
+    public function testCreatesAPrefixAttribute(): void
+    {
+        $prefix = new Prefix('/admin');
 
-it('creates a prefix attribute', function (): void {
-    $prefix = new Prefix('/admin');
-
-    expect($prefix->prefix)->toBe('/admin');
-});
+        $this->assertSame('/admin', $prefix->prefix);
+    }
+}

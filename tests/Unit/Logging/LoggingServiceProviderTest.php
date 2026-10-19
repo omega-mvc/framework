@@ -10,8 +10,10 @@ use Omega\Logging\Exception\LogArgumentException;
 use Omega\Logging\LoggingManager;
 use Omega\Logging\LoggingServiceProvider;
 use Omega\Logging\Stream;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Tests\TestCase;
 
 use function array_diff;
 use function array_map;
@@ -25,126 +27,146 @@ use function uniqid;
 use function unlink;
 use function Omega\Application\slash;
 
-covers(LoggingServiceProvider::class);
+#[CoversClass(LoggingServiceProvider::class)]
+final class LoggingServiceProviderTest extends TestCase
+{
+    private string $tempDir;
 
-beforeEach(function (): void {
-    $this->tempDir = sys_get_temp_dir() . '/omega-log-provider-' . uniqid();
-    mkdir($this->tempDir, 0777, true);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-afterEach(function (): void {
-    if (isset($this->app)) {
-        $this->app->flush();
+        $this->tempDir = sys_get_temp_dir() . '/omega-log-provider-' . uniqid();
+        mkdir($this->tempDir, 0777, true);
     }
 
-    removeProviderDirectory($this->tempDir);
-});
+    protected function tearDown(): void
+    {
+        if (isset($this->app)) {
+            $this->app->flush();
+        }
 
-it('registers a logging manager', function (): void {
-    $app = makeApp($this->tempDir, driverConfig($this->tempDir));
-    $this->app = $app;
+        $this->removeProviderDirectory($this->tempDir);
 
-    $logging = $app->get('logging');
-
-    expect($logging)->toBeInstanceOf(LoggingManager::class);
-    expect($logging)->toBeInstanceOf(LoggerInterface::class);
-});
-
-it('registers every configured driver', function (): void {
-    $app = makeApp($this->tempDir, driverConfig($this->tempDir));
-    $this->app = $app;
-    $logging = $app->get('logging');
-    $this->assertInstanceOf(LoggingManager::class, $logging);
-
-    expect($logging->getDriver('stream'))->toBeInstanceOf(Stream::class);
-    expect($logging->getDriver('custom'))->toBeInstanceOf(Stream::class);
-});
-
-it('writes log entries with the default driver', function (): void {
-    $app = makeApp($this->tempDir, driverConfig($this->tempDir));
-    $this->app = $app;
-
-    $logging = $app->get('logging');
-    $this->assertInstanceOf(LoggingManager::class, $logging);
-
-    $logging->log(LogLevel::INFO, 'via provider');
-
-    expect(file_get_contents($this->tempDir . '/omega.log'))->toContain('via provider');
-});
-
-it('throws an exception for an unsupported driver type', function (): void {
-    $config = driverConfig($this->tempDir);
-    $this->assertIsArray($config['logging']);
-    $config['logging']['bogus'] = ['type' => 'unsupported'];
-
-    $app = makeApp($this->tempDir, $config);
-    $this->app = $app;
-
-    $app->get('logging.bogus');
-})->throws(LogArgumentException::class, 'Unsupported logger type [unsupported].');
-
-/**
- * Build a logging configuration for the provider tests.
- *
- * @param string $tempDir The temporary directory for the log files.
- * @return array<string, mixed>
- */
-function driverConfig(string $tempDir): array
-{
-    return [
-        'logging' => [
-            'default' => 'stream',
-            'stream'  => [
-                'type'    => 'stream',
-                'path'    => $tempDir . '/omega.log',
-                'minimum' => LogLevel::DEBUG,
-                'options' => ['appendContext' => true],
-            ],
-            'custom'  => [
-                'type'    => 'stream',
-                'path'    => $tempDir . '/custom.log',
-                'minimum' => LogLevel::WARNING,
-                'options' => [],
-            ],
-        ],
-    ];
-}
-
-/**
- * Build an application with the logging provider booted.
- *
- * @param string               $tempDir The temporary directory for the log files.
- * @param array<string, mixed> $config  The application configuration.
- * @return Application The configured application instance.
- */
-function makeApp(string $tempDir, array $config): Application
-{
-    $app = new Application(slash(__DIR__ . '/fixtures/support/'));
-    $app->set('config', static fn () => new ConfigRepository($config));
-
-    (new LoggingServiceProvider($app))->boot();
-
-    return $app;
-}
-
-function removeProviderDirectory(string $dir): void
-{
-    if (!is_dir($dir)) {
-        return;
+        parent::tearDown();
     }
 
-    array_map(
-        function (string $entry) use ($dir): void {
-            $path = $dir . slash(path: '/') . $entry;
+    public function testRegistersALoggingManager(): void
+    {
+        $app = $this->makeApp($this->tempDir, $this->driverConfig($this->tempDir));
+        $this->app = $app;
 
-            if (is_dir($path)) {
-                removeProviderDirectory($path);
-            } else {
-                @unlink($path);
-            }
-        },
-        array_diff(scandir($dir), ['.', '..'])
-    );
+        $logging = $app->get('logging');
 
-    @rmdir($dir);
+        $this->assertInstanceOf(LoggingManager::class, $logging);
+        $this->assertInstanceOf(LoggerInterface::class, $logging);
+    }
+
+    public function testRegistersEveryConfiguredDriver(): void
+    {
+        $app = $this->makeApp($this->tempDir, $this->driverConfig($this->tempDir));
+        $this->app = $app;
+        $logging = $app->get('logging');
+        $this->assertInstanceOf(LoggingManager::class, $logging);
+
+        $this->assertInstanceOf(Stream::class, $logging->getDriver('stream'));
+        $this->assertInstanceOf(Stream::class, $logging->getDriver('custom'));
+    }
+
+    public function testWritesLogEntriesWithTheDefaultDriver(): void
+    {
+        $app = $this->makeApp($this->tempDir, $this->driverConfig($this->tempDir));
+        $this->app = $app;
+
+        $logging = $app->get('logging');
+        $this->assertInstanceOf(LoggingManager::class, $logging);
+
+        $logging->log(LogLevel::INFO, 'via provider');
+
+        $this->assertStringContainsString(
+            'via provider',
+            (string) file_get_contents($this->tempDir . '/omega.log')
+        );
+    }
+
+    public function testThrowsAnExceptionForAnUnsupportedDriverType(): void
+    {
+        $config = $this->driverConfig($this->tempDir);
+        $this->assertIsArray($config['logging']);
+        $config['logging']['bogus'] = ['type' => 'unsupported'];
+
+        $app = $this->makeApp($this->tempDir, $config);
+        $this->app = $app;
+
+        $this->expectException(LogArgumentException::class);
+        $this->expectExceptionMessage('Unsupported logger type [unsupported].');
+
+        $app->get('logging.bogus');
+    }
+
+    /**
+     * Build a logging configuration for the provider tests.
+     *
+     * @param string $tempDir The temporary directory for the log files.
+     * @return array<string, mixed>
+     */
+    private function driverConfig(string $tempDir): array
+    {
+        return [
+            'logging' => [
+                'default' => 'stream',
+                'stream'  => [
+                    'type'    => 'stream',
+                    'path'    => $tempDir . '/omega.log',
+                    'minimum' => LogLevel::DEBUG,
+                    'options' => ['appendContext' => true],
+                ],
+                'custom'  => [
+                    'type'    => 'stream',
+                    'path'    => $tempDir . '/custom.log',
+                    'minimum' => LogLevel::WARNING,
+                    'options' => [],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Build an application with the logging provider booted.
+     *
+     * @param string               $tempDir The temporary directory for the log files.
+     * @param array<string, mixed> $config  The application configuration.
+     * @return Application The configured application instance.
+     */
+    private function makeApp(string $tempDir, array $config): Application
+    {
+        $app = new Application(slash(__DIR__ . '/fixtures/support/'));
+        $app->set('config', static fn () => new ConfigRepository($config));
+
+        (new LoggingServiceProvider($app))->boot();
+
+        return $app;
+    }
+
+    private function removeProviderDirectory(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        array_map(
+            function (string $entry) use ($dir): void {
+                $path = $dir . slash(path: '/') . $entry;
+
+                if (is_dir($path)) {
+                    $this->removeProviderDirectory($path);
+                } else {
+                    @unlink($path);
+                }
+            },
+            array_diff(scandir($dir), ['.', '..'])
+        );
+
+        @rmdir($dir);
+    }
 }

@@ -1,49 +1,59 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render starts validation')
-    ->expect(vr()->starts('Z'))
-    ->toEqual('starts,Z')
-;
+final class StartsTest extends TestCase
+{
+    public function testCanRenderStartsValidation(): void
+    {
+        $this->assertEquals('starts,Z', vr()->starts('Z'));
+    }
 
-it('can render invert starts validation')
-    ->expect(vr()->not()->starts('Z'))
-    ->toEqual('invert_starts,Z')
-;
+    public function testCanRenderInvertStartsValidation(): void
+    {
+        $this->assertEquals('invert_starts,Z', vr()->not()->starts('Z'));
+    }
 
-// validate with correct input field
+    public function testCanValidateRegexWithCorrectInput(): void
+    {
+        $val = new Validator(['test' => 'test']);
 
-it('can validate regex with correct input', function () {
-    $val = new Omega\Validator\Validator(['test' => 'test']);
+        $val->test->starts('tes');
 
-    $val->test->starts('tes');
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateRequiredNotWithCorrectInput(): void
+    {
+        $val = new Validator(['test' => 'test']);
 
-it('can validate required (not) with correct input', function () {
-    $val = new Omega\Validator\Validator(['test' => 'test']);
+        $val->test->not->starts('tes');
 
-    $val->test->not->starts('tes');
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateRequiredWithIncorrectInput(): void
+    {
+        $val = new Validator(['test' => 'ttest']);
 
-// validate with incorrect input field
+        $val->test->starts('tes');
 
-it('can validate required with incorrect input', function () {
-    $val = new Omega\Validator\Validator(['test' => 'ttest']);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->test->starts('tes');
+    public function testCanValidateRegexNotWithIncorrectInput(): void
+    {
+        $val = new Validator(['test' => 'ttest']);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test->not->starts('tes');
 
-it('can validate regex (not) with incorrect input', function () {
-    $val = new Omega\Validator\Validator(['test' => 'ttest']);
-
-    $val->test->not->starts('tes');
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

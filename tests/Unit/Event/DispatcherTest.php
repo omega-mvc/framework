@@ -8,293 +8,328 @@ use Omega\Event\Dispatcher\Dispatcher;
 use Omega\Event\Event;
 use Omega\Event\EventInterface;
 use Omega\Event\Priority;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Event\Support\TestSkippingSubscriber;
 use Tests\Event\Support\TestSubscriber;
+use Tests\TestCase;
 
-covers(Dispatcher::class);
+#[CoversClass(Dispatcher::class)]
+final class DispatcherTest extends TestCase
+{
+    public function testDispatchesAnEventToMatchingListeners(): void
+    {
+        $dispatcher = new Dispatcher();
+        $called     = false;
 
-it('dispatches an event to matching listeners', function (): void {
-    $dispatcher = new Dispatcher();
-    $called     = false;
+        $dispatcher->addListener('order.created', function (EventInterface $event) use (&$called): void {
+            $called = $event->getName() === 'order.created';
+        });
 
-    $dispatcher->addListener('order.created', function (EventInterface $event) use (&$called): void {
-        $called = $event->getName() === 'order.created';
-    });
+        $dispatcher->dispatch(new Event('order.created'));
 
-    $dispatcher->dispatch(new Event('order.created'));
+        $this->assertTrue($called);
+    }
 
-    expect($called)->toBeTrue();
-});
+    public function testDoesNotCallListenersOfOtherEvents(): void
+    {
+        $dispatcher = new Dispatcher();
+        $called     = false;
 
-it('does not call listeners of other events', function (): void {
-    $dispatcher = new Dispatcher();
-    $called     = false;
+        $dispatcher->addListener('order.created', function () use (&$called): void {
+            $called = true;
+        });
 
-    $dispatcher->addListener('order.created', function () use (&$called): void {
-        $called = true;
-    });
+        $dispatcher->dispatch(new Event('customer.created'));
 
-    $dispatcher->dispatch(new Event('customer.created'));
+        $this->assertFalse($called);
+    }
 
-    expect($called)->toBeFalse();
-});
+    public function testExecutesListenersInDescendingPriorityOrder(): void
+    {
+        $dispatcher = new Dispatcher();
+        $order      = [];
 
-it('executes listeners in descending priority order', function (): void {
-    $dispatcher = new Dispatcher();
-    $order      = [];
+        $dispatcher->addListener('order.created', function () use (&$order): void {
+            $order[] = 'low';
+        }, -5);
+        $dispatcher->addListener('order.created', function () use (&$order): void {
+            $order[] = 'high';
+        }, 5);
+        $dispatcher->addListener('order.created', function () use (&$order): void {
+            $order[] = 'mid';
+        }, 0);
 
-    $dispatcher->addListener('order.created', function () use (&$order): void {
-        $order[] = 'low';
-    }, -5);
-    $dispatcher->addListener('order.created', function () use (&$order): void {
-        $order[] = 'high';
-    }, 5);
-    $dispatcher->addListener('order.created', function () use (&$order): void {
-        $order[] = 'mid';
-    }, 0);
+        $dispatcher->dispatch(new Event('order.created'));
 
-    $dispatcher->dispatch(new Event('order.created'));
+        $this->assertEquals(['high', 'mid', 'low'], $order);
+    }
 
-    expect($order)->toEqual(['high', 'mid', 'low']);
-});
+    public function testStopsPropagationWhenAListenerStopsTheEvent(): void
+    {
+        $dispatcher = new Dispatcher();
+        $stopped    = false;
 
-it('stops propagation when a listener stops the event', function (): void {
-    $dispatcher = new Dispatcher();
-    $stopped    = false;
+        $dispatcher->addListener('order.created', function (EventInterface $event) use (&$stopped): void {
+            $stopped = true;
+            $event->stopPropagation();
+        });
+        $dispatcher->addListener('order.created', function () use (&$stopped): void {
+            $stopped = false;
+        });
 
-    $dispatcher->addListener('order.created', function (EventInterface $event) use (&$stopped): void {
-        $stopped = true;
+        $dispatcher->dispatch(new Event('order.created'));
+
+        $this->assertTrue($stopped);
+    }
+
+    public function testReturnsTheDispatchedEventInstance(): void
+    {
+        $dispatcher = new Dispatcher();
+        $event      = new Event('order.created');
+
+        $this->assertSame($event, $dispatcher->dispatch($event));
+    }
+
+    public function testDoesNothingWhenDispatchingAnEventWithoutListeners(): void
+    {
+        $dispatcher = new Dispatcher();
+        $event      = new Event('order.created');
+
+        $this->assertSame($event, $dispatcher->dispatch($event));
+    }
+
+    public function testReportsThePriorityOfARegisteredListener(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $listener, 7);
+
+        $this->assertSame(7, $dispatcher->getListenerPriority('order.created', $listener));
+        $this->assertNull($dispatcher->getListenerPriority('unknown.event', $listener));
+    }
+
+    public function testRegistersAllSubscriberEvents(): void
+    {
+        $dispatcher = new Dispatcher();
+        $subscriber = new TestSubscriber();
+
+        $dispatcher->addSubscriber($subscriber);
+
+        $this->assertSame(1, $dispatcher->countListeners('subscriber.alpha'));
+        $this->assertSame(1, $dispatcher->countListeners('subscriber.beta'));
+        $this->assertSame(1, $dispatcher->countListeners('subscriber.gamma'));
+        $this->assertSame(1, $dispatcher->countListeners('subscriber.stop'));
+    }
+
+    public function testHonorsSubscriberPriorities(): void
+    {
+        $dispatcher = new Dispatcher();
+        $subscriber = new TestSubscriber();
+
+        $dispatcher->addSubscriber($subscriber);
+
+        $this->assertSame(
+            Priority::HIGH->value,
+            $dispatcher->getListenerPriority('subscriber.beta', [$subscriber, 'onBeta'])
+        );
+        $this->assertSame(
+            -1,
+            $dispatcher->getListenerPriority('subscriber.gamma', [$subscriber, 'onGamma'])
+        );
+    }
+
+    public function testDispatchesSubscriberListeners(): void
+    {
+        $dispatcher = new Dispatcher();
+        $subscriber = new TestSubscriber();
+
+        $dispatcher->addSubscriber($subscriber);
+        $dispatcher->dispatch(new Event('subscriber.alpha'));
+        $dispatcher->dispatch(new Event('subscriber.beta'));
+
+        $this->assertEquals(['alpha', 'beta'], $subscriber->getCalls());
+    }
+
+    public function testLetsASubscriberStopPropagation(): void
+    {
+        $dispatcher      = new Dispatcher();
+        $subscriber      = new TestSubscriber();
+        $afterSubscriber = false;
+
+        $dispatcher->addSubscriber($subscriber);
+        $dispatcher->addListener('subscriber.stop', function () use (&$afterSubscriber): void {
+            $afterSubscriber = true;
+        });
+
+        $dispatcher->dispatch(new Event('subscriber.stop'));
+
+        $this->assertEquals(['stop'], $subscriber->getCalls());
+        $this->assertFalse($afterSubscriber);
+    }
+
+    public function testRemovesAllSubscriberListeners(): void
+    {
+        $dispatcher = new Dispatcher();
+        $subscriber = new TestSubscriber();
+
+        $dispatcher->addSubscriber($subscriber);
+        $dispatcher->removeSubscriber($subscriber);
+
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.alpha'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.beta'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.gamma'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.stop'));
+    }
+
+    public function testRemovesASingleListener(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = function (EventInterface $event): void {
+        };
+        $other      = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $listener);
+        $dispatcher->addListener('order.created', $other);
+        $dispatcher->removeListener('order.created', $listener);
+
+        $this->assertFalse($dispatcher->hasListener($listener, 'order.created'));
+        $this->assertTrue($dispatcher->hasListener($other, 'order.created'));
+    }
+
+    public function testChecksListenerExistenceGloballyAndPerEvent(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $listener);
+
+        $this->assertTrue($dispatcher->hasListener($listener));
+        $this->assertTrue($dispatcher->hasListener($listener, 'order.created'));
+        $this->assertFalse($dispatcher->hasListener($listener, 'other.event'));
+    }
+
+    public function testSearchesListenerExistenceAcrossMultipleEvents(): void
+    {
+        $dispatcher = new Dispatcher();
+        $first      = function (EventInterface $event): void {
+        };
+        $second     = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $first);
+        $dispatcher->addListener('customer.created', $second);
+
+        $this->assertTrue($dispatcher->hasListener($second));
+        $this->assertFalse($dispatcher->hasListener(static function (EventInterface $event): void {
+        }));
+    }
+
+    public function testSkipsEmptyAndNonCallableSubscriberEvents(): void
+    {
+        $dispatcher = new Dispatcher();
+        $subscriber = new TestSkippingSubscriber();
+
+        $dispatcher->addSubscriber($subscriber);
+
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.empty'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.emptyArray'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.missing'));
+        $this->assertSame(0, $dispatcher->countListeners('subscriber.missingString'));
+    }
+
+    public function testReturnsListenersFilteredOrGrouped(): void
+    {
+        $dispatcher = new Dispatcher();
+        $first      = function (EventInterface $event): void {
+        };
+        $second     = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $first);
+        $dispatcher->addListener('order.created', $second);
+        $dispatcher->addListener('customer.created', $first);
+
+        $this->assertCount(2, $dispatcher->getListeners('order.created'));
+
+        $listeners = $dispatcher->getListeners();
+        $this->assertArrayHasKey('order.created', $listeners);
+        $this->assertArrayHasKey('customer.created', $listeners);
+    }
+
+    public function testClearsListenersForASingleEvent(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $listener);
+        $dispatcher->addListener('customer.created', $listener);
+
+        $dispatcher->clearListeners('order.created');
+
+        $this->assertSame(0, $dispatcher->countListeners('order.created'));
+        $this->assertSame(1, $dispatcher->countListeners('customer.created'));
+    }
+
+    public function testClearsAllListeners(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = function (EventInterface $event): void {
+        };
+
+        $dispatcher->addListener('order.created', $listener);
+        $dispatcher->addListener('customer.created', $listener);
+
+        $dispatcher->clearListeners();
+
+        $this->assertSame(0, $dispatcher->countListeners('order.created'));
+        $this->assertSame(0, $dispatcher->countListeners('customer.created'));
+    }
+
+    public function testReturnsAnEmptyListForAnUnregisteredEvent(): void
+    {
+        $dispatcher = new Dispatcher();
+
+        $this->assertSame([], $dispatcher->getListeners('unregistered.event'));
+    }
+
+    public function testDoesNotCallListenersWhenTheEventIsAlreadyStopped(): void
+    {
+        $dispatcher = new Dispatcher();
+        $called     = false;
+
+        $dispatcher->addListener('order.created', function () use (&$called): void {
+            $called = true;
+        });
+
+        $event = new Event('order.created');
         $event->stopPropagation();
-    });
-    $dispatcher->addListener('order.created', function () use (&$stopped): void {
-        $stopped = false;
-    });
 
-    $dispatcher->dispatch(new Event('order.created'));
+        $dispatcher->dispatch($event);
 
-    expect($stopped)->toBeTrue();
-});
+        $this->assertFalse($called);
+    }
 
-it('returns the dispatched event instance', function (): void {
-    $dispatcher = new Dispatcher();
-    $event      = new Event('order.created');
+    public function testDoesNothingWhenRemovingAnUnregisteredListener(): void
+    {
+        $dispatcher = new Dispatcher();
+        $listener   = static function (): void {
+        };
 
-    expect($dispatcher->dispatch($event))->toBe($event);
-});
+        $dispatcher->removeListener('never.registered', $listener);
 
-it('does nothing when dispatching an event without listeners', function (): void {
-    $dispatcher = new Dispatcher();
-    $event      = new Event('order.created');
+        $this->assertSame(0, $dispatcher->countListeners('never.registered'));
+    }
 
-    expect($dispatcher->dispatch($event))->toBe($event);
-});
+    public function testDoesNothingWhenClearingAnUnregisteredEvent(): void
+    {
+        $dispatcher = new Dispatcher();
 
-it('reports the priority of a registered listener', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $listener, 7);
-
-    expect($dispatcher->getListenerPriority('order.created', $listener))->toBe(7);
-    expect($dispatcher->getListenerPriority('unknown.event', $listener))->toBeNull();
-});
-
-it('registers all subscriber events', function (): void {
-    $dispatcher = new Dispatcher();
-    $subscriber = new TestSubscriber();
-
-    $dispatcher->addSubscriber($subscriber);
-
-    expect($dispatcher->countListeners('subscriber.alpha'))->toBe(1);
-    expect($dispatcher->countListeners('subscriber.beta'))->toBe(1);
-    expect($dispatcher->countListeners('subscriber.gamma'))->toBe(1);
-    expect($dispatcher->countListeners('subscriber.stop'))->toBe(1);
-});
-
-it('honors subscriber priorities', function (): void {
-    $dispatcher = new Dispatcher();
-    $subscriber = new TestSubscriber();
-
-    $dispatcher->addSubscriber($subscriber);
-
-    expect($dispatcher->getListenerPriority('subscriber.beta', [$subscriber, 'onBeta']))
-        ->toBe(Priority::HIGH->value);
-    expect($dispatcher->getListenerPriority('subscriber.gamma', [$subscriber, 'onGamma']))
-        ->toBe(-1);
-});
-
-it('dispatches subscriber listeners', function (): void {
-    $dispatcher = new Dispatcher();
-    $subscriber = new TestSubscriber();
-
-    $dispatcher->addSubscriber($subscriber);
-    $dispatcher->dispatch(new Event('subscriber.alpha'));
-    $dispatcher->dispatch(new Event('subscriber.beta'));
-
-    expect($subscriber->getCalls())->toEqual(['alpha', 'beta']);
-});
-
-it('lets a subscriber stop propagation', function (): void {
-    $dispatcher        = new Dispatcher();
-    $subscriber        = new TestSubscriber();
-    $afterSubscriber   = false;
-
-    $dispatcher->addSubscriber($subscriber);
-    $dispatcher->addListener('subscriber.stop', function () use (&$afterSubscriber): void {
-        $afterSubscriber = true;
-    });
-
-    $dispatcher->dispatch(new Event('subscriber.stop'));
-
-    expect($subscriber->getCalls())->toEqual(['stop']);
-    expect($afterSubscriber)->toBeFalse();
-});
-
-it('removes all subscriber listeners', function (): void {
-    $dispatcher = new Dispatcher();
-    $subscriber = new TestSubscriber();
-
-    $dispatcher->addSubscriber($subscriber);
-    $dispatcher->removeSubscriber($subscriber);
-
-    expect($dispatcher->countListeners('subscriber.alpha'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.beta'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.gamma'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.stop'))->toBe(0);
-});
-
-it('removes a single listener', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = function (EventInterface $event): void {
-    };
-    $other      = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $listener);
-    $dispatcher->addListener('order.created', $other);
-    $dispatcher->removeListener('order.created', $listener);
-
-    expect($dispatcher->hasListener($listener, 'order.created'))->toBeFalse();
-    expect($dispatcher->hasListener($other, 'order.created'))->toBeTrue();
-});
-
-it('checks listener existence globally and per event', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $listener);
-
-    expect($dispatcher->hasListener($listener))->toBeTrue();
-    expect($dispatcher->hasListener($listener, 'order.created'))->toBeTrue();
-    expect($dispatcher->hasListener($listener, 'other.event'))->toBeFalse();
-});
-
-it('searches listener existence across multiple events', function (): void {
-    $dispatcher = new Dispatcher();
-    $first      = function (EventInterface $event): void {
-    };
-    $second     = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $first);
-    $dispatcher->addListener('customer.created', $second);
-
-    expect($dispatcher->hasListener($second))->toBeTrue();
-    expect($dispatcher->hasListener(static function (EventInterface $event): void {
-    }))->toBeFalse();
-});
-
-it('skips empty and non-callable subscriber events', function (): void {
-    $dispatcher = new Dispatcher();
-    $subscriber = new TestSkippingSubscriber();
-
-    $dispatcher->addSubscriber($subscriber);
-
-    expect($dispatcher->countListeners('subscriber.empty'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.emptyArray'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.missing'))->toBe(0);
-    expect($dispatcher->countListeners('subscriber.missingString'))->toBe(0);
-});
-
-it('returns listeners filtered or grouped', function (): void {
-    $dispatcher = new Dispatcher();
-    $first  = function (EventInterface $event): void {
-    };
-    $second = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $first);
-    $dispatcher->addListener('order.created', $second);
-    $dispatcher->addListener('customer.created', $first);
-
-    expect($dispatcher->getListeners('order.created'))->toHaveCount(2);
-    expect($dispatcher->getListeners())->toHaveKeys(['order.created', 'customer.created']);
-});
-
-it('clears listeners for a single event', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $listener);
-    $dispatcher->addListener('customer.created', $listener);
-
-    $dispatcher->clearListeners('order.created');
-
-    expect($dispatcher->countListeners('order.created'))->toBe(0);
-    expect($dispatcher->countListeners('customer.created'))->toBe(1);
-});
-
-it('clears all listeners', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = function (EventInterface $event): void {
-    };
-
-    $dispatcher->addListener('order.created', $listener);
-    $dispatcher->addListener('customer.created', $listener);
-
-    $dispatcher->clearListeners();
-
-    expect($dispatcher->countListeners('order.created'))->toBe(0);
-    expect($dispatcher->countListeners('customer.created'))->toBe(0);
-});
-
-it('returns an empty list for an unregistered event', function (): void {
-    $dispatcher = new Dispatcher();
-
-    expect($dispatcher->getListeners('unregistered.event'))->toBe([]);
-});
-
-it('does not call listeners when the event is already stopped', function (): void {
-    $dispatcher = new Dispatcher();
-    $called     = false;
-
-    $dispatcher->addListener('order.created', function () use (&$called): void {
-        $called = true;
-    });
-
-    $event = new Event('order.created');
-    $event->stopPropagation();
-
-    $dispatcher->dispatch($event);
-
-    expect($called)->toBeFalse();
-});
-
-it('does nothing when removing an unregistered listener', function (): void {
-    $dispatcher = new Dispatcher();
-    $listener   = static function (): void {};
-
-    $dispatcher->removeListener('never.registered', $listener);
-
-    expect($dispatcher->countListeners('never.registered'))->toBe(0);
-});
-
-it('does nothing when clearing an unregistered event', function (): void {
-    $dispatcher = new Dispatcher();
-
-    expect($dispatcher->clearListeners('never.registered'))->toBe($dispatcher);
-    expect($dispatcher->countListeners('never.registered'))->toBe(0);
-});
+        $this->assertSame($dispatcher, $dispatcher->clearListeners('never.registered'));
+        $this->assertSame(0, $dispatcher->countListeners('never.registered'));
+    }
+}

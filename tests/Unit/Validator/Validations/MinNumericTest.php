@@ -1,60 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render min_numeric validation')
-    ->expect(vr()->min_numeric(5))
-    ->toEqual('min_numeric,5')
-;
+final class MinNumericTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => 5,
+        'test2' => 10,
+        'test3' => '',
+    ];
 
-it('can render invert min_numeric validation')
-    ->expect(vr()->not->min_numeric(5))
-    ->toEqual('invert_min_numeric,5')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test' => 3,
+    ];
 
-$correct = [
-    'test1' => 5,
-    'test2' => 10,
-    'test3' => '',
-];
-$incorrect = [
-    'test' => 3,
-];
+    public function testCanRenderMinNumericValidation(): void
+    {
+        $this->assertEquals('min_numeric,5', vr()->min_numeric(5));
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertMinNumericValidation(): void
+    {
+        $this->assertEquals('invert_min_numeric,5', vr()->not->min_numeric(5));
+    }
 
-it('can validate min_numeric with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateMinNumericWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $val->field('test1', 'test2', 'test3')->min_numeric(5);
+        $val->field('test1', 'test2', 'test3')->min_numeric(5);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate min_numeric (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateMinNumericNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $val->field('test1', 'test2', 'test3')->not->min_numeric(5);
+        $val->field('test1', 'test2', 'test3')->not->min_numeric(5);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateMinNumericWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate min_numeric with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        // less
+        $val->field('test')->min_numeric(5);
 
-    // less
-    $val->field('test')->min_numeric(5);
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateMinNumericNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate min_numeric (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        // less
+        $val->field('test')->not->min_numeric(5);
 
-    // less
-    $val->field('test')->not->min_numeric(5);
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

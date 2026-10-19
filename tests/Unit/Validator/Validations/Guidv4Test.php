@@ -1,61 +1,81 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render guidv4 validation')
-    ->expect(vr()->guidv4())
-    ->toEqual('guidv4')
-;
+final class Guidv4Test extends TestCase
+{
+    public function testCanRenderGuidv4Validation(): void
+    {
+        $this->assertEquals('guidv4', vr()->guidv4());
+    }
 
-it('can render invert guidv4 validation')
-    ->expect(vr()->not->guidv4())
-    ->toEqual('invert_guidv4')
-;
+    public function testCanRenderInvertGuidv4Validation(): void
+    {
+        $this->assertEquals('invert_guidv4', vr()->not->guidv4());
+    }
 
-$correct = [
-    'test1' => 'A98C5A1E-A742-4808-96FA-6F409E799937',
-    'test2' => '7deca41a-3479-4f18-9771-3531f742061b',
-];
-$incorrect = [
-    'test1' => 'A98C5A1EA742480896FA6F409E799937',
-    'test2' => '7deca41a-9771-3531f742061b',
-];
-// validate with correct input field
+    public function testCanValidateGuidv4WithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate guidv4 with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test1->guidv4();
+        $val->test2->guidv4();
 
-    $val->test1->guidv4();
-    $val->test2->guidv4();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateGuidv4NotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-it('can validate guidv4 (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $val->test1->not->guidv4();
+        $val->test2->not->guidv4();
 
-    $val->test1->not->guidv4();
-    $val->test2->not->guidv4();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateGuidv4WithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-// validate with incorrect input field
+        $val->test1->guidv4();
+        $val->test2->guidv4();
 
-it('can validate guidv4 with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->test1->guidv4();
-    $val->test2->guidv4();
+    public function testCanValidateGuidv4NotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->test1->not->guidv4();
+        $val->test2->not->guidv4();
 
-it('can validate guidv4 (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->test1->not->guidv4();
-    $val->test2->not->guidv4();
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => 'A98C5A1E-A742-4808-96FA-6F409E799937',
+            'test2' => '7deca41a-3479-4f18-9771-3531f742061b',
+        ];
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test1' => 'A98C5A1EA742480896FA6F409E799937',
+            'test2' => '7deca41a-9771-3531f742061b',
+        ];
+    }
+}

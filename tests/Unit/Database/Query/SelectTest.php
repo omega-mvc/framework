@@ -9,14 +9,19 @@ use Omega\Database\Query\InnerQuery;
 use Omega\Database\Query\Query;
 use Omega\Database\Query\Select;
 use Omega\Database\Schema\SchemaConnection;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(Query::class)]
-#[CoversClass(InnerQuery::class)]
-#[CoversClass(Select::class)]
 final class SelectTest extends TestCase
 {
+
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -340,4 +345,6 @@ final class SelectTest extends TestCase
             $select->__toString()
         );
     }
+
+
 }

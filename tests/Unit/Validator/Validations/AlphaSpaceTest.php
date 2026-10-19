@@ -1,46 +1,67 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render alpha_space validation')
-    ->expect(vr()->alpha_space())
-    ->toEqual('alpha_space')
-;
+final class AlphaSpaceTest extends TestCase
+{
+    public function testCanRenderAlphaSpaceValidation(): void
+    {
+        $this->assertEquals('alpha_space', vr()->alpha_space());
+    }
 
-it('can render invert alpha_space validation')
-    ->expect(vr()->not()->alpha_space())
-    ->toEqual('invert_alpha_space')
-;
+    public function testCanRenderInvertAlphaSpaceValidation(): void
+    {
+        $this->assertEquals('invert_alpha_space', vr()->not()->alpha_space());
+    }
 
-$correct   = ['test' => ' azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ '];
-$incorrect = ['test' => '1 azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ'];
+    public function testCanValidateAlphaSpaceWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->alpha_space();
 
-// validate with correct input field
-it('can validate alpha_space with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->alpha_space();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    public function testCanValidateAlphaSpaceNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
+        $val->test->not()->alpha_space();
 
-it('can validate alpha_space (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
-    $val->test->not()->alpha_space();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaSpaceWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->alpha_space();
 
-// validate with incorrect input field
-it('can validate alpha_space with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->alpha_space();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateAlphaSpaceNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
+        $val->test->not()->alpha_space();
 
-it('can validate alpha_space (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
-    $val->test->not()->alpha_space();
+        $this->assertTrue($val->isValid());
+    }
 
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, string> */
+    private function correctInput(): array
+    {
+        return ['test' => ' azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ '];
+    }
+
+    /** @return array<string, string> */
+    private function incorrectInput(): array
+    {
+        return ['test' => '1 azÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÒÓÔÕÖßÙÚÛÜÝàáâãäåçèéêëìíîïðòóôõöùúûüýÿ'];
+    }
+}

@@ -12,187 +12,210 @@ use Omega\Event\Events\ModelEvent;
 use Omega\Event\Listeners\AuditTrailListener;
 use Omega\Event\Listeners\CacheClearListener;
 use Omega\Event\Listeners\ExceptionHandlerListener;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
 use Tests\Event\Support\FakeConnection;
 use Tests\Event\Support\MemoryLogger;
 use Tests\Event\Support\StubModel;
+use Tests\TestCase;
 
 use function array_map;
 
-covers(AuditTrailListener::class);
-covers(CacheClearListener::class);
-covers(ExceptionHandlerListener::class);
+#[CoversClass(AuditTrailListener::class)]
+#[CoversClass(CacheClearListener::class)]
+#[CoversClass(ExceptionHandlerListener::class)]
+final class ListenersTest extends TestCase
+{
+    public function testLogsModelLifecycleOperations(): void
+    {
+        $logger   = new MemoryLogger();
+        $listener = new AuditTrailListener();
+        $listener->setLogger($logger);
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-it('logs model lifecycle operations', function (): void {
-    $logger   = new MemoryLogger();
-    $listener = new AuditTrailListener();
-    $listener->setLogger($logger);
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $listener->onModelCreated(ModelEvent::created($model));
+        $listener->onModelSaved(ModelEvent::saved($model));
+        $listener->onModelDeleted(ModelEvent::deleted($model));
 
-    $listener->onModelCreated(ModelEvent::created($model));
-    $listener->onModelSaved(ModelEvent::saved($model));
-    $listener->onModelDeleted(ModelEvent::deleted($model));
+        $this->assertCount(3, $logger->getRecords());
 
-    expect($logger->getRecords())->toHaveCount(3);
+        $messages = array_map(
+            static fn (array $record): string => $record['message'],
+            $logger->getRecords(),
+        );
 
-    $messages = array_map(
-        static fn (array $record): string => $record['message'],
-        $logger->getRecords(),
-    );
+        $this->assertEquals([
+            'Model created in table `stub_table`',
+            'Model updated in table `stub_table`',
+            'Model deleted in table `stub_table`',
+        ], $messages);
+        $this->assertArrayHasKey('table', $logger->getRecords()[0]['context']);
+        $this->assertSame('stub_table', $logger->getRecords()[0]['context']['table']);
+    }
 
-    expect($messages)->toEqual([
-        'Model created in table `stub_table`',
-        'Model updated in table `stub_table`',
-        'Model deleted in table `stub_table`',
-    ]);
-    expect($logger->getRecords()[0]['context'])->toHaveKey('table');
-    expect($logger->getRecords()[0]['context']['table'])->toBe('stub_table');
-});
+    public function testMarksASavedOperationAsCreated(): void
+    {
+        $logger   = new MemoryLogger();
+        $listener = new AuditTrailListener();
+        $listener->setLogger($logger);
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-it('marks a saved operation as created', function (): void {
-    $logger   = new MemoryLogger();
-    $listener = new AuditTrailListener();
-    $listener->setLogger($logger);
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $listener->onModelSaved(ModelEvent::saved($model, true));
 
-    $listener->onModelSaved(ModelEvent::saved($model, true));
+        $this->assertCount(1, $logger->getRecords());
+        $this->assertSame('Model created in table `stub_table`', $logger->getRecords()[0]['message']);
+    }
 
-    expect($logger->getRecords())->toHaveCount(1);
-    expect($logger->getRecords()[0]['message'])->toBe('Model created in table `stub_table`');
-});
+    public function testDoesNothingWithoutALogger(): void
+    {
+        $listener = new AuditTrailListener();
+        $model    = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-it('does nothing without a logger', function (): void {
-    $listener = new AuditTrailListener();
-    $model    = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $listener->onModelCreated(ModelEvent::created($model));
 
-    expect(fn () => $listener->onModelCreated(ModelEvent::created($model)))->not->toThrow(\Throwable::class);
-});
+        $this->addToAssertionCount(1);
+    }
 
-it('logs caught exceptions', function (): void {
-    $logger   = new MemoryLogger();
-    $listener = new ExceptionHandlerListener();
-    $listener->setLogger($logger);
-    $exception = new \RuntimeException('boom');
+    public function testLogsCaughtExceptions(): void
+    {
+        $logger   = new MemoryLogger();
+        $listener = new ExceptionHandlerListener();
+        $listener->setLogger($logger);
+        $exception = new RuntimeException('boom');
 
-    $listener->onExceptionLogged(ExceptionEvent::create($exception, 'critical'));
+        $listener->onExceptionLogged(ExceptionEvent::create($exception, 'critical'));
 
-    expect($logger->getRecords())->toHaveCount(1);
-    expect($logger->getRecords()[0]['message'])->toBe('Exception caught: boom');
-    expect($logger->getRecords()[0]['level'])->toBe('critical');
-    expect($logger->getRecords()[0]['context'])->toHaveKey('exception');
-    expect($logger->getRecords()[0]['context'])->toHaveKey('file');
-    expect($logger->getRecords()[0]['context'])->toHaveKey('line');
-});
+        $this->assertCount(1, $logger->getRecords());
+        $this->assertSame('Exception caught: boom', $logger->getRecords()[0]['message']);
+        $this->assertSame('critical', $logger->getRecords()[0]['level']);
+        $this->assertArrayHasKey('exception', $logger->getRecords()[0]['context']);
+        $this->assertArrayHasKey('file', $logger->getRecords()[0]['context']);
+        $this->assertArrayHasKey('line', $logger->getRecords()[0]['context']);
+    }
 
-it('skips logging when the logged value is not a throwable', function (): void {
-    $logger   = new MemoryLogger();
-    $listener = new ExceptionHandlerListener();
-    $listener->setLogger($logger);
+    public function testSkipsLoggingWhenTheLoggedValueIsNotAThrowable(): void
+    {
+        $logger   = new MemoryLogger();
+        $listener = new ExceptionHandlerListener();
+        $listener->setLogger($logger);
 
-    $event = new Event('exception.logged');
-    $event->setArgument('exception', 'plain-string');
+        $event = new Event('exception.logged');
+        $event->setArgument('exception', 'plain-string');
 
-    $listener->onExceptionLogged($event);
+        $listener->onExceptionLogged($event);
 
-    expect($logger->getRecords())->toBe([]);
-});
+        $this->assertSame([], $logger->getRecords());
+    }
 
-it('does not log exceptions without a logger', function (): void {
-    $listener  = new ExceptionHandlerListener();
-    $exception = new \RuntimeException('boom');
+    public function testDoesNotLogExceptionsWithoutALogger(): void
+    {
+        $listener  = new ExceptionHandlerListener();
+        $exception = new RuntimeException('boom');
 
-    expect(fn () => $listener->onExceptionLogged(ExceptionEvent::create($exception, 'critical')))
-        ->not->toThrow(\Throwable::class);
-});
+        $listener->onExceptionLogged(ExceptionEvent::create($exception, 'critical'));
 
-it('clears the table cache on save', function (): void {
-    $storage  = new MemoryStorage(['ttl' => 3600]);
-    $cache    = new CacheManager('memory', $storage);
-    $listener = new CacheClearListener();
-    $listener->setCacheManager($cache);
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $this->addToAssertionCount(1);
+    }
 
-    $cache->set('model.stub_table', 'cached');
+    public function testClearsTheTableCacheOnSave(): void
+    {
+        $storage  = new MemoryStorage(['ttl' => 3600]);
+        $cache    = new CacheManager('memory', $storage);
+        $listener = new CacheClearListener();
+        $listener->setCacheManager($cache);
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-    expect($cache->has('model.stub_table'))->toBeTrue();
+        $cache->set('model.stub_table', 'cached');
 
-    $listener->onModelSaved(ModelEvent::saved($model));
+        $this->assertTrue($cache->has('model.stub_table'));
 
-    expect($cache->has('model.stub_table'))->toBeFalse();
-});
+        $listener->onModelSaved(ModelEvent::saved($model));
 
-it('clears the table cache on delete', function (): void {
-    $storage  = new MemoryStorage(['ttl' => 3600]);
-    $cache    = new CacheManager('memory', $storage);
-    $listener = new CacheClearListener();
-    $listener->setCacheManager($cache);
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $this->assertFalse($cache->has('model.stub_table'));
+    }
 
-    $cache->set('model.stub_table', 'cached');
-    $listener->onModelDeleted(ModelEvent::deleted($model));
+    public function testClearsTheTableCacheOnDelete(): void
+    {
+        $storage  = new MemoryStorage(['ttl' => 3600]);
+        $cache    = new CacheManager('memory', $storage);
+        $listener = new CacheClearListener();
+        $listener->setCacheManager($cache);
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-    expect($cache->has('model.stub_table'))->toBeFalse();
-});
+        $cache->set('model.stub_table', 'cached');
+        $listener->onModelDeleted(ModelEvent::deleted($model));
 
-it('skips clearing when the event has no table', function (): void {
-    $storage  = new MemoryStorage(['ttl' => 3600]);
-    $cache    = new CacheManager('memory', $storage);
-    $listener = new CacheClearListener();
-    $listener->setCacheManager($cache);
+        $this->assertFalse($cache->has('model.stub_table'));
+    }
 
-    $cache->set('model.other', 'value');
-    $listener->onModelSaved(new Event('model.saved'));
+    public function testSkipsClearingWhenTheEventHasNoTable(): void
+    {
+        $storage  = new MemoryStorage(['ttl' => 3600]);
+        $cache    = new CacheManager('memory', $storage);
+        $listener = new CacheClearListener();
+        $listener->setCacheManager($cache);
 
-    expect($cache->has('model.other'))->toBeTrue();
-});
+        $cache->set('model.other', 'value');
+        $listener->onModelSaved(new Event('model.saved'));
 
-it('skips clearing when the event table is not a string', function (): void {
-    $storage  = new MemoryStorage(['ttl' => 3600]);
-    $cache    = new CacheManager('memory', $storage);
-    $listener = new CacheClearListener();
-    $listener->setCacheManager($cache);
+        $this->assertTrue($cache->has('model.other'));
+    }
 
-    $cache->set('model.other', 'value');
-    $event = new Event('model.saved');
-    $event->setArgument('table', 123);
-    $listener->onModelSaved($event);
+    public function testSkipsClearingWhenTheEventTableIsNotAString(): void
+    {
+        $storage  = new MemoryStorage(['ttl' => 3600]);
+        $cache    = new CacheManager('memory', $storage);
+        $listener = new CacheClearListener();
+        $listener->setCacheManager($cache);
 
-    expect($cache->has('model.other'))->toBeTrue();
-});
+        $cache->set('model.other', 'value');
+        $event = new Event('model.saved');
+        $event->setArgument('table', 123);
+        $listener->onModelSaved($event);
 
-it('does nothing without a cache manager', function (): void {
-    $listener = new CacheClearListener();
-    $model    = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $this->assertTrue($cache->has('model.other'));
+    }
 
-    expect(fn () => $listener->onModelSaved(ModelEvent::saved($model)))->not->toThrow(\Throwable::class);
-});
+    public function testDoesNothingWithoutACacheManager(): void
+    {
+        $listener = new CacheClearListener();
+        $model    = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-it('subscribes to model lifecycle events', function (): void {
-    expect(AuditTrailListener::getSubscribedEvents())->toEqual([
-        'model.created' => ['onModelCreated', 0],
-        'model.saved'   => ['onModelSaved', 0],
-        'model.deleted' => ['onModelDeleted', 0],
-    ]);
-    expect(CacheClearListener::getSubscribedEvents())->toEqual([
-        'model.saved'   => ['onModelSaved', 0],
-        'model.deleted' => ['onModelDeleted', 0],
-    ]);
-    expect(ExceptionHandlerListener::getSubscribedEvents())->toEqual([
-        'exception.logged' => ['onExceptionLogged', 10],
-    ]);
-});
+        $listener->onModelSaved(ModelEvent::saved($model));
 
-it('falls back to the unknown table name for a non-string table', function (): void {
-    $logger   = new MemoryLogger();
-    $listener = new AuditTrailListener();
-    $listener->setLogger($logger);
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $this->addToAssertionCount(1);
+    }
 
-    $event = new Event('model.saved');
-    $event->setArgument('model', $model);
-    $event->setArgument('table', 123);
+    public function testSubscribesToModelLifecycleEvents(): void
+    {
+        $this->assertEquals([
+            'model.created' => ['onModelCreated', 0],
+            'model.saved'   => ['onModelSaved', 0],
+            'model.deleted' => ['onModelDeleted', 0],
+        ], AuditTrailListener::getSubscribedEvents());
+        $this->assertEquals([
+            'model.saved'   => ['onModelSaved', 0],
+            'model.deleted' => ['onModelDeleted', 0],
+        ], CacheClearListener::getSubscribedEvents());
+        $this->assertEquals([
+            'exception.logged' => ['onExceptionLogged', 10],
+        ], ExceptionHandlerListener::getSubscribedEvents());
+    }
 
-    $listener->onModelSaved($event);
+    public function testFallsBackToTheUnknownTableNameForANonStringTable(): void
+    {
+        $logger   = new MemoryLogger();
+        $listener = new AuditTrailListener();
+        $listener->setLogger($logger);
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
 
-    expect($logger->getRecords())->toHaveCount(1);
-    expect($logger->getRecords()[0]['message'])->toBe('Model updated in table `unknown`');
-});
+        $event = new Event('model.saved');
+        $event->setArgument('model', $model);
+        $event->setArgument('table', 123);
+
+        $listener->onModelSaved($event);
+
+        $this->assertCount(1, $logger->getRecords());
+        $this->assertSame('Model updated in table `unknown`', $logger->getRecords()[0]['message']);
+    }
+}

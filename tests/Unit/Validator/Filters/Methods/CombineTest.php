@@ -1,14 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
+
 use Omega\Validator\Rule\Filter;
+use Tests\TestCase;
 
-it('can combine filter class with other filter class', function () {
-    $filter = new Filter();
-    $filter->trim();
+final class CombineTest extends TestCase
+{
+    public function testCanCombineFilterClassWithOtherFilterClass(): void
+    {
+        $filter = new Filter();
+        $filter->trim();
 
-    $filter2 =new Filter();
-    $filter2->lower_case();
-    $filter2->combine($filter);
+        $filter2 = new Filter();
+        $filter2->lower_case();
+        $filter2->combine($filter);
 
-    expect($filter2->getFilter())->toEqual('lower_case|trim');
-});
+        $this->assertEquals('lower_case|trim', $filter2->getFilter());
+    }
+}

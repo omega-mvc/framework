@@ -4,127 +4,156 @@ declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
-use Exception;
 use Omega\View\Templator;
-use Omega\View\TemplatorFinder;
 use Omega\View\Templator\SectionTemplator;
+use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 use Throwable;
 
 use function trim;
 
 use const PHP_EOL;
 
+#[CoversClass(SectionTemplator::class)]
+#[CoversClass(Templator::class)]
+#[CoversClass(TemplatorFinder::class)]
+final class SectionTest extends TestCase
+{
+    private Templator $templator;
 
-covers(SectionTemplator::class);
-covers(Templator::class);
-covers(TemplatorFinder::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->templator = new Templator(
-        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
-        __DIR__ . '/../fixtures/view/templator/'
-    );
-});
-
-it('can render section scope', function (): void {
-    $out = $this->templator->templates(
-        '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
-    );
-    expect(trim($out))->toEqual('<p><strong>taylor</strong></p>');
-});
-
-it('throw when extend not found', function (): void {
-    try {
-        $this->templator->templates(
-            '{% extend(\'section.html\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
+        $this->templator = new Templator(
+            new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']),
+            __DIR__ . '/../fixtures/view/templator/'
         );
-    } catch (Throwable $th) {
-        expect($th->getMessage())->toEqual('View file not found: `section.html`');
     }
-});
 
-it('can render section inline', function (): void {
-    $out = $this->templator->templates('{% extend(\'section.template\') %} {% section(\'title\', \'taylor\') %}');
-    expect(trim($out))->toEqual('<p>taylor</p>');
-});
+    public function testCanRenderSectionScope(): void
+    {
+        $out = $this->templator->templates(
+            '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
+        );
 
-it('can render section inline escape', function (): void {
-    $out = $this->templator->templates(
-        '{% extend(\'section.template\') %} {% section(\'title\', \'<script>alert(1)</script>\') %}'
-    );
-    expect(trim($out))->toEqual('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>');
-});
+        $this->assertEquals('<p><strong>taylor</strong></p>', trim($out));
+    }
 
-it('can render multi section', function (): void {
-    $out = $this->templator->templates('
+    public function testThrowWhenExtendNotFound(): void
+    {
+        try {
+            $this->templator->templates(
+                '{% extend(\'section.html\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}'
+            );
+        } catch (Throwable $th) {
+            $this->assertEquals('View file not found: `section.html`', $th->getMessage());
+        }
+    }
+
+    public function testCanRenderSectionInline(): void
+    {
+        $out = $this->templator->templates('{% extend(\'section.template\') %} {% section(\'title\', \'taylor\') %}');
+
+        $this->assertEquals('<p>taylor</p>', trim($out));
+    }
+
+    public function testCanRenderSectionInlineEscape(): void
+    {
+        $out = $this->templator->templates(
+            '{% extend(\'section.template\') %} {% section(\'title\', \'<script>alert(1)</script>\') %}'
+        );
+
+        $this->assertEquals('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>', trim($out));
+    }
+
+    public function testCanRenderMultiSection(): void
+    {
+        $out = $this->templator->templates('
             {% extend(\'section.template\') %}
 
             {% sections %}
             title : <strong>taylor</strong>
             {% endsections %}
         ');
-    expect(trim($out))->toEqual('<p><strong>taylor</strong></p>');
-});
 
-it('can get dependency view', function (): void {
-    $finder    = new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']);
-    $templator = new Templator($finder, __DIR__ . '/../fixtures/view/templator');
-    $templator->templates(
-        '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}',
-        'test'
-    );
-    expect($templator->getDependency('test'))->toEqual([
-        $finder->find('section.template') => 1,
-    ]);
-});
+        $this->assertEquals('<p><strong>taylor</strong></p>', trim($out));
+    }
 
-it('can render section scope with default yield', function (): void {
-    $out = $this->templator->templates('{% extend(\'sectiondefault.template\') %}');
-    expect(trim($out))->toEqual('<p>nuno</p>');
-});
+    public function testCanGetDependencyView(): void
+    {
+        $finder    = new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/view/'], ['']);
+        $templator = new Templator($finder, __DIR__ . '/../fixtures/view/templator');
 
-it('can render section with multi line', function (): void {
-    $out = $this->templator->templates('{% extend(\'sectiondefaultmultilines.template\') %}');
-    expect(trim($out))->toEqual(
-        '<li>'
-        . PHP_EOL
-        . '<ul>one</ul>'
-        . PHP_EOL
-        . '<ul>two</ul>'
-        . PHP_EOL
-        . '<ul>three</ul>'
-        . PHP_EOL
-        . '</li>'
-    );
-});
+        $templator->templates(
+            '{% extend(\'section.template\') %} {% section(\'title\') %}<strong>taylor</strong>{% endsection %}',
+            'test'
+        );
 
-it('will throw error have two default', function (): void {
-    $this->expectExceptionMessageIsOrContains('The yield statement cannot have both a default value and content.');
-    $this->templator->templates('{% extend(\'sectiondefaultandmultilines.template\') %}');
-});
+        $this->assertEquals([
+            $finder->find('section.template') => 1,
+        ], $templator->getDependency('test'));
+    }
 
-it('returns template if no extend', function (): void {
-    $template = '<p>no extend here</p>';
-    $out      = $this->templator->templates($template);
+    public function testCanRenderSectionScopeWithDefaultYield(): void
+    {
+        $out = $this->templator->templates('{% extend(\'sectiondefault.template\') %}');
 
-    expect($out)->toEqual('<p>no extend here</p>');
-});
+        $this->assertEquals('<p>nuno</p>', trim($out));
+    }
 
-it('throws when required yield section missing', function (): void {
-    $this->expectExceptionMessageIsOrContains(
-        "Slot with extends 'sectionwithmissingyield.template' required 'missing_section'"
-    );
+    public function testCanRenderSectionWithMultiLine(): void
+    {
+        $out = $this->templator->templates('{% extend(\'sectiondefaultmultilines.template\') %}');
 
-    $childTemplate  = '{% extend(\'sectionwithmissingyield.template\') %}';
-    $this->templator->templates($childTemplate);
-});
+        $this->assertEquals(
+            '<li>'
+            . PHP_EOL
+            . '<ul>one</ul>'
+            . PHP_EOL
+            . '<ul>two</ul>'
+            . PHP_EOL
+            . '<ul>three</ul>'
+            . PHP_EOL
+            . '</li>',
+            trim($out)
+        );
+    }
 
-it('returns empty string when yield not defined', function (): void {
-    $layoutPath = __DIR__ . '/../fixtures/view/templator/view/sectionempty.template';
+    public function testWillThrowErrorHaveTwoDefault(): void
+    {
+        $this->expectExceptionMessageIsOrContains('The yield statement cannot have both a default value and content.');
 
-    file_put_contents($layoutPath, '{% yield %}');
+        $this->templator->templates('{% extend(\'sectiondefaultandmultilines.template\') %}');
+    }
 
-    $out = $this->templator->templates('{% extend("sectionempty.template") %}');
+    public function testReturnsTemplateIfNoExtend(): void
+    {
+        $template = '<p>no extend here</p>';
+        $out      = $this->templator->templates($template);
 
-    expect(trim($out))->toEqual('');
-});
+        $this->assertEquals('<p>no extend here</p>', $out);
+    }
+
+    public function testThrowsWhenRequiredYieldSectionMissing(): void
+    {
+        $this->expectExceptionMessageIsOrContains(
+            "Slot with extends 'sectionwithmissingyield.template' required 'missing_section'"
+        );
+
+        $childTemplate = '{% extend(\'sectionwithmissingyield.template\') %}';
+        $this->templator->templates($childTemplate);
+    }
+
+    public function testReturnsEmptyStringWhenYieldNotDefined(): void
+    {
+        $layoutPath = __DIR__ . '/../fixtures/view/templator/view/sectionempty.template';
+
+        file_put_contents($layoutPath, '{% yield %}');
+
+        $out = $this->templator->templates('{% extend("sectionempty.template") %}');
+
+        $this->assertEquals('', trim($out));
+    }
+}

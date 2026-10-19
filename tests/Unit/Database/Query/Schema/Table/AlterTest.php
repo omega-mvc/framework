@@ -7,12 +7,19 @@ namespace Tests\Database\Query\Schema\Table;
 use Omega\Database\ConnectionInterface;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Database\Schema\Table\Alter;
-use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(Alter::class)]
 final class AlterTest extends TestCase
 {
+
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -116,4 +123,6 @@ final class AlterTest extends TestCase
             $schema->__toString()
         );
     }
+
+
 }

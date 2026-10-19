@@ -5,157 +5,199 @@ declare(strict_types=1);
 namespace Tests\Filesystem\Adapter\Local;
 
 use InvalidArgumentException;
-use OutOfBoundsException;
-use RuntimeException;
 use Omega\Filesystem\Adapter\Local\Local;
 use Omega\Filesystem\Stream\StreamMode;
 use Omega\Filesystem\Util\Checksum;
-use Omega\Filesystem\Util\Size;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
+use Tests\TestCase;
 
-covers(Local::class);
+use function is_dir;
+use function mkdir;
+use function rmdir;
+use function sys_get_temp_dir;
+use function uniqid;
+use function unlink;
 
-beforeEach(function (): void {
-    $this->dir = sys_get_temp_dir() . '/omega_test_' . uniqid();
-    mkdir($this->dir, 0777, true);
-});
+#[CoversClass(Local::class)]
+final class LocalTest extends TestCase
+{
+    private string $dir;
 
-afterEach(function (): void {
-    if (is_dir($this->dir)) {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::CHILD_FIRST
-        );
-        foreach ($iterator as $file) {
-            if ($file instanceof \SplFileInfo) {
-                $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
-            }
-        }
-        rmdir($this->dir);
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->dir = sys_get_temp_dir() . '/omega_test_' . uniqid();
+        mkdir($this->dir, 0777, true);
     }
-});
 
-it('constructs with existing directory', function (): void {
-    $adapter = new Local($this->dir);
-    expect($adapter->isDirectory('.'))->toBeTrue();
-});
+    protected function tearDown(): void
+    {
+        if (is_dir($this->dir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($iterator as $file) {
+                if ($file instanceof \SplFileInfo) {
+                    $file->isDir() ? rmdir($file->getPathname()) : unlink($file->getPathname());
+                }
+            }
+            rmdir($this->dir);
+        }
 
-it('throws when directory does not exist and create is false', function (): void {
-    $adapter = new Local($this->dir);
-    rmdir($this->dir);
-    $adapter->read('file.txt');
-})->throws(RuntimeException::class);
+        parent::tearDown();
+    }
 
-it('creates directory lazily when create is true', function (): void {
-    $newDir = $this->dir . '/newdir';
-    $adapter = new Local($newDir, true);
-    $adapter->write('test.txt', 'content');
-    expect(is_dir($newDir))->toBeTrue();
-});
+    public function testConstructsWithExistingDirectory(): void
+    {
+        $adapter = new Local($this->dir);
+        $this->assertTrue($adapter->isDirectory('.'));
+    }
 
-it('writes and reads a file', function (): void {
-    $adapter = new Local($this->dir, true);
-    $bytes = $adapter->write('test.txt', 'Hello');
-    expect($bytes)->toBe(5);
-    expect($adapter->read('test.txt'))->toBe('Hello');
-});
+    public function testThrowsWhenDirectoryDoesNotExistAndCreateIsFalse(): void
+    {
+        $adapter = new Local($this->dir);
+        rmdir($this->dir);
 
-it('returns false when reading directory', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('file.txt', 'content');
-    expect($adapter->read('.'))->toBeFalse();
-});
+        $this->expectException(RuntimeException::class);
 
-it('checks file existence', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'content');
-    expect($adapter->exists('test.txt'))->toBeTrue();
-    expect($adapter->exists('missing.txt'))->toBeFalse();
-});
+        $adapter->read('file.txt');
+    }
 
-it('lists keys', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('b.txt', 'b');
-    $adapter->write('a.txt', 'a');
-    $keys = $adapter->keys();
-    expect($keys)->toBe(['a.txt', 'b.txt']);
-});
+    public function testCreatesDirectoryLazilyWhenCreateIsTrue(): void
+    {
+        $newDir  = $this->dir . '/newdir';
+        $adapter = new Local($newDir, true);
+        $adapter->write('test.txt', 'content');
+        $this->assertTrue(is_dir($newDir));
+    }
 
-it('returns modification time', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'content');
-    $mtime = $adapter->mtime('test.txt');
-    expect($mtime)->toBeInt();
-});
+    public function testWritesAndReadsAFile(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $bytes   = $adapter->write('test.txt', 'Hello');
+        $this->assertSame(5, $bytes);
+        $this->assertSame('Hello', $adapter->read('test.txt'));
+    }
 
-it('deletes a file', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'content');
-    expect($adapter->delete('test.txt'))->toBeTrue();
-    expect($adapter->exists('test.txt'))->toBeFalse();
-});
+    public function testReturnsFalseWhenReadingDirectory(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('file.txt', 'content');
+        $this->assertFalse($adapter->read('.'));
+    }
 
-it('returns false when deleting non-existent file', function (): void {
-    $adapter = new Local($this->dir, true);
-    expect($adapter->delete('missing.txt'))->toBeFalse();
-});
+    public function testChecksFileExistence(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'content');
+        $this->assertTrue($adapter->exists('test.txt'));
+        $this->assertFalse($adapter->exists('missing.txt'));
+    }
 
-it('renames a file', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('old.txt', 'content');
-    expect($adapter->rename('old.txt', 'new.txt'))->toBeTrue();
-    expect($adapter->exists('new.txt'))->toBeTrue();
-    expect($adapter->exists('old.txt'))->toBeFalse();
-});
+    public function testListsKeys(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('b.txt', 'b');
+        $adapter->write('a.txt', 'a');
+        $keys = $adapter->keys();
+        $this->assertSame(['a.txt', 'b.txt'], $keys);
+    }
 
-it('checks if path is a directory', function (): void {
-    $adapter = new Local($this->dir, true);
-    expect($adapter->isDirectory('.'))->toBeTrue();
-    $adapter->write('file.txt', 'content');
-    expect($adapter->isDirectory('file.txt'))->toBeFalse();
-});
+    public function testReturnsModificationTime(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'content');
+        $mtime = $adapter->mtime('test.txt');
+        $this->assertIsInt($mtime);
+    }
 
-it('computes checksum', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'hello');
-    expect($adapter->checksum('test.txt'))->toBe(Checksum::fromContent('hello'));
-});
+    public function testDeletesAFile(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'content');
+        $this->assertTrue($adapter->delete('test.txt'));
+        $this->assertFalse($adapter->exists('test.txt'));
+    }
 
-it('computes size', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'hello');
-    expect($adapter->size('test.txt'))->toBe(5);
-});
+    public function testReturnsFalseWhenDeletingNonExistentFile(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $this->assertFalse($adapter->delete('missing.txt'));
+    }
 
-it('returns mime type', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'hello');
-    $mimeType = $adapter->mimeType('test.txt');
-    expect($mimeType)->not->toBeEmpty();
-});
+    public function testRenamesAFile(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('old.txt', 'content');
+        $this->assertTrue($adapter->rename('old.txt', 'new.txt'));
+        $this->assertTrue($adapter->exists('new.txt'));
+        $this->assertFalse($adapter->exists('old.txt'));
+    }
 
-it('computes key from path', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('subdir/file.txt', 'content');
-    $key = $adapter->computeKey($this->dir . '/subdir/file.txt');
-    expect($key)->toBe('subdir/file.txt');
-});
+    public function testChecksIfPathIsADirectory(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $this->assertTrue($adapter->isDirectory('.'));
+        $adapter->write('file.txt', 'content');
+        $this->assertFalse($adapter->isDirectory('file.txt'));
+    }
 
-it('deletes a directory recursively', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('subdir/file.txt', 'content');
-    expect($adapter->delete('subdir'))->toBeTrue();
-    expect($adapter->isDirectory('subdir'))->toBeFalse();
-});
+    public function testComputesChecksum(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'hello');
+        $this->assertSame(Checksum::fromContent('hello'), $adapter->checksum('test.txt'));
+    }
 
-it('throws when deleting root directory', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->delete('.');
-})->throws(InvalidArgumentException::class);
+    public function testComputesSize(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'hello');
+        $this->assertSame(5, $adapter->size('test.txt'));
+    }
 
-it('creates a stream', function (): void {
-    $adapter = new Local($this->dir, true);
-    $adapter->write('test.txt', 'content');
-    $stream = $adapter->createStream('test.txt');
-    expect($stream->open(new StreamMode('r')))->toBeTrue();
-    expect($stream->read(7))->toBe('content');
-});
+    public function testReturnsMimeType(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'hello');
+        $mimeType = $adapter->mimeType('test.txt');
+        $this->assertNotEmpty($mimeType);
+    }
+
+    public function testComputesKeyFromPath(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('subdir/file.txt', 'content');
+        $key = $adapter->computeKey($this->dir . '/subdir/file.txt');
+        $this->assertSame('subdir/file.txt', $key);
+    }
+
+    public function testDeletesADirectoryRecursively(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('subdir/file.txt', 'content');
+        $this->assertTrue($adapter->delete('subdir'));
+        $this->assertFalse($adapter->isDirectory('subdir'));
+    }
+
+    public function testThrowsWhenDeletingRootDirectory(): void
+    {
+        $adapter = new Local($this->dir, true);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $adapter->delete('.');
+    }
+
+    public function testCreatesAStream(): void
+    {
+        $adapter = new Local($this->dir, true);
+        $adapter->write('test.txt', 'content');
+        $stream = $adapter->createStream('test.txt');
+        $this->assertTrue($stream->open(new StreamMode('r')));
+        $this->assertSame('content', $stream->read(7));
+    }
+}

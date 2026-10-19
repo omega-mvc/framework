@@ -1,74 +1,86 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can add costume validation', function () {
-    $validation = new Validator(['test' => 2]);
+final class CostumeValidationTest extends TestCase
+{
+    public function testCanAddCostumeValidation(): void
+    {
+        $validation = new Validator(['test' => 2]);
 
-    $validation->field('test')->valid(
-        fn ($field, $input, $param, $value) => true,
-        'This field is not odd number'
-    );
+        $validation->field('test')->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => true,
+            'This field is not odd number'
+        );
 
-    expect($validation->isValid())->toBeTrue();
-});
+        $this->assertTrue($validation->isValid());
+    }
 
-it('can add costume validation (not)', function () {
-    $validation = new Validator(['test' => 2]);
+    public function testCanAddCostumeValidationNot(): void
+    {
+        $validation = new Validator(['test' => 2]);
 
-    $validation->field('test')->not->valid(
-        fn ($field, $input, $param, $value) => true,
-        'This field is not odd number'
-    );
+        $validation->field('test')->not->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => true,
+            'This field is not odd number'
+        );
 
-    expect($validation->isValid())->toBeFalse();
-});
+        $this->assertFalse($validation->isValid());
+    }
 
-it('can add costume validation combine with other', function () {
-    $validation = new Validator(['test' => 22]);
+    public function testCanAddCostumeValidationCombineWithOther(): void
+    {
+        $validation = new Validator(['test' => 22]);
 
-    $validation->field('test')->valid(
-        fn ($field, $input, $param, $value) => true,
-        'This field is not odd number'
-    )->min_len(2);
+        $validation->field('test')->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => true,
+            'This field is not odd number'
+        )->min_len(2);
 
-    expect($validation->isValid())->toBeTrue();
-});
+        $this->assertTrue($validation->isValid());
+    }
 
-it('can add costume validation (not) combine with other', function () {
-    $validation = new Validator(['test' => 2]);
+    public function testCanAddCostumeValidationNotCombineWithOther(): void
+    {
+        $validation = new Validator(['test' => 2]);
 
-    $validation->field('test')->not->valid(
-        fn ($field, $input, $param, $value) => true,
-        'This field is not odd number'
-    )->min_len(2);
+        $validation->field('test')->not->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => true,
+            'This field is not odd number'
+        )->min_len(2);
 
-    expect($validation->isValid())->toBeFalse();
-});
+        $this->assertFalse($validation->isValid());
+    }
 
-it('can add costume message validation', function () {
-    $validation = new Validator(['test' => 2]);
+    public function testCanAddCostumeMessageValidation(): void
+    {
+        $validation = new Validator(['test' => 2]);
 
-    $validation->field('test')->valid(
-        fn ($field, $input, $param, $value) => false,
-        'Costume error - {field}'
-    );
+        $validation->field('test')->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => false,
+            'Costume error - {field}'
+        );
 
-    expect($validation->errors->all())->toMatchArray([
-        'test' => 'Costume error - Test',
-    ]);
-});
+        $this->assertArrayHasKey('test', $validation->errors->all());
+        $this->assertEquals('Costume error - Test', $validation->errors->all()['test']);
+    }
 
-it('can add costume message validation (not)', function () {
-    $validation = new Validator(['test' => 2]);
+    public function testCanAddCostumeMessageValidationNot(): void
+    {
+        $validation = new Validator(['test' => 2]);
 
-    $validation->field('test')->not->valid(
-        fn ($field, $input, $param, $value) => true,
-        'Costume error - {field}'
-    );
+        $validation->field('test')->not->valid(
+            fn (string $field, array $input, array $param, mixed $value): bool => true,
+            'Costume error - {field}'
+        );
 
-    expect($validation->isValid())->toBeFalse();
-    expect($validation->errors->all())->toMatchArray([
-        'test' => 'Not, Costume error - Test',
-    ]);
-});
+        $this->assertFalse($validation->isValid());
+        $this->assertArrayHasKey('test', $validation->errors->all());
+        $this->assertEquals('Not, Costume error - Test', $validation->errors->all()['test']);
+    }
+}

@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -17,90 +7,107 @@ namespace Tests\Router;
 use Omega\Router\Exceptions\RouteNotRegisteredException;
 use Omega\Router\Route;
 use Omega\Router\Router;
+use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\Router\Support\TestMiddleware;
+use Tests\TestCase;
 
-covers(Route::class);
+#[CoversClass(Route::class)]
+final class RouteExtendedTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        Router::reset();
 
-afterEach(function (): void {
-    Router::reset();
-});
+        parent::tearDown();
+    }
 
-it('returns the whole definition through the route() magic method', function (): void {
-    $route = new Route(['uri' => '/x', 'method' => 'get']);
+    public function testReturnsTheWholeDefinitionThroughTheRouteMagicMethod(): void
+    {
+        $route = new Route(['uri' => '/x', 'method' => 'get']);
 
-    expect($route->route())->toBe(['uri' => '/x', 'method' => 'get', 'name' => '']);
-});
+        $this->assertSame(['uri' => '/x', 'method' => 'get', 'name' => ''], $route->route());
+    }
 
-it('throws RouteNotRegisteredException for unknown dynamic methods', function (): void {
-    $route = new Route(['uri' => '/x']);
+    public function testThrowsRouteNotRegisteredExceptionForUnknownDynamicMethods(): void
+    {
+        $route = new Route(['uri' => '/x']);
 
-    expect(fn () => $route->__call('unknownMagic', []))
-        ->toThrow(RouteNotRegisteredException::class, 'Route property or method [unknownMagic] is not registered.');
-});
+        $this->expectException(RouteNotRegisteredException::class);
+        $this->expectExceptionMessage('Route property or method [unknownMagic] is not registered.');
 
-it('defaults the route name to an empty string', function (): void {
-    $route = new Route(['uri' => '/x']);
+        $route->__call('unknownMagic', []);
+    }
 
-    expect($route['name'])->toBe('');
-});
+    public function testDefaultsTheRouteNameToAnEmptyString(): void
+    {
+        $route = new Route(['uri' => '/x']);
 
-it('prepends the router group as prefix to the route name', function (): void {
-    $backup        = Router::$group;
-    Router::$group = ['prefix' => '/web', 'middleware' => [], 'as' => 'web.'];
+        $this->assertSame('', $route['name']);
+    }
 
-    $route = new Route(['uri' => '/x', 'name' => 'home']);
+    public function testPrependsTheRouterGroupAsPrefixToTheRouteName(): void
+    {
+        $backup        = Router::$group;
+        Router::$group = ['prefix' => '/web', 'middleware' => [], 'as' => 'web.'];
 
-    expect($route['name'])->toBe('web.home');
+        $route = new Route(['uri' => '/x', 'name' => 'home']);
 
-    $route->name('other');
+        $this->assertSame('web.home', $route['name']);
 
-    expect($route['name'])->toBe('web.other');
+        $route->name('other');
 
-    Router::$group = $backup;
-});
+        $this->assertSame('web.other', $route['name']);
 
-it('appends middleware to the existing middleware list', function (): void {
-    $route = new Route(['uri' => '/x', 'middleware' => [TestMiddleware::class]]);
+        Router::$group = $backup;
+    }
 
-    $result = $route->middleware([Route::class, TestMiddleware::class]);
+    public function testAppendsMiddlewareToTheExistingMiddlewareList(): void
+    {
+        $route = new Route(['uri' => '/x', 'middleware' => [TestMiddleware::class]]);
 
-    expect($result)->toBe($route);
-    expect($route['middleware'])->toBe([
-        TestMiddleware::class,
-        Route::class,
-        TestMiddleware::class,
-    ]);
-});
+        $result = $route->middleware([Route::class, TestMiddleware::class]);
 
-it('creates the middleware list from scratch when no middleware is present', function (): void {
-    $route = new Route(['uri' => '/x']);
+        $this->assertSame($route, $result);
+        $this->assertSame([
+            TestMiddleware::class,
+            Route::class,
+            TestMiddleware::class,
+        ], $route['middleware']);
+    }
 
-    $route->middleware([TestMiddleware::class]);
+    public function testCreatesTheMiddlewareListFromScratchWhenNoMiddlewareIsPresent(): void
+    {
+        $route = new Route(['uri' => '/x']);
 
-    expect($route['middleware'])->toBe([TestMiddleware::class]);
-});
+        $route->middleware([TestMiddleware::class]);
 
-it('stores custom patterns through where()', function (): void {
-    $route = new Route(['uri' => '/x/{id}']);
+        $this->assertSame([TestMiddleware::class], $route['middleware']);
+    }
 
-    $result = $route->where(['{id}' => '\d+']);
+    public function testStoresCustomPatternsThroughWhere(): void
+    {
+        $route = new Route(['uri' => '/x/{id}']);
 
-    expect($result)->toBe($route);
-    expect($route['patterns'])->toBe(['{id}' => '\d+']);
-});
+        $result = $route->where(['{id}' => '\d+']);
 
-it('supports the ArrayAccess contract', function (): void {
-    $route = new Route(['uri' => '/x', 'name' => 'n']);
+        $this->assertSame($route, $result);
+        $this->assertSame(['{id}' => '\d+'], $route['patterns']);
+    }
 
-    expect(isset($route['name']))->toBeTrue();
-    expect(isset($route['missing']))->toBeFalse();
-    expect($route['missing'])->toBeNull();
+    public function testSupportsTheArrayAccessContract(): void
+    {
+        $route = new Route(['uri' => '/x', 'name' => 'n']);
 
-    $route['extra'] = 'value';
-    expect($route['extra'])->toBe('value');
-    expect(isset($route['extra']))->toBeTrue();
+        $this->assertTrue(isset($route['name']));
+        $this->assertFalse(isset($route['missing']));
+        $this->assertNull($route['missing']);
 
-    unset($route['extra']);
-    expect(isset($route['extra']))->toBeFalse();
-    expect($route['extra'])->toBeNull();
-});
+        $route['extra'] = 'value';
+        $this->assertSame('value', $route['extra']);
+        $this->assertTrue(isset($route['extra']));
+
+        unset($route['extra']);
+        $this->assertFalse(isset($route['extra']));
+        $this->assertNull($route['extra']);
+    }
+}

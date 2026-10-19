@@ -6,6 +6,8 @@ namespace Tests\DocBlockGenerator\VarExport;
 
 use Omega\DocBlockGenerator\VarExport;
 use Omega\DocBlockGenerator\VarExport\Value\Constant;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function file_put_contents;
 use function sys_get_temp_dir;
@@ -15,30 +17,33 @@ use function unlink;
 use const DIRECTORY_SEPARATOR;
 use const PHP_VERSION;
 
-covers(Constant::class);
-covers(VarExport::class);
+#[CoversClass(Constant::class)]
+#[CoversClass(VarExport::class)]
+final class ConstantTest extends TestCase
+{
+    public function testCanCompileConstantByName(): void
+    {
+        $data = [
+            'php_version' => new Constant('PHP_VERSION'),
+            'ds'          => new Constant('DIRECTORY_SEPARATOR'),
+        ];
 
-it('can compile constant by name', function (): void {
-    $data = [
-        'php_version' => new Constant('PHP_VERSION'),
-        'ds'          => new Constant('DIRECTORY_SEPARATOR'),
-    ];
+        $exporter = new VarExport();
+        $exported = $exporter->export($data);
 
-    $exporter = new VarExport();
-    $exported = $exporter->export($data);
+        $this->assertStringContainsString("'php_version' => PHP_VERSION", $exported);
+        $this->assertStringContainsString("'ds' => DIRECTORY_SEPARATOR", $exported);
 
-    expect($exported)->toContain("'php_version' => PHP_VERSION");
-    expect($exported)->toContain("'ds' => DIRECTORY_SEPARATOR");
+        $file = tempnam(sys_get_temp_dir(), 'test');
+        file_put_contents($file, "<?php return {$exported};");
+        $imported = require $file;
+        unlink($file);
 
-    $file = tempnam(sys_get_temp_dir(), 'test');
-    file_put_contents($file, "<?php return {$exported};");
-    $imported = require $file;
-    unlink($file);
+        if (!is_array($imported)) {
+            throw new \RuntimeException('Imported file must return an array.');
+        }
 
-    if (!is_array($imported)) {
-        throw new \RuntimeException('Imported file must return an array.');
+        $this->assertEquals(PHP_VERSION, $imported['php_version']);
+        $this->assertEquals(DIRECTORY_SEPARATOR, $imported['ds']);
     }
-
-    expect($imported['php_version'])->toEqual(PHP_VERSION);
-    expect($imported['ds'])->toEqual(DIRECTORY_SEPARATOR);
-});
+}

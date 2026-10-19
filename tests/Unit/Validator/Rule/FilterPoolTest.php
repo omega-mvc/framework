@@ -1,180 +1,210 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Rule;
+
+use Omega\Validator\Rule\Filter;
 use Omega\Validator\Rule\FilterPool;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can add filter pool using __get', function () {
-    $pool =  new FilterPool();
+#[CoversClass(FilterPool::class)]
+final class FilterPoolTest extends TestCase
+{
+    public function testCanAddFilterPoolUsingMagicGet(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->test->trim();
+        $pool->test->trim();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim'], $pool->getPool());
+    }
 
-it('can add filter pool using __get with exits rule', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingMagicGetWithExistRule(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->test->trim();
-    $pool->test->upper_case();
+        $pool->test->trim();
+        $pool->test->upper_case();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim|upper_case',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim|upper_case'], $pool->getPool());
+    }
 
-it('can add filter pool using __set', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingMagicSet(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->test = 'trim';
+        $pool->test = 'trim';
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim'], $pool->getPool());
+    }
 
-it('can add filter pool using __set with exits rule', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingMagicSetWithExistRule(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->test = 'trim';
-    $pool->test = 'upper_case';
+        $pool->test = 'trim';
+        $pool->test = 'upper_case';
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim|upper_case',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim|upper_case'], $pool->getPool());
+    }
 
-it('can add filter pool using __invoke', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingInvoke(): void
+    {
+        $pool = new FilterPool();
 
-    $pool('test')->trim();
+        $pool('test')->trim();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim'], $pool->getPool());
+    }
 
-it('can add filter pool using __invoke (multy)', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingInvokeMulty(): void
+    {
+        $pool = new FilterPool();
 
-    $pool('test', 'test2')->trim();
+        $pool('test', 'test2')->trim();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim',
-        'test2' => 'trim',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim',
+            'test2' => 'trim',
+        ], $pool->getPool());
+    }
 
-it('can add filter pool using __invoke with exist rule', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingInvokeWithExistRule(): void
+    {
+        $pool = new FilterPool();
 
-    $pool('test', 'test2')->trim();
-    $pool('test')->upper_case();
-    $pool('test2')->upper_case();
+        $pool('test', 'test2')->trim();
+        $pool('test')->upper_case();
+        $pool('test2')->upper_case();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim|upper_case',
-        'test2' => 'trim|upper_case',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim|upper_case',
+            'test2' => 'trim|upper_case',
+        ], $pool->getPool());
+    }
 
-it('can add filter pool using rule', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingRule(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test')->trim();
+        $pool->rule('test')->trim();
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim'], $pool->getPool());
+    }
 
-it('can add filter pool using rule (multy)', function () {
-    $pool =  new FilterPool();
+    public function testCanAddFilterPoolUsingRuleMulty(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test', 'test2')->trim();
+        $pool->rule('test', 'test2')->trim();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim',
-        'test2' => 'trim',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim',
+            'test2' => 'trim',
+        ], $pool->getPool());
+    }
 
-it('can add filter pool using rule (multy) with rule exist', function () {
-    $pool = new FilterPool();
+    public function testCanAddFilterPoolUsingRuleMultyWithRuleExist(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test', 'test2')->trim();
-    $pool->rule('test')->upper_case();
-    $pool->rule('test2')->upper_case();
+        $pool->rule('test', 'test2')->trim();
+        $pool->rule('test')->upper_case();
+        $pool->rule('test2')->upper_case();
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim|upper_case',
-        'test2' => 'trim|upper_case',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim|upper_case',
+            'test2' => 'trim|upper_case',
+        ], $pool->getPool());
+    }
 
-it('can filter pool only allow field', function () {
-    $pool = new FilterPool();
+    public function testCanFilterPoolOnlyAllowField(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test')->trim();
-    $pool->rule('test2')->upper_case();
-    $pool->rule('test3')->lower_case();
+        $pool->rule('test')->trim();
+        $pool->rule('test2')->upper_case();
+        $pool->rule('test3')->lower_case();
 
-    $pool->only(['test', 'test3']);
+        $pool->only(['test', 'test3']);
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim',
-        'test3' => 'lower_case',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim',
+            'test3' => 'lower_case',
+        ], $pool->getPool());
+    }
 
-it('can filter pool only allow field (empty)', function () {
-    $pool = new FilterPool();
+    public function testCanFilterPoolOnlyAllowFieldEmpty(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test')->trim();
+        $pool->rule('test')->trim();
 
-    $pool->only([]);
+        $pool->only([]);
 
-    expect($pool->getPool())->toBe([]);
-});
+        $this->assertSame([], $pool->getPool());
+    }
 
-it('can filter pool except field', function () {
-    $pool = new FilterPool();
+    public function testCanFilterPoolExceptField(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test')->trim();
-    $pool->rule('test2')->upper_case();
-    $pool->rule('test3')->lower_case();
+        $pool->rule('test')->trim();
+        $pool->rule('test2')->upper_case();
+        $pool->rule('test3')->lower_case();
 
-    $pool->except(['test2']);
+        $pool->except(['test2']);
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim',
-        'test3' => 'lower_case',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim',
+            'test3' => 'lower_case',
+        ], $pool->getPool());
+    }
 
-it('can filter pool except field (empty)', function () {
-    $pool = new FilterPool();
+    public function testCanFilterPoolExceptFieldEmpty(): void
+    {
+        $pool = new FilterPool();
 
-    $pool->rule('test')->trim();
+        $pool->rule('test')->trim();
 
-    $pool->except([]);
+        $pool->except([]);
 
-    expect($pool->getPool())->toMatchArray([
-        'test' => 'trim',
-    ]);
-});
+        $this->assertRulePool(['test' => 'trim'], $pool->getPool());
+    }
 
-it('can combine filter pool', function () {
-    $pool  = new FilterPool();
-    $pool2 = new FilterPool();
+    public function testCanCombineFilterPool(): void
+    {
+        $pool  = new FilterPool();
+        $pool2 = new FilterPool();
 
-    $pool->rule('test')->trim();
-    $pool2->rule('test2')->upper_case();
+        $pool->rule('test')->trim();
+        $pool2->rule('test2')->upper_case();
 
-    $pool->combine($pool2);
+        $pool->combine($pool2);
 
-    expect($pool->getPool())->toMatchArray([
-        'test'  => 'trim',
-        'test2' => 'upper_case',
-    ]);
-});
+        $this->assertRulePool([
+            'test'  => 'trim',
+            'test2' => 'upper_case',
+        ], $pool->getPool());
+    }
+
+    /**
+     * Assert that every expected field/rule pair is present in the filter pool.
+     *
+     * Mirrors Pest's `toMatchArray()`: each expected key must exist and its value
+     * must be loosely equal (the pool stores {@see Filter} objects that cast to
+     * their raw rule string).
+     *
+     * @param array<string, string>     $expected Expected field => rule pairs
+     * @param array<int|string, Filter> $actual   Pool returned by FilterPool::getPool()
+     */
+    private function assertRulePool(array $expected, array $actual): void
+    {
+        foreach ($expected as $field => $rule) {
+            $this->assertArrayHasKey($field, $actual);
+            $this->assertEquals($rule, $actual[$field]);
+        }
+    }
+}

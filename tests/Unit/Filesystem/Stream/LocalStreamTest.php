@@ -5,253 +5,316 @@ declare(strict_types=1);
 namespace Tests\Filesystem\Stream;
 
 use LogicException;
-use RuntimeException;
 use Omega\Filesystem\Stream\Local;
 use Omega\Filesystem\Stream\StreamMode;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
+use Tests\TestCase;
 
-covers(Local::class);
+use function file_exists;
+use function file_get_contents;
+use function file_put_contents;
+use function is_dir;
+use function mkdir;
+use function rmdir;
+use function sys_get_temp_dir;
+use function uniqid;
+use function unlink;
 
-beforeEach(function (): void {
-    $this->tmpDir = sys_get_temp_dir() . '/omega_stream_test_' . uniqid();
-    mkdir($this->tmpDir, 0777, true);
-    $this->tmpFile = $this->tmpDir . '/test.txt';
-});
+#[CoversClass(Local::class)]
+final class LocalStreamTest extends TestCase
+{
+    private string $tmpDir;
 
-afterEach(function (): void {
-    if (is_dir($this->tmpDir)) {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator(
-                $this->tmpDir,
-                \FilesystemIterator::SKIP_DOTS
-            ),
-            \RecursiveIteratorIterator::CHILD_FIRST
-        );
-        foreach ($iterator as $file) {
-            if ($file instanceof \SplFileInfo) {
-                $file->isDir()
-                    ? rmdir($file->getPathname())
-                    : unlink($file->getPathname());
+    private string $tmpFile;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->tmpDir = sys_get_temp_dir() . '/omega_stream_test_' . uniqid();
+        mkdir($this->tmpDir, 0777, true);
+        $this->tmpFile = $this->tmpDir . '/test.txt';
+    }
+
+    protected function tearDown(): void
+    {
+        if (is_dir($this->tmpDir)) {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator(
+                    $this->tmpDir,
+                    \FilesystemIterator::SKIP_DOTS
+                ),
+                \RecursiveIteratorIterator::CHILD_FIRST
+            );
+            foreach ($iterator as $file) {
+                if ($file instanceof \SplFileInfo) {
+                    $file->isDir()
+                        ? rmdir($file->getPathname())
+                        : unlink($file->getPathname());
+                }
             }
+            rmdir($this->tmpDir);
         }
-        rmdir($this->tmpDir);
+
+        parent::tearDown();
     }
-});
 
-it('opens a file for writing and creates directories', function (): void {
-    $dir = $this->tmpDir . '/sub';
-    $stream = new Local($dir . '/file.txt');
-    $result = $stream->open(new StreamMode('w'));
-    expect($result)->toBeTrue();
-    expect(is_dir($dir))->toBeTrue();
-    $stream->close();
-});
+    public function testOpensAFileForWritingAndCreatesDirectories(): void
+    {
+        $dir    = $this->tmpDir . '/sub';
+        $stream = new Local($dir . '/file.txt');
+        $result = $stream->open(new StreamMode('w'));
+        $this->assertTrue($result);
+        $this->assertTrue(is_dir($dir));
+        $stream->close();
+    }
 
-it('opens an existing file for reading', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $result = $stream->open(new StreamMode('r'));
-    expect($result)->toBeTrue();
-    $stream->close();
-});
+    public function testOpensAnExistingFileForReading(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $result = $stream->open(new StreamMode('r'));
+        $this->assertTrue($result);
+        $stream->close();
+    }
 
-it('throws when fopen fails', function (): void {
-    $stream = new Local('/nonexistent/path/file.txt');
+    public function testThrowsWhenFopenFails(): void
+    {
+        $stream = new Local('/nonexistent/path/file.txt');
 
-    set_error_handler(static fn (): bool => true);
+        $this->expectException(RuntimeException::class);
 
-    try {
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            $stream->open(new StreamMode('r'));
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    public function testReadsDataFromAnOpenStream(): void
+    {
+        file_put_contents($this->tmpFile, 'hello world');
+        $stream = new Local($this->tmpFile);
         $stream->open(new StreamMode('r'));
-    } finally {
-        restore_error_handler();
+        $this->assertSame('hello', $stream->read(5));
+        $stream->close();
     }
-})->throws(RuntimeException::class);
 
-it('reads data from an open stream', function (): void {
-    file_put_contents($this->tmpFile, 'hello world');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->read(5))->toBe('hello');
-    $stream->close();
-});
+    public function testReturnsFalseWhenReadingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->read(5));
+    }
 
-it('returns false when reading without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->read(5))->toBeFalse();
-});
+    public function testReturnsEmptyStringWhenCountIsLessThan1(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $this->assertSame('', $stream->read(0));
+        $this->assertSame('', $stream->read(-1));
+        $stream->close();
+    }
 
-it('returns empty string when count is less than 1', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->read(0))->toBe('');
-    expect($stream->read(-1))->toBe('');
-    $stream->close();
-});
+    public function testThrowsWhenReadingOnWriteOnlyMode(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
 
-it('throws when reading on write-only mode', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $stream->read(5);
-})->throws(LogicException::class, 'The stream does not allow read.');
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageIsOrContains('The stream does not allow read.');
 
-it('writes data to a stream', function (): void {
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $bytes = $stream->write('hello');
-    expect($bytes)->toBe(5);
-    $stream->close();
-    expect(file_get_contents($this->tmpFile))->toBe('hello');
-});
+        $stream->read(5);
+    }
 
-it('returns false when writing without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->write('data'))->toBeFalse();
-});
+    public function testWritesDataToAStream(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
+        $bytes = $stream->write('hello');
+        $this->assertSame(5, $bytes);
+        $stream->close();
+        $this->assertSame('hello', file_get_contents($this->tmpFile));
+    }
 
-it('throws when writing on read-only mode', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    $stream->write('data');
-})->throws(LogicException::class, 'The stream does not allow write.');
+    public function testReturnsFalseWhenWritingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->write('data'));
+    }
 
-it('closes an open stream', function (): void {
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $stream->write('data');
-    expect($stream->close())->toBeTrue();
-});
+    public function testThrowsWhenWritingOnReadOnlyMode(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
 
-it('returns false when closing without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->close())->toBeFalse();
-});
+        $this->expectException(LogicException::class);
+        $this->expectExceptionMessageIsOrContains('The stream does not allow write.');
 
-it('flushes an open stream', function (): void {
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $stream->write('data');
-    expect($stream->flush())->toBeTrue();
-    $stream->close();
-});
+        $stream->write('data');
+    }
 
-it('returns false when flushing without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->flush())->toBeFalse();
-});
+    public function testClosesAnOpenStream(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
+        $stream->write('data');
+        $this->assertTrue($stream->close());
+    }
 
-it('seeks to a position', function (): void {
-    file_put_contents($this->tmpFile, 'hello world');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r+'));
-    expect($stream->seek(6))->toBeTrue();
-    expect($stream->read(5))->toBe('world');
-    $stream->close();
-});
+    public function testReturnsFalseWhenClosingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->close());
+    }
 
-it('returns false when seeking without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->seek(0))->toBeFalse();
-});
+    public function testFlushesAnOpenStream(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
+        $stream->write('data');
+        $this->assertTrue($stream->flush());
+        $stream->close();
+    }
 
-it('returns current position via tell', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->tell())->toBe(0);
-    $stream->read(3);
-    expect($stream->tell())->toBe(3);
-    $stream->close();
-});
+    public function testReturnsFalseWhenFlushingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->flush());
+    }
 
-it('returns false when telling without open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->tell())->toBeFalse();
-});
+    public function testSeeksToAPosition(): void
+    {
+        file_put_contents($this->tmpFile, 'hello world');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r+'));
+        $this->assertTrue($stream->seek(6));
+        $this->assertSame('world', $stream->read(5));
+        $stream->close();
+    }
 
-it('detects end of file', function (): void {
-    file_put_contents($this->tmpFile, 'hi');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->eof())->toBeFalse();
-    $stream->read(2);
-    $stream->read(1);
-    expect($stream->eof())->toBeTrue();
-    $stream->close();
-});
+    public function testReturnsFalseWhenSeekingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->seek(0));
+    }
 
-it('returns true for eof when no handle', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->eof())->toBeTrue();
-});
+    public function testReturnsCurrentPositionViaTell(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $this->assertSame(0, $stream->tell());
+        $stream->read(3);
+        $this->assertSame(3, $stream->tell());
+        $stream->close();
+    }
 
-it('returns stat for open file', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    $stat = $stream->stat();
-    $this->assertIsArray($stat);
-    expect($stat['size'])->toBe(5);
-    $stream->close();
-});
+    public function testReturnsFalseWhenTellingWithoutOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->tell());
+    }
 
-it('returns stat for directory when not opened', function (): void {
-    $stream = new Local($this->tmpDir);
-    $stat = $stream->stat();
-    expect($stat)->toBeArray();
-});
+    public function testDetectsEndOfFile(): void
+    {
+        file_put_contents($this->tmpFile, 'hi');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $this->assertFalse($stream->eof());
+        $stream->read(2);
+        $stream->read(1);
+        $this->assertTrue($stream->eof());
+        $stream->close();
+    }
 
-it('returns false for stat when no handle and not dir', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->stat())->toBeFalse();
-});
+    public function testReturnsTrueForEofWhenNoHandle(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertTrue($stream->eof());
+    }
 
-it('cast returns handle when open', function (): void {
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $cast = $stream->cast(0);
-    expect($cast)->not->toBeFalse();
-    $stream->close();
-});
+    public function testReturnsStatForOpenFile(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $stat = $stream->stat();
+        $this->assertIsArray($stat);
+        $this->assertSame(5, $stat['size']);
+        $stream->close();
+    }
 
-it('cast returns false when not open', function (): void {
-    $stream = new Local($this->tmpFile);
-    expect($stream->cast(0))->toBeFalse();
-});
+    public function testReturnsStatForDirectoryWhenNotOpened(): void
+    {
+        $stream = new Local($this->tmpDir);
+        $stat   = $stream->stat();
+        $this->assertIsArray($stat);
+    }
 
-it('unlink deletes file when mode implies deletion', function (): void {
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('w'));
-    $stream->write('data');
-    expect($stream->unlink())->toBeTrue();
-    expect(file_exists($this->tmpFile))->toBeFalse();
-});
+    public function testReturnsFalseForStatWhenNoHandleAndNotDir(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->stat());
+    }
 
-it('unlink returns false when mode does not imply deletion', function (): void {
-    file_put_contents($this->tmpFile, 'data');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->unlink())->toBeFalse();
-    expect(file_exists($this->tmpFile))->toBeTrue();
-    $stream->close();
-});
+    public function testCastReturnsHandleWhenOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
+        $cast = $stream->cast(0);
+        $this->assertNotFalse($cast);
+        $stream->close();
+    }
 
-it('seeks with SEEK_CUR', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    $stream->read(2);
-    expect($stream->seek(1, SEEK_CUR))->toBeTrue();
-    expect($stream->tell())->toBe(3);
-    $stream->close();
-});
+    public function testCastReturnsFalseWhenNotOpen(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $this->assertFalse($stream->cast(0));
+    }
 
-it('seeks with SEEK_END', function (): void {
-    file_put_contents($this->tmpFile, 'hello');
-    $stream = new Local($this->tmpFile);
-    $stream->open(new StreamMode('r'));
-    expect($stream->seek(-2, SEEK_END))->toBeTrue();
-    expect($stream->tell())->toBe(3);
-    $stream->close();
-});
+    public function testUnlinkDeletesFileWhenModeImpliesDeletion(): void
+    {
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('w'));
+        $stream->write('data');
+        $this->assertTrue($stream->unlink());
+        $this->assertFalse(file_exists($this->tmpFile));
+    }
+
+    public function testUnlinkReturnsFalseWhenModeDoesNotImplyDeletion(): void
+    {
+        file_put_contents($this->tmpFile, 'data');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $this->assertFalse($stream->unlink());
+        $this->assertTrue(file_exists($this->tmpFile));
+        $stream->close();
+    }
+
+    public function testSeeksWithSeekCur(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $stream->read(2);
+        $this->assertTrue($stream->seek(1, SEEK_CUR));
+        $this->assertSame(3, $stream->tell());
+        $stream->close();
+    }
+
+    public function testSeeksWithSeekEnd(): void
+    {
+        file_put_contents($this->tmpFile, 'hello');
+        $stream = new Local($this->tmpFile);
+        $stream->open(new StreamMode('r'));
+        $this->assertTrue($stream->seek(-2, SEEK_END));
+        $this->assertSame(3, $stream->tell());
+        $stream->close();
+    }
+}

@@ -4,34 +4,47 @@ declare(strict_types=1);
 
 namespace Tests\View\Templator;
 
-use Exception;
 use Omega\View\Templator;
 use Omega\View\Templator\SetTemplator;
 use Omega\View\TemplatorFinder;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
+#[CoversClass(SetTemplator::class)]
+#[CoversClass(Templator::class)]
+#[CoversClass(TemplatorFinder::class)]
+final class SetTest extends TestCase
+{
+    private Templator $templator;
 
-covers(SetTemplator::class);
-covers(Templator::class);
-covers(TemplatorFinder::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->templator = new Templator(
-        new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
-        __DIR__ . '/../fixtures/view/templator/'
-    );
-});
+        $this->templator = new Templator(
+            new TemplatorFinder([__DIR__ . '/../fixtures/view/templator/'], ['']),
+            __DIR__ . '/../fixtures/view/templator/'
+        );
+    }
 
-it('can render set string', function (): void {
-    $out = $this->templator->templates('{% set $foo=\'bar\' %}');
-    expect($out)->toEqual('<?php $foo = \'bar\'; ?>');
-});
+    public function testCanRenderSetString(): void
+    {
+        $out = $this->templator->templates('{% set $foo=\'bar\' %}');
 
-it('can render set int', function (): void {
-    $out = $this->templator->templates('{% set $bar=123 %}');
-    expect($out)->toEqual('<?php $bar = 123; ?>');
-});
+        $this->assertEquals('<?php $foo = \'bar\'; ?>', $out);
+    }
 
-it('can render set array', function (): void {
-    $out = $this->templator->templates('{% set $arr=[12, \'34\'] %}');
-    expect($out)->toEqual('<?php $arr = [12, \'34\']; ?>');
-});
+    public function testCanRenderSetInt(): void
+    {
+        $out = $this->templator->templates('{% set $bar=123 %}');
+
+        $this->assertEquals('<?php $bar = 123; ?>', $out);
+    }
+
+    public function testCanRenderSetArray(): void
+    {
+        $out = $this->templator->templates('{% set $arr=[12, \'34\'] %}');
+
+        $this->assertEquals('<?php $arr = [12, \'34\']; ?>', $out);
+    }
+}

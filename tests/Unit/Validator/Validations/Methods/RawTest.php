@@ -1,19 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
+
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can add validation using raw', function () {
-    $validation = new Validator(['test' => 'test']);
+final class RawTest extends TestCase
+{
+    public function testCanAddValidationUsingRaw(): void
+    {
+        $validation = new Validator(['test' => 'test']);
 
-    $validation->field('test')->raw('required');
+        $validation->field('test')->raw('required');
 
-    expect($validation->isValid())->toBeTrue();
-});
+        $this->assertTrue($validation->isValid());
+    }
 
-it('can add validation using raw combine with other', function () {
-    $validation = new Validator(['test' => 'test']);
+    public function testCanAddValidationUsingRawCombineWithOther(): void
+    {
+        $validation = new Validator(['test' => 'test']);
 
-    $validation->field('test')->raw('required')->min_len(5);
+        $validation->field('test')->raw('required')->min_len(5);
 
-    expect($validation->isValid())->toBeFalse();
-});
+        $this->assertFalse($validation->isValid());
+    }
+}

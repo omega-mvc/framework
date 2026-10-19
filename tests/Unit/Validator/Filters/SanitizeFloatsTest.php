@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander sanitize_floats', function () {
-    expect(fr()->sanitize_floats())
-        ->toEqual('sanitize_floats')
-    ;
-});
+final class SanitizeFloatsTest extends TestCase
+{
+    public function testCanRanderSanitizeFloats(): void
+    {
+        $this->assertEquals('sanitize_floats', fr()->sanitize_floats());
+    }
 
-it('can filter sanitize_floats', function () {
-    $fr = new Omega\Validator\Validator(['field' => '12.3']);
+    public function testCanFilterSanitizeFloats(): void
+    {
+        $fr = new Validator(['field' => '12.3']);
 
-    $fr->filter('field')->sanitize_floats();
+        $fr->filter('field')->sanitize_floats();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 12.3])
-    ;
-});
+        $this->assertEquals(['field' => 12.3], $fr->filterOut());
+    }
+}

@@ -1,69 +1,89 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
+use function array_keys;
 use function Omega\Validator\vr;
 
-it('can render integer validation')
-    ->expect(vr()->integer())
-    ->toEqual('integer')
-;
+final class IntegerTest extends TestCase
+{
+    public function testCanRenderIntegerValidation(): void
+    {
+        $this->assertEquals('integer', vr()->integer());
+    }
 
-it('can render invert integer validation')
-    ->expect(vr()->not()->integer())
-    ->toEqual('invert_integer')
-;
+    public function testCanRenderInvertIntegerValidation(): void
+    {
+        $this->assertEquals('invert_integer', vr()->not()->integer());
+    }
 
-$correct = [
-    'test1' => '123',
-    'test2' => 123,
-    'test3' => -1,
-    'test4' => 0,
-    'test5' => '0',
-];
-$incorrect = [
-    'test1' => 'text',
-    'test2' => true,
-    'test3' => null,
-    'test4' => 1.1,
-    'test5' => '1.1',
-    'test6' => ['array'],
-];
+    public function testCanValidateIntegerWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->integer();
 
-it('can validate integer with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->integer();
+    public function testCanValidateIntegerNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $field_name = array_keys($this->correctInput());
+        $val->field(...$field_name)->not->integer();
 
-it('can validate integer (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->integer();
+    public function testCanValidateIntegerWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->integer();
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate integer with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateIbanNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->integer();
+        $field_name = array_keys($this->incorrectInput());
+        $val->field(...$field_name)->not->integer();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate iban (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /** @return array<string, int|string> */
+    private function correctInput(): array
+    {
+        return [
+            'test1' => '123',
+            'test2' => 123,
+            'test3' => -1,
+            'test4' => 0,
+            'test5' => '0',
+        ];
+    }
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->integer();
-
-    expect($val->isValid())->toBeTrue();
-});
+    /** @return array<string, array<int, string>|bool|float|int|string|null> */
+    private function incorrectInput(): array
+    {
+        return [
+            'test1' => 'text',
+            'test2' => true,
+            'test3' => null,
+            'test4' => 1.1,
+            'test5' => '1.1',
+            'test6' => ['array'],
+        ];
+    }
+}

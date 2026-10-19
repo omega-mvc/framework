@@ -6,16 +6,21 @@ namespace Tests\Database\RealDatabase;
 
 use Omega\Database\Query\Join\InnerJoin;
 use Omega\Database\Query\Query;
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Database\Asserts\UserTrait;
 use Tests\Database\ManagesDatabase;
 use Tests\TestCase;
+use PHPUnit\Framework\Attributes\After;
+use PHPUnit\Framework\Attributes\AfterClass;
+use PHPUnit\Framework\Attributes\Before;
+use PHPUnit\Framework\Attributes\BeforeClass;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 
-#[CoversClass(Query::class)]
-#[CoversClass(InnerJoin::class)]
 final class SelectTest extends TestCase
 {
+
+
     use ManagesDatabase;
     use UserTrait;
 
@@ -277,4 +282,6 @@ final class SelectTest extends TestCase
         $this->assertArrayHasKey('stat', $users[0]);
         $this->assertArrayHasKey('real_name', $users[0]);
     }
+
+
 }

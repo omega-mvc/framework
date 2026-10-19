@@ -13,70 +13,84 @@ use Omega\View\Templator\DirectiveTemplator;
 use Omega\View\TemplatorFinder;
 use Omega\View\ViewServiceProvider;
 use Omega\View\Vite;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
 use function Omega\Application\slash;
 
+#[CoversClass(ViewServiceProvider::class)]
+final class ViewServiceProviderTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-covers(ViewServiceProvider::class);
+        $basePath = slash(__DIR__ . '/fixtures/support/');
 
-beforeEach(function (): void {
-    $basePath = slash(__DIR__ . '/fixtures/support/');
+        $this->app = new Application($basePath);
+        $this->app->set('config', fn (): ConfigRepository => new ConfigRepository([
+            'VIEW_EXTENSIONS' => ['.php'],
+        ]));
 
-    $this->app = new Application($basePath);
-    $this->app->set('config', fn (): ConfigRepository => new ConfigRepository([
-        'VIEW_EXTENSIONS' => ['.php'],
-    ]));
+        $this->app->set('path.public', $basePath . 'manifest/public');
+        $this->app->set('paths.view', [$basePath . 'view']);
+        $this->app->set('path.compiled_view_path', $basePath . 'cache');
+    }
 
-    $this->app->set('path.public', $basePath . 'manifest/public');
-    $this->app->set('paths.view', [$basePath . 'view']);
-    $this->app->set('path.compiled_view_path', $basePath . 'cache');
-});
+    protected function tearDown(): void
+    {
+        DirectiveTemplator::reset();
+        $this->app->flush();
 
-afterEach(function (): void {
-    DirectiveTemplator::reset();
-    $this->app->flush();
-});
+        parent::tearDown();
+    }
 
-it('boots the vite resolver bindings', function (): void {
-    (new ViewServiceProvider($this->app))->boot();
+    public function testBootsTheViteResolverBindings(): void
+    {
+        (new ViewServiceProvider($this->app))->boot();
 
-    expect($this->app->get('vite.gets'))->toBeInstanceOf(Vite::class);
-    expect($this->app->get('vite.location'))->toBeString();
-    expect($this->app->get('vite.hasManifest'))->toBeTrue();
-});
+        $this->assertInstanceOf(Vite::class, $this->app->get('vite.gets'));
+        $this->assertIsString($this->app->get('vite.location'));
+        $this->assertTrue($this->app->get('vite.hasManifest'));
+    }
 
-it('boots the view resolver bindings', function (): void {
-    (new ViewServiceProvider($this->app))->boot();
+    public function testBootsTheViewResolverBindings(): void
+    {
+        (new ViewServiceProvider($this->app))->boot();
 
-    expect($this->app->get(TemplatorFinder::class))->toBeInstanceOf(TemplatorFinder::class);
-    expect($this->app->get('view.instance'))->toBeInstanceOf(Templator::class);
+        $this->assertInstanceOf(TemplatorFinder::class, $this->app->get(TemplatorFinder::class));
+        $this->assertInstanceOf(Templator::class, $this->app->get('view.instance'));
 
-    $resolver = $this->app->get('view.response');
-    $this->assertIsCallable($resolver);
+        $resolver = $this->app->get('view.response');
+        $this->assertIsCallable($resolver);
 
-    $response = $resolver('test');
-    $this->assertInstanceOf(Response::class, $response);
-    expect($response->getContent())->toContain('omega');
-});
+        $response = $resolver('test');
+        $this->assertInstanceOf(Response::class, $response);
+        $this->assertStringContainsString('omega', $response->getContent());
+    }
 
-it('registers the vite template directive', function (): void {
-    (new ViewServiceProvider($this->app))->boot();
+    public function testRegistersTheViteTemplateDirective(): void
+    {
+        (new ViewServiceProvider($this->app))->boot();
 
-    $output = DirectiveTemplator::call('vite', ['resources/css/app.css']);
+        $output = DirectiveTemplator::call('vite', ['resources/css/app.css']);
 
-    expect($output)->toContain('fixtures/app-4ed993c7.css');
-});
+        $this->assertStringContainsString('fixtures/app-4ed993c7.css', $output);
+    }
 
-it('skips the vite directive when the vite resolver is not registered', function (): void {
-    $provider = new class ($this->app) extends ViewServiceProvider {
-        public function registerDirectives(): void
-        {
-            $this->registerViteDirectives();
-        }
-    };
+    public function testSkipsTheViteDirectiveWhenTheViteResolverIsNotRegistered(): void
+    {
+        $provider = new class ($this->app) extends ViewServiceProvider {
+            public function registerDirectives(): void
+            {
+                $this->registerViteDirectives();
+            }
+        };
 
-    $provider->registerDirectives();
+        $provider->registerDirectives();
 
-    expect(fn () => DirectiveTemplator::call('vite', ['resources/css/app.css']))
-        ->toThrow(DirectiveNotRegisterException::class);
-});
+        $this->expectException(DirectiveNotRegisterException::class);
+
+        DirectiveTemplator::call('vite', ['resources/css/app.css']);
+    }
+}

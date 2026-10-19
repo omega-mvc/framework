@@ -8,76 +8,88 @@ use Omega\Event\Events\ExceptionEvent;
 use Omega\Event\Events\LogEvent;
 use Omega\Event\Events\ModelEvent;
 use Omega\Event\Events\RouteEvent;
+use PHPUnit\Framework\Attributes\CoversClass;
+use RuntimeException;
 use Tests\Event\Support\FakeConnection;
 use Tests\Event\Support\StubModel;
+use Tests\TestCase;
 
-covers(RouteEvent::class);
-covers(LogEvent::class);
-covers(ExceptionEvent::class);
-covers(ModelEvent::class);
+#[CoversClass(RouteEvent::class)]
+#[CoversClass(LogEvent::class)]
+#[CoversClass(ExceptionEvent::class)]
+#[CoversClass(ModelEvent::class)]
+final class EventsTest extends TestCase
+{
+    public function testCreatesARouteBeforeEvent(): void
+    {
+        $event = RouteEvent::before('/home', 'GET');
 
-it('creates a route before event', function (): void {
-    $event = RouteEvent::before('/home', 'GET');
+        $this->assertSame('route.before', $event->getName());
+        $this->assertSame('/home', $event->getArgument('uri'));
+        $this->assertSame('GET', $event->getArgument('method'));
+    }
 
-    expect($event->getName())->toBe('route.before');
-    expect($event->getArgument('uri'))->toBe('/home');
-    expect($event->getArgument('method'))->toBe('GET');
-});
+    public function testCreatesARouteAfterEvent(): void
+    {
+        $event = RouteEvent::after('/home', 'GET', fn (): string => 'ok', ['id' => 1]);
 
-it('creates a route after event', function (): void {
-    $event = RouteEvent::after('/home', 'GET', fn (): string => 'ok', ['id' => 1]);
+        $this->assertSame('route.after', $event->getName());
+        $this->assertSame('/home', $event->getArgument('uri'));
+        $this->assertSame('GET', $event->getArgument('method'));
+        $this->assertIsCallable($event->getArgument('callable'));
+        $this->assertEquals(['id' => 1], $event->getArgument('parameters'));
+    }
 
-    expect($event->getName())->toBe('route.after');
-    expect($event->getArgument('uri'))->toBe('/home');
-    expect($event->getArgument('method'))->toBe('GET');
-    expect($event->getArgument('callable'))->toBeCallable();
-    expect($event->getArgument('parameters'))->toEqual(['id' => 1]);
-});
+    public function testCreatesALogWrittenEvent(): void
+    {
+        $event = LogEvent::written('info', 'An event happened', ['user' => 1]);
 
-it('creates a log written event', function (): void {
-    $event = LogEvent::written('info', 'An event happened', ['user' => 1]);
+        $this->assertSame('log.written', $event->getName());
+        $this->assertSame('info', $event->getArgument('level'));
+        $this->assertSame('An event happened', $event->getArgument('message'));
+        $this->assertEquals(['user' => 1], $event->getArgument('context'));
+    }
 
-    expect($event->getName())->toBe('log.written');
-    expect($event->getArgument('level'))->toBe('info');
-    expect($event->getArgument('message'))->toBe('An event happened');
-    expect($event->getArgument('context'))->toEqual(['user' => 1]);
-});
+    public function testCreatesAnExceptionLoggedEvent(): void
+    {
+        $exception = new RuntimeException('boom');
+        $event     = ExceptionEvent::create($exception, 'critical');
 
-it('creates an exception logged event', function (): void {
-    $exception = new \RuntimeException('boom');
-    $event     = ExceptionEvent::create($exception, 'critical');
+        $this->assertSame('exception.logged', $event->getName());
+        $this->assertSame($exception, $event->getArgument('exception'));
+        $this->assertSame('critical', $event->getArgument('level'));
+        $this->assertSame('boom', $event->getArgument('message'));
+        $this->assertSame(RuntimeException::class, $event->getArgument('class'));
+    }
 
-    expect($event->getName())->toBe('exception.logged');
-    expect($event->getArgument('exception'))->toBe($exception);
-    expect($event->getArgument('level'))->toBe('critical');
-    expect($event->getArgument('message'))->toBe('boom');
-    expect($event->getArgument('class'))->toBe(\RuntimeException::class);
-});
+    public function testCreatesAModelCreatedEvent(): void
+    {
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $event = ModelEvent::created($model);
 
-it('creates a model created event', function (): void {
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
-    $event = ModelEvent::created($model);
+        $this->assertSame('model.created', $event->getName());
+        $this->assertSame($model, $event->getArgument('model'));
+        $this->assertSame('stub_table', $event->getArgument('table'));
+    }
 
-    expect($event->getName())->toBe('model.created');
-    expect($event->getArgument('model'))->toBe($model);
-    expect($event->getArgument('table'))->toBe('stub_table');
-});
+    public function testCreatesAModelSavedEvent(): void
+    {
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $event = ModelEvent::saved($model, true);
 
-it('creates a model saved event', function (): void {
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
-    $event = ModelEvent::saved($model, true);
+        $this->assertSame('model.saved', $event->getName());
+        $this->assertSame($model, $event->getArgument('model'));
+        $this->assertSame('stub_table', $event->getArgument('table'));
+        $this->assertTrue($event->getArgument('created'));
+    }
 
-    expect($event->getName())->toBe('model.saved');
-    expect($event->getArgument('model'))->toBe($model);
-    expect($event->getArgument('table'))->toBe('stub_table');
-    expect($event->getArgument('created'))->toBeTrue();
-});
+    public function testCreatesAModelDeletedEvent(): void
+    {
+        $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
+        $event = ModelEvent::deleted($model);
 
-it('creates a model deleted event', function (): void {
-    $model = new StubModel(new FakeConnection(), [['id' => 1]], 'stub_table');
-    $event = ModelEvent::deleted($model);
-
-    expect($event->getName())->toBe('model.deleted');
-    expect($event->getArgument('model'))->toBe($model);
-    expect($event->getArgument('table'))->toBe('stub_table');
-});
+        $this->assertSame('model.deleted', $event->getName());
+        $this->assertSame($model, $event->getArgument('model'));
+        $this->assertSame('stub_table', $event->getArgument('table'));
+    }
+}

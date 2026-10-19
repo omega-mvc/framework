@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Tests\DocBlockGenerator\Parser\File;
 
 use Omega\DocBlockGenerator\Parser\File\NamespaceResolver;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(NamespaceResolver::class);
-
-it('parses use statements', function (): void {
-    $sources = <<<'PHP'
+#[CoversClass(NamespaceResolver::class)]
+final class NamespaceResolverTest extends TestCase
+{
+    public function testParsesUseStatements(): void
+    {
+        $sources = <<<'PHP'
     <?php
 
     declare(strict_types=1);
@@ -22,23 +26,24 @@ it('parses use statements', function (): void {
     use Omega\DocBlockGenerator\VarExport\Buffer;
     PHP;
 
-    $parser = new NamespaceResolver();
-    $uses   = $parser->resolve($sources);
+        $parser = new NamespaceResolver();
+        $uses   = $parser->resolve($sources);
 
-    $expected = [
-        'Omega\Http\Request',
-        'Omega\Http\Response',
-        'Omega\Router\Route',
-        'Omega\Router\Router',
-        'Omega\DocBlockGenerator\VarExport',
-        'Omega\DocBlockGenerator\VarExport\Buffer',
-    ];
+        $expected = [
+            'Omega\Http\Request',
+            'Omega\Http\Response',
+            'Omega\Router\Route',
+            'Omega\Router\Router',
+            'Omega\DocBlockGenerator\VarExport',
+            'Omega\DocBlockGenerator\VarExport\Buffer',
+        ];
 
-    expect($uses)->toEqual($expected);
-});
+        $this->assertEquals($expected, $uses);
+    }
 
-it('parses group use statements', function (): void {
-    $sources = <<<'PHP'
+    public function testParsesGroupUseStatements(): void
+    {
+        $sources = <<<'PHP'
     <?php
 
     declare(strict_types=1);
@@ -49,25 +54,27 @@ it('parses group use statements', function (): void {
     use Omega\DocBlockGenerator\VarExport\Buffer;
     PHP;
 
-    $parser = new NamespaceResolver();
-    $uses   = $parser->resolve($sources);
+        $parser = new NamespaceResolver();
+        $uses   = $parser->resolve($sources);
 
-    $expected = [
-        'Omega\Http\Request',
-        'Omega\Http\Response',
-        'Omega\Router\Route',
-        'Omega\Router\Router',
-        'Omega\DocBlockGenerator\VarExport',
-        'Omega\DocBlockGenerator\VarExport\Buffer',
-    ];
+        $expected = [
+            'Omega\Http\Request',
+            'Omega\Http\Response',
+            'Omega\Router\Route',
+            'Omega\Router\Router',
+            'Omega\DocBlockGenerator\VarExport',
+            'Omega\DocBlockGenerator\VarExport\Buffer',
+        ];
 
-    expect($uses)->toEqual($expected);
-});
+        $this->assertEquals($expected, $uses);
+    }
 
-it('handles a file with no use statements', function (): void {
-    $sources = '<?php class MyClass {}';
-    $parser  = new NamespaceResolver();
-    $uses    = $parser->resolve($sources);
+    public function testHandlesAFileWithNoUseStatements(): void
+    {
+        $sources = '<?php class MyClass {}';
+        $parser  = new NamespaceResolver();
+        $uses    = $parser->resolve($sources);
 
-    expect($uses)->toBeEmpty();
-});
+        $this->assertEmpty($uses);
+    }
+}

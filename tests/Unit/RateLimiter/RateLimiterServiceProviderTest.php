@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\RateLimiter;
@@ -20,42 +10,52 @@ use Omega\Cache\Storage\MemoryStorage;
 use Omega\Middleware\ThrottleMiddleware;
 use Omega\RateLimiter\RateLimiterFactory;
 use Omega\RateLimiter\RateLimiterServiceProvider;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(CacheManager::class)]
+#[CoversClass(MemoryStorage::class)]
+#[CoversClass(RateLimiterFactory::class)]
+#[CoversClass(RateLimiterServiceProvider::class)]
+#[CoversClass(ThrottleMiddleware::class)]
+final class RateLimiterServiceProviderTest extends TestCase
+{
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-covers(CacheManager::class);
-covers(MemoryStorage::class);
-covers(RateLimiterFactory::class);
-covers(RateLimiterServiceProvider::class);
-covers(ThrottleMiddleware::class);
+        $this->app = new Application('/');
 
-beforeEach(function (): void {
-    $this->app = new Application('/');
+        $this->app->set('cache', new CacheManager(
+            'array',
+            new MemoryStorage(['ttl' => 3600])
+        ));
+    }
 
-    $this->app->set('cache', new CacheManager(
-        'array',
-        new MemoryStorage(['ttl' => 3600])
-    ));
-});
+    protected function tearDown(): void
+    {
+        $this->app->flush();
 
-afterEach(function (): void {
-    $this->app->flush();
-});
+        parent::tearDown();
+    }
 
-it('boots and resolves the rate limiter factory', function (): void {
-    (new RateLimiterServiceProvider($this->app))->boot();
+    public function testBootsAndResolvesTheRateLimiterFactory(): void
+    {
+        (new RateLimiterServiceProvider($this->app))->boot();
 
-    $factory = $this->app->get(RateLimiterFactory::class);
+        $factory = $this->app->get(RateLimiterFactory::class);
 
-    expect($factory)->toBeInstanceOf(RateLimiterFactory::class);
-    expect($this->app->get(RateLimiterFactory::class))->toBe($factory);
-});
+        $this->assertInstanceOf(RateLimiterFactory::class, $factory);
+        $this->assertSame($factory, $this->app->get(RateLimiterFactory::class));
+    }
 
-it('boots and resolves the throttle middleware', function (): void {
-    (new RateLimiterServiceProvider($this->app))->boot();
+    public function testBootsAndResolvesTheThrottleMiddleware(): void
+    {
+        (new RateLimiterServiceProvider($this->app))->boot();
 
-    $middleware = $this->app->get(ThrottleMiddleware::class);
+        $middleware = $this->app->get(ThrottleMiddleware::class);
 
-    expect($middleware)->toBeInstanceOf(ThrottleMiddleware::class);
-    expect($this->app->get(ThrottleMiddleware::class))->toBe($middleware);
-});
+        $this->assertInstanceOf(ThrottleMiddleware::class, $middleware);
+        $this->assertSame($middleware, $this->app->get(ThrottleMiddleware::class));
+    }
+}

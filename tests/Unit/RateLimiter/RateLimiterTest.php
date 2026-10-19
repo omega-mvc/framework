@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\RateLimiter;
@@ -18,78 +8,92 @@ use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\Policy\FixedWindow;
 use Omega\RateLimiter\Policy\NoLimiter;
 use Omega\RateLimiter\RateLimiter;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(FixedWindow::class)]
+#[CoversClass(MemoryStorage::class)]
+#[CoversClass(NoLimiter::class)]
+#[CoversClass(RateLimiter::class)]
+final class RateLimiterTest extends TestCase
+{
+    private RateLimiter $rateLimiter;
 
-covers(FixedWindow::class);
-covers(MemoryStorage::class);
-covers(NoLimiter::class);
-covers(RateLimiter::class);
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-beforeEach(function (): void {
-    $this->rateLimiter = new RateLimiter(
-        new FixedWindow(
-            cache: new MemoryStorage(['ttl' => 3600]),
-            limit: 1,
-            windowSeconds: 60
-        )
-    );
-});
+        $this->rateLimiter = new RateLimiter(
+            new FixedWindow(
+                cache: new MemoryStorage(['ttl' => 3600]),
+                limit: 1,
+                windowSeconds: 60
+            )
+        );
+    }
 
-it('consume', function (): void {
-    expect($this->rateLimiter->consume('key'))->toBe(1);
-});
+    public function testConsume(): void
+    {
+        $this->assertSame(1, $this->rateLimiter->consume('key'));
+    }
 
-it('get count left', function (): void {
-    expect($this->rateLimiter->getCount('key'))->toBe(0);
+    public function testGetCountLeft(): void
+    {
+        $this->assertSame(0, $this->rateLimiter->getCount('key'));
 
-    $this->rateLimiter->consume('key');
+        $this->rateLimiter->consume('key');
 
-    expect($this->rateLimiter->getCount('key'))->toBe(1);
-});
+        $this->assertSame(1, $this->rateLimiter->getCount('key'));
+    }
 
-it('remaining', function (): void {
-    expect($this->rateLimiter->remaining('key', 1))->toBe(1);
+    public function testRemaining(): void
+    {
+        $this->assertSame(1, $this->rateLimiter->remaining('key', 1));
 
-    $this->rateLimiter->consume('key');
+        $this->rateLimiter->consume('key');
 
-    expect($this->rateLimiter->remaining('key', 1))->toBe(0);
-});
+        $this->assertSame(0, $this->rateLimiter->remaining('key', 1));
+    }
 
-it('reset', function (): void {
-    $this->rateLimiter->consume('key');
-    $this->rateLimiter->reset('key');
+    public function testReset(): void
+    {
+        $this->rateLimiter->consume('key');
+        $this->rateLimiter->reset('key');
 
-    expect($this->rateLimiter->getCount('key'))->toBe(0);
-});
+        $this->assertSame(0, $this->rateLimiter->getCount('key'));
+    }
 
-it('is blocked', function (): void {
-    expect($this->rateLimiter->isBlocked('key', 1, 1))->toBeFalse();
+    public function testIsBlocked(): void
+    {
+        $this->assertFalse($this->rateLimiter->isBlocked('key', 1, 1));
 
-    $this->rateLimiter->consume('key');
+        $this->rateLimiter->consume('key');
 
-    expect($this->rateLimiter->isBlocked('key', 1, 1))->toBeTrue();
-});
+        $this->assertTrue($this->rateLimiter->isBlocked('key', 1, 1));
+    }
 
-it('get retry after when not blocked', function (): void {
-    $rateLimiter = new RateLimiter(new NoLimiter());
+    public function testGetRetryAfterWhenNotBlocked(): void
+    {
+        $rateLimiter = new RateLimiter(new NoLimiter());
 
-    expect($rateLimiter->getRetryAfter('key'))->toBe(0);
-});
+        $this->assertSame(0, $rateLimiter->getRetryAfter('key'));
+    }
 
-it('get retry after when blocked', function (): void {
-    $rateLimiter = new RateLimiter(
-        new FixedWindow(
-            cache: new MemoryStorage(['ttl' => 3600]),
-            limit: 1,
-            windowSeconds: 3600
-        )
-    );
+    public function testGetRetryAfterWhenBlocked(): void
+    {
+        $rateLimiter = new RateLimiter(
+            new FixedWindow(
+                cache: new MemoryStorage(['ttl' => 3600]),
+                limit: 1,
+                windowSeconds: 3600
+            )
+        );
 
-    $rateLimiter->consume('key');
+        $rateLimiter->consume('key');
 
-    $retryAfter = $rateLimiter->getRetryAfter('key');
+        $retryAfter = $rateLimiter->getRetryAfter('key');
 
-    expect($retryAfter)->toBeGreaterThanOrEqual(0);
-    expect($retryAfter)->toBeLessThanOrEqual(3600);
-});
+        $this->assertGreaterThanOrEqual(0, $retryAfter);
+        $this->assertLessThanOrEqual(3600, $retryAfter);
+    }
+}

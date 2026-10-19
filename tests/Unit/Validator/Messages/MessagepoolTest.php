@@ -1,31 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Messages;
+
 use Omega\Validator\Messages\Message;
 use Omega\Validator\Messages\MessagePool;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can add message using method __get', function () {
-    $v                  = new MessagePool();
-    $v->test->required  = 'test';
+#[CoversClass(MessagePool::class)]
+final class MessagepoolTest extends TestCase
+{
+    public function testCanAddMessageUsingMethodMagicGet(): void
+    {
+        $v                 = new MessagePool();
+        $v->test->required = 'test';
 
-    $m              = new Message();
-    $m->required    = 'test';
-    expect($v->Messages()['test'])->toEqual($m);
-});
+        $m           = new Message();
+        $m->required = 'test';
 
-it('can add message using method field', function () {
-    $v                          = new MessagePool();
-    $v->field('test')->required = 'test';
+        $this->assertEquals($m, $v->Messages()['test']);
+    }
 
-    $m              = new Message();
-    $m->required    = 'test';
-    expect($v->Messages()['test'])->toEqual($m);
-});
+    public function testCanAddMessageUsingMethodField(): void
+    {
+        $v                         = new MessagePool();
+        $v->field('test')->required = 'test';
 
-it('can add message using method __set with a Message instance', function () {
-    $v                  = new MessagePool();
-    $m                  = new Message();
-    $m->required        = 'test';
-    $v->test            = $m;
+        $m           = new Message();
+        $m->required = 'test';
 
-    expect($v->Messages()['test'])->toEqual($m);
-});
+        $this->assertEquals($m, $v->Messages()['test']);
+    }
+
+    public function testCanAddMessageUsingMethodMagicSetWithMessageInstance(): void
+    {
+        $v           = new MessagePool();
+        $m           = new Message();
+        $m->required = 'test';
+        $v->test     = $m;
+
+        $this->assertEquals($m, $v->Messages()['test']);
+    }
+}

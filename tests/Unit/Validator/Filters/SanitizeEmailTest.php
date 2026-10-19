@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander sanitize_email', function () {
-    expect(fr()->sanitize_email())
-        ->toEqual('sanitize_email')
-    ;
-});
+final class SanitizeEmailTest extends TestCase
+{
+    public function testCanRanderSanitizeEmail(): void
+    {
+        $this->assertEquals('sanitize_email', fr()->sanitize_email());
+    }
 
-it('can filter sanitize_email', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'john(.doe)@exa//mple.com']);
+    public function testCanFilterSanitizeEmail(): void
+    {
+        $fr = new Validator(['field' => 'john(.doe)@exa//mple.com']);
 
-    $fr->filter('field')->sanitize_email();
+        $fr->filter('field')->sanitize_email();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'john.doe@example.com'])
-    ;
-});
+        $this->assertEquals(['field' => 'john.doe@example.com'], $fr->filterOut());
+    }
+}

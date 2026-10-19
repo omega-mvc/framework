@@ -1,7 +1,16 @@
 <?php
 
-use Omega\Validator\Validator;
+declare(strict_types=1);
 
-it('can create static', function () {
-    expect(Validator::make()->getFields())->toEqual([]);
-});
+namespace Tests\Validator;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
+final class CreateUsingStaticTest extends TestCase
+{
+    public function testCanCreateStatic(): void
+    {
+        $this->assertEquals([], Validator::make()->getFields());
+    }
+}

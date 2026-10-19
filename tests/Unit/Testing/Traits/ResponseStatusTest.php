@@ -6,54 +6,66 @@ namespace Tests\Testing\Traits;
 
 use Omega\Http\Response;
 use Omega\Testing\TestResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Response::class);
-covers(TestResponse::class);
+#[CoversClass(Response::class)]
+#[CoversClass(TestResponse::class)]
+final class ResponseStatusTest extends TestCase
+{
+    public function testAssertsAnOkResponse(): void
+    {
+        $response = new TestResponse(new Response('test', 200, []));
 
-it('asserts an ok response', function (): void {
-    $response = new TestResponse(new Response('test', 200, []));
+        $response->assertOk();
+    }
 
-    $response->assertOk();
-});
+    public function testAssertsACreatedResponse(): void
+    {
+        $response = new TestResponse(new Response('test', 201, []));
 
-it('asserts a created response', function (): void {
-    $response = new TestResponse(new Response('test', 201, []));
+        $response->assertCreated();
+    }
 
-    $response->assertCreated();
-});
+    public function testAssertsANoContentResponse(): void
+    {
+        $response = new TestResponse(new Response('', 204, []));
 
-it('asserts a no content response', function (): void {
-    $response = new TestResponse(new Response('', 204, []));
+        $response->assertNoContent();
+    }
 
-    $response->assertNoContent();
-});
+    public function testAssertsABadRequestResponse(): void
+    {
+        $response = new TestResponse(new Response('', 400, []));
 
-it('asserts a bad request response', function (): void {
-    $response = new TestResponse(new Response('', 400, []));
+        $response->assertBadRequest();
+    }
 
-    $response->assertBadRequest();
-});
+    public function testAssertsAnUnauthorizedResponse(): void
+    {
+        $response = new TestResponse(new Response('', 401, []));
 
-it('asserts an unauthorized response', function (): void {
-    $response = new TestResponse(new Response('', 401, []));
+        $response->assertUnauthorized();
+    }
 
-    $response->assertUnauthorized();
-});
+    public function testAssertsAForbiddenResponse(): void
+    {
+        $response = new TestResponse(new Response('', 403, []));
 
-it('asserts a forbidden response', function (): void {
-    $response = new TestResponse(new Response('', 403, []));
+        $response->assertForbidden();
+    }
 
-    $response->assertForbidden();
-});
+    public function testAssertsANotFoundResponse(): void
+    {
+        $response = new TestResponse(new Response('', 404, []));
 
-it('asserts a not found response', function (): void {
-    $response = new TestResponse(new Response('', 404, []));
+        $response->assertNotFound();
+    }
 
-    $response->assertNotFound();
-});
+    public function testAssertsAMethodNotAllowedResponse(): void
+    {
+        $response = new TestResponse(new Response('', 405, []));
 
-it('asserts a method not allowed response', function (): void {
-    $response = new TestResponse(new Response('', 405, []));
-
-    $response->assertNotAllowed();
-});
+        $response->assertNotAllowed();
+    }
+}

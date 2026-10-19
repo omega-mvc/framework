@@ -5,93 +5,118 @@ declare(strict_types=1);
 namespace Tests\Filesystem\Adapter\Memory;
 
 use Omega\Filesystem\Adapter\Memory\InMemory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(InMemory::class);
+#[CoversClass(InMemory::class)]
+final class InMemoryTest extends TestCase
+{
+    private InMemory $adapter;
 
-beforeEach(function (): void {
-    $this->adapter = new InMemory([
-        'file1.txt' => 'Hello World',
-        'file2.txt' => [
-            'content' => 'Foo Bar',
-            'mtime' => 1000,
-        ],
-    ]);
-});
+    protected function setUp(): void
+    {
+        parent::setUp();
 
-it('reads an existing file', function (): void {
-    expect($this->adapter->read('file1.txt'))->toBe('Hello World');
-});
+        $this->adapter = new InMemory([
+            'file1.txt' => 'Hello World',
+            'file2.txt' => [
+                'content' => 'Foo Bar',
+                'mtime'   => 1000,
+            ],
+        ]);
+    }
 
-it('reads false for non-existent file', function (): void {
-    expect($this->adapter->read('missing.txt'))->toBeFalse();
-});
+    public function testReadsAnExistingFile(): void
+    {
+        $this->assertSame('Hello World', $this->adapter->read('file1.txt'));
+    }
 
-it('writes a file and returns byte count', function (): void {
-    $bytes = $this->adapter->write('new.txt', 'test');
-    expect($bytes)->toBe(4);
-    expect($this->adapter->read('new.txt'))->toBe('test');
-});
+    public function testReadsFalseForNonExistentFile(): void
+    {
+        $this->assertFalse($this->adapter->read('missing.txt'));
+    }
 
-it('checks file existence', function (): void {
-    expect($this->adapter->exists('file1.txt'))->toBeTrue();
-    expect($this->adapter->exists('missing.txt'))->toBeFalse();
-});
+    public function testWritesAFileAndReturnsByteCount(): void
+    {
+        $bytes = $this->adapter->write('new.txt', 'test');
+        $this->assertSame(4, $bytes);
+        $this->assertSame('test', $this->adapter->read('new.txt'));
+    }
 
-it('lists all keys', function (): void {
-    $keys = $this->adapter->keys();
-    expect($keys)->toBe(['file1.txt', 'file2.txt']);
-});
+    public function testChecksFileExistence(): void
+    {
+        $this->assertTrue($this->adapter->exists('file1.txt'));
+        $this->assertFalse($this->adapter->exists('missing.txt'));
+    }
 
-it('returns modification time for existing file', function (): void {
-    expect($this->adapter->mtime('file2.txt'))->toBe(1000);
-});
+    public function testListsAllKeys(): void
+    {
+        $keys = $this->adapter->keys();
+        $this->assertSame(['file1.txt', 'file2.txt'], $keys);
+    }
 
-it('returns false mtime for non-existent file', function (): void {
-    expect($this->adapter->mtime('missing.txt'))->toBeFalse();
-});
+    public function testReturnsModificationTimeForExistingFile(): void
+    {
+        $this->assertSame(1000, $this->adapter->mtime('file2.txt'));
+    }
 
-it('deletes a file', function (): void {
-    expect($this->adapter->delete('file1.txt'))->toBeTrue();
-    expect($this->adapter->exists('file1.txt'))->toBeFalse();
-});
+    public function testReturnsFalseMtimeForNonExistentFile(): void
+    {
+        $this->assertFalse($this->adapter->mtime('missing.txt'));
+    }
 
-it('always returns false for isDirectory', function (): void {
-    expect($this->adapter->isDirectory('file1.txt'))->toBeFalse();
-});
+    public function testDeletesAFile(): void
+    {
+        $this->assertTrue($this->adapter->delete('file1.txt'));
+        $this->assertFalse($this->adapter->exists('file1.txt'));
+    }
 
-it('renames an existing file', function (): void {
-    expect($this->adapter->rename('file1.txt', 'renamed.txt'))->toBeTrue();
-    expect($this->adapter->exists('renamed.txt'))->toBeTrue();
-    expect($this->adapter->exists('file1.txt'))->toBeFalse();
-});
+    public function testAlwaysReturnsFalseForIsDirectory(): void
+    {
+        $this->assertFalse($this->adapter->isDirectory('file1.txt'));
+    }
 
-it('returns false when renaming non-existent file', function (): void {
-    expect($this->adapter->rename('missing.txt', 'new.txt'))->toBeFalse();
-});
+    public function testRenamesAnExistingFile(): void
+    {
+        $this->assertTrue($this->adapter->rename('file1.txt', 'renamed.txt'));
+        $this->assertTrue($this->adapter->exists('renamed.txt'));
+        $this->assertFalse($this->adapter->exists('file1.txt'));
+    }
 
-it('returns mime type for a file', function (): void {
-    $mimeType = $this->adapter->mimeType('file1.txt');
-    expect($mimeType)->not->toBeEmpty();
-});
+    public function testReturnsFalseWhenRenamingNonExistentFile(): void
+    {
+        $this->assertFalse($this->adapter->rename('missing.txt', 'new.txt'));
+    }
 
-it('constructs with no files', function (): void {
-    $adapter = new InMemory();
-    expect($adapter->keys())->toBe([]);
-});
+    public function testReturnsMimeTypeForAFile(): void
+    {
+        $mimeType = $this->adapter->mimeType('file1.txt');
+        $this->assertNotEmpty($mimeType);
+    }
 
-it('setFiles replaces all files', function (): void {
-    $this->adapter->setFiles(['replaced.txt' => 'new content']);
-    expect($this->adapter->keys())->toBe(['replaced.txt']);
-    expect($this->adapter->read('replaced.txt'))->toBe('new content');
-});
+    public function testConstructsWithNoFiles(): void
+    {
+        $adapter = new InMemory();
+        $this->assertSame([], $adapter->keys());
+    }
 
-it('setFile adds a single file', function (): void {
-    $this->adapter->setFile('added.txt', 'added content');
-    expect($this->adapter->read('added.txt'))->toBe('added content');
-    expect($this->adapter->exists('added.txt'))->toBeTrue();
-});
+    public function testSetFilesReplacesAllFiles(): void
+    {
+        $this->adapter->setFiles(['replaced.txt' => 'new content']);
+        $this->assertSame(['replaced.txt'], $this->adapter->keys());
+        $this->assertSame('new content', $this->adapter->read('replaced.txt'));
+    }
 
-it('setFile with null content stores empty string', function (): void {
-    $this->adapter->setFile('empty.txt');
-    expect($this->adapter->read('empty.txt'))->toBe('');
-});
+    public function testSetFileAddsASingleFile(): void
+    {
+        $this->adapter->setFile('added.txt', 'added content');
+        $this->assertSame('added content', $this->adapter->read('added.txt'));
+        $this->assertTrue($this->adapter->exists('added.txt'));
+    }
+
+    public function testSetFileWithNullContentStoresEmptyString(): void
+    {
+        $this->adapter->setFile('empty.txt');
+        $this->assertSame('', $this->adapter->read('empty.txt'));
+    }
+}

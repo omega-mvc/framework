@@ -1,64 +1,77 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render valid_ip validation')
-    ->expect(vr()->valid_ip())
-    ->toEqual('valid_ip')
-;
+final class ValidIpTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test1' => '2001:0db8:85a3:08d3:1319:8a2e:0370:7334',
+        'test2' => '127.0.0.1',
+        'test3' => '255.255.255.255',
+    ];
 
-it('can render invert valid_ip validation')
-    ->expect(vr()->not()->valid_ip())
-    ->toEqual('invert_valid_ip')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'tets1' => '2001:0zb8:85a3:08d3:1319:8a2e:0370:7334',
+        'tets2' => '0,0,0,0',
+        'tets3' => '256.0.0.0',
+    ];
 
-$correct = [
-    'test1' => '2001:0db8:85a3:08d3:1319:8a2e:0370:7334',
-    'test2' => '127.0.0.1',
-    'test3' => '255.255.255.255',
-];
-$incorrect = [
-    'tets1' => '2001:0zb8:85a3:08d3:1319:8a2e:0370:7334',
-    'tets2' => '0,0,0,0',
-    'tets3' => '256.0.0.0',
-];
+    public function testCanRenderValidIpValidation(): void
+    {
+        $this->assertEquals('valid_ip', vr()->valid_ip());
+    }
 
-// validate with correct input field
+    public function testCanRenderInvertValidIpValidation(): void
+    {
+        $this->assertEquals('invert_valid_ip', vr()->not()->valid_ip());
+    }
 
-it('can validate valid_ip with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->valid_ip();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->valid_ip();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate valid_ip (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanValidateValidIpNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->valid_ip();
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->valid_ip();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-// validate with incorrect input field
+    public function testCanValidateValidIpWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ip with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->valid_ip();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->valid_ip();
+        $this->assertFalse($val->isValid());
+    }
 
-    expect($val->isValid())->toBeFalse();
-});
+    public function testCanValidateValidIpNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-it('can validate valid_ip (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->valid_ip();
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->valid_ip();
-
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

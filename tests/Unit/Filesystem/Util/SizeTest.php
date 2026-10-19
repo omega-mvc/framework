@@ -6,45 +6,65 @@ namespace Tests\Filesystem\Util;
 
 use InvalidArgumentException;
 use Omega\Filesystem\Util\Size;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Size::class);
+use function file_put_contents;
+use function fclose;
+use function fopen;
+use function fwrite;
+use function rewind;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
 
-it('computes size from content', function (): void {
-    expect(Size::fromContent('hello'))->toBe(5);
-});
-
-it('computes size from empty content', function (): void {
-    expect(Size::fromContent(''))->toBe(0);
-});
-
-it('computes size from a file', function (): void {
-    $tmpFile = tempnam(sys_get_temp_dir(), 'omega_');
-    file_put_contents($tmpFile, 'test');
-
-    try {
-        expect(Size::fromFile($tmpFile))->toBe(4);
-    } finally {
-        unlink($tmpFile);
+#[CoversClass(Size::class)]
+final class SizeTest extends TestCase
+{
+    public function testComputesSizeFromContent(): void
+    {
+        $this->assertSame(5, Size::fromContent('hello'));
     }
-});
 
-it('throws InvalidArgumentException for non-existent file', function (): void {
-    set_error_handler(static fn (): bool => true);
-
-    try {
-        Size::fromFile('/nonexistent/path/file.txt');
-    } finally {
-        restore_error_handler();
+    public function testComputesSizeFromEmptyContent(): void
+    {
+        $this->assertSame(0, Size::fromContent(''));
     }
-})->throws(InvalidArgumentException::class);
 
-it('computes size from a resource', function (): void {
-    $handle = fopen('php://memory', 'r+');
-    $this->assertIsResource($handle);
-    fwrite($handle, 'test content');
-    rewind($handle);
+    public function testComputesSizeFromAFile(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'omega_');
+        file_put_contents($tmpFile, 'test');
 
-    $size = Size::fromResource($handle);
-    expect($size)->toBeInt();
-    fclose($handle);
-});
+        try {
+            $this->assertSame(4, Size::fromFile($tmpFile));
+        } finally {
+            unlink($tmpFile);
+        }
+    }
+
+    public function testThrowsInvalidArgumentExceptionForNonExistentFile(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            Size::fromFile('/nonexistent/path/file.txt');
+        } finally {
+            restore_error_handler();
+        }
+    }
+
+    public function testComputesSizeFromAResource(): void
+    {
+        $handle = fopen('php://memory', 'r+');
+        $this->assertIsResource($handle);
+        fwrite($handle, 'test content');
+        rewind($handle);
+
+        $size = Size::fromResource($handle);
+        $this->assertIsInt($size);
+        fclose($handle);
+    }
+}

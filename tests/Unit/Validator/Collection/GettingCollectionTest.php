@@ -1,36 +1,51 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Collection;
+
 use Omega\Collection\Collection;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-it('can get item using get', function () {
-    $collection = new Collection(['key' => 'item']);
+#[CoversClass(Collection::class)]
+final class GettingCollectionTest extends TestCase
+{
+    public function testCanGetItemUsingGet(): void
+    {
+        $collection = new Collection(['key' => 'item']);
 
-    expect($collection)->get('key')->toEqual('item');
-});
+        $this->assertEquals('item', $collection->get('key'));
+    }
 
-it('can get item using get (default) but not exist', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection([]);
+    public function testCanGetItemUsingGetDefaultButNotExist(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection([]);
 
-    expect($collection)->get('key', 'no item')->toEqual('no item');
-});
+        $this->assertEquals('no item', $collection->get('key', 'no item'));
+    }
 
-it('can get item using get (no default set) but not exist', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection([]);
+    public function testCanGetItemUsingGetNoDefaultSetButNotExist(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection([]);
 
-    expect($collection)->get('key')->toBeNull();
-});
+        $this->assertNull($collection->get('key'));
+    }
 
-it('can get item using __get', function () {
-    $collection = new Collection(['key' => 'item']);
+    public function testCanGetItemUsingMagicGet(): void
+    {
+        $collection = new Collection(['key' => 'item']);
 
-    expect($collection)->key->toEqual('item');
-});
+        $this->assertEquals('item', $collection->key);
+    }
 
-it('can get item using __get (no default set) but not exist', function () {
-    /** @var Collection<string, string> $collection */
-    $collection = new Collection(['seed' => 'value']);
+    public function testCanGetItemUsingMagicGetNoDefaultSetButNotExist(): void
+    {
+        /** @var Collection<string, string> $collection */
+        $collection = new Collection(['seed' => 'value']);
 
-    expect($collection)->item->toBeNull();
-});
+        $this->assertNull($collection->item);
+    }
+}

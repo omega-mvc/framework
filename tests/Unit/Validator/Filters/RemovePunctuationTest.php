@@ -1,19 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\fr;
 
-it('can rander rmpunctuation', function () {
-    expect(fr()->rmpunctuation())
-        ->toEqual('rmpunctuation')
-    ;
-});
+final class RemovePunctuationTest extends TestCase
+{
+    public function testCanRanderRmpunctuation(): void
+    {
+        $this->assertEquals('rmpunctuation', fr()->rmpunctuation());
+    }
 
-it('can filter rmpunctuation', function () {
-    $fr = new Omega\Validator\Validator(['field' => 'is true?']);
+    public function testCanFilterRmpunctuation(): void
+    {
+        $fr = new Validator(['field' => 'is true?']);
 
-    $fr->filter('field')->rmpunctuation();
+        $fr->filter('field')->rmpunctuation();
 
-    expect($fr->filterOut())
-        ->toEqual(['field' => 'is true'])
-    ;
-});
+        $this->assertEquals(['field' => 'is true'], $fr->filterOut());
+    }
+}

@@ -17,7 +17,6 @@ use function Omega\Application\slash;
 #[CoversClass(CacheManager::class)]
 #[CoversClass(FileStorage::class)]
 #[CoversClass(MemoryStorage::class)]
-#[CoversFunction('Omega\Application\slash')]
 final class CacheFactoryTest extends TestCase
 {
     public function testRegistersTheFileStorageDriverViaTheCacheManagerFactory(): void

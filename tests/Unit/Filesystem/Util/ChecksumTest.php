@@ -5,35 +5,52 @@ declare(strict_types=1);
 namespace Tests\Filesystem\Util;
 
 use Omega\Filesystem\Util\Checksum;
+use PHPUnit\Framework\Attributes\CoversClass;
 use RuntimeException;
+use Tests\TestCase;
 
-covers(Checksum::class);
+use function file_put_contents;
+use function md5;
+use function md5_file;
+use function sys_get_temp_dir;
+use function tempnam;
+use function unlink;
 
-it('computes md5 checksum from content', function (): void {
-    expect(Checksum::fromContent('hello'))->toBe(md5('hello'));
-});
-
-it('computes md5 checksum from empty content', function (): void {
-    expect(Checksum::fromContent(''))->toBe(md5(''));
-});
-
-it('computes md5 checksum from a file', function (): void {
-    $tmpFile = tempnam(sys_get_temp_dir(), 'omega_');
-    file_put_contents($tmpFile, 'test content');
-
-    try {
-        expect(Checksum::fromFile($tmpFile))->toBe(md5_file($tmpFile));
-    } finally {
-        unlink($tmpFile);
+#[CoversClass(Checksum::class)]
+final class ChecksumTest extends TestCase
+{
+    public function testComputesMd5ChecksumFromContent(): void
+    {
+        $this->assertSame(md5('hello'), Checksum::fromContent('hello'));
     }
-});
 
-it('throws RuntimeException for non-existent file', function (): void {
-    set_error_handler(static fn (): bool => true);
-
-    try {
-        Checksum::fromFile('/nonexistent/path/file.txt');
-    } finally {
-        restore_error_handler();
+    public function testComputesMd5ChecksumFromEmptyContent(): void
+    {
+        $this->assertSame(md5(''), Checksum::fromContent(''));
     }
-})->throws(RuntimeException::class);
+
+    public function testComputesMd5ChecksumFromAFile(): void
+    {
+        $tmpFile = tempnam(sys_get_temp_dir(), 'omega_');
+        file_put_contents($tmpFile, 'test content');
+
+        try {
+            $this->assertSame(md5_file($tmpFile), Checksum::fromFile($tmpFile));
+        } finally {
+            unlink($tmpFile);
+        }
+    }
+
+    public function testThrowsRuntimeExceptionForNonExistentFile(): void
+    {
+        $this->expectException(RuntimeException::class);
+
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            Checksum::fromFile('/nonexistent/path/file.txt');
+        } finally {
+            restore_error_handler();
+        }
+    }
+}

@@ -1,21 +1,13 @@
 <?php
 
-/**
- * Part of Omega - Tests\Session\Storage Package.
- * @link https://omega-mvc.github.io
- * @author Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version 2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Session\Storage;
 
 use Omega\Session\Storage\NativeStorage;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-use function expect;
 use function preg_match;
 use function session_destroy;
 use function session_id;
@@ -25,113 +17,136 @@ use function session_status;
 use const PHP_SESSION_ACTIVE;
 use const PHP_SESSION_NONE;
 
-covers(NativeStorage::class);
+#[CoversClass(NativeStorage::class)]
+final class NativeStorageTest extends TestCase
+{
+    private NativeStorage $storage;
 
-beforeEach(function (): void {
-    if (session_status() === PHP_SESSION_ACTIVE) {
-        session_destroy();
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_destroy();
+        }
+
+        session_name('PHPSESSID');
+        session_id('');
+
+        $_SESSION = [];
+
+        $this->storage = new NativeStorage();
     }
 
-    session_name('PHPSESSID');
-    session_id('');
+    public function testWritesAndReadsSessionData(): void
+    {
+        $this->assertTrue($this->storage->write('abc', '{"foo":"bar"}'));
+        $this->assertSame('{"foo":"bar"}', $this->storage->read('abc'));
+    }
 
-    $_SESSION = [];
+    public function testStoresSessionDataUnderTheDefaultSessionKey(): void
+    {
+        $this->storage->write('abc', '{"foo":"bar"}');
 
-    $this->storage = new NativeStorage();
-});
+        $this->assertSame('{"foo":"bar"}', $_SESSION['omega_session']);
+    }
 
-it('writes and reads session data', function (): void {
-    expect($this->storage->write('abc', '{"foo":"bar"}'))->toBeTrue();
-    expect($this->storage->read('abc'))->toBe('{"foo":"bar"}');
-});
+    public function testStoresSessionDataUnderTheConfiguredPrefix(): void
+    {
+        $storage = new NativeStorage(['prefix' => 'app']);
+        $storage->write('abc', 'data');
 
-it('stores session data under the default session key', function (): void {
-    $this->storage->write('abc', '{"foo":"bar"}');
+        $this->assertSame('data', $_SESSION['app_session']);
+    }
 
-    expect($_SESSION['omega_session'])->toBe('{"foo":"bar"}');
-});
+    public function testSetsACustomSessionNameWhenConfigured(): void
+    {
+        new NativeStorage(['name' => 'CUSTOM_NAME']);
 
-it('stores session data under the configured prefix', function (): void {
-    $storage = new NativeStorage(['prefix' => 'app']);
-    $storage->write('abc', 'data');
+        $this->assertSame('CUSTOM_NAME', session_name());
+    }
 
-    expect($_SESSION['app_session'])->toBe('data');
-});
+    public function testKeepsTheDefaultSessionNameWhenNotConfigured(): void
+    {
+        new NativeStorage();
 
-it('sets a custom session name when configured', function (): void {
-    $storage = new NativeStorage(['name' => 'CUSTOM_NAME']);
+        $this->assertSame('PHPSESSID', session_name());
+    }
 
-    expect(session_name())->toBe('CUSTOM_NAME');
-});
+    public function testReturnsFalseWhenReadingAMissingSession(): void
+    {
+        $this->assertFalse($this->storage->read('missing'));
+    }
 
-it('keeps the default session name when not configured', function (): void {
-    $storage = new NativeStorage();
+    public function testReturnsFalseWhenTheStoredValueIsNotAString(): void
+    {
+        $this->storage->write('abc', 'x');
+        $_SESSION['omega_session'] = ['nested' => true];
 
-    expect(session_name())->toBe('PHPSESSID');
-});
+        $this->assertFalse($this->storage->read('abc'));
+    }
 
-it('returns false when reading a missing session', function (): void {
-    expect($this->storage->read('missing'))->toBeFalse();
-});
+    public function testReturnsFalseWhenTheStoredValueIsAnEmptyString(): void
+    {
+        $this->storage->write('abc', '');
 
-it('returns false when the stored value is not a string', function (): void {
-    $this->storage->write('abc', 'x');
-    $_SESSION['omega_session'] = ['nested' => true];
+        $this->assertFalse($this->storage->read('abc'));
+    }
 
-    expect($this->storage->read('abc'))->toBeFalse();
-});
+    public function testReturnsFalseForAnEmptyValueReadWhileTheSessionIsInactive(): void
+    {
+        $this->storage->write('abc', '');
+        $this->storage->close();
 
-it('returns false when the stored value is an empty string', function (): void {
-    $this->storage->write('abc', '');
+        $this->assertFalse($this->storage->read('abc'));
+    }
 
-    expect($this->storage->read('abc'))->toBeFalse();
-});
+    public function testWritesIntoAnAlreadyActiveSession(): void
+    {
+        $this->storage->write('abc', 'first');
 
-it('returns false for an empty value read while the session is inactive', function (): void {
-    $this->storage->write('abc', '');
-    $this->storage->close();
+        $this->assertTrue($this->storage->write('def', 'second'));
+        $this->assertSame('second', $_SESSION['omega_session']);
+    }
 
-    expect($this->storage->read('abc'))->toBeFalse();
-});
+    public function testDestroysAnActiveSessionAndClearsItsData(): void
+    {
+        $this->storage->write('abc', '{"foo":"bar"}');
 
-it('writes into an already active session', function (): void {
-    $this->storage->write('abc', 'first');
+        $this->assertTrue($this->storage->destroy('abc'));
+        $this->assertFalse($this->storage->read('abc'));
+    }
 
-    expect($this->storage->write('def', 'second'))->toBeTrue();
-    expect($_SESSION['omega_session'])->toBe('second');
-});
+    public function testDestroysASessionStartingFromAnInactiveState(): void
+    {
+        $this->assertTrue($this->storage->destroy('never-started'));
+        $this->assertSame(PHP_SESSION_NONE, session_status());
+    }
 
-it('destroys an active session and clears its data', function (): void {
-    $this->storage->write('abc', '{"foo":"bar"}');
+    public function testGarbageCollectionReportsZeroDeletedEntries(): void
+    {
+        $this->assertSame(0, $this->storage->gc(3600));
+    }
 
-    expect($this->storage->destroy('abc'))->toBeTrue();
-    expect($this->storage->read('abc'))->toBeFalse();
-});
+    public function testCreatesA32CharacterHexadecimalSessionId(): void
+    {
+        $id = $this->storage->createId();
 
-it('destroys a session starting from an inactive state', function (): void {
-    expect($this->storage->destroy('never-started'))->toBeTrue();
-    expect(session_status())->toBe(PHP_SESSION_NONE);
-});
+        $this->assertSame(1, preg_match('/^[0-9a-f]{32}$/', $id));
+        $this->assertNotSame($id, $this->storage->createId());
+    }
 
-it('garbage collection reports zero deleted entries', function (): void {
-    expect($this->storage->gc(3600))->toBe(0);
-});
+    public function testClosesAnActiveSessionAndPersistsItsData(): void
+    {
+        $this->storage->write('abc', '{"foo":"bar"}');
 
-it('creates a 32-character hexadecimal session id', function (): void {
-    $id = $this->storage->createId();
+        $this->assertTrue($this->storage->close());
+        $this->assertSame(PHP_SESSION_NONE, session_status());
+        $this->assertSame('{"foo":"bar"}', $this->storage->read('abc'));
+    }
 
-    expect(preg_match('/^[0-9a-f]{32}$/', $id))->toBe(1);
-    expect($this->storage->createId())->not->toBe($id);
-});
-
-it('closes an active session and persists its data', function (): void {
-    $this->storage->write('abc', '{"foo":"bar"}');
-
-    expect($this->storage->close())->toBeTrue();
-    expect(session_status())->toBe(PHP_SESSION_NONE);
-    expect($this->storage->read('abc'))->toBe('{"foo":"bar"}');
-});
-
-it('closes cleanly when no session is active', function (): void {
-    expect($this->storage->close())->toBeTrue();
-});
+    public function testClosesCleanlyWhenNoSessionIsActive(): void
+    {
+        $this->assertTrue($this->storage->close());
+    }
+}

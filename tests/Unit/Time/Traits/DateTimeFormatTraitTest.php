@@ -16,77 +16,94 @@ namespace Tests\Time\Traits;
 
 use Omega\Time\Now;
 use Omega\Time\Traits\DateTimeFormatTrait;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(Now::class, DateTimeFormatTrait::class);
+#[CoversClass(Now::class)]
+#[CoversClass(DateTimeFormatTrait::class)]
+final class DateTimeFormatTraitTest extends TestCase
+{
+    public function testFormatsTimeInAtomFormat(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in ATOM format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('2026-03-02T15:30:45+00:00', $now->formatATOM());
+    }
 
-    expect($now->formatATOM())->toBe('2026-03-02T15:30:45+00:00');
-});
+    public function testFormatsTimeInCookieFormatWithStandardTime(): void
+    {
+        $now = new Now('02-03-2026', 'UTC');
 
-it('formats time in COOKIE format with standard time', function (): void {
-    $now = new Now('02-03-2026', 'UTC');
+        $this->assertEquals('Monday, 02-Mar-2026 00:00:00 UTC', $now->formatCOOKIE());
+    }
 
-    expect($now->formatCOOKIE())->toEqual('Monday, 02-Mar-2026 00:00:00 UTC');
-});
+    public function testFormatsTimeInRfc822Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC822 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 26 15:30:45 +0000', $now->formatRFC822());
+    }
 
-    expect($now->formatRFC822())->toBe('Mon, 02 Mar 26 15:30:45 +0000');
-});
+    public function testFormatsTimeInRfc850Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC850 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Monday, 02-Mar-26 15:30:45 UTC', $now->formatRFC850());
+    }
 
-    expect($now->formatRFC850())->toBe('Monday, 02-Mar-26 15:30:45 UTC');
-});
+    public function testFormatsTimeInRfc1036Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC1036 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 26 15:30:45 +0000', $now->formatRFC1036());
+    }
 
-    expect($now->formatRFC1036())->toBe('Mon, 02 Mar 26 15:30:45 +0000');
-});
+    public function testFormatsTimeInRfc1123Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC1123 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 2026 15:30:45 +0000', $now->formatRFC1123());
+    }
 
-    expect($now->formatRFC1123())->toBe('Mon, 02 Mar 2026 15:30:45 +0000');
-});
+    public function testFormatsTimeInRfc7231Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC7231 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 2026 15:30:45 GMT', $now->formatRFC7231());
+    }
 
-    expect($now->formatRFC7231())->toBe('Mon, 02 Mar 2026 15:30:45 GMT');
-});
+    public function testFormatsTimeInRfc2822Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC2822 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 2026 15:30:45 +0000', $now->formatRFC2822());
+    }
 
-    expect($now->formatRFC2822())->toBe('Mon, 02 Mar 2026 15:30:45 +0000');
-});
+    public function testFormatsTimeInRfc3339Format(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RFC3339 format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('2026-03-02T15:30:45+00:00', $now->formatRFC3339());
+    }
 
-    expect($now->formatRFC3339())->toBe('2026-03-02T15:30:45+00:00');
-});
+    public function testFormatsTimeInExtendedRfc3339FormatWithMilliseconds(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in extended RFC3339 format with milliseconds', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('2026-03-02T15:30:45.000+00:00', $now->formatRFC3339(true));
+    }
 
-    expect($now->formatRFC3339(true))->toBe('2026-03-02T15:30:45.000+00:00');
-});
+    public function testFormatsTimeInRssFormat(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in RSS format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
+        $this->assertSame('Mon, 02 Mar 2026 15:30:45 +0000', $now->formatRSS());
+    }
 
-    expect($now->formatRSS())->toBe('Mon, 02 Mar 2026 15:30:45 +0000');
-});
+    public function testFormatsTimeInW3cFormat(): void
+    {
+        $now = new Now('2026-03-02 15:30:45', 'UTC');
 
-it('formats time in W3C format', function (): void {
-    $now = new Now('2026-03-02 15:30:45', 'UTC');
-
-    expect($now->formatW3C())->toBe('2026-03-02T15:30:45+00:00');
-});
+        $this->assertSame('2026-03-02T15:30:45+00:00', $now->formatW3C());
+    }
+}

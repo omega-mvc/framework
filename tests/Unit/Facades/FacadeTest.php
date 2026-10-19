@@ -26,148 +26,167 @@ use Omega\Session\SessionManager;
 use Omega\Session\Storage\ArrayStorage;
 use Omega\View\Facades\View;
 use Omega\View\Facades\Vite;
+use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionMethod;
 use ReflectionProperty;
 use Tests\Facades\Sample\FacadesTestClass;
 use Tests\Facades\Support\NullFacade;
 use Tests\Facades\Support\TestAbstractFacade;
+use Tests\TestCase;
 
-use function expect;
+#[CoversClass(AbstractFacade::class)]
+#[CoversClass(Application::class)]
+#[CoversClass(DB::class)]
+#[CoversClass(DatabaseManager::class)]
+#[CoversClass(Cache::class)]
+#[CoversClass(CircularAliasException::class)]
+#[CoversClass(Collection::class)]
+#[CoversClass(Config::class)]
+#[CoversClass(ConfigRepository::class)]
+#[CoversClass(FacadeObjectNotSetException::class)]
+#[CoversClass(Hash::class)]
+#[CoversClass(HashManager::class)]
+#[CoversClass(PDO::class)]
+#[CoversClass(Schedule::class)]
+#[CoversClass(Schema::class)]
+#[CoversClass(Session::class)]
+#[CoversClass(SessionManager::class)]
+#[CoversClass(ArrayStorage::class)]
+#[CoversClass(Table::class)]
+#[CoversClass(View::class)]
+#[CoversClass(Vite::class)]
+final class FacadeTest extends TestCase
+{
+    protected function tearDown(): void
+    {
+        AbstractFacade::setFacadeBase(null);
+        AbstractFacade::flushInstance();
 
-covers(AbstractFacade::class);
-covers(Application::class);
-covers(DB::class);
-covers(DatabaseManager::class);
-covers(Cache::class);
-covers(CircularAliasException::class);
-covers(Collection::class);
-covers(Config::class);
-covers(ConfigRepository::class);
-covers(FacadeObjectNotSetException::class);
-covers(Hash::class);
-covers(HashManager::class);
-covers(PDO::class);
-covers(Schedule::class);
-covers(Schema::class);
-covers(Session::class);
-covers(SessionManager::class);
-covers(ArrayStorage::class);
-covers(Table::class);
-covers(View::class);
-covers(Vite::class);
-
-
-afterEach(function (): void {
-    AbstractFacade::setFacadeBase(null);
-    AbstractFacade::flushInstance();
-});
-
-it('can call static', function (): void {
-    $app = new Application(__DIR__);
-    $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
-
-    AbstractFacade::setFacadeBase($app);
-
-    expect(FacadesTestClass::has('php'))->toBeTrue();
-    $app->flush();
-    AbstractFacade::flushInstance();
-});
-
-it('throws when application is not set', function (): void {
-    AbstractFacade::flushInstance();
-    AbstractFacade::setFacadeBase(null);
-
-    FacadesTestClass::has('php');
-})->throws(FacadeObjectNotSetException::class, 'has not been set');
-
-it('constructor sets application', function (): void {
-    $app = new Application(__DIR__);
-
-    new TestAbstractFacade($app);
-
-    $ref = new ReflectionProperty(AbstractFacade::class, 'app');
-
-    expect($ref->getValue())->toBe($app);
-});
-
-it('throws when app is not set', function (): void {
-    NullFacade::has('php');
-})->throws(FacadeObjectNotSetException::class);
-
-it('throws from getFacadeBase when the application is not set', function (): void {
-    AbstractFacade::flushInstance();
-    AbstractFacade::setFacadeBase(null);
-
-    $method = new ReflectionMethod(AbstractFacade::class, 'getFacadeBase');
-
-    expect(
-        fn () => $method->invoke(null, 'missing.service'),
-    )->toThrow(FacadeObjectNotSetException::class);
-});
-
-it('uses cached instance', function (): void {
-    $app = new Application(__DIR__);
-
-    $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
-
-    AbstractFacade::setFacadeBase($app);
-
-    expect(FacadesTestClass::has('php'))->toBeTrue();
-    expect(FacadesTestClass::has('php'))->toBeTrue();
-});
-
-it('returns the correct accessor', function (): void {
-    $cases = [
-        DB::class        => DatabaseManager::class,
-        Config::class    => ConfigRepository::class,
-        Cache::class     => 'cache',
-        Hash::class      => HashManager::class,
-        PDO::class       => 'database',
-        Schedule::class  => 'schedule',
-        Schema::class    => 'Schema',
-        Session::class   => 'session',
-        View::class      => 'view.instance',
-        Vite::class      => 'vite.gets',
-    ];
-
-    foreach ($cases as $facade => $accessor) {
-        expect($facade::getFacadeAccessor())->toBe($accessor);
+        parent::tearDown();
     }
-});
 
-it('forwards static calls to the session manager', function (): void {
-    $app = new Application(__DIR__);
-    $app->set('session', fn () => new SessionManager('array', new ArrayStorage()));
+    public function testCanCallStatic(): void
+    {
+        $app = new Application(__DIR__);
+        $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
 
-    AbstractFacade::setFacadeBase($app);
+        AbstractFacade::setFacadeBase($app);
 
-    expect(Session::start())->toBeTrue();
+        $this->assertTrue(FacadesTestClass::has('php'));
+        $app->flush();
+        AbstractFacade::flushInstance();
+    }
 
-    $app->flush();
-    AbstractFacade::flushInstance();
-});
+    public function testThrowsWhenApplicationIsNotSet(): void
+    {
+        AbstractFacade::flushInstance();
+        AbstractFacade::setFacadeBase(null);
 
-it('table returns query builder', function (): void {
-    $app = new Application(__DIR__);
+        $this->expectException(FacadeObjectNotSetException::class);
+        $this->expectExceptionMessage('has not been set');
 
-    $connection = $this->createStub(ConnectionInterface::class);
-    $connection->method('getInstance')->willReturn($connection);
+        FacadesTestClass::has('php');
+    }
 
-    $app->set('database', fn () => $connection);
+    public function testConstructorSetsApplication(): void
+    {
+        $app = new Application(__DIR__);
 
-    AbstractFacade::setFacadeBase($app);
+        new TestAbstractFacade($app);
 
-    $first  = DB::table('users');
-    $second = DB::table('users');
+        $ref = new ReflectionProperty(AbstractFacade::class, 'app');
 
-    expect($first)->not->toBe($second);
-});
+        $this->assertSame($app, $ref->getValue());
+    }
 
-it('from returns query builder', function (): void {
-    $connection = $this->createStub(ConnectionInterface::class);
+    public function testThrowsWhenAppIsNotSet(): void
+    {
+        $this->expectException(FacadeObjectNotSetException::class);
 
-    $first  = DB::from('users', $connection);
-    $second = DB::from('users', $connection);
+        NullFacade::has('php');
+    }
 
-    expect($first)->not->toBe($second);
-});
+    public function testThrowsFromGetFacadeBaseWhenTheApplicationIsNotSet(): void
+    {
+        AbstractFacade::flushInstance();
+        AbstractFacade::setFacadeBase(null);
+
+        $method = new ReflectionMethod(AbstractFacade::class, 'getFacadeBase');
+
+        $this->expectException(FacadeObjectNotSetException::class);
+
+        $method->invoke(null, 'missing.service');
+    }
+
+    public function testUsesCachedInstance(): void
+    {
+        $app = new Application(__DIR__);
+
+        $app->set(Collection::class, fn () => new Collection(['php' => 'greater']));
+
+        AbstractFacade::setFacadeBase($app);
+
+        $this->assertTrue(FacadesTestClass::has('php'));
+        $this->assertTrue(FacadesTestClass::has('php'));
+    }
+
+    public function testReturnsTheCorrectAccessor(): void
+    {
+        $cases = [
+            DB::class        => DatabaseManager::class,
+            Config::class    => ConfigRepository::class,
+            Cache::class     => 'cache',
+            Hash::class      => HashManager::class,
+            PDO::class       => 'database',
+            Schedule::class  => 'schedule',
+            Schema::class    => 'Schema',
+            Session::class   => 'session',
+            View::class      => 'view.instance',
+            Vite::class      => 'vite.gets',
+        ];
+
+        foreach ($cases as $facade => $accessor) {
+            $this->assertSame($accessor, $facade::getFacadeAccessor());
+        }
+    }
+
+    public function testForwardsStaticCallsToTheSessionManager(): void
+    {
+        $app = new Application(__DIR__);
+        $app->set('session', fn () => new SessionManager('array', new ArrayStorage()));
+
+        AbstractFacade::setFacadeBase($app);
+
+        $this->assertTrue(Session::start());
+
+        $app->flush();
+        AbstractFacade::flushInstance();
+    }
+
+    public function testTableReturnsQueryBuilder(): void
+    {
+        $app = new Application(__DIR__);
+
+        $connection = $this->createStub(ConnectionInterface::class);
+        $connection->method('getInstance')->willReturn($connection);
+
+        $app->set('database', fn () => $connection);
+
+        AbstractFacade::setFacadeBase($app);
+
+        $first  = DB::table('users');
+        $second = DB::table('users');
+
+        $this->assertNotSame($first, $second);
+    }
+
+    public function testFromReturnsQueryBuilder(): void
+    {
+        $connection = $this->createStub(ConnectionInterface::class);
+
+        $first  = DB::from('users', $connection);
+        $second = DB::from('users', $connection);
+
+        $this->assertNotSame($first, $second);
+    }
+}

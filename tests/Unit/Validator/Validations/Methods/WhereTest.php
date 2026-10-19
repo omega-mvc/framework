@@ -1,66 +1,87 @@
 <?php
 
-use function Omega\Validator\vr;
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
 
 use Omega\Validator\Validator;
+use Tests\TestCase;
 
-it('can render validation rule using method where (true)', function () {
-    expect(vr()->required()->where(fn () => true))->toEqual('required');
-});
+use function Omega\Validator\vr;
 
-it('can render validation rule using method where (false)', function () {
-    expect(vr()->required()->where(fn () => false))->toEqual('');
-});
+final class WhereTest extends TestCase
+{
+    public function testCanRenderValidationRuleUsingMethodWhereTrue(): void
+    {
+        $this->assertEquals('required', vr()->required()->where(fn (): bool => true));
+    }
 
-it('can reset validation rule using method where (true)', function () {
-    $val = new Validator();
+    public function testCanRenderValidationRuleUsingMethodWhereFalse(): void
+    {
+        $this->assertEquals('', vr()->required()->where(fn (): bool => false));
+    }
 
-    // output: required
-    $val->field('test')->required()->where(fn () => true);
+    public function testCanResetValidationRuleUsingMethodWhereTrue(): void
+    {
+        $val = new Validator();
 
-    expect($val->isValid())->toBeFalse();
-});
-
-it('can reset validation rule using method where (false)', function () {
-    $val = new Validator();
-
-    // output: ''
-    $val->test->required()->where(fn () => false);
-
-    expect($val->isValid())->toBeTrue();
-});
-
-it('can reset validation rule using method where (no return)', function () {
-    $val = new Validator();
-
-    // output: ''
-    $val->test->required()->where(function () {
-        // empty function
-    });
-})->throws('Condition closure not return boolean');
-
-it('can reset validation rule using method where (no boolean)', function () {
-    $val = new Validator();
-
-    // output: throw error
-    $val->test->required()->where(fn () => 'test');
-})->throws('Condition closure not return boolean');
-
-it('can validate combine with submitted method', function () {
-    $previous            = $_SERVER['REQUEST_METHOD'] ?? null;
-    $_SERVER['REQUEST_METHOD'] = 'POST';
-    $val                 = new Validator();
-
-    try {
         // output: required
-        $val->field('test')->required()->where(fn () => $val->submitted());
+        $val->field('test')->required()->where(fn (): bool => true);
 
-        expect($val->isValid())->toBeFalse();
-    } finally {
-        if ($previous === null) {
-            unset($_SERVER['REQUEST_METHOD']);
-        } else {
-            $_SERVER['REQUEST_METHOD'] = $previous;
+        $this->assertFalse($val->isValid());
+    }
+
+    public function testCanResetValidationRuleUsingMethodWhereFalse(): void
+    {
+        $val = new Validator();
+
+        // output: ''
+        $val->test->required()->where(fn (): bool => false);
+
+        $this->assertTrue($val->isValid());
+    }
+
+    public function testCanResetValidationRuleUsingMethodWhereNoReturn(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
+
+        $val = new Validator();
+
+        // output: ''
+        $val->test->required()->where(function () {
+            // empty function
+        });
+    }
+
+    public function testCanResetValidationRuleUsingMethodWhereNoBoolean(): void
+    {
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage('Condition closure not return boolean');
+
+        $val = new Validator();
+
+        // output: throw error
+        $val->test->required()->where(fn (): string => 'test');
+    }
+
+    public function testCanValidateCombineWithSubmittedMethod(): void
+    {
+        $previous                  = $_SERVER['REQUEST_METHOD'] ?? null;
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $val                       = new Validator();
+
+        try {
+            // output: required
+            $val->field('test')->required()->where(fn (): bool => $val->submitted());
+
+            $this->assertFalse($val->isValid());
+        } finally {
+            if ($previous === null) {
+                unset($_SERVER['REQUEST_METHOD']);
+            } else {
+                $_SERVER['REQUEST_METHOD'] = $previous;
+            }
         }
     }
-});
+}

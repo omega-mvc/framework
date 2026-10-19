@@ -1,72 +1,95 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render extension validation')
-    ->expect(vr()->extension('png', 'jpg', 'gif'))
-    ->toEqual('extension,png;jpg;gif')
-;
+final class ExtensionTest extends TestCase
+{
+    public function testCanRenderExtensionValidation(): void
+    {
+        $this->assertEquals('extension,png;jpg;gif', vr()->extension('png', 'jpg', 'gif'));
+    }
 
-it('can render invert extension validation')
-    ->expect(vr()->not->extension('png', 'jpg', 'gif'))
-    ->toEqual('invert_extension,png;jpg;gif')
-;
+    public function testCanRenderInvertExtensionValidation(): void
+    {
+        $this->assertEquals('invert_extension,png;jpg;gif', vr()->not->extension('png', 'jpg', 'gif'));
+    }
 
-$correct = [
-    'files' => [
-        'test' => [
-            'name'     => 'screenshot.png',
-            'type'     => 'image/png',
-            'tmp_name' => '/tmp/phphjatI9',
-            'error'    => 0,
-            'size'     => 22068,
-        ],
-    ],
-];
-$incorrect = [
-    'files' => [
-        'test' => [
-            'name'     => 'screenshot.png',
-            'type'     => 'image/png',
-            'tmp_name' => '/tmp/phphjatI9',
-            'error'    => 4,
-            'size'     => 22068,
-        ],
-    ],
-];
+    public function testCanValidateExtensionWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-// validate with correct input field
+        $val->field('files.test')->extension('png');
 
-it('can validate extension with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $val->field('files.test')->extension('png');
+    public function testCanValidateExtensionNotWithCorrectInput(): void
+    {
+        $val = new Validator($this->correctInput());
 
-    expect($val->isValid())->toBeTrue();
-});
+        $val->field('files.test')->not->extension('png');
 
-it('can validate extension (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertFalse($val->isValid());
+    }
 
-    $val->field('files.test')->not->extension('png');
+    public function testCanValidateExtensionWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    expect($val->isValid())->toBeFalse();
-});
+        $val->field('files.test')->extension('php');
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate extension with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidateExtensionNotWithIncorrectInput(): void
+    {
+        $val = new Validator($this->incorrectInput());
 
-    $val->field('files.test')->extension('php');
+        $val->field('files.test')->not->extension('php');
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertTrue($val->isValid());
+    }
 
-it('can validate extension (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    /**
+     * @return array{files: array{test: array{name: string, type: string, tmp_name: string, error: int, size: int}}}
+     */
+    private function correctInput(): array
+    {
+        return [
+            'files' => [
+                'test' => [
+                    'name'     => 'screenshot.png',
+                    'type'     => 'image/png',
+                    'tmp_name' => '/tmp/phphjatI9',
+                    'error'    => 0,
+                    'size'     => 22068,
+                ],
+            ],
+        ];
+    }
 
-    $val->field('files.test')->not->extension('php');
-
-    expect($val->isValid())->toBeTrue();
-});
+    /**
+     * @return array{files: array{test: array{name: string, type: string, tmp_name: string, error: int, size: int}}}
+     */
+    private function incorrectInput(): array
+    {
+        return [
+            'files' => [
+                'test' => [
+                    'name'     => 'screenshot.png',
+                    'type'     => 'image/png',
+                    'tmp_name' => '/tmp/phphjatI9',
+                    'error'    => 4,
+                    'size'     => 22068,
+                ],
+            ],
+        ];
+    }
+}

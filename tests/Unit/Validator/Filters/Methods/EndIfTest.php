@@ -1,29 +1,40 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Filters\Methods;
+
 use Omega\Validator\Rule\Filter;
+use ReflectionProperty;
+use Tests\TestCase;
 
-it('can render end_if filter')
-    ->expect(fn () => (new Filter())->if(fn (): bool => true)->end_if()->trim()->getFilter())
-    ->toBe('trim')
-;
+final class EndIfTest extends TestCase
+{
+    public function testCanRenderEndIfFilter(): void
+    {
+        $this->assertEquals('trim', (new Filter())->if(fn (): bool => true)->end_if()->trim()->getFilter());
+    }
 
-it('can render both if and end_if filter')
-    ->expect(fn () => (new Filter())->if(fn (): bool => false)->end_if()->trim()->getFilter())
-    ->toBe('trim')
-;
+    public function testCanRenderBothIfAndEndIfFilter(): void
+    {
+        $this->assertEquals('trim', (new Filter())->if(fn (): bool => false)->end_if()->trim()->getFilter());
+    }
 
-it('re-opens the filter rules block after an end_if')
-    ->expect(fn () => (new Filter())->if(fn (): bool => false)->trim()->end_if()->upper_case()->getFilter())
-    ->toBe('upper_case')
-;
+    public function testReOpensTheFilterRulesBlockAfterAnEndIf(): void
+    {
+        $this->assertEquals('upper_case', (new Filter())->if(fn (): bool => false)->trim()->end_if()->upper_case()->getFilter());
+    }
 
-it('can directly append the end_if rule')
-    ->expect((new Filter())->end_if()->getFilter())
-    ->toBe('')
-;
+    public function testCanDirectlyAppendTheEndIfRule(): void
+    {
+        $this->assertEquals('', (new Filter())->end_if()->getFilter());
+    }
 
-it('appends the end_if marker to the filter rules array')
-    ->expect(fn () => (new ReflectionProperty(Filter::class, 'filter_rule'))
-        ->getValue((new Filter())->end_if()))
-    ->toBe(['end_if'])
-;
+    public function testAppendsTheEndIfMarkerToTheFilterRulesArray(): void
+    {
+        $filter = new Filter();
+        $filter->end_if();
+        $property = new ReflectionProperty(Filter::class, 'filter_rule');
+        $this->assertEquals(['end_if'], $property->getValue($filter));
+    }
+}

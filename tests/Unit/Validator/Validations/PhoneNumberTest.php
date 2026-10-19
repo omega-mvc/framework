@@ -1,66 +1,80 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations;
+
+use Omega\Validator\Validator;
+use Tests\TestCase;
+
 use function Omega\Validator\vr;
 
-it('can render phone_number validation')
-    ->expect(vr()->phone_number())
-    ->toEqual('phone_number')
-;
+final class PhoneNumberTest extends TestCase
+{
+    /** @var array<string, mixed> */
+    private const CORRECT = [
+        'test'  => '555-555-5555',
+        'test2' => '5555425555',
+        'test3' => '555 555 5555',
+        'test4' => '1(222) 555-4444',
+        'test5' => '1 (519) 555-4422',
+        'test6' => '1-555-555-5555',
+        'test7' => '1-(555)-555-5555',
+    ];
 
-it('can render invert phone_number validation')
-    ->expect(vr()->not()->phone_number())
-    ->toEqual('invert_phone_number')
-;
+    /** @var array<string, mixed> */
+    private const INCORRECT = [
+        'test8' => '666111222',
+        'test9' => '004461234123',
+    ];
 
-$correct = [
-    'test'  => '555-555-5555',
-    'test2' => '5555425555',
-    'test3' => '555 555 5555',
-    'test4' => '1(222) 555-4444',
-    'test5' => '1 (519) 555-4422',
-    'test6' => '1-555-555-5555',
-    'test7' => '1-(555)-555-5555',
-];
-$incorrect = [
-    'test8' => '666111222',
-    'test9' => '004461234123',
-];
-// validate with correct input field
+    public function testCanRenderPhoneNumberValidation(): void
+    {
+        $this->assertEquals('phone_number', vr()->phone_number());
+    }
 
-it('can validate phone_number with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+    public function testCanRenderInvertPhoneNumberValidation(): void
+    {
+        $this->assertEquals('invert_phone_number', vr()->not()->phone_number());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->phone_number();
+    public function testCanValidatePhoneNumberWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeTrue();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->phone_number();
 
-it('can validate numeric (not) with correct input', function () use ($correct) {
-    $val = new Omega\Validator\Validator($correct);
+        $this->assertTrue($val->isValid());
+    }
 
-    $field_name = array_keys($correct);
-    $val->field(...$field_name)->not->phone_number();
+    public function testCanValidateNumericNotWithCorrectInput(): void
+    {
+        $val = new Validator(self::CORRECT);
 
-    expect($val->isValid())->toBeFalse();
-});
+        $fieldName = array_keys(self::CORRECT);
+        $val->field(...$fieldName)->not->phone_number();
 
-// validate with incorrect input field
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate phone_number with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidatePhoneNumberWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->phone_number();
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->phone_number();
 
-    expect($val->isValid())->toBeFalse();
-});
+        $this->assertFalse($val->isValid());
+    }
 
-it('can validate phone_number (not) with incorrect input', function () use ($incorrect) {
-    $val = new Omega\Validator\Validator($incorrect);
+    public function testCanValidatePhoneNumberNotWithIncorrectInput(): void
+    {
+        $val = new Validator(self::INCORRECT);
 
-    $field_name = array_keys($incorrect);
-    $val->field(...$field_name)->not->phone_number();
+        $fieldName = array_keys(self::INCORRECT);
+        $val->field(...$fieldName)->not->phone_number();
 
-    expect($val->isValid())->toBeTrue();
-});
+        $this->assertTrue($val->isValid());
+    }
+}

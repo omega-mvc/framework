@@ -1,14 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Validator\Validations\Methods;
+
 use Omega\Validator\Rule\Valid;
+use Tests\TestCase;
 
-it('can combine valid class with other valid class', function () {
-    $valid = new Valid();
-    $valid->required();
+final class CombineTest extends TestCase
+{
+    public function testCanCombineValidClassWithOtherValidClass(): void
+    {
+        $valid = new Valid();
+        $valid->required();
 
-    $valid2 =new Valid();
-    $valid2->alpha();
-    $valid2->combine($valid);
+        $valid2 = new Valid();
+        $valid2->alpha();
+        $valid2->combine($valid);
 
-    expect($valid2->getValidation())->toEqual('alpha|required');
-});
+        $this->assertEquals('alpha|required', $valid2->getValidation());
+    }
+}

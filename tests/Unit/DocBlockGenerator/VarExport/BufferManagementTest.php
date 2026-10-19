@@ -5,22 +5,28 @@ declare(strict_types=1);
 namespace Tests\DocBlockGenerator\VarExport;
 
 use Omega\DocBlockGenerator\VarExport;
+use PHPUnit\Framework\Attributes\CoversClass;
+use Tests\TestCase;
 
-covers(VarExport::class);
+#[CoversClass(VarExport::class)]
+final class BufferManagementTest extends TestCase
+{
+    public function testStartsEmptyBuffer(): void
+    {
+        $varExport = new VarExport();
+        $result    = $varExport->export([]);
 
-it('starts empty buffer', function (): void {
-    $varExport = new VarExport();
-    $result    = $varExport->export([]);
+        $this->assertEquals('[]', $result);
+    }
 
-    expect($result)->toEqual('[]');
-});
+    public function testResetsBufferAfterCompile(): void
+    {
+        $varExport = new VarExport();
 
-it('resets buffer after compile', function (): void {
-    $varExport = new VarExport();
+        $varExport->export(['foo' => 'bar']);
 
-    $varExport->export(['foo' => 'bar']);
+        $result = $varExport->export([]);
 
-    $result = $varExport->export([]);
-
-    expect($result)->toEqual('[]');
-});
+        $this->assertEquals('[]', $result);
+    }
+}

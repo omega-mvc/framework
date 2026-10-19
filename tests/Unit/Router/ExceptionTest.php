@@ -1,15 +1,5 @@
 <?php
 
-/**
- * Part of Omega - Tests\Router Package.
- *
- * @link      https://omega-mvc.github.io
- * @author    Adriano Giovannini <agisoftt@gmail.com>
- * @copyright Copyright (c) 2025 - 2026 Adriano Giovannini (https://omega-mvc.github.io)
- * @license   https://www.gnu.org/licenses/gpl-3.0-standalone.html     GPL V3.0+
- * @version   2.0.0
- */
-
 declare(strict_types=1);
 
 namespace Tests\Router;
@@ -21,88 +11,123 @@ use Omega\Router\Exceptions\RouteNotFoundException;
 use Omega\Router\Exceptions\RouteNotRegisteredException;
 use Omega\Router\Exceptions\RouteUrlNotFullyResolvedException;
 use Omega\Router\Exceptions\UnknownRoutePatternException;
-use RuntimeException;
-use Stringable;
+use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
+use Stringable;
+use Tests\TestCase;
 
 use function fopen;
 
-covers(InvalidRouteParameterException::class);
-covers(MissingRouteParameterException::class);
-covers(RouteNotFoundException::class);
-covers(RouteNotRegisteredException::class);
-covers(RouteUrlNotFullyResolvedException::class);
-covers(UnknownRoutePatternException::class);
+#[CoversClass(InvalidRouteParameterException::class)]
+#[CoversClass(MissingRouteParameterException::class)]
+#[CoversClass(RouteNotFoundException::class)]
+#[CoversClass(RouteNotRegisteredException::class)]
+#[CoversClass(RouteUrlNotFullyResolvedException::class)]
+#[CoversClass(UnknownRoutePatternException::class)]
+final class ExceptionTest extends TestCase
+{
+    public function testBuildsTheRouteNotFoundMessageFromTheRouteName(): void
+    {
+        $exception = new RouteNotFoundException('users.show');
 
-it('builds the route not found message from the route name', function (): void {
-    $exception = new RouteNotFoundException('users.show');
+        $this->assertSame('Route [users.show] not found.', $exception->getMessage());
+    }
 
-    expect($exception->getMessage())->toBe('Route [users.show] not found.');
-});
+    public function testBuildsTheRouteNotRegisteredMessageFromThePropertyName(): void
+    {
+        $exception = new RouteNotRegisteredException('uri');
 
-it('builds the route not registered message from the property name', function (): void {
-    $exception = new RouteNotRegisteredException('uri');
+        $this->assertSame('Route property or method [uri] is not registered.', $exception->getMessage());
+    }
 
-    expect($exception->getMessage())->toBe('Route property or method [uri] is not registered.');
-});
+    public function testBuildsTheUnknownPatternMessageFromThePatternKey(): void
+    {
+        $exception = new UnknownRoutePatternException('(:custom)');
 
-it('builds the unknown pattern message from the pattern key', function (): void {
-    $exception = new UnknownRoutePatternException('(:custom)');
+        $this->assertSame('Unknown pattern type: (:custom)', $exception->getMessage());
+    }
 
-    expect($exception->getMessage())->toBe('Unknown pattern type: (:custom)');
-});
+    public function testBuildsEveryMissingRouteParameterMessageVariant(): void
+    {
+        $this->assertSame('Missing named parameter: id', MissingRouteParameterException::named('id')->getMessage());
+        $this->assertSame(
+            'Missing parameter at index 2 for named parameter slug',
+            MissingRouteParameterException::namedIndexed(2, 'slug')->getMessage()
+        );
+        $this->assertSame(
+            "Missing parameter for pattern {(:num)}. Provide either numeric index {3} or key '{num}'",
+            MissingRouteParameterException::patternAssoc('(:num)', 3)->getMessage()
+        );
+        $this->assertSame(
+            'Missing parameter at index 4 for pattern (:any)',
+            MissingRouteParameterException::patternIndexed(4, '(:any)')->getMessage()
+        );
+    }
 
-it('builds every missing route parameter message variant', function (): void {
-    expect(MissingRouteParameterException::named('id')->getMessage())->toBe('Missing named parameter: id');
-    expect(MissingRouteParameterException::namedIndexed(2, 'slug')->getMessage())
-        ->toBe('Missing parameter at index 2 for named parameter slug');
-    expect(MissingRouteParameterException::patternAssoc('(:num)', 3)->getMessage())
-        ->toBe("Missing parameter for pattern {(:num)}. Provide either numeric index {3} or key '{num}'");
-    expect(MissingRouteParameterException::patternIndexed(4, '(:any)')->getMessage())
-        ->toBe('Missing parameter at index 4 for pattern (:any)');
-});
+    public function testCarriesTheMessageOfTheRouteUrlNotFullyResolvedException(): void
+    {
+        $exception = new RouteUrlNotFullyResolvedException('Unresolved pattern remains.');
 
-it('carries the message of the route url not fully resolved exception', function (): void {
-    $exception = new RouteUrlNotFullyResolvedException('Unresolved pattern remains.');
+        $this->assertSame('Unresolved pattern remains.', $exception->getMessage());
+    }
 
-    expect($exception->getMessage())->toBe('Unresolved pattern remains.');
-});
+    public function testStringifiesScalarStringableSerializableAndNestedValues(): void
+    {
+        $stringable = new class implements Stringable {
+            public function __toString(): string
+            {
+                return 'str-value';
+            }
+        };
+        $jsonable = new class implements JsonSerializable {
+            public function jsonSerialize(): mixed
+            {
+                return ['key' => 'value'];
+            }
+        };
 
-it('stringifies scalar, stringable, serializable and nested values', function (): void {
-    $stringable = new class implements Stringable {
-        public function __toString(): string
-        {
-            return 'str-value';
-        }
-    };
-    $jsonable = new class implements JsonSerializable {
-        public function jsonSerialize(): mixed
-        {
-            return ['key' => 'value'];
-        }
-    };
+        $this->assertSame(
+            'Invalid value [text] for route parameter [a].',
+            (new InvalidRouteParameterException('a', 'text'))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [7] for route parameter [a].',
+            (new InvalidRouteParameterException('a', 7))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [1.5] for route parameter [a].',
+            (new InvalidRouteParameterException('a', 1.5))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [1] for route parameter [a].',
+            (new InvalidRouteParameterException('a', true))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [str-value] for route parameter [a].',
+            (new InvalidRouteParameterException('a', $stringable))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [{"key":"value"}] for route parameter [a].',
+            (new InvalidRouteParameterException('a', $jsonable))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [{"x":1}] for route parameter [a].',
+            (new InvalidRouteParameterException('a', ['x' => 1]))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [{}] for route parameter [a].',
+            (new InvalidRouteParameterException('a', new stdClass()))->getMessage()
+        );
 
-    expect((new InvalidRouteParameterException('a', 'text'))->getMessage())
-        ->toBe('Invalid value [text] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', 7))->getMessage())
-        ->toBe('Invalid value [7] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', 1.5))->getMessage())
-        ->toBe('Invalid value [1.5] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', true))->getMessage())
-        ->toBe('Invalid value [1] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', $stringable))->getMessage())
-        ->toBe('Invalid value [str-value] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', $jsonable))->getMessage())
-        ->toBe('Invalid value [{"key":"value"}] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', ['x' => 1]))->getMessage())
-        ->toBe('Invalid value [{"x":1}] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', new stdClass()))->getMessage())
-        ->toBe('Invalid value [{}] for route parameter [a].');
+        $resource = fopen('php://memory', 'r');
 
-    $resource = fopen('php://memory', 'r');
-
-    expect((new InvalidRouteParameterException('a', $resource))->getMessage())
-        ->toBe('Invalid value [null] for route parameter [a].');
-    expect((new InvalidRouteParameterException('a', [$resource]))->getMessage())
-        ->toBe('Invalid value [null] for route parameter [a].');
-});
+        $this->assertSame(
+            'Invalid value [null] for route parameter [a].',
+            (new InvalidRouteParameterException('a', $resource))->getMessage()
+        );
+        $this->assertSame(
+            'Invalid value [null] for route parameter [a].',
+            (new InvalidRouteParameterException('a', [$resource]))->getMessage()
+        );
+    }
+}
