@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use Tests\TestCase;
 
-use function Omega\Application\slash;
 
 #[CoversClass(CacheManager::class)]
 #[CoversClass(FileStorage::class)]
@@ -21,7 +20,7 @@ final class CacheFactoryTest extends TestCase
 {
     public function testRegistersTheFileStorageDriverViaTheCacheManagerFactory(): void
     {
-        $cache = new CacheManager('array1', new FileStorage(['ttl' => 3_600, 'path' => slash(path: '/cache')]));
+        $cache = new CacheManager('array1', new FileStorage(['ttl' => 3_600, 'path' => __DIR__ . '/fixtures/cache']));
 
         $this->assertInstanceOf(CacheInterface::class, $cache->getDriver('array1'));
         $this->assertTrue($cache->getDriver('array1')->set('key1', 'value1'));

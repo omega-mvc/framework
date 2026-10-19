@@ -68,7 +68,7 @@ return [
         'storage' => [
             'file'   => [
                 'ttl'  => 3600,
-                'path' => DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR,
+                'path' => __DIR__ . '/../storage/app/cache/',
             ],
             'memory' => [
                 'ttl' => 3600,
