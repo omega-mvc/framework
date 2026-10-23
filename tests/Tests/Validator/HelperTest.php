@@ -14,6 +14,9 @@ use function Omega\Validator\fr;
 use function Omega\Validator\validate;
 use function Omega\Validator\vr;
 
+#[CoversFunction('Omega\Validator\vr')]
+#[CoversFunction('Omega\Validator\fr')]
+#[CoversFunction('Omega\Validator\validate')]
 final class HelperTest extends TestCase
 {
     public function testVrHelperCreatesAValidRule(): void

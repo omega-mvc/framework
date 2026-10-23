@@ -16,6 +16,7 @@ use function Omega\Time\now;
 use function strtotime;
 
 #[CoversClass(Now::class)]
+#[CoversFunction('Omega\Time\now')]
 final class HelperFunctionTest extends TestCase
 {
     public function testReturnsANowInstanceWithCurrentTimeByDefault(): void

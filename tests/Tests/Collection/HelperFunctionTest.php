@@ -14,6 +14,9 @@ use function Omega\Collection\collection;
 use function Omega\Collection\collection_immutable;
 
 #[CoversClass(Collection::class)]
+#[CoversFunction('Omega\Collection\collection')]
+#[CoversFunction('Omega\Collection\collection_immutable')]
+#[CoversFunction('Omega\Collection\data_get')]
 final class HelperFunctionTest extends TestCase
 {
     public function testCreatesACollectionInstanceWithTheCollectionHelper(): void

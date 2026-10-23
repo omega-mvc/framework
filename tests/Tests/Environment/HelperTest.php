@@ -6,11 +6,13 @@ namespace Tests\Environment;
 
 use Omega\Application\Application;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversFunction;
 use Tests\TestCase;
 
 use function Omega\Environment\env;
 
 #[CoversClass(Application::class)]
+#[CoversFunction('Omega\Environment\env')]
 final class HelperTest extends TestCase
 {
     public function testEnvHelperReturnsDefaultValueIfKeyDoesNotExist(): void

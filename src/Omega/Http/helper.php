@@ -8,7 +8,7 @@ use Exception;
 use Omega\Router\Router;
 use Omega\Router\RouteUrlBuilder;
 
-if (!function_exists('redirect')) {
+if (!function_exists('redirect')) { // @codeCoverageIgnore
     /**
      * Redirect to a specific URL.
      *
@@ -22,7 +22,7 @@ if (!function_exists('redirect')) {
     }
 }
 
-if (!function_exists('redirect_route')) {
+if (!function_exists('redirect_route')) { // @codeCoverageIgnore
     /**
      * Redirect to another route using the route's name and optional parameters.
      *

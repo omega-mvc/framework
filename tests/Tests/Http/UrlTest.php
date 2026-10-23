@@ -7,7 +7,6 @@ namespace Tests\Http;
 use Omega\Http\Request;
 use Omega\Http\Url;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\CoversFunction;
 use Tests\TestCase;
 
 #[CoversClass(Request::class)]

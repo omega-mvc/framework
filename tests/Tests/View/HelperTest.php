@@ -21,6 +21,8 @@ use function Omega\View\vite;
 #[CoversClass(Application::class)]
 #[CoversClass(View::class)]
 #[CoversClass(Vite::class)]
+#[CoversFunction('Omega\View\view')]
+#[CoversFunction('Omega\View\vite')]
 final class HelperTest extends TestCase
 {
     public function testViteHelperHandlesSingleAndMultipleEntryPoints(): void

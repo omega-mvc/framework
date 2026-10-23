@@ -13,6 +13,8 @@ use Tests\TestCase;
 use function Omega\Security\decrypt;
 use function Omega\Security\encrypt;
 
+#[CoversFunction('Omega\Security\encrypt')]
+#[CoversFunction('Omega\Security\decrypt')]
 final class HelperTest extends TestCase
 {
     public function testEncryptHelperEncryptsDataWithAPassPhrase(): void

@@ -13,6 +13,8 @@ use function Omega\Text\string;
 use function Omega\Text\text;
 
 #[CoversClass(Text::class)]
+#[CoversFunction('Omega\Text\string')]
+#[CoversFunction('Omega\Text\text')]
 final class HelperFunctionTest extends TestCase
 {
     public function testCreatesATextInstanceWithStringHelper(): void

@@ -6,7 +6,7 @@ namespace Omega\Environment;
 
 use Omega\Environment\Env as GetEnv;
 
-if (!function_exists('env')) {
+if (!function_exists('env')) { // @codeCoverageIgnore
     /**
      * Retrieve an environment variable value.
      *
