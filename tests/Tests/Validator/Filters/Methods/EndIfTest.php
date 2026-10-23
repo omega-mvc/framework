@@ -22,7 +22,10 @@ final class EndIfTest extends TestCase
 
     public function testReOpensTheFilterRulesBlockAfterAnEndIf(): void
     {
-        $this->assertEquals('upper_case', (new Filter())->if(fn (): bool => false)->trim()->end_if()->upper_case()->getFilter());
+        $this->assertEquals(
+            'upper_case',
+            (new Filter())->if(fn (): bool => false)->trim()->end_if()->upper_case()->getFilter()
+        );
     }
 
     public function testCanDirectlyAppendTheEndIfRule(): void

@@ -46,7 +46,10 @@ final class MakeModelCommandTest extends TestCase
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
         $this->assertStringContainsString('Making model file...', $result->getDisplay());
-        $this->assertStringContainsString('Model [app/Models/UserProfile] created successfully.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'Model [app/Models/UserProfile] created successfully.',
+            $result->getDisplay()
+        );
         $this->assertFileExists($save . 'UserProfile.php');
         $this->assertStringContainsString('namespace App\\Models;', $content);
         $this->assertStringContainsString('extends Model', $content);
@@ -81,7 +84,10 @@ final class MakeModelCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['name' => 'UserProfile']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The "path.model" binding must resolve to a string path.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The "path.model" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }
@@ -98,7 +104,10 @@ final class MakeModelCommandTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
         $this->assertStringContainsString('File already exists.', $result->getDisplay());
-        $this->assertStringContainsString('Failed to create model file. Use --force to overwrite.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'Failed to create model file. Use --force to overwrite.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

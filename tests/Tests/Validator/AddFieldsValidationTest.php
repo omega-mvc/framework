@@ -60,7 +60,7 @@ final class AddFieldsValidationTest extends TestCase
 
     public function testCanAddFieldUsingIteratorArray(): void
     {
-        $fields = new class() implements IteratorAggregate {
+        $fields = new class () implements IteratorAggregate {
             /** @var array<string, string> */
             private array $fields = [
                 'field_1' => 'test',

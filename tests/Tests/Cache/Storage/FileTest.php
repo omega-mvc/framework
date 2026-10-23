@@ -241,14 +241,18 @@ final class FileTest extends TestCase
 
     public function testCalculatesTheExpirationTimestampFromADateTimeInstance(): void
     {
-        $expiration = (fn () => $this->{'calculateExpirationTimestamp'}(new DateTimeImmutable('@1000000000')))->call($this->storage);
+        $expiration = (fn () => $this->{'calculateExpirationTimestamp'}(
+            new DateTimeImmutable('@1000000000')
+        ))->call($this->storage);
 
         $this->assertSame(1000000000, $expiration);
     }
 
     public function testCalculatesTheExpirationTimestampFromADateInterval(): void
     {
-        $expiration = (fn () => $this->{'calculateExpirationTimestamp'}(new DateInterval('PT1H')))->call($this->storage);
+        $expiration = (fn () => $this->{'calculateExpirationTimestamp'}(
+            new DateInterval('PT1H')
+        ))->call($this->storage);
 
         $this->assertGreaterThan(time(), $expiration);
     }

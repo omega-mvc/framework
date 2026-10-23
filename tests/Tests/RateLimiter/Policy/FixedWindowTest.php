@@ -7,8 +7,10 @@ namespace Tests\RateLimiter\Policy;
 use Omega\Cache\Storage\MemoryStorage;
 use Omega\RateLimiter\Policy\FixedWindow;
 use Tests\TestCase;
+
 use function floor;
 use function Omega\Time\now;
+
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\Before;
@@ -19,8 +21,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class FixedWindowTest extends TestCase
 {
-
-
     private MemoryStorage $cache;
 
     protected function setUp(): void
@@ -89,7 +89,7 @@ final class FixedWindowTest extends TestCase
 
     public function testTreatsANonIntegerCachedValueAsZeroWhenConsuming(): void
     {
-        $cache = new class(['ttl' => 3600]) extends MemoryStorage {
+        $cache = new class (['ttl' => 3600]) extends MemoryStorage {
             private bool $returnString = false;
 
             public function returnString(bool $returnString): void
@@ -129,7 +129,7 @@ final class FixedWindowTest extends TestCase
 
     public function testTreatsANonIntegerCachedValueAsZeroWhenPeeking(): void
     {
-        $cache = new class(['ttl' => 3600]) extends MemoryStorage {
+        $cache = new class (['ttl' => 3600]) extends MemoryStorage {
             private bool $returnString = false;
 
             public function returnString(bool $returnString): void
@@ -169,6 +169,4 @@ final class FixedWindowTest extends TestCase
         $this->assertSame(5, $rateLimit->getConsumed());
         $this->assertSame(0, $rateLimit->getRemaining());
     }
-
-
 }

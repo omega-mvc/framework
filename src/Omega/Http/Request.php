@@ -136,7 +136,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>                          $post          POST parameters ($_POST).
      * @param array<string, string>                          $attributes    Custom attributes.
      * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
-     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files ($_FILES)
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files.
      * @param array<string, string>                          $headers       HTTP headers.
      * @param string                                         $method        HTTP method, default 'GET'.
      * @param string                                         $remoteAddress Client IP address, default '::1'.
@@ -179,7 +179,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>                          $post          POST parameters ($_POST).
      * @param array<string, string>                          $attributes    Custom attributes.
      * @param array<string, string>                          $cookies       Cookies ($_COOKIE).
-     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files ($_FILES)
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>> $files Uploaded files.
      * @param array<string, string>                          $headers       HTTP headers.
      * @param string                                         $method        HTTP method, default 'GET'.
      * @param string                                         $remoteAddress Client IP address, default '::1'.
@@ -220,7 +220,7 @@ class Request implements ArrayAccess, IteratorAggregate
      * @param array<string, string>|null $post Optional POST parameters to override.
      * @param array<string, string>|null $attributes Optional custom attributes to override.
      * @param array<string, string>|null $cookies Optional cookies to override.
-     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>>|null $files Optional uploaded files to override.
+     * @param array<string, array<string, string|int|array<int, string>|array<int, int>>>|null $files Optional files.
      * @param array<string, string>|null $headers Optional headers to override.
      * @return self Returns a cloned request instance with optional overrides.
      */
@@ -352,7 +352,8 @@ class Request implements ArrayAccess, IteratorAggregate
      * If no key is provided, returns all uploaded files as an array.
      *
      * @param string|null $key Optional key of the file input to retrieve.
-     * @return array<string, array<string, string|int|array<int, string>|array<int, int>>>|array<string, string|int|array<int, string>|array<int, int>>
+     * @return array<string, array<string, string|int|array<int, string>|array<int, int>>>
+     *     |array<string, string|int|array<int, string>|array<int, int>>
      *         Returns the requested file or all uploaded files.
      */
     public function getFile(?string $key = null): array

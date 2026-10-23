@@ -124,7 +124,10 @@ final class CacheClearCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['--all' => true, '--drivers' => ['file']]);
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
-        $this->assertStringContainsString("'--all' overrides '--drivers': clearing all registered drivers.", $result->getDisplay());
+        $this->assertStringContainsString(
+            "'--all' overrides '--drivers': clearing all registered drivers.",
+            $result->getDisplay()
+        );
         $this->assertStringContainsString("Cleared 'redis' driver.", $result->getDisplay());
 
         $app->flush();

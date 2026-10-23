@@ -30,6 +30,10 @@ final class AllFilterTest extends TestCase
             ->slug()
             ->trim();
 
-        $this->assertEquals('noise_words|rmpunctuation|urlencode|sanitize_email|sanitize_numbers|sanitize_floats|sanitize_string|boolean|basic_tags|whole_number|ms_word_characters|lower_case|upper_case|slug|trim', $rule->getFilter());
+        $this->assertEquals(
+            'noise_words|rmpunctuation|urlencode|sanitize_email|sanitize_numbers|sanitize_floats|sanitize_string|'
+                . 'boolean|basic_tags|whole_number|ms_word_characters|lower_case|upper_case|slug|trim',
+            $rule->getFilter()
+        );
     }
 }

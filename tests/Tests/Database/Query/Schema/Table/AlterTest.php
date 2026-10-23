@@ -18,8 +18,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class AlterTest extends TestCase
 {
-
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -123,6 +121,4 @@ final class AlterTest extends TestCase
             $schema->__toString()
         );
     }
-
-
 }

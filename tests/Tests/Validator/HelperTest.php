@@ -13,6 +13,7 @@ use Tests\TestCase;
 use function Omega\Validator\fr;
 use function Omega\Validator\validate;
 use function Omega\Validator\vr;
+
 final class HelperTest extends TestCase
 {
     public function testVrHelperCreatesAValidRule(): void

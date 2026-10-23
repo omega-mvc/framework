@@ -30,7 +30,8 @@ final class RawTest extends TestCase
         $this->createConnection($engine);
 
         $schema = new Raw(
-            'CREATE TABLE ' . $this->pdoSchema->getDatabase() . '.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
+            'CREATE TABLE ' . $this->pdoSchema->getDatabase()
+            . '.test ( PersonID int, LastName varchar(255), PRIMARY KEY (PersonID) )',
             $this->pdoSchema
         );
 

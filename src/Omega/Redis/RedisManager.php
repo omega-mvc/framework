@@ -27,7 +27,21 @@ class RedisManager implements RedisInterface
     }
 
     /**
-     * @param array{default?: string, connections?: array<string, array{host?: string, port?: int, timeout?: float, retry_interval?: int, read_timeout?: float, persistent?: bool, persistent_id?: string, password?: string, database?: int, unix_socket?: string}>} $config
+     * @param array{
+     *     default?: string,
+     *     connections?: array<string, array{
+     *         host?: string,
+     *         port?: int,
+     *         timeout?: float,
+     *         retry_interval?: int,
+     *         read_timeout?: float,
+     *         persistent?: bool,
+     *         persistent_id?: string,
+     *         password?: string,
+     *         database?: int,
+     *         unix_socket?: string,
+     *     }>,
+     * } $config
      */
     public function setConfig(array $config): self
     {

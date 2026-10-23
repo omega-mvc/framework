@@ -19,8 +19,6 @@ use PHPUnit\Framework\TestCase;
 
 final class TestBasicRouteAttribute extends TestCase
 {
-
-
     /**
      * Test method index.
      *
@@ -94,6 +92,4 @@ final class TestBasicRouteAttribute extends TestCase
     public function destroy(int $id): void
     {
     }
-
-
 }

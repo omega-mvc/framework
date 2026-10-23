@@ -102,7 +102,8 @@ abstract class AbstractMakeCommand extends AbstractCommand
      * Generate a file from the configured stub template.
      *
      * @param string $argument The file base name without suffix.
-     * @param array{template_location: string, save_location: string, pattern: string, suffix: string, vars: array<string, string>} $makeOption Resolved Make attribute options.
+     * @param array{template_location: string, save_location: string, pattern: string, suffix: string,
+     *     vars: array<string, string>} $makeOption Resolved Make attribute options.
      * @param string $folder Optional sub-folder appended to the save path.
      * @return bool True on success, false when the file exists or an error occurs.
      */

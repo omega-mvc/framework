@@ -62,10 +62,10 @@ class RouteServiceProvider extends AbstractServiceProvider
             $schedule = get_path('path.base', 'routes/schedule.php');
 
             if (is_string($schedule)) {
-            if (is_file($schedule)) {
-                require $schedule;
+                if (is_file($schedule)) {
+                    require $schedule;
+                }
             }
-        }
 
             self::$scheduleLoaded = true;
         }

@@ -76,7 +76,10 @@ final class MakeSeedCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['name' => 'UserSeeder']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The "path.seeder" binding must resolve to a string path.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The "path.seeder" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

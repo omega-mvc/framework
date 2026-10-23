@@ -25,7 +25,8 @@ final class UrlBuilderInvalidArgumentTest extends TestCase
      *       - Can be associative (named parameters) or indexed (positional parameters).
      *  3. 'message' - The expected exception message when the builder fails.
      *
-     * @return array<string, array{0: array{uri: string, patterns: array<string, string>}, 1: array<int|string, int|string>, 2: string}>
+     * @return array<string, array{0: array{uri: string, patterns: array<string, string>},
+     *     1: array<int|string, int|string>, 2: string}>
      *         Returns an associative array of test cases keyed by a descriptive name.
      */
     private function invalidArgumentCases(): array

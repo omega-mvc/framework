@@ -7,6 +7,7 @@ namespace Tests\Collection;
 use Omega\Collection\Collection;
 use Omega\Collection\CollectionImmutable;
 use Tests\TestCase;
+
 use function array_filter;
 use function array_keys;
 use function array_map;
@@ -18,7 +19,9 @@ use function ob_get_clean;
 use function ob_start;
 use function str_contains;
 use function ucfirst;
+
 use const JSON_THROW_ON_ERROR;
+
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\Before;
@@ -29,9 +32,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class CollectionTest extends TestCase
 {
-
-
-
     public function testCanGetGetterSetter(): void
     {
         $original = [
@@ -977,7 +977,4 @@ final class CollectionTest extends TestCase
 
         $this->assertSame([], $coll->assocBy(static fn (): array => [])->all());
     }
-
-
-
 }

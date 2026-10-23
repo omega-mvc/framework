@@ -16,7 +16,11 @@ use function is_string;
     description: 'Put the application into maintenance mode',
     options: [
         'redirect' => [null, InputOption::VALUE_REQUIRED, 'The path that users should be redirected to'],
-        'retry'    => [null, InputOption::VALUE_REQUIRED, 'The number of seconds after which the request may be retried'],
+        'retry'    => [
+            null,
+            InputOption::VALUE_REQUIRED,
+            'The number of seconds after which the request may be retried',
+        ],
         'status'   => [null, InputOption::VALUE_REQUIRED, 'The status code that should be returned', 503],
         'template' => [null, InputOption::VALUE_REQUIRED, 'The template to display while in maintenance mode'],
     ]

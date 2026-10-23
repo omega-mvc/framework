@@ -157,7 +157,7 @@ abstract class AbstractEvent implements EventInterface, ArrayAccess, Serializabl
     /**
      * Prepares the event data for serialization.
      *
-     * @return array{name: string, arguments: array<string, mixed>, stopped: bool} Structured data representing the event state.
+     * @return array{name: string, arguments: array<string, mixed>, stopped: bool} Structured event state.
      */
     public function __serialize(): array
     {

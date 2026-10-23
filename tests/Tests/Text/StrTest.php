@@ -17,8 +17,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class StrTest extends TestCase
 {
-
-
     public function testReturnCharacterSpecifiedPosition(): void
     {
         $text = 'i love laravel';
@@ -405,6 +403,4 @@ final class StrTest extends TestCase
             Str::after('https://localhost:8000/test', '~')
         );
     }
-
-
 }

@@ -40,7 +40,9 @@ class MacroServiceProvider extends AbstractServiceProvider
                 $file = $files[$fileName] ?? null;
 
                 if (!is_array($file)) {
-                    throw new InvalidArgumentException(sprintf('No uploaded file was found for the name [%s]', $fileName));
+                    throw new InvalidArgumentException(
+                        sprintf('No uploaded file was found for the name [%s]', $fileName)
+                    );
                 }
 
                 return new UploadFile([

@@ -44,7 +44,8 @@ class DatabaseQueueAdapter implements QueueAdapterInterface
         $createdAt = date('Y-m-d H:i:s');
 
         $this->execute(
-            "INSERT INTO {$this->table} (queue, payload, attempts, reserved_at, available_at, created_at) VALUES (?, ?, 0, NULL, ?, ?)",
+            'INSERT INTO ' . $this->table
+            . ' (queue, payload, attempts, reserved_at, available_at, created_at) VALUES (?, ?, 0, NULL, ?, ?)',
             [$queue, $payload, $availableAt, $createdAt],
         );
 
@@ -66,7 +67,10 @@ class DatabaseQueueAdapter implements QueueAdapterInterface
         $now = date('Y-m-d H:i:s');
 
         $row = $this->pdo
-            ->query("SELECT * FROM {$this->table} WHERE queue = ? AND reserved_at IS NULL AND available_at <= ? ORDER BY id ASC LIMIT 1")
+            ->query(
+                'SELECT * FROM ' . $this->table
+                . ' WHERE queue = ? AND reserved_at IS NULL AND available_at <= ? ORDER BY id ASC LIMIT 1'
+            )
             ->bind(1, 'default')
             ->bind(2, $now)
             ->single();

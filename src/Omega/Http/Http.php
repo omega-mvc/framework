@@ -261,8 +261,8 @@ class Http
      * The callable result may return a Response instance, a string,
      * or an array. Any other return type is considered invalid.
      *
-     * @param array{object|string, string}|callable|object|string             $callable   Callable or handler to execute.
-     * @param array<string, mixed>                                            $parameters Parameters passed to the callable.
+     * @param array{object|string, string}|callable|object|string $callable Callable or handler to execute.
+     * @param array<string, mixed> $parameters Parameters passed to the callable.
      * @return Response Normalized HTTP response.
      * @throws ContainerExceptionInterface Thrown on general container errors, e.g., service not retrievable.
      * @throws Exception If the returned content type is invalid.

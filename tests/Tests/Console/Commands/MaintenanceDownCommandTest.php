@@ -49,7 +49,9 @@ final class MaintenanceDownCommandTest extends TestCase
 
         $downPath        = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down';
         $maintenancePath = $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'maintenance.php';
-        $stub            = (string) file_get_contents(dirname(__DIR__, 4) . '/src/Omega/Console/stubs/maintenance.stub');
+        $stub            = (string) file_get_contents(
+            dirname(__DIR__, 4) . '/src/Omega/Console/stubs/maintenance.stub'
+        );
         $down            = (string) file_get_contents($downPath);
 
         $this->assertFileExists($downPath);
@@ -76,7 +78,9 @@ final class MaintenanceDownCommandTest extends TestCase
             '--template' => '<h1>Under maintenance</h1>',
         ]);
 
-        $down = (string) file_get_contents($base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down');
+        $down = (string) file_get_contents(
+            $base . '/storage' . DIRECTORY_SEPARATOR . 'app' . DIRECTORY_SEPARATOR . 'down'
+        );
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
         $this->assertStringContainsString("'redirect' => '/maintenance',", $down);
@@ -99,7 +103,10 @@ final class MaintenanceDownCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['--status' => '99']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The status code must be an integer between 100 and 599.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The status code must be an integer between 100 and 599.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }
@@ -116,7 +123,10 @@ final class MaintenanceDownCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['--status' => '200', '--retry' => '-2']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The retry value must be an integer greater than or equal to zero.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The retry value must be an integer greater than or equal to zero.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }
@@ -134,7 +144,10 @@ final class MaintenanceDownCommandTest extends TestCase
         $result = (new CommandTester($command))->run([]);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The "path.storage" binding must resolve to a string path.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The "path.storage" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

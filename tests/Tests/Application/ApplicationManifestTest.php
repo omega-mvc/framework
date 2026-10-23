@@ -529,8 +529,7 @@ final class ApplicationManifestTest extends TestCase
         string $tempBase,
         string $tempCachePath,
         string $dir = 'pkg'
-    ): void
-    {
+    ): void {
         if (!is_dir($tempCachePath)) {
             mkdir($tempCachePath, 0777, true);
         }

@@ -22,11 +22,18 @@ final class ConsoleApplicationTest extends TestCase
     /**
      * @param array<int, string> $tokens
      */
-    private function runHandleInSubprocess(string $autoload, string $base, array $tokens, mixed $input, string $outputCode, string $shell): int
-    {
+    private function runHandleInSubprocess(
+        string $autoload,
+        string $base,
+        array $tokens,
+        mixed $input,
+        string $outputCode,
+        string $shell
+    ): int {
         $inputCode = match (true) {
             $input === null => 'null',
-            $input === 'array-input' => 'new \Symfony\Component\Console\Input\ArrayInput(' . var_export($tokens, true) . ')',
+            $input === 'array-input' => 'new \Symfony\Component\Console\Input\ArrayInput('
+                . var_export($tokens, true) . ')',
             default => var_export($input, true),
         };
 
@@ -226,7 +233,10 @@ final class ConsoleApplicationTest extends TestCase
         $base = $this->newConsoleBase();
         $app = new Application($base);
         $app->set('path.command', __DIR__ . '/Fixtures/DiscoveredCommands');
-        $app->set('App\Console\Commands\DiscoveryCommand', static fn () => new \App\Console\Commands\DiscoveryCommand());
+        $app->set(
+            'App\Console\Commands\DiscoveryCommand',
+            static fn () => new \App\Console\Commands\DiscoveryCommand()
+        );
         $console = new ConsoleApplicationHarness($app);
         $branding = new ConsoleBranding($app, 'Omega Test:', '1.0.0');
 
@@ -244,11 +254,36 @@ final class ConsoleApplicationTest extends TestCase
         $base = $this->newConsoleBase();
 
         $scenarios = [
-            ['input' => null, 'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()', 'shell' => '/bin/bash', 'tokens' => ['pest', '--version']],
-            ['input' => ['pest', '--version'], 'output' => 'null', 'shell' => '', 'tokens' => []],
-            ['input' => 'array-input', 'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()', 'shell' => '/usr/bin/nologin', 'tokens' => ['pest', '--version']],
-            ['input' => null, 'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()', 'shell' => '/usr/bin/zsh', 'tokens' => ['pest', '--version']],
-            ['input' => null, 'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()', 'shell' => '/usr/bin/fish', 'tokens' => ['pest', '--version']],
+            [
+                'input' => null,
+                'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()',
+                'shell' => '/bin/bash',
+                'tokens' => ['pest', '--version'],
+            ],
+            [
+                'input' => ['pest', '--version'],
+                'output' => 'null',
+                'shell' => '',
+                'tokens' => [],
+            ],
+            [
+                'input' => 'array-input',
+                'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()',
+                'shell' => '/usr/bin/nologin',
+                'tokens' => ['pest', '--version'],
+            ],
+            [
+                'input' => null,
+                'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()',
+                'shell' => '/usr/bin/zsh',
+                'tokens' => ['pest', '--version'],
+            ],
+            [
+                'input' => null,
+                'output' => 'new \Symfony\Component\Console\Output\BufferedOutput()',
+                'shell' => '/usr/bin/fish',
+                'tokens' => ['pest', '--version'],
+            ],
         ];
 
         foreach ($scenarios as $scenario) {

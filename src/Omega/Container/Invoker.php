@@ -122,7 +122,7 @@ final readonly class Invoker
         }
 
         // Handle object (invokable object)
-        // @phpstan-ignore-next-line: only is_object proves `object` provenance to phpstan, and that guard would create a phantom coverage path
+        // @phpstan-ignore-next-line: only is_object proves `object` provenance to phpstan
         if (method_exists($callable, '__invoke')) {
             $reflectionMethod = $this->container->getReflectionMethod($callable, '__invoke');
             $dependencies     = $this->resolveMethodDependencies($reflectionMethod, $parameters);

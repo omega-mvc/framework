@@ -38,7 +38,10 @@ final class CronWorkCommandTest extends TestCase
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
         $this->assertStringContainsString('Omega Cron Worker', $result->getDisplay());
-        $this->assertStringContainsString('Watching and executing scheduled jobs every minute...', $result->getDisplay());
+        $this->assertStringContainsString(
+            'Watching and executing scheduled jobs every minute...',
+            $result->getDisplay()
+        );
         $this->assertStringContainsString('Press CTRL+C to stop the worker.', $result->getDisplay());
 
         $app->flush();

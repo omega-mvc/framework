@@ -212,7 +212,10 @@ class Dispatcher implements DispatcherInterface
      */
     public function addSubscriber(SubscriberInterface $subscriber): void
     {
-        $this->registerSubscriptions($this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()), true);
+        $this->registerSubscriptions(
+            $this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()),
+            true
+        );
     }
 
     /**
@@ -220,13 +223,16 @@ class Dispatcher implements DispatcherInterface
      */
     public function removeSubscriber(SubscriberInterface $subscriber): void
     {
-        $this->registerSubscriptions($this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()), false);
+        $this->registerSubscriptions(
+            $this->collectSubscriptions($subscriber, $subscriber->getSubscribedEvents()),
+            false
+        );
     }
 
     /**
      * Registers or unregisters a flat list of subscriber subscriptions.
      *
-     * @param list<array{0: string, 1: callable(EventInterface): void, 2: int}> $subscriptions The resolved subscriptions.
+     * @param list<array{0: string, 1: callable(EventInterface): void, 2: int}> $subscriptions Resolved subscriptions.
      * @param bool $register True to register, false to unregister.
      */
     private function registerSubscriptions(array $subscriptions, bool $register): void

@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\CoversFunction;
 use Tests\TestCase;
 
-
 #[CoversClass(CacheManager::class)]
 #[CoversClass(FileStorage::class)]
 #[CoversClass(MemoryStorage::class)]

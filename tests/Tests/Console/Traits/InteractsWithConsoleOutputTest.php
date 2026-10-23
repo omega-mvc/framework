@@ -8,9 +8,11 @@ use Omega\Console\Traits\InteractsWithConsoleOutputTrait;
 use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Console\Fixtures\OutputStyler;
 use Tests\TestCase;
+
 use function rtrim;
 use function str_repeat;
 use function strlen;
+
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\Before;
@@ -21,7 +23,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class InteractsWithConsoleOutputTest extends TestCase
 {
-
     public function testReturnsTheTerminalWidth(): void
     {
         $styler = new OutputStyler(new BufferedOutput());
@@ -112,5 +113,4 @@ final class InteractsWithConsoleOutputTest extends TestCase
         $this->assertStringEndsWith($right . '  ', $display);
         $this->assertStringContainsString('..', $display);
     }
-
 }

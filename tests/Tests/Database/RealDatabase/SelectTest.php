@@ -19,8 +19,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class SelectTest extends TestCase
 {
-
-
     use ManagesDatabase;
     use UserTrait;
 
@@ -282,6 +280,4 @@ final class SelectTest extends TestCase
         $this->assertArrayHasKey('stat', $users[0]);
         $this->assertArrayHasKey('real_name', $users[0]);
     }
-
-
 }

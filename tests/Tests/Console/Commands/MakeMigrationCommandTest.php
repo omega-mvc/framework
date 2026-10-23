@@ -88,7 +88,10 @@ final class MakeMigrationCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['name' => 'CreateUsersTable']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The "path.migrations" binding must resolve to a string path.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The "path.migrations" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

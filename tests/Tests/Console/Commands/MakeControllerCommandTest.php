@@ -112,7 +112,10 @@ final class MakeControllerCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['name' => 'User']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('The "path.controller" binding must resolve to a string path.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'The "path.controller" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

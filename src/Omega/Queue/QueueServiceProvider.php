@@ -46,7 +46,10 @@ class QueueServiceProvider extends AbstractServiceProvider
         $adapters = $config['queue']['drivers'] ?? ['database' => ['table' => 'jobs']];
 
         foreach ($adapters as $name => $options) {
-            $this->app->set("queue.adapter.$name", fn (): QueueAdapterInterface => $this->createAdapter($name, $options));
+            $this->app->set(
+                "queue.adapter.$name",
+                fn (): QueueAdapterInterface => $this->createAdapter($name, $options)
+            );
         }
 
         $this->app->set('queue', function () use ($default, $adapters): QueueManager {

@@ -167,7 +167,11 @@ class Router extends AbstractRouter
         $prefixName      = '';
         $rootMiddlewares = [];
 
-        array_walk($attributes, static function (ReflectionAttribute $classAttribute) use (&$rootMiddlewares, &$prefixName, &$prefixUri): void {
+        array_walk($attributes, static function (ReflectionAttribute $classAttribute) use (
+            &$rootMiddlewares,
+            &$prefixName,
+            &$prefixUri
+        ): void {
             $instance = $classAttribute->newInstance();
 
             if ($instance instanceof Middleware) {

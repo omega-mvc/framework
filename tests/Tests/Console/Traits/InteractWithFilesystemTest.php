@@ -17,7 +17,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class InteractWithFilesystemTest extends TestCase
 {
-
     public function testReturnsAnEmptyListWhenTheDirectoryDoesNotExist(): void
     {
         $probe = new FilesystemProbe();
@@ -58,5 +57,4 @@ final class InteractWithFilesystemTest extends TestCase
         $this->assertCount(2, $files);
         $this->assertNotContains(__DIR__ . '/../Fixtures/Files/b.log', $files);
     }
-
 }

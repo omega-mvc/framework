@@ -17,8 +17,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class RateLimitTest extends TestCase
 {
-
-
     public function testExposesTheRateLimitStateWithRetryAndExpirationDates(): void
     {
         $retryAfter = new DateTime('@1000');
@@ -61,6 +59,4 @@ final class RateLimitTest extends TestCase
         $this->assertNull($rateLimit->getRetryAfter());
         $this->assertNull($rateLimit->getExpiresAt());
     }
-
-
 }

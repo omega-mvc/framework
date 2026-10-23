@@ -51,7 +51,7 @@ use Stringable;
  * @method static void                      notice(string|Stringable $message, array<string, mixed> $context = [])
  * @method static void                      info(string|Stringable $message, array<string, mixed> $context = [])
  * @method static void                      debug(string|Stringable $message, array<string, mixed> $context = [])
- * @method static void                      log(mixed $level, string|Stringable $message, array<string, mixed> $context = [])
+ * @method static void log(mixed $level, string|Stringable $message, array<string, mixed> $context = [])
  * @method static void                      setLogToStdOut(string $stdOutPath)
  * @method static void                      setLogFilePath(string $logDirectory)
  * @method static void                      setFileHandle(string $writeMode)

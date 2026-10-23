@@ -36,7 +36,7 @@ interface HashInterface
      * parameters, and status flags.
      *
      * @param string $hash The hash string to inspect.
-     * @return array{algo: int|string|null, algoName: string, options: array<string, mixed>} An associative array containing hash information.
+     * @return array{algo: int|string|null, algoName: string, options: array<string, mixed>} Hash information.
      */
     public function info(string $hash): array;
 

@@ -26,8 +26,10 @@ class PlainCommand extends Command
         parent::__construct('plain:run');
     }
 
-    protected function execute(\Symfony\Component\Console\Input\InputInterface $input, \Symfony\Component\Console\Output\OutputInterface $output): int
-    {
+    protected function execute(
+        \Symfony\Component\Console\Input\InputInterface $input,
+        \Symfony\Component\Console\Output\OutputInterface $output
+    ): int {
         $output->writeln('plain');
 
         return self::SUCCESS;

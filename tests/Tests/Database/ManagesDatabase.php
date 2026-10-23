@@ -258,7 +258,8 @@ trait ManagesDatabase
      * and OMEGA_TEST_DB_PORT). Database names are engine-specific so the
      * engines can run against the same server without colliding.
      *
-     * @return array<string, array{driver: string, host: string, username: string, password: string, database: string, port: int, charset: string}>
+     * @return array<string, array{driver: string, host: string, username: string, password: string,
+     *     database: string, port: int, charset: string}>
      */
     protected function getConfiguration(): array
     {
@@ -311,7 +312,8 @@ trait ManagesDatabase
      * Resolve the configuration array for the requested engine.
      *
      * @param string $engine Database engine.
-     * @return array{driver: string, host?: string, username?: string, password?: string, database: string, path?: string, port?: int, charset?: string, prefix?: string}
+     * @return array{driver: string, host?: string, username?: string, password?: string, database: string,
+     *     path?: string, port?: int, charset?: string, prefix?: string}
      */
     protected function environmentFor(string $engine): array
     {

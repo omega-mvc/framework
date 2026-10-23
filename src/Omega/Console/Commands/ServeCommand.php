@@ -69,7 +69,11 @@ final class ServeCommand extends AbstractCommand
 
         if ($expose) {
             $hostname = gethostname();
-            $this->io->writeln(sprintf('Network: <info>http://%s:%d</info>', $hostname !== false ? $hostname : '127.0.0.1', $port));
+            $this->io->writeln(sprintf(
+                'Network: <info>http://%s:%d</info>',
+                $hostname !== false ? $hostname : '127.0.0.1',
+                $port
+            ));
         }
 
         $this->io->newLine(2);

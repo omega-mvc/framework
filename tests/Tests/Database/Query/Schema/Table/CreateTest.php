@@ -19,8 +19,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class CreateTest extends TestCase
 {
-
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -211,6 +209,4 @@ final class CreateTest extends TestCase
             $schema->__toString()
         );
     }
-
-
 }

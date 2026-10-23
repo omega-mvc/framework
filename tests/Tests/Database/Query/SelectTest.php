@@ -20,8 +20,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class SelectTest extends TestCase
 {
-
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -345,6 +343,4 @@ final class SelectTest extends TestCase
             $select->__toString()
         );
     }
-
-
 }

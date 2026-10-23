@@ -31,7 +31,6 @@ use Throwable;
 use function file;
 use function str_contains;
 
-
 #[CoversClass(Application::class)]
 #[CoversClass(BindingResolutionException::class)]
 #[CoversClass(CircularAliasException::class)]
@@ -52,63 +51,64 @@ class ExceptionHandlerTest extends \Tests\TestCase
 
     protected ExceptionHandler $exceptionHandler;
 
-    protected function setUp(): void {
-    LogStore::reset();
+    protected function setUp(): void
+    {
+        LogStore::reset();
 
-    $this->app = new Application(__DIR__ . '/fixtures/application-read/');
+        $this->app = new Application(__DIR__ . '/fixtures/application-read/');
 
-    $this->app->set('environment', 'testing');
+        $this->app->set('environment', 'testing');
 
-    $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
-        basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
-        applicationCachePath: $this->app->getApplicationCachePath(),
-        vendorPath: '/package/'
-    ));
+        $this->app->set(ApplicationManifest::class, fn () => new ApplicationManifest(
+            basePath: is_string($this->app->get('path.base')) ? $this->app->get('path.base') : '',
+            applicationCachePath: $this->app->getApplicationCachePath(),
+            vendorPath: '/package/'
+        ));
 
-    $this->app->set(
-        Http::class,
-        fn () => new $this->http($this->app)
-    );
+        $this->app->set(
+            Http::class,
+            fn () => new $this->http($this->app)
+        );
 
-    $this->app->set(
-        ExceptionHandler::class,
-        fn () => $this->exceptionHandler
-    );
+        $this->app->set(
+            ExceptionHandler::class,
+            fn () => $this->exceptionHandler
+        );
 
-    $this->http = new class ($this->app) extends Http {
-        protected array $bootstrappers = [
+        $this->http = new class ($this->app) extends Http {
+            protected array $bootstrappers = [
             ConfigBootstrapper::class,
             FacadeBootstrapper::class,
             RegisterProviders::class,
             BootProviders::class,
-        ];
+            ];
 
-        protected function dispatcher(Request $request): array
-        {
-            throw new HttpException(429, 'Too Many Request');
-        }
-    };
+            protected function dispatcher(Request $request): array
+            {
+                throw new HttpException(429, 'Too Many Request');
+            }
+        };
 
-    $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
-        public function render(Request $request, Throwable $th): Response
-        {
-            if ($request->isJson()) {
-                return $this->handleJsonResponse($th);
+        $this->exceptionHandler = new class ($this->app) extends ExceptionHandler {
+            public function render(Request $request, Throwable $th): Response
+            {
+                if ($request->isJson()) {
+                    return $this->handleJsonResponse($th);
+                }
+
+                if ($th instanceof HttpException) {
+                    return new Response($th->getMessage(), $th->getStatusCode(), $th->getHeaders());
+                }
+
+                return parent::render($request, $th);
             }
 
-            if ($th instanceof HttpException) {
-                return new Response($th->getMessage(), $th->getStatusCode(), $th->getHeaders());
+            public function report(Throwable $th): void
+            {
+                LogStore::push($th->getMessage());
             }
-
-            return parent::render($request, $th);
-        }
-
-        public function report(Throwable $th): void
-        {
-            LogStore::push($th->getMessage());
-        }
-    };
-}
+        };
+    }
 
     protected function tearDown(): void
     {

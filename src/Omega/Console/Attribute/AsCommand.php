@@ -41,7 +41,7 @@ class AsCommand
      * @param array<int, string> $aliases Alternative names for the command
      * @param bool $hidden Whether the command should be hidden from the list
      * @param array<string, array<int, mixed>> $arguments Argument definitions [name => [mode, description, default]]
-     * @param array<string, array<int, mixed>> $options Option definitions [name => [shortcut, mode, description, default]]
+     * @param array<string, array<int, mixed>> $options Option definitions.
      */
     public function __construct(
         public string $name,

@@ -98,7 +98,10 @@ final class DatabaseWipeCommandTest extends TestCase
         $result = (new CommandTester($command))->run(['--no-interact' => true, '--database' => 'missing_db']);
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
-        $this->assertStringContainsString('Database `missing_db` does not exist, nothing to drop.', $result->getDisplay());
+        $this->assertStringContainsString(
+            'Database `missing_db` does not exist, nothing to drop.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

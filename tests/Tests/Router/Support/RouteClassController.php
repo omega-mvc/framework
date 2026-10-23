@@ -15,8 +15,6 @@ use PHPUnit\Framework\TestCase;
 
 final class RouteClassController extends TestCase
 {
-
-
     /**
      * Handle the "index" action.
      *
@@ -100,6 +98,4 @@ final class RouteClassController extends TestCase
     {
         echo 'works destroy';
     }
-
-
 }

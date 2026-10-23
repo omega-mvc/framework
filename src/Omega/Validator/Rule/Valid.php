@@ -228,7 +228,12 @@ final class Valid
         $rule_name      = 'validate_' . $hex;
         $rule_invert    = 'invert_validate_' . $hex;
         $message_invert = 'Not, ' . $message;
-        $invert = static function (string $field, array $input, array $param, mixed $value) use ($custom_validation): bool {
+        $invert = static function (
+            string $field,
+            array $input,
+            array $param,
+            mixed $value
+        ) use ($custom_validation): bool {
             /** @var array<string, string> $input */
             /** @var array<string, string> $param */
             return !call_user_func(

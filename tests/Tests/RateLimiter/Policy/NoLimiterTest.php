@@ -6,7 +6,9 @@ namespace Tests\RateLimiter\Policy;
 
 use Omega\RateLimiter\Policy\NoLimiter;
 use Tests\TestCase;
+
 use const PHP_INT_MAX;
+
 use PHPUnit\Framework\Attributes\After;
 use PHPUnit\Framework\Attributes\AfterClass;
 use PHPUnit\Framework\Attributes\Before;
@@ -17,8 +19,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class NoLimiterTest extends TestCase
 {
-
-
     public function testCanConsumeTokensWithinTheLimit(): void
     {
         $limiter   = new NoLimiter();
@@ -55,6 +55,4 @@ final class NoLimiterTest extends TestCase
 
         $this->assertSame(0, $rateLimit->getConsumed());
     }
-
-
 }

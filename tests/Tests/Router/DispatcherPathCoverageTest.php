@@ -189,7 +189,13 @@ final class DispatcherPathCoverageTest extends TestCase
             'pathMatch, all null'                 => ['/hit', [$pathMatch], 'GET', null, null],
             'pathMismatch, both null'             => ['/nope', [$pathMismatch], 'GET', null, null],
             'pathMismatch, methodNotAllowed null' => ['/nope', [$pathMismatch], 'GET', null, fn (): string => 'nf'],
-            'pathMismatch, all callable'          => ['/nope', [$pathMismatch], 'GET', fn (): string => 'mna', fn (): string => 'nf'],
+            'pathMismatch, all callable' => [
+                '/nope',
+                [$pathMismatch],
+                'GET',
+                fn (): string => 'mna',
+                fn (): string => 'nf',
+            ],
         ];
 
         // Several identical rounds accumulate consecutive traces for every shape.

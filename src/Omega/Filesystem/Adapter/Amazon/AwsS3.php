@@ -289,7 +289,8 @@ class AwsS3 extends AbstractAmazonS3
         );
 
         try {
-            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey))); // @phpstan-ignore argument.type
+            // @phpstan-ignore-next-line argument.type
+            $this->service->copyObject(array_merge($options, $this->getMetadata($targetKey)));
 
             return $this->delete($sourceKey);
         } catch (Exception) {

@@ -12,6 +12,7 @@ use Tests\TestCase;
 
 use function Omega\Security\decrypt;
 use function Omega\Security\encrypt;
+
 final class HelperTest extends TestCase
 {
     public function testEncryptHelperEncryptsDataWithAPassPhrase(): void

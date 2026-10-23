@@ -83,7 +83,10 @@ final class ConfigCacheCommandTest extends TestCase
 
         $this->assertSame(Command::FAILURE, $result->statusCode);
         $this->assertStringContainsString('An error occurred while caching configuration:', $result->getDisplay());
-        $this->assertStringContainsString('Invalid config cache file: expected array, got string', $result->getDisplay());
+        $this->assertStringContainsString(
+            'Invalid config cache file: expected array, got string',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }

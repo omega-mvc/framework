@@ -176,18 +176,32 @@ class RouteUrlBuilder
     ): string {
         $paramIndex = $isAssociative ? 0 : $this->countProcessedParameters($url);
 
-        array_walk($patternMap, function (string $regex, string $pattern) use ($parameters, $isAssociative, &$url, &$paramIndex): void {
-            $occurrences = array_fill(0, substr_count($url, $pattern), null);
-            array_walk($occurrences, function () use ($parameters, $pattern, $regex, $isAssociative, &$url, &$paramIndex): void {
-                $value = $this->getNextParameterValue($parameters, $pattern, $paramIndex, $isAssociative);
+        array_walk(
+            $patternMap,
+            function (
+                string $regex,
+                string $pattern
+            ) use (
+                $parameters,
+                $isAssociative,
+                &$url,
+                &$paramIndex
+            ): void {
+                $occurrences = array_fill(0, substr_count($url, $pattern), null);
+                array_walk(
+                    $occurrences,
+                    function () use ($parameters, $pattern, $regex, $isAssociative, &$url, &$paramIndex): void {
+                        $value = $this->getNextParameterValue($parameters, $pattern, $paramIndex, $isAssociative);
 
-                $this->validateParameterAgainstPattern($value, $value, $pattern, $regex, false);
+                        $this->validateParameterAgainstPattern($value, $value, $pattern, $regex, false);
 
-                $replaced = preg_replace('/' . preg_quote($pattern, '/') . '/', (string) $value, $url, 1);
-                $url      = $replaced ?? $url;
-                $paramIndex++;
-            });
-        });
+                        $replaced = preg_replace('/' . preg_quote($pattern, '/') . '/', (string) $value, $url, 1);
+                        $url      = $replaced ?? $url;
+                        $paramIndex++;
+                    }
+                );
+            }
+        );
 
         return $url;
     }

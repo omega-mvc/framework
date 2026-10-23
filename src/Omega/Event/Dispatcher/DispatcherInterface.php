@@ -28,6 +28,8 @@ use Omega\Event\SubscriberInterface;
  *
  * Listeners are executed in priority order, from highest to lowest priority.
  *
+ * @phpstan-type EventListener callable(EventInterface): void
+ *
  * @category   Omega
  * @package    Event
  * @subpackage Dispatcher
@@ -93,7 +95,8 @@ interface DispatcherInterface
      * Listeners are returned in execution order (priority-sorted).
      *
      * @param string|null $event The event name or null for all events.
-     * @return ($event is null ? array<string, list<callable(EventInterface): void>> : list<callable(EventInterface): void>) A list of listeners grouped or filtered by event name.
+     * @return ($event is null ? array<string, list<EventListener>> : list<EventListener>)
+     *     A list of listeners grouped or filtered by event name.
      */
     public function getListeners(?string $event = null): array;
 

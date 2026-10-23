@@ -47,8 +47,10 @@ final class CronListCommandTest extends TestCase
         $app = new Application($base);
 
         $schedule = new Schedule(time());
-        $schedule->call(static function (): void {})->hourly()->eventName('Send mail');
-        $schedule->call(static function (): void {})->justInTime()->anonymously()->eventName('Backup DB');
+        $schedule->call(static function (): void {
+        })->hourly()->eventName('Send mail');
+        $schedule->call(static function (): void {
+        })->justInTime()->anonymously()->eventName('Backup DB');
 
         $app->set('schedule', $schedule);
 

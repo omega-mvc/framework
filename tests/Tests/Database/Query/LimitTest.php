@@ -18,8 +18,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class LimitTest extends TestCase
 {
-
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -126,6 +124,4 @@ final class LimitTest extends TestCase
             $select->__toString()
         );
     }
-
-
 }

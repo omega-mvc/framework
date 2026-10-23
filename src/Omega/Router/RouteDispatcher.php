@@ -251,7 +251,7 @@ final class RouteDispatcher
         bool $multiMatch = false
     ): void {
 
-$basePath          = rtrim($basePath, '/');
+        $basePath          = rtrim($basePath, '/');
         $parsedUrl         = parse_url($this->request->getUrl());
         $path              = $this->resolvePath($parsedUrl, $basePath, $trailingSlashMatters);
         $method            = strtolower($this->request->getMethod());
@@ -260,7 +260,15 @@ $basePath          = rtrim($basePath, '/');
         $routeMatchFound   = false;
         $routes            = $this->routes;
 
-        array_walk($routes, function (Route $route) use ($basePath, $caseMatters, $method, $multiMatch, $path, &$pathMatchFound, &$routeMatchFound): void {
+        array_walk($routes, function (Route $route) use (
+            $basePath,
+            $caseMatters,
+            $method,
+            $multiMatch,
+            $path,
+            &$pathMatchFound,
+            &$routeMatchFound
+        ): void {
             if ($routeMatchFound) {
                 if (false === $multiMatch) {
                     return;
@@ -286,10 +294,12 @@ $basePath          = rtrim($basePath, '/');
             $pathMatchFound = true;
 
             // Cast allowed method to array if it's not one already, then run through all methods
-            if (!array_any(
-                (array) $data['method'],
-                static fn (mixed $allowedMethod): bool => $method === strtolower((string) $allowedMethod)
-            )) {
+            if (
+                !array_any(
+                    (array) $data['method'],
+                    static fn (mixed $allowedMethod): bool => $method === strtolower((string) $allowedMethod)
+                )
+            ) {
                 return;
             }
 

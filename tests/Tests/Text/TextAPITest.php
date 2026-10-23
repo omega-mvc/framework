@@ -18,8 +18,6 @@ use PHPUnit\Framework\Attributes\Test;
 
 final class TextAPITest extends TestCase
 {
-
-
     private Text $text;
 
     protected function setUp(): void
@@ -206,6 +204,4 @@ final class TextAPITest extends TestCase
     {
         $this->assertSame('symfony', $this->text->after('love ')->__toString());
     }
-
-
 }
