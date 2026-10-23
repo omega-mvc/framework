@@ -11,12 +11,12 @@ use Omega\DocBlockGenerator\Method;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
-use const DIRECTORY_SEPARATOR;
-
 use function file_exists;
 use function file_put_contents;
 use function is_string;
 use function rtrim;
+
+use const DIRECTORY_SEPARATOR;
 
 #[AsCommand(
     name: 'make:seeder',

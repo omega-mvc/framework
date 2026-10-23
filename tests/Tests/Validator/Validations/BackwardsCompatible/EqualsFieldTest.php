@@ -9,7 +9,7 @@ use Tests\TestCase;
 
 use function Omega\Validator\vr;
 
-final class Equals_FieldTest extends TestCase
+final class EqualsFieldTest extends TestCase
 {
     /** @var array<string, mixed> */
     private const array CORRECT = ['test' => 'string', 'other' => 'string'];
