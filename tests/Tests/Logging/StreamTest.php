@@ -79,13 +79,13 @@ final class StreamTest extends TestCase
 
     public function testWritesToAPhpStream(): void
     {
-        $logger = new Stream('php://stderr');
+        $logger = new Stream('php://memory');
 
-        $this->assertSame('php://stderr', $logger->getLogFilePath());
+        $this->assertSame('php://memory', $logger->getLogFilePath());
 
-        $logger->log(LogLevel::WARNING, 'to stderr');
+        $logger->log(LogLevel::WARNING, 'to a php stream');
 
-        $this->assertStringContainsString('to stderr', $logger->getLastLogLine());
+        $this->assertStringContainsString('to a php stream', $logger->getLastLogLine());
     }
 
     public function testRespectsTheLogLevelThreshold(): void
