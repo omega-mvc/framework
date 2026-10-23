@@ -8,6 +8,7 @@ use Closure;
 use Omega\Macroable\Exceptions\MacroNotFoundException;
 use Omega\Macroable\MacroableTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +19,7 @@ use PHPUnit\Framework\TestCase;
  * @method static bool test_param(bool $bool)
  */
 #[CoversClass(MacroNotFoundException::class)]
-#[CoversClass(MacroableTrait::class)]
+#[CoversTrait(MacroableTrait::class)]
 class MacroableFixture
 {
     use MacroableTrait;

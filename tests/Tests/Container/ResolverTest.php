@@ -101,6 +101,8 @@ final class ResolverTest extends TestCase
     public function testRefusesParametersWithoutTypeHintsAndAvailableDefaults(): void
     {
         $resolver  = new Resolver(new Container());
+        // The missing type hint is the subject of this test.
+        // @phpstan-ignore typeCoverage.paramTypeCoverage
         $untyped   = function ($value): void {
         };
         $parameter = (new ReflectionFunction($untyped))->getParameters()[0];

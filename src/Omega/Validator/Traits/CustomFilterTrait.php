@@ -20,7 +20,7 @@ trait CustomFilterTrait
      *
      * @return T
      */
-    protected function filter_($value, array $params = [])
+    protected function filter_(mixed $value, array $params = []): mixed
     {
         return $value;
     }

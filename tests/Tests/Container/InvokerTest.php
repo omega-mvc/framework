@@ -136,7 +136,7 @@ final class InvokerTest extends TestCase
 
     public function testFallsBackToParameterDefaults(): void
     {
-        $result = $this->invoker->call(fn ($name = 'default') => $name);
+        $result = $this->invoker->call(fn (string $name = 'default') => $name);
 
         $this->assertSame('default', $result);
     }
@@ -150,7 +150,7 @@ final class InvokerTest extends TestCase
 
     public function testAppendsUnmatchedParametersToTheInvocationArguments(): void
     {
-        $result = $this->invoker->call(fn ($first) => $first, ['first' => 1, 'second' => 2]);
+        $result = $this->invoker->call(fn (mixed $first) => $first, ['first' => 1, 'second' => 2]);
 
         $this->assertSame(1, $result);
     }
@@ -194,6 +194,8 @@ final class InvokerTest extends TestCase
 
     public function testInjectsTheContainerIntoAnUntypedContainerParameter(): void
     {
+        // The untyped parameter is what makes the container fall back to the current instance.
+        // @phpstan-ignore typeCoverage.paramTypeCoverage
         $result = $this->invoker->call(fn ($container) => $container);
 
         $this->assertSame($this->container, $result);
@@ -217,7 +219,7 @@ final class InvokerTest extends TestCase
     {
         $this->expectException(BindingResolutionException::class);
 
-        $this->invoker->call(fn ($missing) => $missing);
+        $this->invoker->call(fn (mixed $missing) => $missing);
     }
 
     public function testFallsBackToTheDefaultForABuiltInTypedParameter(): void
@@ -229,6 +231,8 @@ final class InvokerTest extends TestCase
 
     public function testConsumesLeftoverParametersForAnUntypedParameter(): void
     {
+        // The untyped parameter is the subject of this test: leftovers are consumed for it.
+        // @phpstan-ignore typeCoverage.paramTypeCoverage
         $result = $this->invoker->call(fn ($value) => $value, ['unmatched' => 7]);
 
         $this->assertSame(7, $result);

@@ -12,14 +12,14 @@ use function Omega\Validator\vr;
 final class MinLenTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 'ñándú',
         'test2' => 'ñán',
         'test3' => '',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test' => 'ñ',
     ];
 

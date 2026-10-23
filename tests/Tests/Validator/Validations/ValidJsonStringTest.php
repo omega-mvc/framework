@@ -12,13 +12,13 @@ use function Omega\Validator\vr;
 final class ValidJsonStringTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => '{}',
         'test2' => '{"testing": true}',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'tets1' => '{}}',
         'tets2' => '{test:true}',
         'tets3' => '{"test":text}',

@@ -12,10 +12,10 @@ use function Omega\Validator\vr;
 final class MinAgeTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = ['test' => '1997-06-16'];
+    private const array CORRECT = ['test' => '1997-06-16'];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = ['test' => '2022-01-11'];
+    private const array INCORRECT = ['test' => '2022-01-11'];
 
     public function testCanRenderMinAgeValidation(): void
     {

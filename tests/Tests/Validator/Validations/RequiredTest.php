@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class RequiredTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 'test',
         'test2' => '0',
         'test3' => 0.0,
@@ -21,7 +21,7 @@ final class RequiredTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test1' => null,
         'test2' => '',
     ];

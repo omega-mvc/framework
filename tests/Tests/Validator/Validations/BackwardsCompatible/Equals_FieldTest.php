@@ -12,10 +12,10 @@ use function Omega\Validator\vr;
 final class Equals_FieldTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = ['test' => 'string', 'other' => 'string'];
+    private const array CORRECT = ['test' => 'string', 'other' => 'string'];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = ['test' => 'string', 'other' => 'different_string'];
+    private const array INCORRECT = ['test' => 'string', 'other' => 'different_string'];
 
     public function testCanRenderEqualsFieldValidation(): void
     {

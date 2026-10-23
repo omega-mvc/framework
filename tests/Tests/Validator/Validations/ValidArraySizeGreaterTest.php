@@ -12,13 +12,13 @@ use function Omega\Validator\vr;
 final class ValidArraySizeGreaterTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => [1, 2, 3],
         'test2' => '',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = ['test' => [1, 2]];
+    private const array INCORRECT = ['test' => [1, 2]];
 
     public function testCanRenderValidArraySizeGreaterValidation(): void
     {

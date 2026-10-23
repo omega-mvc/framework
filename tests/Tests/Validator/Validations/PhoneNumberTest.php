@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class PhoneNumberTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test'  => '555-555-5555',
         'test2' => '5555425555',
         'test3' => '555 555 5555',
@@ -23,7 +23,7 @@ final class PhoneNumberTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test8' => '666111222',
         'test9' => '004461234123',
     ];

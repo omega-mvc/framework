@@ -6,6 +6,7 @@ namespace Tests\View;
 
 use Exception;
 use Omega\View\Vite;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
@@ -520,6 +521,7 @@ final class ViteTest extends TestCase
         }
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testThrowsExceptionWhenTheManifestModificationTimeCannotBeRead(): void
     {
         $vite = $this->getMockBuilder(Vite::class)

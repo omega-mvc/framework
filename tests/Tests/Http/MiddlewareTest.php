@@ -67,7 +67,7 @@ final class MiddlewareTest extends TestCase
         ];
 
         $dispatcher = [
-            'callable' => function ($param) {
+            'callable' => function (mixed $param) {
                 if (!is_string($param)) {
                     throw new Exception('Invalid middleware dispatcher parameter.');
                 }
@@ -99,7 +99,7 @@ final class MiddlewareTest extends TestCase
     {
         $middleware = [ClassD::class];
         $dispatcher = [
-            'callable' => function ($param) {
+            'callable' => function (mixed $param) {
                 if (!is_string($param)) {
                     throw new Exception('Invalid middleware dispatcher parameter.');
                 }

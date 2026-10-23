@@ -207,7 +207,7 @@ final class StyleTest extends TestCase
     /**
      * @return resource
      */
-    private static function streamWith(string $content)
+    private static function streamWith(string $content): mixed
     {
         $stream = fopen('php://memory', 'r+');
         if ($stream === false) {

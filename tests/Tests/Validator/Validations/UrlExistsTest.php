@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class UrlExistsTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = ['test' => 'https://google.com/'];
+    private const array CORRECT = ['test' => 'https://google.com/'];
 
     public function testCanRenderUrlExistsValidation(): void
     {

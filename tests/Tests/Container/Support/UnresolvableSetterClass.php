@@ -35,7 +35,7 @@ use PHPUnit\Framework\Attributes\CoversNothing;
 final class UnresolvableSetterClass
 {
     /** @var mixed Holds the injected dependency. */
-    public $dependency;
+    public mixed $dependency = null;
 
     /**
      * Setter with an unresolvable dependency type.

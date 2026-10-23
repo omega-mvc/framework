@@ -96,7 +96,7 @@ final class CollectionTest extends TestCase
 
         $this->assertEquals(6, $test->count());
 
-        $countIf = $test->countIf(function ($item) {
+        $countIf = $test->countIf(function (string $item) {
             return str_contains($item, 'e');
         });
 
@@ -177,19 +177,19 @@ final class CollectionTest extends TestCase
             $this->assertArrayHasKey($key, $original);
         });
 
-        $test->map(fn ($item) => ucfirst($item));
+        $test->map(fn (string $item) => ucfirst($item));
 
-        $copyOrigin = array_map(fn ($item) => ucfirst($item), $original);
+        $copyOrigin = array_map(fn (string $item) => ucfirst($item), $original);
 
         $this->assertEquals($copyOrigin, $test->all());
 
         $test->replace($original);
 
-        $test->filter(function ($item) {
+        $test->filter(function (string $item) {
             return str_contains($item, 'e');
         });
 
-        $copyOrigin = array_filter($original, function ($item) {
+        $copyOrigin = array_filter($original, function (string $item) {
             return str_contains($item, 'e');
         });
 
@@ -210,13 +210,13 @@ final class CollectionTest extends TestCase
         ];
         $test = new Collection($original);
 
-        $some = $test->some(function ($item) {
+        $some = $test->some(function (string $item) {
             return str_contains($item, 'e');
         });
 
         $this->assertTrue($some);
 
-        $every = $test->every(function ($item) {
+        $every = $test->every(function (string $item) {
             return !str_contains($item, 'x');
         });
 
@@ -259,7 +259,7 @@ final class CollectionTest extends TestCase
         $this->assertEquals('apel', $test->sort()->first());
         $this->assertEquals('rambutan', $test->sortDesc()->first());
 
-        $test->sortBy(function ($a, $b) {
+        $test->sortBy(function (string $a, string $b) {
             if ($a == $b) {
                 return 0;
             }
@@ -269,7 +269,7 @@ final class CollectionTest extends TestCase
 
         $this->assertEquals('apel', $test->first());
 
-        $test->sortByDesc(function ($a, $b) {
+        $test->sortByDesc(function (string $a, string $b) {
             if ($a == $b) {
                 return 0;
             }
@@ -301,7 +301,7 @@ final class CollectionTest extends TestCase
         $copyOrigin = $original;
         unset($copyOrigin['buah_2']);
 
-        $this->assertEquals($copyOrigin, $test->reject(fn ($item) => $item == 'jeruk')->all());
+        $this->assertEquals($copyOrigin, $test->reject(fn (string $item) => $item == 'jeruk')->all());
 
         $chunk = $test->clone()->chunk(3)->all();
         $this->assertEquals([
@@ -343,21 +343,21 @@ final class CollectionTest extends TestCase
             ->set(0, 0)
             ->clear()
             ->replace($origin)
-            ->each(fn ($el) => in_array($el, $origin))
-            ->map(fn ($el) => $el + 100 - (2 * 50))
-            ->filter(fn ($el) => $el > -1)
+            ->each(fn (int $el) => in_array($el, $origin))
+            ->map(fn (int $el) => $el + 100 - (2 * 50))
+            ->filter(fn (int $el) => $el > -1)
             ->sort()
             ->sortDesc()
             ->sortKey()
             ->sortKeyDesc()
-            ->sortBy(function ($a, $b) {
+            ->sortBy(function (int $a, int $b) {
                 if ($a == $b) {
                     return 0;
                 }
 
                 return ($a < $b) ? -1 : 1;
             })
-            ->sortByDesc(function ($a, $b) {
+            ->sortByDesc(function (int $a, int $b) {
                 if ($b == $a) {
                     return 0;
                 }
@@ -443,7 +443,7 @@ final class CollectionTest extends TestCase
             ],
         ]);
 
-        $assocBy = $arr->assocBy(fn ($item) => [$item['name'] => $item['email']]);
+        $assocBy = $arr->assocBy(fn (array $item) => [$item['name'] => $item['email']]);
 
         $this->assertEquals([
             'taylor'     => 'taylor@laravel.com',
@@ -477,7 +477,7 @@ final class CollectionTest extends TestCase
     {
         $collection = new Collection([1, 2, 3, 4]);
 
-        $sum = $collection->reduce(fn ($carry, $item) => $carry + $item);
+        $sum = $collection->reduce(fn (?int $carry, int $item) => $carry + $item);
 
         $this->assertTrue($sum === 10);
     }

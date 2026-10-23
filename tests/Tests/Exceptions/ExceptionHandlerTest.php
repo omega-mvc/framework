@@ -232,7 +232,7 @@ class ExceptionHandlerTest extends \Tests\TestCase
         $app->set(
             TemplatorFinder::class,
             fn () => new TemplatorFinder(
-                array_map(fn ($item) => is_string($item) ? $item : '', (array) ($app->get('paths.view') ?? [])),
+                array_map(fn (mixed $item) => is_string($item) ? $item : '', (array) ($app->get('paths.view') ?? [])),
                 ['.php', '.template.php']
             )
         );

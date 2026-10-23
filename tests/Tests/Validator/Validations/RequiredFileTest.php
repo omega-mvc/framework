@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class RequiredFileTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'files' => [
             'test' => [
                 'name'     => 'screenshot.png',
@@ -25,7 +25,7 @@ final class RequiredFileTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'files' => [],
     ];
 

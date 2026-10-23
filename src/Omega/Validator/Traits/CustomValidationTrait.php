@@ -20,7 +20,7 @@ trait CustomValidationTrait
      *
      * @return bool
      */
-    protected function validate_($field, array $input, array $params, $value)
+    protected function validate_(string $field, array $input, array $params, mixed $value): bool
     {
         return array_key_exists($field, $input);
     }

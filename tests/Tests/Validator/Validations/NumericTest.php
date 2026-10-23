@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class NumericTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 123,
         'test2' => 1.2,
         'test3' => 0,
@@ -24,7 +24,7 @@ final class NumericTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test' => 'n0t',
     ];
 

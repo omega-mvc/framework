@@ -40,7 +40,7 @@ final class CollectionImmutableTest extends TestCase
         $this->assertTrue($test->contain('mangga'));
         $this->assertEquals(6, $test->count());
 
-        $countIf = $test->countIf(function ($item) {
+        $countIf = $test->countIf(function (string $item) {
             return str_contains($item, 'e');
         });
         $this->assertEquals(4, $countIf);
@@ -58,12 +58,12 @@ final class CollectionImmutableTest extends TestCase
             $this->assertArrayHasKey($key, $original);
         });
 
-        $some = $test->some(function ($item) {
+        $some = $test->some(function (string $item) {
             return str_contains($item, 'e');
         });
         $this->assertTrue($some);
 
-        $every = $test->every(function ($item) {
+        $every = $test->every(function (string $item) {
             return !str_contains($item, 'x');
         });
         $this->assertTrue($every);

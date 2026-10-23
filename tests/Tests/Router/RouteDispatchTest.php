@@ -32,8 +32,8 @@ final class RouteDispatchTest extends TestCase
         /** @noinspection PhpUnusedLocalVariableInspection */
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path)              => 'not found - ',
-            fn ($path, $method)     => 'method not allowed - - ',
+            fn (string $path) => 'not found - ',
+            fn (string $path, string $method) => 'method not allowed - - ',
         );
 
         $current = $dispatcher->current();
@@ -60,8 +60,8 @@ final class RouteDispatchTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path)              => 'not found - ',
-            fn ($path, $method)     => 'method not allowed - - ',
+            fn (string $path) => 'not found - ',
+            fn (string $path, string $method) => 'method not allowed - - ',
         );
 
         $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
@@ -75,8 +75,8 @@ final class RouteDispatchTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn ()               => 'found',
-            fn ($path)          => 'not found - ',
-            fn ($path, $method) => 'method not allowed - - ',
+            fn (string $path) => 'not found - ',
+            fn (string $path, string $method) => 'method not allowed - - ',
         );
 
         $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
@@ -90,8 +90,8 @@ final class RouteDispatchTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn ()               => 'found',
-            fn ($path)          => 'not found - ',
-            fn ($path, $method) => 'method not allowed - - ',
+            fn (string $path) => 'not found - ',
+            fn (string $path, string $method) => 'method not allowed - - ',
         );
 
         $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
@@ -105,8 +105,8 @@ final class RouteDispatchTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn ()               => 'found',
-            fn ($path)          => 'not found - ',
-            fn ($path, $method) => 'method not allowed - - ',
+            fn (string $path) => 'not found - ',
+            fn (string $path, string $method) => 'method not allowed - - ',
         );
 
         $result = call_user_func_array($dispatch['callable'], $dispatch['params']);

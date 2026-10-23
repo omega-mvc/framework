@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class ValidFloatTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 0,
         'test2' => 1.1,
         'test3' => '1.1',
@@ -21,7 +21,7 @@ final class ValidFloatTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test1' => '1,1',
         'test2' => '1.0,0',
         'test3' => '1,0.0',

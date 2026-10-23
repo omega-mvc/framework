@@ -19,7 +19,7 @@ final class HelperTest extends TestCase
 {
     public function testRedirectToCorrectUrl(): void
     {
-        Router::get('/test/(:any)', fn ($test) => $test)->name('test');
+        Router::get('/test/(:any)', fn (string $test) => $test)->name('test');
         $redirect = redirect_route('test', ['ok']);
         $response = new TestResponse($redirect);
         $response->assertStatusCode(302);
@@ -30,7 +30,7 @@ final class HelperTest extends TestCase
 
     public function testRedirectToCorrectUrlWithPlanUrl(): void
     {
-        Router::get('/test', fn ($test) => $test)->name('test');
+        Router::get('/test', fn (string $test) => $test)->name('test');
         $redirect = redirect_route('test');
         $response = new TestResponse($redirect);
         $response->assertStatusCode(302);

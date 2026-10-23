@@ -6,6 +6,7 @@ namespace Tests\DocBlockGenerator\VarExport\Compile;
 
 use InvalidArgumentException;
 use Omega\DocBlockGenerator\VarExport\ClosureExtractor;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionFunction;
 use Tests\TestCase;
@@ -291,6 +292,7 @@ final class ClosureExtractorTest extends TestCase
         $this->assertStringEndsWith('}', trim($normalized));
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testNonExistentFileThrowsException(): void
     {
         $extractor = new ClosureExtractor();

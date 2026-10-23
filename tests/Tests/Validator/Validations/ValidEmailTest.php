@@ -12,14 +12,14 @@ use function Omega\Validator\vr;
 final class ValidEmailTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 'test@gmail.com',
         'test2' => 'test@yahoo.com',
         'test3' => 'test@hotmail.com',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test1' => 'test',
         'test2' => 'test@gmail',
     ];

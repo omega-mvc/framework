@@ -12,12 +12,12 @@ use function Omega\Validator\vr;
 final class ValidIpv6Test extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test' => '2001:0db8:85a3:08d3:1319:8a2e:0370:7334',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'tets1' => '2001;0db8;85a3;08d3;1319;8a2e;0370;7334',
         'tets2' => '0,0,0,0',
         'tets3' => '256.0.0.0',

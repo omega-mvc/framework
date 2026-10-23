@@ -21,6 +21,7 @@ use DateTimeZone;
 use Omega\Time\Now;
 use Omega\Time\Traits\DateTimeFormatTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use PHPUnit\Framework\Attributes\TestWith;
 use Tests\TestCase;
 
@@ -31,7 +32,7 @@ use function strtotime;
 use function ucfirst;
 
 #[CoversClass(Now::class)]
-#[CoversClass(DateTimeFormatTrait::class)]
+#[CoversTrait(DateTimeFormatTrait::class)]
 final class NowTest extends TestCase
 {
     public function testIsSameWithCurrentTime(): void

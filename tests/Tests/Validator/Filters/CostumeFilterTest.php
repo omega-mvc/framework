@@ -13,7 +13,7 @@ final class CostumeFilterTest extends TestCase
     {
         $validation = new Validator(['test' => 'test']);
 
-        $validation->filter('test')->filter(fn ($value, $param = []) => 'ok ' . $value);
+        $validation->filter('test')->filter(fn (string $value, array $param = []) => 'ok ' . $value);
 
         $this->assertEquals(['test' => 'ok test'], $validation->filters->all());
     }
@@ -23,7 +23,7 @@ final class CostumeFilterTest extends TestCase
         $validation = new Validator(['test' => 'test']);
 
         $validation->filter('test')
-            ->filter(fn ($value, $param = []) => 'ok ' . $value)
+            ->filter(fn (string $value, array $param = []) => 'ok ' . $value)
             ->upper_case();
 
         $this->assertEquals(['test' => 'OK TEST'], $validation->filters->all());

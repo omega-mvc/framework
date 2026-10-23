@@ -6,6 +6,7 @@ namespace Tests\Router;
 
 use Omega\Application\Application;
 use Omega\Middleware\MaintenanceMiddleware;
+use Omega\Router\Route;
 use Omega\Router\RouteServiceProvider;
 use Omega\Router\Router;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -73,8 +74,8 @@ final class RouteServiceProviderTest extends TestCase
 
         $this->assertCount(4, $routes);
 
-        $methods     = array_map(static fn ($route): mixed => $route['method'], $routes);
-        $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+        $methods     = array_map(static fn (Route $route): mixed => $route['method'], $routes);
+        $expressions = array_map(static fn (Route $route): mixed => $route['expression'], $routes);
 
         $this->assertContains('get', $methods);
         $this->assertContains('head', $methods);
@@ -163,7 +164,7 @@ final class RouteServiceProviderTest extends TestCase
 
         $provider->registerWebRoutes();
 
-        $expressions = array_map(static fn ($route): mixed => $route['expression'], Router::getRoutesRaw());
+        $expressions = array_map(static fn (Route $route): mixed => $route['expression'], Router::getRoutesRaw());
 
         $this->assertNotContains('/numeric-method', $expressions);
         $this->assertCount(4, $expressions);
@@ -193,7 +194,7 @@ final class RouteServiceProviderTest extends TestCase
         $provider->registerWebRoutes();
 
         $routes      = Router::getRoutesRaw();
-        $expressions = array_map(static fn ($route): mixed => $route['expression'], $routes);
+        $expressions = array_map(static fn (Route $route): mixed => $route['expression'], $routes);
 
         $this->assertSame(['/controller'], $expressions);
         $this->assertSame([SomeClass::class, 'foo'], $routes[0]['function']);

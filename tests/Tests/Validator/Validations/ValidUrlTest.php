@@ -12,7 +12,7 @@ use function Omega\Validator\vr;
 final class ValidUrlTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 'http://test.com/',
         'test2' => 'http://test.com',
         'test3' => 'https://test.com',
@@ -21,7 +21,7 @@ final class ValidUrlTest extends TestCase
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test1' => 'example.com',
         'test2' => 'text',
     ];

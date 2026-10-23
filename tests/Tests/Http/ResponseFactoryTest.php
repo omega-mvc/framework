@@ -212,7 +212,7 @@ final class ResponseFactoryTest extends TestCase
                             {
                             }
 
-                            public function detach()
+                            public function detach(): mixed
                             {
                                 return null;
                             }
@@ -272,7 +272,10 @@ final class ResponseFactoryTest extends TestCase
                                 return $this->content;
                             }
 
-                            public function getMetadata(?string $key = null)
+                            /**
+                             * @return array<string, mixed>|null
+                             */
+                            public function getMetadata(?string $key = null): ?array
                             {
                                 return $key === null ? [] : null;
                             }
@@ -310,7 +313,7 @@ final class ResponseFactoryTest extends TestCase
                     {
                     }
 
-                    public function detach()
+                    public function detach(): mixed
                     {
                         return null;
                     }
@@ -370,7 +373,10 @@ final class ResponseFactoryTest extends TestCase
                         return $this->content;
                     }
 
-                    public function getMetadata(?string $key = null)
+                    /**
+                     * @return array<string, mixed>|null
+                     */
+                    public function getMetadata(?string $key = null): ?array
                     {
                         return $key === null ? [] : null;
                     }

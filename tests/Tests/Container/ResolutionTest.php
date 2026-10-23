@@ -68,7 +68,7 @@ final class ResolutionTest extends TestCase
 
     public function testResolvesClosuresThroughGet(): void
     {
-        $this->container->bind('test-closure', function ($container) {
+        $this->container->bind('test-closure', function (Container $container) {
             return 'resolved from closure';
         });
 
@@ -77,7 +77,7 @@ final class ResolutionTest extends TestCase
 
     public function testResolvesClosuresThroughMake(): void
     {
-        $this->container->bind('test-closure', function ($container) {
+        $this->container->bind('test-closure', function (Container $container) {
             return 'resolved from closure';
         });
 

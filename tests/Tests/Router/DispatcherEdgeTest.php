@@ -21,8 +21,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => 'root',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('root', call_user_func_array($dispatch['callable'], $dispatch['params']));
@@ -34,8 +34,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('handler-/foo', call_user_func_array($dispatch['callable'], $dispatch['params']));
@@ -48,8 +48,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('not-found', call_user_func_array($dispatch['callable'], $dispatch['params']));
@@ -64,16 +64,16 @@ final class DispatcherEdgeTest extends TestCase
 
         $defaultDispatch = $default->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('found', call_user_func_array($defaultDispatch['callable'], $defaultDispatch['params']));
 
         $strictDispatch = $strict->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('not-found', call_user_func_array($strictDispatch['callable'], $strictDispatch['params']));
@@ -86,8 +86,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('handler-/users', call_user_func_array($dispatch['callable'], $dispatch['params']));
@@ -105,8 +105,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $singleDispatch = $single->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame(
@@ -116,8 +116,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $multiDispatch = $multi->run(
             fn (callable $callable, array $params) => call_user_func_array($callable, $params),
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $multiResult = call_user_func_array($multiDispatch['callable'], $multiDispatch['params']);
@@ -144,8 +144,8 @@ final class DispatcherEdgeTest extends TestCase
 
                 return call_user_func_array($callable, $params);
             },
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $result = call_user_func_array($dispatch['callable'], $dispatch['params']);
@@ -168,16 +168,16 @@ final class DispatcherEdgeTest extends TestCase
 
         $foundDispatch = $matching->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('found', call_user_func_array($foundDispatch['callable'], $foundDispatch['params']));
 
         $missingDispatch = $failing->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('not-found', call_user_func_array($missingDispatch['callable'], $missingDispatch['params']));
@@ -195,8 +195,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatch = $dispatcher->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertSame('found', call_user_func_array($dispatch['callable'], $dispatch['params']));
@@ -213,8 +213,8 @@ final class DispatcherEdgeTest extends TestCase
 
         $dispatcher->run(
             fn (callable $callable, array $params) => 'found',
-            fn ($path) => 'not-found',
-            fn ($path, $method) => 'not-allowed',
+            fn (string $path) => 'not-found',
+            fn (string $path, string $method) => 'not-allowed',
         );
 
         $this->assertInstanceOf(Route::class, $dispatcher->current());

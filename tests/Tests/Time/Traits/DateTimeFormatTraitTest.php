@@ -17,10 +17,11 @@ namespace Tests\Time\Traits;
 use Omega\Time\Now;
 use Omega\Time\Traits\DateTimeFormatTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use Tests\TestCase;
 
 #[CoversClass(Now::class)]
-#[CoversClass(DateTimeFormatTrait::class)]
+#[CoversTrait(DateTimeFormatTrait::class)]
 final class DateTimeFormatTraitTest extends TestCase
 {
     public function testFormatsTimeInAtomFormat(): void

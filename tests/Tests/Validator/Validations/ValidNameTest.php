@@ -12,13 +12,13 @@ use function Omega\Validator\vr;
 final class ValidNameTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test1' => 'taylorotwell',
         'tets2' => '',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'tets1' => 'sa`ad',
         'tets2' => 's@ad',
         'test3' => 'Mr. Sigurd Heller MD',

@@ -12,10 +12,10 @@ use function Omega\Validator\vr;
 final class ValidArraySizeEqualTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = ['test' => [1, 2, 3]];
+    private const array CORRECT = ['test' => [1, 2, 3]];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = ['test' => [1, 2]];
+    private const array INCORRECT = ['test' => [1, 2]];
 
     public function testCanRenderValidArraySizeEqualValidation(): void
     {

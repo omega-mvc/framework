@@ -12,10 +12,10 @@ use function Omega\Validator\vr;
 final class RegexTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = ['test' => 'validation using gump'];
+    private const array CORRECT = ['test' => 'validation using gump'];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = ['test' => 'testing using pest'];
+    private const array INCORRECT = ['test' => 'testing using pest'];
 
     public function testCanRenderRegexValidation(): void
     {

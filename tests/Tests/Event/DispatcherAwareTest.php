@@ -8,10 +8,11 @@ use Omega\Event\Dispatcher\Dispatcher;
 use Omega\Event\Dispatcher\DispatcherAwareTrait;
 use Omega\Event\Exceptions\DispatcherNotSetException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use Tests\Event\Support\DispatcherAwareService;
 use Tests\TestCase;
 
-#[CoversClass(DispatcherAwareTrait::class)]
+#[CoversTrait(DispatcherAwareTrait::class)]
 #[CoversClass(DispatcherNotSetException::class)]
 final class DispatcherAwareTest extends TestCase
 {

@@ -95,6 +95,8 @@ final class CallTest extends TestCase
             'Unable to resolve dependency [Parameter #0 [ <required> $param ]] in callable'
         );
 
+        // The missing type hint is the subject of this test.
+        // @phpstan-ignore typeCoverage.paramTypeCoverage
         $this->container->call(function ($param): void {
         });
     }

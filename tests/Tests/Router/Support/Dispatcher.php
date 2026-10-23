@@ -31,7 +31,7 @@ function dispatcher(string $url, string $method): false|string
 
     $call = $dispatch->run(
         // found
-        function ($callable, $param) {
+        function (mixed $callable, mixed $param) {
             if (is_array($callable)) {
                 [$class, $method] = $callable;
 
@@ -51,11 +51,11 @@ function dispatcher(string $url, string $method): false|string
             return null;
         },
         // not found
-        function ($path) {
+        function (string $path) {
             echo 'not found';
         },
         // method not allowed
-        function ($path, $method) {
+        function (string $path, string $method) {
             echo 'not allowed';
         }
     );

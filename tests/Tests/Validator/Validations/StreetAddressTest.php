@@ -12,13 +12,13 @@ use function Omega\Validator\vr;
 final class StreetAddressTest extends TestCase
 {
     /** @var array<string, mixed> */
-    private const CORRECT = [
+    private const array CORRECT = [
         'test'  => '6 Avondans Road',
         'test2' => 'Calle Mediterráneo 2',
     ];
 
     /** @var array<string, mixed> */
-    private const INCORRECT = [
+    private const array INCORRECT = [
         'test'  => 'Avondans Road',
         'test2' => 'text',
     ];

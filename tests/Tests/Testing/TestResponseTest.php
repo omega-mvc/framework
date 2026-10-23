@@ -9,11 +9,12 @@ use Omega\Http\Response;
 use Omega\Testing\TestResponse;
 use Omega\Testing\Traits\ResponseStatusTrait;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\CoversTrait;
 use Tests\TestCase;
 
 #[CoversClass(Response::class)]
 #[CoversClass(TestResponse::class)]
-#[CoversClass(ResponseStatusTrait::class)]
+#[CoversTrait(ResponseStatusTrait::class)]
 final class TestResponseTest extends TestCase
 {
     public function testCanRespondAssert(): void
