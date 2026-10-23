@@ -9,7 +9,6 @@ use Omega\Csrf\CsrfInterface;
 use Omega\Session\SessionManager;
 use Omega\Session\Storage\ArrayStorage;
 use function class_implements;
-use function expect;
 use function in_array;
 use function preg_match;
 use function str_repeat;
