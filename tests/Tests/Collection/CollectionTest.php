@@ -977,4 +977,184 @@ final class CollectionTest extends TestCase
 
         $this->assertSame([], $coll->assocBy(static fn (): array => [])->all());
     }
+    public function testCanRemoveAKeyThatDoesNotExist(): void
+    {
+        $coll = new Collection(['a' => 1]);
+
+        $coll->remove('missing');
+
+        $this->assertSame(['a' => 1], $coll->all());
+    }
+
+    public function testCanFilterAndRejectCollectionsOfAnySize(): void
+    {
+        $batches = [
+            [],
+            [1],
+            [1, 2],
+            [1, 2, 3],
+            [1, 2, 3, 4],
+        ];
+
+        $even = static fn (int $item): bool => $item % 2 === 0;
+        $odd  = static fn (int $item): bool => $item % 2 !== 0;
+
+        foreach ($batches as $items) {
+            $this->assertSame(
+                array_values(array_filter($items, $even)),
+                array_values((new Collection($items))->filter($even)->all())
+            );
+            $this->assertSame(
+                array_values(array_filter($items, $odd)),
+                array_values((new Collection($items))->reject($even)->all())
+            );
+        }
+    }
+
+    public function testCanExceptAndOnlyOnAnEmptyCollection(): void
+    {
+        $this->assertSame([], (new Collection([]))->except(['a'])->all());
+        $this->assertSame([], (new Collection([]))->only(['a'])->all());
+    }
+
+    public function testCanExceptAndOnlyCollectionsWithSeveralItems(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3, 'd' => 4]);
+
+        $this->assertSame(['b' => 2, 'd' => 4], $coll->except(['a', 'c'])->all());
+        $this->assertSame(
+            ['a' => 1, 'c' => 3],
+            (new Collection(['a' => 1, 'b' => 2, 'c' => 3, 'd' => 4]))->only(['a', 'c', 'z'])->all()
+        );
+    }
+
+    public function testCanAssocByOnAnEmptyCollectionAndWithSeveralItems(): void
+    {
+        $this->assertSame([], (new Collection([]))->assocBy(static fn (): array => [])->all());
+
+        $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3]);
+        $result = $coll->assocBy(
+            static fn (int $item): array => $item === 2 ? [] : ['k' . $item => $item]
+        );
+
+        $this->assertSame(['k1' => 1, 'k3' => 3], $result->all());
+    }
+
+    public function testCanDiffAndComplementAssocOnEmptyCollections(): void
+    {
+        /** @var array<string, int> $nothing */
+        $nothing = [];
+
+        $this->assertSame([], (new Collection($nothing))->diffAssoc(['a' => 1])->all());
+        $this->assertSame([], (new Collection([]))->complementAssoc([])->all());
+        $this->assertSame([], (new Collection(['a' => 1]))->complementAssoc(['a' => 1])->all());
+        $this->assertSame([], (new Collection(['a' => 1]))->diffAssoc(['a' => 1])->all());
+    }
+
+    public function testCanDiffAndComplementAssocWithSeveralItems(): void
+    {
+        $coll = new Collection(['a' => 1, 'b' => 2, 'c' => 3]);
+
+        $this->assertSame(['a' => 1, 'c' => 3], $coll->diffAssoc(['b' => 2, 'd' => 4])->all());
+
+        $coll = new Collection(['a' => 1, 'c' => 3]);
+
+        $this->assertSame(['b' => 2, 'd' => 4], $coll->complementAssoc(['a' => 1, 'b' => 2, 'd' => 4])->all());
+    }
+
+    public function testCanCountIfOnEmptyAndSeveralItems(): void
+    {
+        $this->assertSame(0, (new Collection([]))->countIf(static fn (int $item): bool => true));
+        $this->assertSame(
+            2,
+            (new Collection([1, 2, 3, 4]))->countIf(static fn (int $item): bool => $item % 2 === 0)
+        );
+    }
+
+    public function testCanEachOnEmptyAndStopsEarly(): void
+    {
+        $visited = [];
+
+        (new Collection([]))->each(static function (int $item) use (&$visited): void {
+            $visited[] = $item;
+        });
+
+        $this->assertSame([], $visited);
+
+        $visited = [];
+
+        (new Collection([1, 2, 3, 4]))->each(static function (int $item) use (&$visited): bool {
+            $visited[] = $item;
+
+            return $item < 2;
+        });
+
+        $this->assertSame([1, 2], $visited);
+    }
+
+    public function testCanCheckSomeAndEveryOnEmptyAndSeveralItems(): void
+    {
+        $this->assertFalse((new Collection([]))->some(static fn (int $item): bool => true));
+        $this->assertTrue((new Collection([]))->every(static fn (int $item): bool => true));
+        $this->assertFalse((new Collection([1, 2, 3, 4]))->some(static fn (int $item): bool => $item > 10));
+        $this->assertTrue((new Collection([1, 2, 3, 4]))->every(static fn (int $item): bool => $item > 0));
+        $this->assertTrue((new Collection([1, 2, 3, 4]))->some(static fn (int $item): bool => $item === 4));
+        $this->assertFalse((new Collection([1, 2, 3, 4]))->every(static fn (int $item): bool => $item < 4));
+    }
+
+    public function testCanPluckFromEmptyAndMixedCollections(): void
+    {
+        $this->assertSame([], (new Collection([]))->pluck('id'));
+
+        $items = [
+            ['id' => 1, 'name' => 'a'],
+            (object) ['id' => 2, 'name' => 'b'],
+            'scalar',
+            ['name' => 'c'],
+        ];
+
+        $this->assertSame([1, 2, null], (new Collection($items))->pluck('id'));
+        $this->assertSame(['a' => 1, 'b' => 2, 'c' => null], (new Collection($items))->pluck('id', 'name'));
+    }
+
+    public function testCanFlattenAnEmptyCollection(): void
+    {
+        $this->assertSame([], (new Collection([]))->flatten()->all());
+    }
+
+    public function testCanFlattenSiblingArraysWithCollidingKeys(): void
+    {
+        $this->assertSame([1, 2, 3, 4], (new Collection([[1], [2], [3], [4]]))->flatten()->all());
+    }
+
+    public function testCanFlattenWithDepthOneAndMixedItems(): void
+    {
+        $coll = new Collection([
+            'a' => [1, 2],
+            'b' => 'scalar',
+            'c' => new Collection(['x' => 3]),
+        ]);
+
+        $this->assertSame([0 => 1, 1 => 2, 'b' => 'scalar', 2 => 3], $coll->flatten(1)->all());
+    }
+
+    public function testShortCircuitsOnTheFirstItem(): void
+    {
+        $items = new Collection([1, 2, 3, 4]);
+
+        $this->assertTrue($items->some(static fn (int $item): bool => $item === 1));
+        $this->assertFalse($items->every(static fn (int $item): bool => $item > 1));
+
+        $visited = [];
+
+        $items->each(static function (int $item) use (&$visited): bool {
+            $visited[] = $item;
+
+            return false;
+        });
+
+        $this->assertSame([1], $visited);
+        $this->assertSame(1, (new Collection([1, 2, 3]))->countIf(static fn (int $item): bool => $item === 1));
+        $this->assertSame(2, (new Collection([1, 2, 3]))->countIf(static fn (int $item): bool => $item !== 2));
+    }
 }
