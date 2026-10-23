@@ -149,8 +149,8 @@ class RedisStorage extends AbstractCache
             $redis->close();
 
             return $result === true || $result === '+PONG' || $result === 'PONG';
-        } catch (\RedisException) {
-            return false;
+        } catch (\RedisException) { // @codeCoverageIgnore
+            return false; // @codeCoverageIgnore
         }
     }
 

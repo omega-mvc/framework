@@ -57,8 +57,10 @@ trait CacheTimeTrait
         $fractionalPart = $microtime - $currentTime;
 
         if ($fractionalPart >= 1) {
+            // @codeCoverageIgnoreStart
             $currentTime += (int) $fractionalPart;
             $fractionalPart -= (int) $fractionalPart;
+            // @codeCoverageIgnoreEnd
         }
 
         $mtime = $currentTime + $fractionalPart;

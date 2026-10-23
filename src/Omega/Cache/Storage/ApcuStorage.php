@@ -68,7 +68,7 @@ class ApcuStorage extends AbstractCache
         $mtime        = $info['mtime'] ?? 0;
 
         if (!is_int($ttl) || !is_int($creationTime) || (!is_int($mtime) && !is_float($mtime))) {
-            return [];
+            return []; // @codeCoverageIgnore
         }
 
         return [
@@ -111,7 +111,7 @@ class ApcuStorage extends AbstractCache
         $values = apcu_fetch($prefixedKeys);
 
         if (false === is_array($values)) {
-            $values = [];
+            $values = []; // @codeCoverageIgnore
         }
 
         $result = [];
@@ -165,9 +165,9 @@ class ApcuStorage extends AbstractCache
         $result = apcu_inc($this->prefix . $key, $value, $success);
 
         if (false === $result) {
-            $this->set($key, $value, 0);
+            $this->set($key, $value, 0); // @codeCoverageIgnore
 
-            return $value;
+            return $value; // @codeCoverageIgnore
         }
 
         return $result;

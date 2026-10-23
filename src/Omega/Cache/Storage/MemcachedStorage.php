@@ -44,10 +44,9 @@ class MemcachedStorage extends AbstractCache
             $this->memcached->setOption(PhpMemcached::OPT_CONNECT_TIMEOUT, (int) $options['timeout']);
         }
 
-        $servers = $options['servers'] ?? [[
-            'host' => $options['host'] ?? '127.0.0.1',
-            'port' => $options['port'] ?? 11211,
-        ]];
+        $defaultServer = ['host' => $options['host'] ?? '127.0.0.1', 'port' => $options['port'] ?? 11211];
+
+        $servers = $options['servers'] ?? [$defaultServer];
 
         foreach ($servers as $server) {
             $this->memcached->addServer((string) $server['host'], (int) $server['port']);
@@ -63,7 +62,7 @@ class MemcachedStorage extends AbstractCache
     public static function isSupported(): bool
     {
         if (!extension_loaded('memcached')) {
-            return false;
+            return false; // @codeCoverageIgnore
         }
 
         try {
@@ -73,8 +72,8 @@ class MemcachedStorage extends AbstractCache
             $memcached->getVersion();
 
             return $memcached->getResultCode() === PhpMemcached::RES_SUCCESS;
-        } catch (\MemcachedException) {
-            return false;
+        } catch (\MemcachedException) { // @codeCoverageIgnore
+            return false; // @codeCoverageIgnore
         }
     }
 

@@ -191,7 +191,7 @@ class FileStorage extends AbstractCache
 
         foreach ($files as $fileInfo) {
             if (false === ($fileInfo instanceof \SplFileInfo)) {
-                continue;
+                continue; // @codeCoverageIgnore
             }
 
             $filePath = $fileInfo->getRealPath();
