@@ -23,6 +23,7 @@ use function array_key_first;
 use function array_reverse;
 use function array_slice;
 use function array_values;
+use function array_walk;
 use function arsort;
 use function asort;
 use function call_user_func;
@@ -131,9 +132,7 @@ class Collection extends AbstractCollectionImmutable
      */
     public function add(array $collection): self
     {
-        foreach ($collection as $key => $item) {
-            $this->set($key, $item);
-        }
+        array_walk($collection, fn ($item, $key): mixed => $this->set($key, $item));
 
         return $this;
     }
@@ -191,9 +190,7 @@ class Collection extends AbstractCollectionImmutable
     public function replace(array $newCollection): self
     {
         $this->collection = [];
-        foreach ($newCollection as $key => $item) {
-            $this->set($key, $item);
-        }
+        array_walk($newCollection, fn ($item, $key): mixed => $this->set($key, $item));
 
         return $this;
     }

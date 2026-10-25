@@ -1157,4 +1157,246 @@ final class CollectionTest extends TestCase
         $this->assertSame(1, (new Collection([1, 2, 3]))->countIf(static fn (int $item): bool => $item === 1));
         $this->assertSame(2, (new Collection([1, 2, 3]))->countIf(static fn (int $item): bool => $item !== 2));
     }
+
+    public function testCanFlattenWithCollectionInstancesAndDepthOne(): void
+    {
+        $coll = new Collection([
+            new Collection([1, 2]),
+            new Collection(['x' => 3]),
+        ]);
+
+        $this->assertSame([1, 2, 2 => 3], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenWithStringKeysAndNumericCollisions(): void
+    {
+        $coll = new Collection([
+            ['a' => 1, 'b' => 2],
+            ['c' => 3],
+            [0 => 99],
+        ]);
+
+        $this->assertSame(['a' => 1, 'b' => 2, 'c' => 3, 99], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWhenNumericChildKeysCollide(): void
+    {
+        $coll = new Collection([
+            ['x', 'y'],
+            ['z'],
+        ]);
+
+        $this->assertSame(['x', 'y', 'z'], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithMixedStringAndNumericKeysDeeply(): void
+    {
+        $coll = new Collection([
+            'root' => ['nested' => [10, 20]],
+            ['a' => 30],
+        ]);
+
+        $this->assertSame([[10, 20], 30], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenCollectionContainingCollectionAtDepthOne(): void
+    {
+        $coll = new Collection([
+            ['list' => new Collection([1, 2, 3])],
+        ]);
+
+        $result = $coll->flatten(1)->all();
+        $this->assertCount(1, $result);
+        $this->assertInstanceOf(Collection::class, $result[0]);
+        $this->assertSame([1, 2, 3], $result[0]->all());
+    }
+
+    public function testCanFlattenWithScalarValuesDirectly(): void
+    {
+        $coll = new Collection([1, 2, 'hello', null]);
+        $this->assertSame([1, 2, 'hello', null], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenDeeplyNestedWithStringKeys(): void
+    {
+        $coll = new Collection([
+            ['a' => ['b' => ['c' => 1]]],
+        ]);
+        $this->assertSame(['c' => 1], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithMultipleStringKeyCollisions(): void
+    {
+        $coll = new Collection([
+            ['key' => 1],
+            ['key' => 2],
+            ['other' => 3],
+        ]);
+        $this->assertSame(['key' => 2, 'other' => 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenDepthOneWithNumericKeysAndCollision(): void
+    {
+        $coll = new Collection([
+            [1, 2],
+            [3, 4],
+        ]);
+        $this->assertSame([1, 2, 3, 4], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenMixedCollectionsAndArrays(): void
+    {
+        $coll = new Collection([
+            new Collection(['a' => [1, 2]]),
+            ['b' => [3, 4]],
+        ]);
+        $this->assertSame([[1, 2], [3, 4]], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenWithEmptyArrayInMiddle(): void
+    {
+        $coll = new Collection([1, [], [2, 3], []]);
+        $this->assertSame([1, 2, 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithAllStringKeysNoCollision(): void
+    {
+        $coll = new Collection([
+            ['a' => 1],
+            ['b' => 2],
+            ['c' => 3],
+        ]);
+
+        $this->assertSame(['a' => 1, 'b' => 2, 'c' => 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithStringKeyOverwriting(): void
+    {
+        $coll = new Collection([
+            ['a' => 1],
+            ['a' => 2],
+        ]);
+
+        $this->assertSame(['a' => 2], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithNullAndScalarMixed(): void
+    {
+        $coll = new Collection([
+            null,
+            [1, 2],
+            'test',
+        ]);
+
+        $this->assertSame([null, 1, 2, 'test'], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenDeeplyWithCollectionConversion(): void
+    {
+        $coll = new Collection([
+            [new Collection([1, [2, new Collection([3])]])],
+        ]);
+
+        $this->assertSame([1, 2, 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithNumericKeysAndAppendOnCollision(): void
+    {
+        $coll = new Collection([
+            [10],
+            [20],
+            [30, 40],
+        ]);
+
+        $this->assertSame([10, 20, 30, 40], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenAtDepthOneWithAllStringKeys(): void
+    {
+        $coll = new Collection([
+            ['a' => 1, 'b' => 2],
+            ['c' => 3],
+        ]);
+
+        $this->assertSame([1, 2, 3], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenAtDepthOneWithStringKeysPreserved(): void
+    {
+        $coll = new Collection([
+            ['a' => 1],
+            ['b' => ['c' => 2]],
+        ]);
+
+        $this->assertSame([1, ['c' => 2]], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenWithStringKeysAtDepthOne(): void
+    {
+        $coll = new Collection([
+            ['x' => 1, 'y' => 2],
+        ]);
+
+        $this->assertSame([1, 2], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenStringKeysWithNumericSiblingKeys(): void
+    {
+        $coll = new Collection([
+            ['a' => 1, 0 => 2],
+            ['b' => 3],
+        ]);
+
+        $this->assertSame(['a' => 1, 2, 'b' => 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithThreeLevelsAndStringKeys(): void
+    {
+        $coll = new Collection([
+            ['a' => ['b' => ['c' => 5]]],
+        ]);
+
+        $this->assertSame([['b' => ['c' => 5]]], $coll->flatten(1)->all());
+        $this->assertSame([['c' => 5]], $coll->flatten(2)->all());
+    }
+
+    public function testCanFlattenStringKeyCollisionInSameLevel(): void
+    {
+        $coll = new Collection([
+            ['key' => 1],
+            ['key' => 2],
+            ['other' => 3],
+        ]);
+
+        $this->assertSame(['key' => 2, 'other' => 3], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithCollectionAndStringKeys(): void
+    {
+        $coll = new Collection([
+            new Collection(['x' => 1]),
+            new Collection(['y' => 2]),
+        ]);
+
+        $this->assertSame(['x' => 1, 'y' => 2], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithAllNonArrayValues(): void
+    {
+        $coll = new Collection([1, 2, 3, 'hello', null]);
+
+        $this->assertSame([1, 2, 3, 'hello', null], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithMixedDepthScenarios(): void
+    {
+        $coll = new Collection([
+            [1, ['a' => ['b' => 2]]],
+            ['c' => 3],
+        ]);
+
+        $this->assertSame([1, ['a' => ['b' => 2]], 2 => 3], $coll->flatten(1)->all());
+        $this->assertSame([1, ['b' => 2], 'c' => 3], $coll->flatten(2)->all());
+        $this->assertSame([1, 2, 'c' => 3], $coll->flatten(3)->all());
+    }
 }
