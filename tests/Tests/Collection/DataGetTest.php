@@ -139,4 +139,36 @@ final class DataGetTest extends TestCase
         $this->assertSame('none', data_get($this->array, '', 'none'));
         $this->assertSame('none', data_get([], '', 'none'));
     }
+
+    public function testCanGetWithSingleSegmentExistingKey(): void
+    {
+        $this->assertSame('bar', data_get(['foo' => 'bar'], 'foo'));
+    }
+
+    public function testWildcardAsOnlySegmentWithScalarItemsReturnsDefault(): void
+    {
+        $this->assertSame('def', data_get([1, 2, 3], '*', 'def'));
+    }
+
+    public function testWildcardAsOnlySegmentWithArraysHavingEmptyKey(): void
+    {
+        $this->assertEquals([5, 6], data_get([['' => 5], ['' => 6]], '*'));
+    }
+
+    public function testWildcardMatchesWhenItemsAreNotArrays(): void
+    {
+        $this->assertSame('none', data_get([1, 2], '*.x', 'none'));
+    }
+
+    public function testNonArrayCurrentDuringTraversalReturnsDefault(): void
+    {
+        $this->assertSame('missing', data_get(['a' => 5], 'a.b', 'missing'));
+        $this->assertSame('missing', data_get(['a' => ['b' => 1]], 'a.b.c', 'missing'));
+    }
+
+    public function testSingleSegmentKeyReturnsValue(): void
+    {
+        $this->assertSame(123, data_get(['foo' => 123], 'foo'));
+        $this->assertSame('bar', data_get([0 => 'bar'], 0));
+    }
 }
