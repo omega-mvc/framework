@@ -1515,4 +1515,80 @@ final class CollectionTest extends TestCase
 
         $this->assertSame([1, 2, 'direct'], $coll->flatten(2)->all());
     }
+
+    public function testCanFlattenWithDepthOneAsFloat(): void
+    {
+        $coll = new Collection([['a' => ['b' => 1]]]);
+        $this->assertSame(['b' => 1], $coll->flatten(1.0)->all());
+    }
+
+    public function testCanFlattenWithDepthZero(): void
+    {
+        $coll = new Collection([[1, 2], [3, 4]]);
+        $this->assertSame([1, 2, 3, 4], $coll->flatten(0)->all());
+    }
+
+    public function testCanFlattenWithDepthNegative(): void
+    {
+        $coll = new Collection([[1, 2]]);
+        $this->assertSame([1, 2], $coll->flatten(-1)->all());
+    }
+
+    public function testCanFlattenItemIsCollection(): void
+    {
+        $coll = new Collection([new Collection([1, 2]), [3, 4]]);
+        $this->assertSame([1, 2, 3, 4], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenItemIsCollectionAtDepthOne(): void
+    {
+        $coll = new Collection([new Collection(['a' => 1, 'b' => 2])]);
+        $this->assertSame([1, 2], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenNumericParentKeyWithArrayCollision(): void
+    {
+        $coll = new Collection([
+            0 => [1, 2],
+            1 => [1, 3],
+        ]);
+        $this->assertSame([1, 2, 1, 3], $coll->flatten(1)->all());
+    }
+
+    public function testCanFlattenStringKeysFromNestedWithNumericCollisionInResult(): void
+    {
+        $coll = new Collection([
+            ['a' => ['x' => 1]],
+            ['b' => ['x' => 2]],
+        ]);
+        $this->assertSame(['x' => 2], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithObjectAsNonArrayItem(): void
+    {
+        $obj = new \stdClass();
+        $obj->foo = 'bar';
+        $coll = new Collection([$obj]);
+        $this->assertSame([$obj], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenWithEmptyArrayItem(): void
+    {
+        $coll = new Collection([[], 1]);
+        $this->assertSame([1 => 1], $coll->flatten()->all());
+    }
+
+    public function testCanFlattenDepthZeroWithCollections(): void
+    {
+        $coll = new Collection([new Collection([1, 2])]);
+        $this->assertSame([1, 2], $coll->flatten(0)->all());
+    }
+
+    public function testCanFlattenNestedCollectionConvertedAtDifferentDepth(): void
+    {
+        $coll = new Collection([
+            'k' => new Collection([new Collection([1])]),
+        ]);
+        $this->assertSame([1], $coll->flatten()->all());
+    }
 }
