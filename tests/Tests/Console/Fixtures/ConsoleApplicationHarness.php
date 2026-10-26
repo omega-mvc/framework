@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Tests\Console\Fixtures;
 
 use Omega\Console\ConsoleApplication;
+use Omega\Console\ConsoleBranding;
 use Symfony\Component\Console\Application as SymfonyApplication;
 use Symfony\Component\Console\Command\Command;
 
@@ -25,6 +26,14 @@ use Symfony\Component\Console\Command\Command;
 class ConsoleApplicationHarness extends ConsoleApplication
 {
     protected array $bootstrappers = [];
+
+    protected function createConsole(): ConsoleBranding
+    {
+        $console = parent::createConsole();
+        $console->setAutoExit(false);
+
+        return $console;
+    }
 
     public function exposeBootstrap(): void
     {

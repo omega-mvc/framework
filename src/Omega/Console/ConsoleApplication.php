@@ -124,15 +124,28 @@ class ConsoleApplication
             putenv('SHELL=/bin/bash');
         }
 
-        $omega = new ConsoleBranding(
-            $this->app,
-            $this->app->getName() . ' Framework:',
-            $this->app->getVersion()
-        );
+        $omega = $this->createConsole();
 
         $this->configureCommandLoader($omega);
 
         return $omega->run($input, $output);
+    }
+
+    /**
+     * Create the branded Symfony console application.
+     *
+     * Extracted into its own factory so tests can disable the automatic exit
+     * performed by Symfony Console when the run completes.
+     *
+     * @return ConsoleBranding The console application ready to be executed.
+     */
+    protected function createConsole(): ConsoleBranding
+    {
+        return new ConsoleBranding(
+            $this->app,
+            $this->app->getName() . ' Framework:',
+            $this->app->getVersion()
+        );
     }
 
     /**

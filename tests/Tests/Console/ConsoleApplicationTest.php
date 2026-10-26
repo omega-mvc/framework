@@ -11,6 +11,8 @@ use Omega\Console\ConsoleBranding;
 use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\ArrayInput;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Tests\Console\Fixtures\ConsoleApplicationHarness;
 use Tests\Console\Fixtures\DemoCommand;
 use Tests\Console\Fixtures\PlainCommand;
@@ -246,6 +248,64 @@ final class ConsoleApplicationTest extends TestCase
 
         $app->flush();
         $this->removeConsoleBase($base);
+    }
+
+    public function testHandlesAnArrayInputInProcessAndRestoresAMissingShell(): void
+    {
+        $base = $this->newConsoleBase();
+        $previousShell = getenv('SHELL');
+        putenv('SHELL');
+
+        try {
+            $app = new Application($base);
+            $console = new ConsoleApplicationHarness($app);
+            $output = new BufferedOutput();
+
+            $exit = $console->handle(['omega', '--version'], $output);
+
+            $this->assertSame(0, $exit);
+            $this->assertSame('/bin/bash', getenv('SHELL'));
+            $this->assertStringContainsString('Framework:', $output->fetch());
+
+            $app->flush();
+        } finally {
+            if (false === $previousShell) {
+                putenv('SHELL');
+            } else {
+                putenv('SHELL=' . $previousShell);
+            }
+
+            $this->removeConsoleBase($base);
+        }
+    }
+
+    public function testHandlesAPrebuiltInputInProcessWithASupportedShell(): void
+    {
+        $base = $this->newConsoleBase();
+        $previousShell = getenv('SHELL');
+        putenv('SHELL=/bin/zsh');
+
+        try {
+            $app = new Application($base);
+            $console = new ConsoleApplicationHarness($app);
+            $output = new BufferedOutput();
+
+            $exit = $console->handle(new ArrayInput(['--version' => true]), $output);
+
+            $this->assertSame(0, $exit);
+            $this->assertSame('/bin/zsh', getenv('SHELL'));
+            $this->assertStringContainsString('Framework:', $output->fetch());
+
+            $app->flush();
+        } finally {
+            if (false === $previousShell) {
+                putenv('SHELL');
+            } else {
+                putenv('SHELL=' . $previousShell);
+            }
+
+            $this->removeConsoleBase($base);
+        }
     }
 
     public function testExecutesConsoleRequestsInASubprocess(): void
