@@ -172,4 +172,47 @@ final class ServeCommandTest extends TestCase
 
         $app->flush();
     }
+
+    public function testLaunchesTheBuiltInServerWithTheResolvedPublicPath(): void
+    {
+        $base = sys_get_temp_dir() . '/omegas-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('path.public', $base . '/missing-public');
+
+        $command = new ServeCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--port' => (string) $this->findFreePort()]);
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Server running...', $display);
+
+        $app->flush();
+    }
+
+    private function findFreePort(): int
+    {
+        $server = stream_socket_server('tcp://127.0.0.1:0');
+
+        if ($server === false) {
+            $this->fail('Could not create a local socket server to reserve a port.');
+        }
+
+        $name = stream_socket_get_name($server, false);
+
+        if ($name === false) {
+            fclose($server);
+            $this->fail('Could not resolve a local socket port.');
+        }
+
+        $port = (int) substr(strrchr($name, ':') ?: '', 1);
+
+        fclose($server);
+
+        return $port;
+    }
 }

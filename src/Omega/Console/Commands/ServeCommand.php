@@ -84,13 +84,17 @@ final class ServeCommand extends AbstractCommand
         if (os_detect() !== 'windows' && function_exists('pcntl_async_signals')) {
             pcntl_async_signals(true);
             pcntl_signal(SIGINT, function (): void {
+                // @codeCoverageIgnoreStart
                 $this->io->warning('Server stopped by user');
                 exit(self::SUCCESS);
+                // @codeCoverageIgnoreEnd
             });
 
             pcntl_signal(SIGTERM, function (): void {
+                // @codeCoverageIgnoreStart
                 $this->io->warning('Server stopped');
                 exit(self::SUCCESS);
+                // @codeCoverageIgnoreEnd
             });
         }
 
