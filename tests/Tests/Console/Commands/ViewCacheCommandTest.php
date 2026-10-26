@@ -84,6 +84,26 @@ final class ViewCacheCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testFallsBackToTheDefaultPrefixWhenTheOptionIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegavc-' . bin2hex(random_bytes(4));
+        $viewPath = $base . '/views';
+        mkdir($viewPath, 0777, true);
+
+        $app = new Application($base);
+        $app->set('path.view', $viewPath);
+
+        $command = new ViewCacheCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--prefix' => ['*.php']]);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('No view files found.', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testReportsAnErrorWhenAViewFileCannotBeCompiled(): void
     {
         $base = sys_get_temp_dir() . '/omegavc-' . bin2hex(random_bytes(4));
