@@ -87,15 +87,6 @@ final class MigrateFreshCommand extends AbstractMigration
             $schema = require $val['file_name'];
             $up     = $this->schemaQueries($schema, 'up');
 
-            if ($this->getOption('dry-run')) {
-                $up->each(function (Query $item): bool {
-                    $this->io->writeln("<fg=gray>{$item->__toString()}</>");
-                    $this->io->newLine();
-                    return true;
-                });
-                continue;
-            }
-
             try {
                 $success = $up->every(fn (Query $item): bool => $item->execute());
             } catch (Throwable $th) {
