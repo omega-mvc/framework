@@ -15,7 +15,9 @@ use Omega\Console\Commands\MakeViewCommand;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\Console\Commands\Fixtures\MissingStubMakeCommand;
 use Tests\Console\Commands\Fixtures\NoMakeCommand;
+use Tests\Console\Commands\Fixtures\SnakeMakeCommand;
 use Tests\TestCase;
 
 require_once __DIR__ . '/Fixtures/NoMakeCommand.php';
@@ -237,6 +239,66 @@ final class MakeCommandsTest extends TestCase
 
         $content = (string) file_get_contents($save . '/UserAdminExportCommand.php');
         $this->assertStringContainsString('user-admin-export', $content);
+
+        $app->flush();
+    }
+
+    public function testReplacesSnakeCaseAndLeavesOtherVariablesUntouched(): void
+    {
+        [$app, $save] = $this->makeCommandApp('path.snake');
+
+        $command = new SnakeMakeCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['name' => 'User-Admin']);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+
+        $content = (string) file_get_contents($save . '/User-Admin.txt');
+        $this->assertStringContainsString('User-Admin User_Admin user-admin untouched', $content);
+
+        $app->flush();
+    }
+
+    public function testReportsAnErrorWhenTheStubCannotBeRead(): void
+    {
+        [$app, $save] = $this->makeCommandApp('path.missing');
+
+        $command = new MissingStubMakeCommand();
+        $command->app = $app;
+
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+
+        $result = (new CommandTester($command))->run(['name' => 'User']);
+
+        restore_error_handler();
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to read stub file', $result->getDisplay());
+        $this->assertFileDoesNotExist($save . '/User.txt');
+
+        $app->flush();
+    }
+
+    public function testReportsAnErrorWhenTheFileCannotBeWritten(): void
+    {
+        [$app, $save] = $this->makeCommandApp();
+
+        chmod($save, 0555);
+
+        $command = new MakeCommand();
+        $command->app = $app;
+
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+
+        $result = (new CommandTester($command))->run(['name' => 'User']);
+
+        restore_error_handler();
+
+        chmod($save, 0755);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Failed to write file', $result->getDisplay());
 
         $app->flush();
     }
