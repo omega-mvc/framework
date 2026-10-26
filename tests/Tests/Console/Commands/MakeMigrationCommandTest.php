@@ -96,6 +96,62 @@ final class MakeMigrationCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testAsksForTheTableNameWhenTheArgumentIsEmpty(): void
+    {
+        [$app, $dir] = $this->makeMigrationApp();
+
+        $command = new MakeMigrationCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['name' => ''], ['Users']);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertNotEmpty(glob($dir . '/*_users.php'));
+
+        $app->flush();
+    }
+
+    public function testFailsWhenTheStubFileIsMissing(): void
+    {
+        [$app] = $this->makeMigrationApp();
+
+        $command = new MakeMigrationCommand(sys_get_temp_dir() . '/omega-missing-stubs/');
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['name' => 'CreateUsersTable']);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Stub not found at:', $result->getDisplay());
+
+        $app->flush();
+    }
+
+    public function testFailsWhenTheStubFileCannotBeRead(): void
+    {
+        [$app] = $this->makeMigrationApp();
+
+        $stubDir = sys_get_temp_dir() . '/omega-stubs-' . bin2hex(random_bytes(4)) . '/';
+        mkdir($stubDir, 0777, true);
+        file_put_contents($stubDir . 'migration.stub', '__table__');
+        chmod($stubDir . 'migration.stub', 0000);
+
+        $command = new MakeMigrationCommand($stubDir);
+        $command->app = $app;
+
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+
+        $result = (new CommandTester($command))->run(['name' => 'CreateUsersTable']);
+
+        restore_error_handler();
+
+        chmod($stubDir . 'migration.stub', 0644);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to read stub at:', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testFailsWhenTheMigrationFileCannotBeWritten(): void
     {
         $base = sys_get_temp_dir() . '/omegamig-' . bin2hex(random_bytes(4));

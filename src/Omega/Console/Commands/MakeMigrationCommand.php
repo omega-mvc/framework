@@ -34,6 +34,14 @@ use function trim;
 )]
 final class MakeMigrationCommand extends AbstractMakeCommand
 {
+    /**
+     * @param string|null $stubPath Optional directory holding the migration stubs.
+     */
+    public function __construct(private readonly ?string $stubPath = null)
+    {
+        parent::__construct();
+    }
+
     public function __invoke(): int
     {
         $this->io->info('Making migration...');
@@ -73,7 +81,7 @@ final class MakeMigrationCommand extends AbstractMakeCommand
 
         // 3. Scelta dello Stub
         $stubName = $this->getOption('update') ? 'migration_update.stub' : 'migration.stub';
-        $stubPath = slash(dirname(__DIR__) . '/stubs/') . $stubName;
+        $stubPath = $this->stubPath() . $stubName;
 
         if (!file_exists($stubPath)) {
             $this->io->error("Stub not found at: {$stubPath}");
@@ -103,5 +111,15 @@ final class MakeMigrationCommand extends AbstractMakeCommand
         $this->io->success("Success! Migration file created: " . basename($fileName));
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Resolve the directory holding the migration stub files.
+     *
+     * @return string The stub directory path, with a trailing slash.
+     */
+    private function stubPath(): string
+    {
+        return $this->stubPath ?? slash(dirname(__DIR__) . '/stubs/');
     }
 }
