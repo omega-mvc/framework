@@ -39,6 +39,29 @@ final class ConfigCacheCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testReplacesAnExistingConfigurationCacheFile(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+
+        $cachePath = $app->getApplicationCachePath() . 'config.php';
+        mkdir($app->getApplicationCachePath(), 0777, true);
+        file_put_contents($cachePath, "<?php return ['cached' => true];");
+
+        $command = new ConfigCacheCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([]);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Configuration cached successfully.', $result->getDisplay());
+        $this->assertStringContainsString('cached', (string) file_get_contents($cachePath));
+
+        $app->flush();
+    }
+
     public function testFailsWhenTheConfigurationCacheFileCannotBeWritten(): void
     {
         $base = sys_get_temp_dir() . '/omegacc-' . bin2hex(random_bytes(4));
