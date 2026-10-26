@@ -218,10 +218,7 @@ class RouteServiceProvider extends AbstractServiceProvider
         ]);
 
         if (!$serialized instanceof UnsignedSerializableClosure) {
-            if (!is_callable($callable)) {
-                return null;
-            }
-            return $callable;
+            return is_callable($callable) ? $callable : null;
         }
 
         return $serialized->getClosure();
