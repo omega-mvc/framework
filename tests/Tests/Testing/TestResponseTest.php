@@ -96,4 +96,12 @@ final class TestResponseTest extends TestCase
         $this->assertTrue(isset($response['foo']));
         $this->assertSame('bar', $response['foo']);
     }
+
+    public function testIgnoresNonStringAndNonIntOffsets(): void
+    {
+        $response = new TestResponse(new Response(['foo' => 'bar'], 200, []));
+
+        $this->assertFalse($response->offsetExists(1.5));
+        $this->assertNull($response->offsetGet(1.5));
+    }
 }
