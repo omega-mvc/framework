@@ -12,6 +12,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\HelperSet;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Tester\CommandTester;
+use Tests\Console\Commands\Fixtures\FakeQuestionHelper;
 use Tests\Console\Commands\Fixtures\FakeSeeder;
 use Tests\TestCase;
 
@@ -77,6 +78,50 @@ final class SeedCommandTest extends TestCase
         $this->assertSame(Command::FAILURE, $result->statusCode);
         $this->assertStringNotContainsString('Running seeder in production? (y/n)', $display);
         $this->assertStringContainsString('Seeder class [Database\Seeders\Ghost] does not exist.', $display);
+
+        $app->flush();
+    }
+
+    public function testAbortsWhenTheQuestionHelperIsNotAvailable(): void
+    {
+        $base = sys_get_temp_dir() . '/omegaseed-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+
+        $command = new SeedCommand();
+        $command->app = $app;
+        $command->setHelperSet(new HelperSet([new FakeQuestionHelper()]));
+
+        $result = (new CommandTester($command))->run([]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringNotContainsString('Running seeder in production? (y/n)', $result->getDisplay());
+
+        $app->flush();
+    }
+
+    public function testReportsWhenTheSeederCannotBeResolvedToAnObject(): void
+    {
+        $base = sys_get_temp_dir() . '/omegaseed-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->bind(FakeSeeder::class, static fn (): int => 42);
+
+        $command = new SeedCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([
+            '--force'      => true,
+            '--name-space' => FakeSeeder::class,
+        ]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            'Seeding failed: Unable to resolve the seeder class to an object.',
+            $result->getDisplay()
+        );
 
         $app->flush();
     }
