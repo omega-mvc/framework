@@ -1011,6 +1011,17 @@ final class CollectionTest extends TestCase
         }
     }
 
+    public function testFilterByConditionCoversAllPaths(): void
+    {
+        $this->assertSame([], (new Collection([]))->filter(static fn (int $x): bool => true)->all());
+        $this->assertSame([], (new Collection([]))->filter(static fn (int $x): bool => false)->all());
+        $this->assertSame([], (new Collection([]))->reject(static fn (int $x): bool => true)->all());
+        $this->assertSame([], (new Collection([]))->reject(static fn (int $x): bool => false)->all());
+
+        $this->assertSame([0 => 1, 2 => 3], (new Collection([1, 2, 3, 4]))->filter(static fn (int $x): bool => $x % 2 === 1)->all());
+        $this->assertSame([1 => 2, 3 => 4], (new Collection([1, 2, 3, 4]))->reject(static fn (int $x): bool => $x % 2 === 1)->all());
+    }
+
     public function testCanExceptAndOnlyOnAnEmptyCollection(): void
     {
         $this->assertSame([], (new Collection([]))->except(['a'])->all());

@@ -171,4 +171,10 @@ final class DataGetTest extends TestCase
         $this->assertSame(123, data_get(['foo' => 123], 'foo'));
         $this->assertSame('bar', data_get([0 => 'bar'], 0));
     }
+
+    public function testPathCoverageForNonArrayOnSecondIteration(): void
+    {
+        $this->assertSame('missing', data_get(['a' => 5], 'a.b', 'missing'));
+        $this->assertSame('missing', data_get(['x' => ['y' => 42]], 'x.y.z', 'missing'));
+    }
 }
