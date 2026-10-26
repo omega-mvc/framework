@@ -28,6 +28,14 @@ final class CronWorkCommand extends AbstractCommand
     private bool $shouldExit = false;
 
     /**
+     * @param int $interval The number of seconds to wait between scheduler cycles.
+     */
+    public function __construct(private readonly int $interval = 60)
+    {
+        parent::__construct();
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function __invoke(): int
@@ -67,7 +75,7 @@ final class CronWorkCommand extends AbstractCommand
 
             $this->io->writeln("Done! ({$executionTime}ms)");
 
-            sleep(60);
+            sleep($this->interval);
         }
 
         return self::SUCCESS;

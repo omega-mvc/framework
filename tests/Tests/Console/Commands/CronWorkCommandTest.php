@@ -46,4 +46,44 @@ final class CronWorkCommandTest extends TestCase
 
         $app->flush();
     }
+
+    public function testRunsASchedulerCycleUntilItIsInterrupted(): void
+    {
+        if (!function_exists('pcntl_alarm') || !function_exists('posix_kill')) {
+            self::markTestSkipped('Requires the pcntl extension to stop the worker loop.');
+        }
+
+        $base = sys_get_temp_dir() . '/omegacw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('schedule', new Schedule(time()));
+
+        AbstractFacade::flushInstance();
+        Scheduler::setFacadeBase($app);
+
+        pcntl_async_signals(true);
+        pcntl_signal(SIGALRM, static function (): void {
+            posix_kill(posix_getpid(), SIGINT);
+        });
+        pcntl_alarm(1);
+
+        try {
+            $command = new CronWorkCommand(1);
+            $command->app = $app;
+
+            $result = (new CommandTester($command))->run([]);
+        } finally {
+            pcntl_alarm(0);
+            pcntl_signal(SIGALRM, SIG_DFL);
+        }
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Running scheduled tasks...', $display);
+        $this->assertStringContainsString('Done! (', $display);
+
+        $app->flush();
+    }
 }
