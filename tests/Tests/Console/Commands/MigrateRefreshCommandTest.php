@@ -99,6 +99,37 @@ final class MigrateRefreshCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testReturnsTheFailureCodeWhenTheMigrationFails(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarefresh-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        ScriptedConnection::resetShared();
+        $this->migrationFixtureDir($base);
+        copy(
+            __DIR__ . '/Fixtures/migrations/failing_migration.php',
+            $base . '/database/migrations/failing_migration.php'
+        );
+
+        $app = new Application($base);
+        $app->set('database', new ScriptedConnection('omega_test'));
+
+        AbstractFacade::setFacadeBase($app);
+
+        [$application] = ConsoleHarness::make($app);
+
+        $command = new MigrateRefreshCommand();
+        $command->app = $app;
+        $command->setApplication($application);
+
+        $result = (new CommandTester($command))->run(['--force' => true]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to run: CREATE TABLE broken (id INT)', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testPrintsTheMigrationSqlWithoutExecutingWhenRefreshingInDryRunMode(): void
     {
         $base = sys_get_temp_dir() . '/omegarefresh-' . bin2hex(random_bytes(4));
