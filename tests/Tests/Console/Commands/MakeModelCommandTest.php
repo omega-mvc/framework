@@ -185,6 +185,36 @@ final class MakeModelCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testSkipsColumnsWithoutAStringName(): void
+    {
+        ScriptedConnection::resetShared();
+
+        [$app, $save] = $this->makeModelApp();
+
+        $connection = ScriptedConnection::shared('model-skip')
+            ->whenQueryContains('INFORMATION_SCHEMA', [
+                ['COLUMN_NAME' => 123, 'COLUMN_KEY' => 'PRI'],
+                ['COLUMN_NAME' => 'email', 'COLUMN_KEY' => ''],
+            ]);
+
+        $app->set('database', $connection);
+        AbstractFacade::setFacadeBase($app);
+
+        $command = new MakeModelCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['name' => 'UserProfile', '--table-name' => 'users']);
+
+        $content = (string) file_get_contents($save . 'UserProfile.php');
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('@property mixed $email', $content);
+        $this->assertStringNotContainsString('@property mixed $123', $content);
+        $this->assertStringContainsString("= 'id'", $content);
+
+        $app->flush();
+    }
+
     public function testWarnsAndContinuesWhenReadingTableInformationFails(): void
     {
         ScriptedConnection::resetShared();
