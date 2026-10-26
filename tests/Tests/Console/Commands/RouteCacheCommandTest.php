@@ -36,6 +36,27 @@ final class RouteCacheCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testIgnoresANonArrayFilesOption(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+
+        Router::reset();
+
+        $command = new RouteCacheCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--files' => 'not-an-array']);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('No routes to cache.', $result->getDisplay());
+
+        Router::reset();
+        $app->flush();
+    }
+
     public function testCreatesTheRouteCacheFileForClosureAndCallableRoutes(): void
     {
         $base = sys_get_temp_dir() . '/omegarc-' . bin2hex(random_bytes(4));
