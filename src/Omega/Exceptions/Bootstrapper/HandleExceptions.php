@@ -185,11 +185,24 @@ class HandleExceptions
         $handler = $this->getHandler();
         $handler->report($th);
 
-        if (php_sapi_name() !== 'cli') {
+        if (!$this->isCli()) {
             /** @var \Omega\Http\Request $request */
             $request = $this->app->get('request');
             $handler->render($request, $th)->send();
         }
+    }
+
+    /**
+     * Determine whether the current process runs on the command line.
+     *
+     * Extracted from {@see self::handleException()} so the web response branch
+     * can be exercised by a test double regardless of the active SAPI.
+     *
+     * @return bool True when running under the CLI SAPI.
+     */
+    protected function isCli(): bool
+    {
+        return 'cli' === php_sapi_name();
     }
 
     /**
@@ -202,12 +215,61 @@ class HandleExceptions
     {
         self::$reserveMemory = null;
 
-        $error = error_get_last();
-        if ($error && $this->isFatal($error['type'])) {
-            $this->handleException(
-                new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line'])
-            );
+        $error = $this->detectFatalError();
+
+        if ($error === null) {
+            return;
         }
+
+        $this->handleFatalError($error);
+    }
+
+    /**
+     * Detect the last fatal error reported by PHP, if any.
+     *
+     * Extracted from {@see self::handleShutdown()} so both the "no fatal error"
+     * and the "fatal error" paths can be exercised by a test double.
+     *
+     * @return array{type: int, message: string, file: string, line: int}|null The last fatal error or null.
+     */
+    protected function detectFatalError(): ?array
+    {
+        $error = $this->lastError();
+
+        if ($error === null || !$this->isFatal($error['type'])) {
+            return null;
+        }
+
+        return $error;
+    }
+
+    /**
+     * Read the last error reported by PHP in the current process.
+     *
+     * Extracted so callers (and tests) can substitute the reported error.
+     *
+     * @return array{type: int, message: string, file: string, line: int}|null The last error or null.
+     */
+    protected function lastError(): ?array
+    {
+        return error_get_last();
+    }
+
+    /**
+     * Convert a captured fatal error into an exception and handle it.
+     *
+     * Extracted from {@see self::handleShutdown()} so the conversion can be
+     * exercised without terminating the current process.
+     *
+     * @param array{type: int, message: string, file: string, line: int} $error The fatal error data.
+     * @return void
+     * @throws Throwable
+     */
+    protected function handleFatalError(array $error): void
+    {
+        $this->handleException(
+            new ErrorException($error['message'], 0, $error['type'], $error['file'], $error['line'])
+        );
     }
 
     /**
