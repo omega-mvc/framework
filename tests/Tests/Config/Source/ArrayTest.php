@@ -26,4 +26,12 @@ final class ArrayTest extends TestCase
 
         new ArrayConfig([])->fetch();
     }
+
+    public function testShouldThrowWhenContentIsNotAssociative(): void
+    {
+        $this->expectException(InvalidArrayConfigException::class);
+        $this->expectExceptionMessage('Configuration must be an associative array.');
+
+        new ArrayConfig(['first', 'second'])->fetch();
+    }
 }

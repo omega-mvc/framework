@@ -243,15 +243,11 @@ class ConfigBootstrapper
     /**
      * Normalizes a value into a string-keyed configuration array.
      *
-     * @param mixed $value The raw value to normalize.
-     * @return array<string, mixed> The value as a string-keyed array, or an empty array.
+     * @param array<array-key, mixed> $value The raw value to normalize.
+     * @return array<string, mixed> The value as a string-keyed array.
      */
-    private function normalizeConfig(mixed $value): array
+    private function normalizeConfig(array $value): array
     {
-        if (!is_array($value)) {
-            return [];
-        }
-
         $result = [];
         foreach ($value as $key => $item) {
             if (is_string($key)) {

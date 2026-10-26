@@ -40,7 +40,7 @@ readonly class ArrayConfig implements SourceInterface
     /**
      * Creates a new configuration source instance.
      *
-     * @param array<string, mixed> $content The configuration source content.
+     * @param array<array-key, mixed> $content The configuration source content.
      * @return void
      */
     public function __construct(private array $content)
@@ -51,7 +51,7 @@ readonly class ArrayConfig implements SourceInterface
      * {@inheritdoc}
      *
      * @return array<string, mixed>
-     * @throws InvalidArrayCOnfigException if file is empty or not an associative array.
+     * @throws InvalidArrayConfigException if file is empty or not an associative array.
      */
     public function fetch(): array
     {
@@ -59,10 +59,16 @@ readonly class ArrayConfig implements SourceInterface
             throw new InvalidArrayConfigException("Configuration array cannot be empty.");
         }
 
-        if (!$this->isAssociative($this->content)) {
-            throw new InvalidArrayConfigException("Configuration must be an associative array.");
+        $config = [];
+
+        foreach ($this->content as $key => $value) {
+            if (!is_string($key)) {
+                throw new InvalidArrayConfigException("Configuration must be an associative array.");
+            }
+
+            $config[$key] = $value;
         }
 
-        return $this->content;
+        return $config;
     }
 }
