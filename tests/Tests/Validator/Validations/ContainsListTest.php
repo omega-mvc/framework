@@ -39,6 +39,19 @@ final class ContainsListTest extends TestCase
         $this->assertFalse($val->isValid());
     }
 
+    public function testCanValidateInvertContainsList(): void
+    {
+        $correct = new Validator($this->correctInput());
+        $correct->field('test1')->not()->contains_list('one', 'two');
+
+        $this->assertFalse($correct->isValid());
+
+        $incorrect = new Validator($this->incorrectInput());
+        $incorrect->field('test')->not()->contains_list('one', 'two');
+
+        $this->assertTrue($incorrect->isValid());
+    }
+
     /** @return array<string, string> */
     private function correctInput(): array
     {

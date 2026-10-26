@@ -53,7 +53,7 @@ trait InvertValidationTrait
      *
      * @return bool
      */
-    protected function validate_invert_contain_list(string $field, array $input, array $params): bool
+    protected function validate_invert_contains_list(string $field, array $input, array $params): bool
     {
         return !$this->validate_contains_list($field, $input, $params);
     }

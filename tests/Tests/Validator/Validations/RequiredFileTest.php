@@ -73,7 +73,7 @@ final class RequiredFileTest extends TestCase
         }
 
         // use not
-        $val->field('files.test')->not()->required();
+        $val->field('files.test')->not()->required_file();
 
         return $val->isValid();
     }
