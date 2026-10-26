@@ -8,10 +8,12 @@ use Omega\Application\Application;
 use Omega\Console\Commands\QueueWorkCommand;
 use Omega\Facade\AbstractFacade;
 use Omega\Queue\Facade\Queue;
+use Omega\Queue\Job;
 use Omega\Queue\QueueManager;
 use PHPUnit\Framework\Attributes\CoversClass;
 use ReflectionClass;
 use RuntimeException;
+use stdClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Console\Commands\Fixtures\FakeQueueAdapter;
@@ -129,6 +131,65 @@ final class QueueWorkCommandTest extends TestCase
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
         $this->assertStringContainsString('Failed: boom', $result->getDisplay());
+        $this->assertCount(1, $adapter->getFailedJobs());
+
+        $app->flush();
+    }
+
+    public function testSkipsAnEmptyQueueAndRejectsNonInvokablePayloads(): void
+    {
+        if (!function_exists('pcntl_async_signals') || !function_exists('posix_kill')) {
+            self::markTestSkipped('Requires the pcntl extension to stop the worker loop.');
+        }
+
+        $base = sys_get_temp_dir() . '/omegaqw-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $adapter = new class () extends FakeQueueAdapter {
+            private int $calls = 0;
+
+            public function shift(): ?Job
+            {
+                ++$this->calls;
+
+                if (1 === $this->calls) {
+                    return null;
+                }
+
+                if (2 === $this->calls) {
+                    posix_kill(posix_getpid(), SIGINT);
+
+                    return new Job(
+                        id: 7,
+                        queue: 'emails',
+                        payload: serialize(new stdClass()),
+                        attempts: 0,
+                        reservedAt: null,
+                        availableAt: null,
+                        createdAt: (string) time(),
+                    );
+                }
+
+                return null;
+            }
+        };
+
+        $app = new Application($base);
+        $app->set('queue', new QueueManager('database', $adapter));
+
+        AbstractFacade::flushInstance();
+        Queue::setFacadeBase($app);
+
+        $command = new QueueWorkCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([]);
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Processing job #7 from queue "emails"', $display);
+        $this->assertStringContainsString('Failed: Unserialized job payload is not invokable.', $display);
         $this->assertCount(1, $adapter->getFailedJobs());
 
         $app->flush();
