@@ -171,4 +171,47 @@ final class MaintenanceDownCommandTest extends TestCase
 
         $app->flush();
     }
+
+    public function testReportsAnErrorWhenTheStubFilesCannotBeRead(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage/app', 0777, true);
+
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand(sys_get_temp_dir() . '/omega-missing-stubs/');
+        $command->app = $app;
+
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            'Unable to read the maintenance mode stub files.',
+            $result->getDisplay()
+        );
+
+        $app->flush();
+    }
+
+    public function testReportsAnErrorWhenTheMaintenanceFileCannotBeWritten(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamdd-' . bin2hex(random_bytes(4));
+        mkdir($base . '/storage/app', 0777, true);
+
+        symlink($base . '/missing/maintenance.php', $base . '/storage/app/maintenance.php');
+
+        $app = new Application($base);
+        $command = new MaintenanceDownCommand();
+        $command->app = $app;
+
+        set_error_handler(static fn (int $severity, string $message): bool => true);
+        $result = (new CommandTester($command))->run([]);
+        restore_error_handler();
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to write the maintenance mode file.', $result->getDisplay());
+
+        $app->flush();
+    }
 }

@@ -27,6 +27,14 @@ use function is_string;
 )]
 final class MaintenanceDownCommand extends AbstractCommand
 {
+    /**
+     * @param string|null $stubPath Optional directory holding the maintenance mode stubs.
+     */
+    public function __construct(private readonly ?string $stubPath = null)
+    {
+        parent::__construct();
+    }
+
     public function __invoke(): int
     {
         if ($this->app->isDownMaintenanceMode()) {
@@ -47,7 +55,7 @@ final class MaintenanceDownCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        $stubPath = slash(dirname(__DIR__) . '/stubs/');
+        $stubPath = $this->stubPath();
 
         $downStub        = file_get_contents($stubPath . 'down.stub');
         $maintenanceStub = file_get_contents($stubPath . 'maintenance.stub');
@@ -78,6 +86,16 @@ final class MaintenanceDownCommand extends AbstractCommand
         $this->io->info('Application is now in maintenance mode.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Resolve the directory holding the maintenance mode stub files.
+     *
+     * @return string The stub directory path, with a trailing slash.
+     */
+    private function stubPath(): string
+    {
+        return $this->stubPath ?? slash(dirname(__DIR__) . '/stubs/');
     }
 
     /**
