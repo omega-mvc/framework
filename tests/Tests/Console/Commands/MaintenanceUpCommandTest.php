@@ -55,6 +55,28 @@ final class MaintenanceUpCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testReportsAnErrorWhenTheStoragePathIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegamu-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('path.storage', 123);
+
+        $command = new MaintenanceUpCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString(
+            'The "path.storage" binding must resolve to a string path.',
+            $result->getDisplay()
+        );
+
+        $app->flush();
+    }
+
     public function testReportsAnErrorWhenAMaintenanceFileCannotBeRemoved(): void
     {
         $base = sys_get_temp_dir() . '/omegamu-' . bin2hex(random_bytes(4));

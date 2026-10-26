@@ -17,14 +17,14 @@ final class MaintenanceUpCommand extends AbstractCommand
 {
     public function __invoke(): int
     {
-        if (!$this->app->isDownMaintenanceMode()) {
-            $this->io->warning('Application is already live.');
-            return self::FAILURE;
-        }
-
         $storagePath = $this->app->get('path.storage');
         if (!is_string($storagePath)) {
             $this->io->error('The "path.storage" binding must resolve to a string path.');
+            return self::FAILURE;
+        }
+
+        if (!$this->app->isDownMaintenanceMode()) {
+            $this->io->warning('Application is already live.');
             return self::FAILURE;
         }
 
