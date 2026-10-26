@@ -6,12 +6,12 @@ namespace Tests\Console\Commands;
 
 use Omega\Application\Application;
 use Omega\Console\Commands\MigrateInitCommand;
+use Omega\Database\Schema\Schema;
 use Omega\Database\Schema\SchemaConnection;
 use Omega\Facade\AbstractFacade;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Tester\CommandTester;
-use Tests\Console\Commands\Fixtures\FakeSchema;
 use Tests\Console\Commands\Fixtures\ScriptedConnection;
 use Tests\Console\Commands\Fixtures\ScriptedSchemaConnection;
 use Tests\TestCase;
@@ -89,9 +89,7 @@ final class MigrateInitCommandTest extends TestCase
         $app->set(SchemaConnection::class, $connection);
 
         $app->set('database', new ScriptedConnection('omega_test'));
-
-        $schema = new FakeSchema();
-        $app->set('Schema', $schema);
+        $app->set('Schema', new Schema($connection, 'omega_test'));
 
         AbstractFacade::setFacadeBase($app);
 
@@ -102,7 +100,13 @@ final class MigrateInitCommandTest extends TestCase
 
         $this->assertSame(Command::SUCCESS, $result->statusCode);
         $this->assertStringContainsString('Successfully created migration table.', $result->getDisplay());
-        $this->assertSame('migration', $schema->last->table);
+
+        $create = implode(' ', $connection->queries);
+
+        $this->assertStringContainsString('CREATE TABLE', $create);
+        $this->assertStringContainsString('migration', $create);
+        $this->assertStringContainsString('batch', $create);
+        $this->assertStringContainsString('UNIQUE', $create);
 
         $app->flush();
     }
@@ -121,9 +125,8 @@ final class MigrateInitCommandTest extends TestCase
 
         $app->set('database', new ScriptedConnection('omega_test'));
 
-        $schema = new FakeSchema();
-        $schema->fail();
-        $app->set('Schema', $schema);
+        $connection->setExecuteResult(false);
+        $app->set('Schema', new Schema($connection, 'omega_test'));
 
         AbstractFacade::setFacadeBase($app);
 
