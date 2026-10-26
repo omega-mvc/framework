@@ -89,6 +89,19 @@ final class CsrfMiddlewareTest extends TestCase
         $this->assertSame($response, $handled);
     }
 
+    public function testPassesAPostRequestCarryingAValidTokenInTheHeader(): void
+    {
+        $token = $this->csrf->generateToken();
+
+        $response = new Response('ok');
+        $handled  = $this->middleware->handle(
+            new Request('/', [], [], [], [], [], ['x-csrf-token' => $token], 'POST'),
+            fn (Request $request) => $response
+        );
+
+        $this->assertSame($response, $handled);
+    }
+
     public function testThrowsAnExceptionWhenTheNextMiddlewareDoesNotReturnAResponse(): void
     {
         $token = $this->csrf->generateToken();

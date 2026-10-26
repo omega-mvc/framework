@@ -22,7 +22,6 @@ use Omega\Http\Request;
 use Omega\Http\Response;
 
 use function is_string;
-use function reset;
 
 class CsrfMiddleware
 {
@@ -36,13 +35,8 @@ class CsrfMiddleware
             $field = $this->csrf->getTokenField();
             $token = $request->getPost($field);
 
-            if (!is_string($token) || $token === '') {
-                $headers = $request->getHeaders('x-csrf-token');
-                if (is_string($headers)) {
-                    $token = $headers;
-                } elseif (is_array($headers) && !empty($headers)) {
-                    $token = reset($headers);
-                }
+            if ($token === '') {
+                $token = $request->getHeaders('x-csrf-token');
             }
 
             if (!is_string($token) || !$this->csrf->validateToken($token)) {
