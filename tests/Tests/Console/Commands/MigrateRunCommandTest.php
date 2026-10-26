@@ -126,4 +126,32 @@ final class MigrateRunCommandTest extends TestCase
 
         $app->flush();
     }
+
+    public function testFailsWhenTheMigrationsPathIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegarun-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('path.migrations', 123);
+        $app->set('database', new ScriptedConnection('omega_test'));
+
+        AbstractFacade::setFacadeBase($app);
+
+        $command = new MigrateRunCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--force' => true]);
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString(
+            'The "path.migrations" binding must resolve to a string path.',
+            $display
+        );
+        $this->assertStringContainsString('Nothing to migrate.', $display);
+
+        $app->flush();
+    }
 }

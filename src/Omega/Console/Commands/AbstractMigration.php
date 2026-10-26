@@ -330,12 +330,7 @@ abstract class AbstractMigration extends AbstractCommand
             $parameters['--name-space'] = $namespace;
         }
 
-        try {
-            return $this->call('db:seed', $parameters);
-        } catch (Throwable $e) {
-            $this->io->error('Seeding failed: ' . $e->getMessage());
-            return self::FAILURE;
-        }
+        return $this->call('db:seed', $parameters);
     }
 
     /**

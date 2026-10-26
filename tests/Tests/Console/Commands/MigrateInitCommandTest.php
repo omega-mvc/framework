@@ -111,6 +111,61 @@ final class MigrateInitCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testUsesTheDatabaseOptionOnSqliteConnections(): void
+    {
+        $base = sys_get_temp_dir() . '/omegainit-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('dsn.sql', ['driver' => 'sqlite']);
+
+        $connection = new ScriptedSchemaConnection('omega_test');
+        $app->set(SchemaConnection::class, $connection);
+
+        $app->set('database', new ScriptedConnection('omega_test'));
+        $app->set('Schema', new Schema($connection, 'omega_test'));
+
+        AbstractFacade::setFacadeBase($app);
+
+        $command = new MigrateInitCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--database' => 'omega_override']);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Successfully created migration table.', $result->getDisplay());
+
+        $app->flush();
+    }
+
+    public function testChecksTheDatabaseExistenceOnPostgresConnections(): void
+    {
+        $base = sys_get_temp_dir() . '/omegainit-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+        $app->set('dsn.sql', ['driver' => 'pgsql']);
+
+        $connection = new ScriptedSchemaConnection('omega_test');
+        $connection->whenQueryContains('pg_database', [['total' => '1']]);
+        $app->set(SchemaConnection::class, $connection);
+
+        $app->set('database', new ScriptedConnection('omega_test'));
+        $app->set('Schema', new Schema($connection, 'omega_test'));
+
+        AbstractFacade::setFacadeBase($app);
+
+        $command = new MigrateInitCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--database' => 'omega_secondary']);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Successfully created migration table.', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testReportsWhenTheMigrationTableCannotBeCreated(): void
     {
         $base = sys_get_temp_dir() . '/omegainit-' . bin2hex(random_bytes(4));

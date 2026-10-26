@@ -36,6 +36,66 @@ final class MigrateRollbackCommandTest extends TestCase
         return $app;
     }
 
+    /**
+     * @param list<string> $migrations Migration fixture file names to copy.
+     */
+    private function makeAppWith(string $prefix, array $migrations): Application
+    {
+        $base = sys_get_temp_dir() . '/' . $prefix . '-' . bin2hex(random_bytes(4));
+        mkdir($base . '/database/migrations', 0777, true);
+
+        foreach ($migrations as $migration) {
+            copy(
+                __DIR__ . '/Fixtures/migrations/' . $migration,
+                $base . '/database/migrations/' . $migration
+            );
+        }
+
+        ScriptedConnection::resetShared();
+
+        $app = new Application($base);
+        $app->set('database', new ScriptedConnection('omega_test'));
+
+        AbstractFacade::setFacadeBase($app);
+
+        return $app;
+    }
+
+    public function testTreatsAMissingTableDuringTheRollbackAsSuccess(): void
+    {
+        $app = $this->makeAppWith('omegarollback', ['drop_missing_table.php']);
+
+        $command = new MigrateRollbackCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--batch' => '1', '--take' => '1']);
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('DONE', $display);
+
+        $app->flush();
+    }
+
+    public function testReportsTheFailureWhenARollbackQueryThrows(): void
+    {
+        $app = $this->makeAppWith('omegarollback', ['failing_down_table.php']);
+
+        $command = new MigrateRollbackCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--batch' => '1', '--take' => '1']);
+
+        $display = $result->getDisplay();
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Unable to run: DROP TABLE broken_down', $display);
+        $this->assertStringContainsString('FAIL', $display);
+
+        $app->flush();
+    }
+
     public function testFailsWhenTheBatchOptionIsMissing(): void
     {
         $app = $this->makeApp('omegarollback');
