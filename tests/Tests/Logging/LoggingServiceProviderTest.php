@@ -7,12 +7,14 @@ namespace Tests\Logging;
 use Omega\Application\Application;
 use Omega\Config\ConfigRepository;
 use Omega\Logging\Exception\LogArgumentException;
+use Omega\Logging\Exception\UnknownDriverException;
 use Omega\Logging\LoggingManager;
 use Omega\Logging\LoggingServiceProvider;
 use Omega\Logging\Stream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use RuntimeException;
 use Tests\TestCase;
 
 use function array_diff;
@@ -102,6 +104,80 @@ final class LoggingServiceProviderTest extends TestCase
         $this->expectExceptionMessage('Unsupported logger type [unsupported].');
 
         $app->get('logging.bogus');
+    }
+
+    public function testThrowsAnExceptionWhenTheConfigServiceIsNotArrayLike(): void
+    {
+        $app = new Application(slash(__DIR__ . '/fixtures/support/'));
+        $app->set('config', static fn () => new \stdClass());
+        $this->app = $app;
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The config service must be an array or implement ArrayAccess.');
+
+        (new LoggingServiceProvider($app))->boot();
+    }
+
+    public function testThrowsAnExceptionWhenTheLoggingConfigurationIsNotAnArray(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The default logging driver must be a string.');
+
+        $this->app = $this->makeApp($this->tempDir, ['logging' => 'not an array']);
+    }
+
+    public function testThrowsAnExceptionWhenTheDefaultDriverIsMissing(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The default logging driver must be a string.');
+
+        $this->app = $this->makeApp($this->tempDir, ['logging' => []]);
+    }
+
+    public function testSkipsDriversWithNonArrayOptions(): void
+    {
+        $config = $this->driverConfig($this->tempDir);
+        $this->assertIsArray($config['logging']);
+        $config['logging']['bogus'] = 'not an array';
+
+        $app = $this->makeApp($this->tempDir, $config);
+        $this->app = $app;
+
+        $logging = $app->get('logging');
+        $this->assertInstanceOf(LoggingManager::class, $logging);
+
+        $this->expectException(UnknownDriverException::class);
+
+        $logging->getDriver('bogus');
+    }
+
+    public function testThrowsAnExceptionWhenTheDefaultDriverIsNotALogger(): void
+    {
+        $app = $this->makeApp($this->tempDir, $this->driverConfig($this->tempDir));
+        $this->app = $app;
+
+        $app->set('logging.stream', static fn () => new \stdClass());
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('The default logging driver is not a logger.');
+
+        $app->get('logging');
+    }
+
+    public function testThrowsAnExceptionForAnInvalidStreamConfiguration(): void
+    {
+        $config = $this->driverConfig($this->tempDir);
+        $this->assertIsArray($config['logging']);
+        $this->assertIsArray($config['logging']['stream']);
+        $config['logging']['stream']['path'] = 123;
+
+        $app = $this->makeApp($this->tempDir, $config);
+        $this->app = $app;
+
+        $this->expectException(LogArgumentException::class);
+        $this->expectExceptionMessage('Unable to create the stream logger: invalid configuration.');
+
+        $app->get('logging.stream');
     }
 
     /**

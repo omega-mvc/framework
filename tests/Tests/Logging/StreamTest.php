@@ -136,6 +136,34 @@ final class StreamTest extends TestCase
         $logger->log(0, 'message');
     }
 
+    public function testFailsWhenTheDirectoryCannotBeCreatedByTheFilesystem(): void
+    {
+        $directory = '/proc/sys/omega-log-' . uniqid();
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Unable to create log directory: ' . $directory);
+
+        @new Stream($directory);
+    }
+
+    public function testFailsWhenTheLogFileCannotBeOpened(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Failed to open log file for writing.');
+
+        @new Stream('/proc/omega-log-' . uniqid() . '.log');
+    }
+
+    public function testThrowsAnExceptionForANonScalarLogLevel(): void
+    {
+        $logger = new Stream($this->tempDir . '/level-type.log');
+
+        $this->expectException(LogArgumentException::class);
+        $this->expectExceptionMessage('Invalid log level: double');
+
+        $logger->log(1.5, 'message');
+    }
+
     public function testThrowsAnExceptionWhenAWriteFails(): void
     {
         $logger = new Stream($this->tempDir . '/write-fail.log');
