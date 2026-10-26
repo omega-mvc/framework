@@ -56,6 +56,26 @@ final class ViewClearCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testFallsBackToTheDefaultPrefixWhenTheOptionIsNotAString(): void
+    {
+        $base = sys_get_temp_dir() . '/omegavclr-' . bin2hex(random_bytes(4));
+        $compiled = $base . '/compiled';
+        mkdir($compiled, 0777, true);
+
+        $app = new Application($base);
+        $app->set('path.compiled_view_path', $compiled);
+
+        $command = new ViewClearCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run(['--prefix' => ['*.php']]);
+
+        $this->assertSame(Command::SUCCESS, $result->statusCode);
+        $this->assertStringContainsString('Cleared 0 cached files.', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testClearsEveryCachedFileRecursively(): void
     {
         $base = sys_get_temp_dir() . '/omegavclr-' . bin2hex(random_bytes(4));
