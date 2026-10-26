@@ -98,6 +98,14 @@ final class DatabaseQueueAdapterTest extends TestCase
         $this->assertSame(0, $adapter->size());
     }
 
+    public function testReturnsZeroWhenTheCountQueryReturnsNoRow(): void
+    {
+        $pdo     = (new ScriptedConnection())->setDefaultResultset([]);
+        $adapter = new DatabaseQueueAdapter($pdo);
+
+        $this->assertSame(0, $adapter->size());
+    }
+
     public function testDeletesAJobFromTheQueue(): void
     {
         $pdo     = new ScriptedConnection();
