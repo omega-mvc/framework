@@ -73,10 +73,6 @@ trait InteractWithFilesystemTrait
         $files    = [];
 
         foreach ($this->collectFiles($directory) as $path) {
-            if (!is_file($path)) {
-                continue;
-            }
-
             $name = basename($path);
 
             if (str_starts_with($name, '.')) {
