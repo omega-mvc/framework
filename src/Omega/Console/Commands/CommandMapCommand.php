@@ -37,11 +37,6 @@ class CommandMapCommand extends AbstractCommand
             return self::FAILURE;
         }
 
-        if (empty($commands)) {
-            $this->io->warning('No commands discovered.');
-            return self::FAILURE;
-        }
-
         $classShortNames = [];
         $shortNameClasses = [];
 

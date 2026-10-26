@@ -61,6 +61,41 @@ final class CommandMapCommandTest extends TestCase
         $app->flush();
     }
 
+    public function testFailsWhenTheCommandsCannotBeDiscovered(): void
+    {
+        $base = sys_get_temp_dir() . '/omegacm-' . bin2hex(random_bytes(4));
+        mkdir($base, 0777, true);
+
+        $app = new Application($base);
+
+        unset($app['path.command']);
+
+        $command = new CommandMapCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Failed to discover console commands:', $result->getDisplay());
+
+        $app->flush();
+    }
+
+    public function testFailsWhenWritingTheCacheThrows(): void
+    {
+        $app = new Application(sys_get_temp_dir() . '/omegacm-' . bin2hex(random_bytes(4)) . "\0");
+
+        $command = new CommandMapCommand();
+        $command->app = $app;
+
+        $result = (new CommandTester($command))->run([]);
+
+        $this->assertSame(Command::FAILURE, $result->statusCode);
+        $this->assertStringContainsString('Failed to write cache file: ', $result->getDisplay());
+
+        $app->flush();
+    }
+
     public function testFailsWhenTheCacheFileCannotBeWritten(): void
     {
         $base = sys_get_temp_dir() . '/omegacm-' . bin2hex(random_bytes(4));
