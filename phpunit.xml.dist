@@ -23,7 +23,7 @@
     </source>
     <coverage pathCoverage="true">
         <report>
-            <html outputDirectory="cache/coverage-report"/>
+            <clover outputFile="cache/clover.xml"/>
         </report>
     </coverage>
     <php>
