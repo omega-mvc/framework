@@ -97,26 +97,24 @@ final class ViewWatchCommand extends AbstractCommand
 
                 $now = filemtime($file);
 
-                if (false === $now) {
+                if (false === $now || $now <= $time) {
                     continue;
                 }
 
-                if ($now > $time) {
-                    $dependency = $this->compileSingle($templator, $file);
+                $dependency = $this->compileSingle($templator, $file);
 
-                    foreach ($dependency as $compile => $depTime) {
-                        $compile = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $compile);
-                        $compiled[$compile][$file] = $time;
-                    }
+                foreach ($dependency as $compile => $depTime) {
+                    $compile = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $compile);
+                    $compiled[$compile][$file] = $time;
+                }
 
-                    $getIndexes[$file] = $now;
-                    $reindex = true;
+                $getIndexes[$file] = $now;
+                $reindex = true;
 
-                    if (isset($compiled[$file])) {
-                        foreach ($compiled[$file] as $parentFile => $parentTime) {
-                            $this->compileSingle($templator, $parentFile);
-                            $getIndexes[$parentFile] = $now;
-                        }
+                if (isset($compiled[$file])) {
+                    foreach ($compiled[$file] as $parentFile => $parentTime) {
+                        $this->compileSingle($templator, $parentFile);
+                        $getIndexes[$parentFile] = $now;
                     }
                 }
             }
@@ -150,10 +148,6 @@ final class ViewWatchCommand extends AbstractCommand
         $indexes = [];
 
         foreach ($files as $file) {
-            if (!is_file($file)) {
-                continue;
-            }
-
             $time = filemtime($file);
 
             if (false !== $time) {
@@ -211,7 +205,12 @@ final class ViewWatchCommand extends AbstractCommand
 
         foreach ($indexes as $file => $time) {
             $filename = Str::replace($file, $this->viewPath, '');
-            $templator->compile($filename);
+            try {
+                $templator->compile($filename);
+            } catch (Throwable $e) {
+                $this->io->error("Error compiling {$filename}: " . $e->getMessage());
+                continue;
+            }
 
             foreach ($templator->getDependency($file) as $depPath => $depTime) {
                 $depPath = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $depPath);
