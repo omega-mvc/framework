@@ -33,7 +33,7 @@ use function is_string;
 #[CoversClass(ExceptionHandler::class)]
 final class ExceptionHandlerCoverageTest extends TestCase
 {
-    private const VIEW_CONTENT = "<h1>Too Many Request</h1>\n";
+    private const string VIEW_CONTENT = "<h1>Too Many Request</h1>\n";
 
     private Application $app;
 

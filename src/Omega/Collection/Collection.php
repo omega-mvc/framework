@@ -132,7 +132,7 @@ class Collection extends AbstractCollectionImmutable
      */
     public function add(array $collection): self
     {
-        array_walk($collection, fn ($item, $key): mixed => $this->set($key, $item));
+        array_walk($collection, fn (mixed $item, int|string $key): mixed => $this->set($key, $item));
 
         return $this;
     }
@@ -190,7 +190,7 @@ class Collection extends AbstractCollectionImmutable
     public function replace(array $newCollection): self
     {
         $this->collection = [];
-        array_walk($newCollection, fn ($item, $key): mixed => $this->set($key, $item));
+        array_walk($newCollection, fn (mixed $item, int|string $key): mixed => $this->set($key, $item));
 
         return $this;
     }

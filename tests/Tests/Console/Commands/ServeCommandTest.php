@@ -178,20 +178,35 @@ final class ServeCommandTest extends TestCase
         $base = sys_get_temp_dir() . '/omegas-' . bin2hex(random_bytes(4));
         mkdir($base, 0777, true);
 
-        $app = new Application($base);
-        $app->set('path.public', $base . '/missing-public');
+        $bin = $base . '/bin';
+        mkdir($bin, 0777, true);
+        file_put_contents(
+            $bin . '/php',
+            '#!/bin/sh' . PHP_EOL . 'exec ' . escapeshellarg(PHP_BINARY) . ' "$@" 2>/dev/null' . PHP_EOL
+        );
+        chmod($bin . '/php', 0755);
 
-        $command = new ServeCommand();
-        $command->app = $app;
+        $path = getenv('PATH');
+        putenv('PATH=' . $bin . PATH_SEPARATOR . ($path !== false ? $path : ''));
 
-        $result = (new CommandTester($command))->run(['--port' => (string) $this->findFreePort()]);
+        try {
+            $app = new Application($base);
+            $app->set('path.public', $base . '/missing-public');
 
-        $display = $result->getDisplay();
+            $command = new ServeCommand();
+            $command->app = $app;
 
-        $this->assertSame(Command::SUCCESS, $result->statusCode);
-        $this->assertStringContainsString('Server running...', $display);
+            $result = (new CommandTester($command))->run(['--port' => (string) $this->findFreePort()]);
 
-        $app->flush();
+            $display = $result->getDisplay();
+
+            $this->assertSame(Command::SUCCESS, $result->statusCode);
+            $this->assertStringContainsString('Server running...', $display);
+
+            $app->flush();
+        } finally {
+            putenv('PATH=' . ($path !== false ? $path : ''));
+        }
     }
 
     private function findFreePort(): int
