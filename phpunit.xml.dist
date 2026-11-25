@@ -1,33 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
-         cacheDirectory="cache/phpunit"
-         executionOrder="depends,defects"
-         defaultTestSuite="Omega Framework Test Suite"
-         beStrictAboutOutputDuringTests="true"
-	 failOnRisky="true"
-         failOnWarning="true"
-         colors="true"
->
-    <testsuites>
-        <testsuite name="Omega Framework Test Suite">
-            <directory>./tests</directory>
-            <exclude>./tests/Tests/*/fixtures/*</exclude>
-        </testsuite>
-    </testsuites>
-    <source>
-        <include>
-            <directory>src</directory>
-        </include>
-    </source>
-    <coverage pathCoverage="true">
-        <report>
-            <html outputDirectory="cache/coverage"/>
-        </report>
-    </coverage>
-    <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="OMEGA_TEST_MODE" value="light"/>
-    </php>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd" bootstrap="vendor/autoload.php" cacheDirectory="cache/phpunit" executionOrder="defects" defaultTestSuite="Omega Framework Test Suite" beStrictAboutOutputDuringTests="true" failOnRisky="true" failOnWarning="true" colors="true" resolveDependencies="true">
+  <testsuites>
+    <testsuite name="Omega Framework Test Suite">
+      <directory>./tests</directory>
+      <exclude>./tests/Tests/*/fixtures/*</exclude>
+    </testsuite>
+  </testsuites>
+  <source>
+    <include>
+      <directory>src</directory>
+    </include>
+  </source>
+  <coverage pathCoverage="true">
+    <report>
+      <html outputDirectory="cache/coverage"/>
+    </report>
+  </coverage>
+  <php>
+    <env name="APP_ENV" value="testing"/>
+    <env name="OMEGA_TEST_MODE" value="light"/>
+  </php>
 </phpunit>
