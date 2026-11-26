@@ -284,6 +284,20 @@ final class StrTest extends TestCase
         $this->assertSame('i love laravel', Str::template($template, []));
     }
 
+    public function testCanRenderTemplateStringWithCustomCloseDelimiterAndEmptyData(): void
+    {
+        $template = 'i love laravel';
+
+        $this->assertSame('i love laravel', Str::template($template, [], '{', ']'));
+    }
+
+    public function testCanRenderTemplateStringWithCustomOpenDelimiterAndEmptyData(): void
+    {
+        $template = 'i love laravel';
+
+        $this->assertSame('i love laravel', Str::template($template, [], '[', '}'));
+    }
+
     public function testCanRenderTemplateStringWithCustomOpenDelimiterAndDefaultClose(): void
     {
         $template = 'i love [lang}';

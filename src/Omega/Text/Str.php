@@ -17,6 +17,7 @@ namespace Omega\Text;
 use Omega\Macroable\MacroableTrait;
 use Omega\Text\Exceptions\NoReturnException;
 
+use function array_keys;
 use function array_map;
 use function array_pop;
 use function array_shift;
@@ -432,10 +433,10 @@ final class Str
             }
         }
 
-        $keys = [];
-        foreach ($data as $key => $value) {
-            $keys[] = $openDelimiter . $key . $closeDelimiter;
-        }
+        $keys = array_map(
+            static fn (string $key): string => $openDelimiter . $key . $closeDelimiter,
+            array_keys($data)
+        );
 
         return str_replace($keys, $data, $template);
     }
