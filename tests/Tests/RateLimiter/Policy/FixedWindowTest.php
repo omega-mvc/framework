@@ -157,6 +157,28 @@ final class FixedWindowTest extends TestCase
         $this->assertSame(5, $rateLimit->getRemaining());
     }
 
+    public function testUsesTheIncrementedValueWhenTheCachedValueIsNotAnInteger(): void
+    {
+        $cache = new class (['ttl' => 3600]) extends MemoryStorage {
+            public function get(string $key, mixed $default = null): mixed
+            {
+                return 'corrupted';
+            }
+
+            public function increment(string $key, int $value): int
+            {
+                return 3;
+            }
+        };
+
+        $limiter   = new FixedWindow($cache, 5, 60);
+        $rateLimit = $limiter->consume('test_key');
+
+        $this->assertFalse($rateLimit->isBlocked());
+        $this->assertSame(3, $rateLimit->getConsumed());
+        $this->assertSame(2, $rateLimit->getRemaining());
+    }
+
     public function testReportsTheKeyAsBlockedWhenTheLimitIsReached(): void
     {
         $limiter = new FixedWindow($this->cache, 5, 60);
