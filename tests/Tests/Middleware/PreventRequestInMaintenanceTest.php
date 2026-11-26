@@ -70,6 +70,19 @@ final class PreventRequestInMaintenanceTest extends TestCase
         $this->assertSame(503, $handle->getStatusCode());
     }
 
+    public function testCanRenderATemplateWithoutRetryDuringMaintenance(): void
+    {
+        $app = new Application(__DIR__);
+        $app->set('path.storage', __DIR__ . '/fixtures/application-read/storage4/');
+
+        $middleware = new MaintenanceMiddleware($app);
+        $response   = new Response('test');
+        $handle     = $middleware->handle(new Request('/'), fn (Request $request) => $response);
+
+        $this->assertSame('<h1>Maintenance</h1>', $handle->getContent());
+        $this->assertNull($handle->headers->get('Retry-After'));
+    }
+
     public function testCanThrowRequestDuringMaintenance(): void
     {
         $app = new Application(__DIR__);

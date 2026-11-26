@@ -21,7 +21,9 @@ use Omega\Csrf\Exceptions\InvalidCsrfTokenException;
 use Omega\Http\Request;
 use Omega\Http\Response;
 
+use function in_array;
 use function is_string;
+use function strtoupper;
 
 class CsrfMiddleware
 {
@@ -31,15 +33,20 @@ class CsrfMiddleware
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->isMethod('GET') && !$request->isMethod('HEAD') && !$request->isMethod('OPTIONS')) {
+        if (!in_array(strtoupper($request->getMethod()), ['GET', 'HEAD', 'OPTIONS'], true)) {
             $field = $this->csrf->getTokenField();
             $token = $request->getPost($field);
 
             if ($token === '') {
-                $token = $request->getHeaders('x-csrf-token');
+                $headerToken = $request->getHeaders('x-csrf-token');
+                if (!is_string($headerToken)) {
+                    throw new InvalidCsrfTokenException('Invalid CSRF token.');
+                }
+                $token = $headerToken;
             }
 
-            if (!is_string($token) || !$this->csrf->validateToken($token)) {
+            /** @var string $token */
+            if (!$this->csrf->validateToken($token)) {
                 throw new InvalidCsrfTokenException('Invalid CSRF token.');
             }
         }

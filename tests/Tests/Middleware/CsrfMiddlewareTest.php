@@ -113,4 +113,47 @@ final class CsrfMiddlewareTest extends TestCase
             fn (Request $request) => null
         );
     }
+
+    public function testThrowsAnExceptionWhenAHeaderTokenIsInvalid(): void
+    {
+        $this->expectException(InvalidCsrfTokenException::class);
+
+        $this->middleware->handle(
+            new Request('/', [], [], [], [], [], ['x-csrf-token' => 'invalid'], 'POST'),
+            fn (Request $request) => new Response('ok')
+        );
+    }
+
+    public function testThrowsWhenTheNextMiddlewareDoesNotReturnAResponseWithHeaderToken(): void
+    {
+        $token = $this->csrf->generateToken();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->middleware->handle(
+            new Request('/', [], [], [], [], [], ['x-csrf-token' => $token], 'POST'),
+            fn (Request $request) => null
+        );
+    }
+
+    public function testThrowsAnExceptionWhenTheHeaderTokenIsNotAString(): void
+    {
+        $this->expectException(InvalidCsrfTokenException::class);
+
+        $this->middleware->handle(
+            // @phpstan-ignore argument.type
+            new Request('/', [], [], [], [], [], ['x-csrf-token' => ['invalid']], 'POST'),
+            fn (Request $request) => new Response('ok')
+        );
+    }
+
+    public function testThrowsWhenTheNextMiddlewareDoesNotReturnAResponseForASafeMethod(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->middleware->handle(
+            new Request('/', [], [], [], [], [], [], 'GET'),
+            fn (Request $request) => null
+        );
+    }
 }

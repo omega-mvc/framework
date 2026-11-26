@@ -1,0 +1,9 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'redirect' => null,
+    'status'   => 503,
+    'template' => '<h1>Maintenance</h1>',
+];
