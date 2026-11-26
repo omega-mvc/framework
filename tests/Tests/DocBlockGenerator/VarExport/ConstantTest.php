@@ -46,4 +46,11 @@ final class ConstantTest extends TestCase
         $this->assertEquals(PHP_VERSION, $imported['php_version']);
         $this->assertEquals(DIRECTORY_SEPARATOR, $imported['ds']);
     }
+
+    public function testToStringReturnsConstantName(): void
+    {
+        $constant = new Constant('PHP_VERSION');
+
+        $this->assertSame('PHP_VERSION', (string) $constant);
+    }
 }
