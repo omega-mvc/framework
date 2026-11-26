@@ -45,41 +45,38 @@ final class Valid
      */
     public function getValidation(): string
     {
-        $validation_rule = ['rules' => [], 'is_invert' => false, 'is_block_if' => false];
+        /** @var array{0: list<string>, 1: bool, 2: bool} $state */
+        $state = array_reduce(
+            $this->validation_rule,
+            /**
+             * @param array{0: list<string>, 1: bool, 2: bool} $state
+             *
+             * @return array{0: list<string>, 1: bool, 2: bool}
+             */
+            static function (array $state, string $rule): array {
+                /** @var list<string> $rules */
+                [$rules, $isInvert, $isBlocked] = $state;
 
-        foreach ($this->validation_rule as $rule) {
-            $is_invert   = $validation_rule['is_invert'];
-            $is_block_if = $validation_rule['is_block_if'];
+                if ($rule === 'if_false') {
+                    return [$rules, $isInvert, true];
+                }
+                if ($rule === 'if_true' || $rule === 'end_if') {
+                    return [$rules, $isInvert, false];
+                }
+                if ($isBlocked === true) {
+                    return $state;
+                }
+                if ($rule === 'invert') {
+                    return [$rules, !$isInvert, $isBlocked];
+                }
+                $rules[] = $isInvert ? 'invert_' . $rule : $rule;
 
-            if ($rule === 'if_false') {
-                $validation_rule['is_block_if'] = true;
+                return [$rules, false, false];
+            },
+            [[], false, false]
+        );
 
-                continue;
-            }
-            if ($rule === 'if_true') {
-                $validation_rule['is_block_if'] = false;
-
-                continue;
-            }
-            if ($rule === 'end_if') {
-                $validation_rule['is_block_if'] = false;
-
-                continue;
-            }
-            if ($is_block_if === true) {
-                continue;
-            }
-            if ($rule === 'invert') {
-                $validation_rule['is_invert'] = !$is_invert;
-
-                continue;
-            }
-
-            $validation_rule['rules'][] = $is_invert ? 'invert_' . $rule : $rule;
-            $validation_rule['is_invert'] = false;
-        }
-
-        return implode($this->delimiter, $validation_rule['rules']);
+        return implode($this->delimiter, $state[0]);
     }
 
     /**

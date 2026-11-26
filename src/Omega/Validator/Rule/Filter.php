@@ -34,34 +34,26 @@ final class Filter
      */
     public function getFilter(): string
     {
-        $filters_rule = ['rules' => [], 'is_block_if' => false];
+        $isBlocked = false;
+        $rules     = array_filter(
+            $this->filter_rule,
+            static function (string $rule) use (&$isBlocked): bool {
+                if ($rule === 'if_false') {
+                    $isBlocked = true;
 
-        foreach ($this->filter_rule as $rule) {
-            $is_block_if = $filters_rule['is_block_if'];
+                    return false;
+                }
+                if ($rule === 'if_true' || $rule === 'end_if') {
+                    $isBlocked = false;
 
-            if ($rule === 'if_false') {
-                $filters_rule['is_block_if'] = true;
+                    return false;
+                }
 
-                continue;
+                return !$isBlocked;
             }
-            if ($rule === 'if_true') {
-                $filters_rule['is_block_if'] = false;
+        );
 
-                continue;
-            }
-            if ($rule === 'end_if') {
-                $filters_rule['is_block_if'] = false;
-
-                continue;
-            }
-            if ($is_block_if === true) {
-                continue;
-            }
-
-            $filters_rule['rules'][] = $rule;
-        }
-
-        return implode($this->delimiter, $filters_rule['rules']);
+        return implode($this->delimiter, $rules);
     }
 
     /**

@@ -33,4 +33,19 @@ final class EndIfTest extends TestCase
 
         $this->assertSame(['end_if'], $property->getValue((new Valid())->end_if()));
     }
+
+    public function testCanRenderIfTrueConditionAsLastRule(): void
+    {
+        $this->assertSame('', (new Valid())->if(fn (): bool => true)->getValidation());
+    }
+
+    public function testCanRenderIfFalseConditionAsLastRule(): void
+    {
+        $this->assertSame('', (new Valid())->if(fn (): bool => false)->getValidation());
+    }
+
+    public function testSkipsTheRulesWhileTheBlockedConditionIsActive(): void
+    {
+        $this->assertSame('', (new Valid())->if(fn (): bool => false)->required()->getValidation());
+    }
 }

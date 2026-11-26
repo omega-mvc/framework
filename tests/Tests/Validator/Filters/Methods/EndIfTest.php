@@ -33,6 +33,21 @@ final class EndIfTest extends TestCase
         $this->assertEquals('', (new Filter())->end_if()->getFilter());
     }
 
+    public function testKeepsTheRulesWhenTheLastConditionIsTrue(): void
+    {
+        $this->assertEquals('', (new Filter())->if(fn (): bool => true)->getFilter());
+    }
+
+    public function testKeepsTheRulesWhenTheLastConditionIsFalse(): void
+    {
+        $this->assertEquals('', (new Filter())->if(fn (): bool => false)->getFilter());
+    }
+
+    public function testSkipsTheRulesWhileTheBlockedConditionIsActive(): void
+    {
+        $this->assertEquals('', (new Filter())->if(fn (): bool => false)->trim()->getFilter());
+    }
+
     public function testAppendsTheEndIfMarkerToTheFilterRulesArray(): void
     {
         $filter = new Filter();
