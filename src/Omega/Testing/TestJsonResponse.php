@@ -22,6 +22,8 @@ use ReturnTypeWillChange;
 
 use function array_key_exists;
 use function is_array;
+use function is_int;
+use function is_string;
 use function Omega\Collection\data_get;
 
 /**
@@ -133,9 +135,11 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      */
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        if (is_string($offset) || is_int($offset)) {
-            $this->responseData[$offset] = $value;
+        if (!is_string($offset) && !is_int($offset)) {
+            return;
         }
+
+        $this->responseData[$offset] = $value;
     }
 
     /**
@@ -146,9 +150,11 @@ class TestJsonResponse extends TestResponse implements ArrayAccess
      */
     public function offsetUnset(mixed $offset): void
     {
-        if (is_string($offset) || is_int($offset)) {
-            unset($this->responseData[$offset]);
+        if (!is_string($offset) && !is_int($offset)) {
+            return;
         }
+
+        unset($this->responseData[$offset]);
     }
 
     /**

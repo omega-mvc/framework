@@ -29,8 +29,11 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Throwable;
 
-use function array_key_exists;
+use function array_filter;
+use function intval;
 use function is_array;
+use function is_numeric;
+use function is_string;
 
 /**
  * TestCase
@@ -93,20 +96,20 @@ class TestCase extends PhpUnitTestCase
 
         $response = new Response($data);
 
-        if (array_key_exists('code', $data) && is_numeric($data['code'])) {
-            $response->setResponseCode(intval($data['code']));
+        $code = $data['code'] ?? null;
+        if (is_numeric($code)) {
+            $response->setResponseCode(intval($code));
         }
 
-        if (array_key_exists('headers', $data) && is_array($data['headers'])) {
-            $headers = [];
-
-            foreach ($data['headers'] as $name => $value) {
-                if (is_string($name) && is_string($value)) {
-                    $headers[$name] = $value;
-                }
-            }
-
-            $response->setHeaders($headers);
+        $headers = $data['headers'] ?? null;
+        if (is_array($headers)) {
+            /** @var array<string, string> $filtered */
+            $filtered = array_filter(
+                $headers,
+                static fn (mixed $value, mixed $name): bool => is_string($name) && is_string($value),
+                ARRAY_FILTER_USE_BOTH
+            );
+            $response->setHeaders($filtered);
         }
 
         return new TestJsonResponse($response);
