@@ -183,20 +183,20 @@ class Stream extends AbstractLogger
             ? dirname($logDirectory)
             : $logDirectory;
 
-        if (file_exists($directory) && !is_dir($directory)) {
-            throw new RuntimeException(
-                'Unable to create log directory: ' . $directory . ' (exists as file)'
-            );
-        }
+        if (file_exists($directory)) {
+            if (!is_dir($directory)) {
+                throw new RuntimeException(
+                    'Unable to create log directory: ' . $directory . ' (exists as file)'
+                );
+            }
+        } else {
+            $parentDir = dirname($directory);
+            if (file_exists($parentDir) && !is_dir($parentDir)) {
+                throw new RuntimeException(
+                    'Unable to create log directory: ' . $directory . ' (parent exists as file)'
+                );
+            }
 
-        $parentDir = dirname($directory);
-        if (file_exists($parentDir) && !is_dir($parentDir)) {
-            throw new RuntimeException(
-                'Unable to create log directory: ' . $directory . ' (parent exists as file)'
-            );
-        }
-
-        if (!file_exists($directory)) {
             if (!@mkdir($directory, $this->defaultPermissions, true) && !is_dir($directory)) {
                 throw new RuntimeException(
                     'Unable to create log directory: ' . $directory
@@ -343,22 +343,24 @@ class Stream extends AbstractLogger
      */
     public function write(string $message): void
     {
-        if (null !== $this->fileHandle) {
-            if (is_resource($this->fileHandle) && @fwrite($this->fileHandle, $message) === false) {
-                throw new RuntimeException(
-                    'The file could not be written to. Check that appropriate permissions have been set.'
-                );
-            } else {
-                $this->lastLine = trim($message);
-                ++$this->logLineCount;
+        if (null === $this->fileHandle) {
+            return;
+        }
 
-                $flushFrequency = $this->options['flushFrequency'];
+        $isResource = is_resource($this->fileHandle);
+        if ($isResource && @fwrite($this->fileHandle, $message) === false) {
+            throw new RuntimeException(
+                'The file could not be written to. Check that appropriate permissions have been set.'
+            );
+        }
 
-                if (is_int($flushFrequency) && $this->logLineCount % $flushFrequency === 0) {
-                    if (is_resource($this->fileHandle)) {
-                        fflush($this->fileHandle);
-                    }
-                }
+        $this->lastLine = trim($message);
+        ++$this->logLineCount;
+
+        $flushFrequency = $this->options['flushFrequency'];
+        if (is_int($flushFrequency)) {
+            if ($this->logLineCount % $flushFrequency === 0 && $isResource) {
+                fflush($this->fileHandle);
             }
         }
     }
@@ -398,9 +400,12 @@ class Stream extends AbstractLogger
             $message = $message->__toString();
         }
 
-        $logFormat = is_string($this->options['logFormat']) ? $this->options['logFormat'] : '';
-
-        if ($logFormat !== '') {
+        $logFormat = $this->options['logFormat'];
+        if (!is_string($logFormat)) {
+            $formattedMessage = '[' . $this->getTimestamp() . '] [' . $level . '] ' . $message;
+        } elseif ($logFormat === '') {
+            $formattedMessage = '[' . $this->getTimestamp() . '] [' . $level . '] ' . $message;
+        } else {
             $parts = [
                 'date'          => $this->getTimestamp(),
                 'level'         => strtoupper($level),
@@ -421,12 +426,12 @@ class Stream extends AbstractLogger
                 },
                 $logFormat
             );
-        } else {
-            $formattedMessage = '[' . $this->getTimestamp() . '] [' . $level . '] ' . $message;
         }
 
-        if ($this->options['appendContext'] && !empty($context)) {
-            $formattedMessage .= PHP_EOL . $this->indent($this->contextToString($context));
+        if ($this->options['appendContext']) {
+            if (!empty($context)) {
+                $formattedMessage .= PHP_EOL . $this->indent($this->contextToString($context));
+            }
         }
 
         return $formattedMessage . PHP_EOL;

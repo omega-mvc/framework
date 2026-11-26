@@ -10,6 +10,7 @@ use Omega\Logging\Stream;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use ReflectionProperty;
 use Tests\TestCase;
 
 #[CoversClass(LoggingManager::class)]
@@ -78,6 +79,19 @@ final class LoggingManagerTest extends TestCase
     {
         $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
         $manager->setDriver('broken', static fn (): ?LoggerInterface => null);
+
+        $this->expectException(UnknownDriverException::class);
+        $this->expectExceptionMessage('The log driver "broken" could not be resolved or is not registered.');
+
+        $manager->getDriver('broken');
+    }
+
+    public function testThrowsAnExceptionForAnUnsupportedDriverValue(): void
+    {
+        $manager = new LoggingManager('stream', $this->createStub(LoggerInterface::class));
+
+        $property = new ReflectionProperty(LoggingManager::class, 'driver');
+        $property->setValue($manager, ['broken' => 'not-a-driver']);
 
         $this->expectException(UnknownDriverException::class);
         $this->expectExceptionMessage('The log driver "broken" could not be resolved or is not registered.');
