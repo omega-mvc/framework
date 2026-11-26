@@ -50,9 +50,14 @@ class ClosureCompiler extends AbstractCompiler
     public function reflectClosure(Closure $closure): ReflectionFunction
     {
         try {
-            return new ReflectionFunction($closure);
+            return $this->createReflection($closure);
         } catch (ReflectionException $e) {
             throw new InvalidArgumentException("Failed to reflect closure: {$e->getMessage()}");
         }
+    }
+
+    protected function createReflection(Closure $closure): ReflectionFunction
+    {
+        return new ReflectionFunction($closure);
     }
 }

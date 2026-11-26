@@ -154,9 +154,7 @@ class Method
         $pre[] = $this->isStatic ? 'static' : '';
 
         // {{final}}{{visibility}}{{static}}
-        $pre    = array_filter($pre);
-        $before = implode(' ', $pre);
-        $before .= count($pre) == 0 ? '' : ' ';
+        $before = implode(' ', [...array_filter($pre), '']);
 
         // name
         $name = $this->name;

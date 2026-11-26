@@ -596,18 +596,11 @@ class Generate
      */
     public function constants(callable|ConstPool|Constant $newConst): self
     {
-        // detect if single const
-        if ($newConst instanceof Constant) {
-            $this->constants[] = $newConst;
-        } elseif (is_callable($newConst)) { // detect if multi const with constPool
-            $const = new ConstPool();
-
-            call_user_func_array($newConst, [$const]);
-
-            $this->constants = [...$this->constants, ...$const->getPools()];
-        } elseif ($newConst instanceof ConstPool) { // detect parameter is instance constPool
-            $this->constants = [...$this->constants, ...$newConst->getPools()];
-        }
+        match (true) {
+            $newConst instanceof Constant => $this->constants[] = $newConst,
+            is_callable($newConst) => $this->addCallableConstants($newConst),
+            $newConst instanceof ConstPool => $this->constants = [...$this->constants, ...$newConst->getPools()],
+        };
 
         return $this;
     }
@@ -635,18 +628,14 @@ class Generate
      */
     public function properties(callable|Property|PropertyPool $newProperty): self
     {
-        // detect if single properties
-        if ($newProperty instanceof Property) {
-            $this->properties[] = $newProperty;
-        } elseif (is_callable($newProperty)) { // detect if multi property with propertyPool
-            $property = new PropertyPool();
-
-            call_user_func_array($newProperty, [$property]);
-
-            $this->properties = [...$this->properties, ...$property->getPools()];
-        } elseif ($newProperty instanceof PropertyPool) { // detect parameter is instance methodPool
-            $this->properties = [...$this->properties, ...$newProperty->getPools()];
-        }
+        match (true) {
+            $newProperty instanceof Property => $this->properties[] = $newProperty,
+            is_callable($newProperty) => $this->addCallableProperties($newProperty),
+            $newProperty instanceof PropertyPool => $this->properties = [
+                ...$this->properties,
+                ...$newProperty->getPools(),
+            ],
+        };
 
         return $this;
     }
@@ -673,20 +662,49 @@ class Generate
      */
     public function methods(MethodPool|callable|Method $newMethod): self
     {
-        // detect if single properties
-        if ($newMethod instanceof Method) {
-            $this->methods[] = $newMethod;
-        } elseif (is_callable($newMethod)) { // detect if multi property with methodsPool
-            $method = new MethodPool();
-
-            call_user_func_array($newMethod, [$method]);
-
-            $this->methods = [...$this->methods, ...$method->getPools()];
-        } elseif ($newMethod instanceof MethodPool) { // detect parameter is instance methodPool
-            $this->methods = [...$this->methods, ...$newMethod->getPools()];
-        }
+        match (true) {
+            $newMethod instanceof Method => $this->methods[] = $newMethod,
+            is_callable($newMethod) => $this->addCallableMethods($newMethod),
+            $newMethod instanceof MethodPool => $this->methods = [...$this->methods, ...$newMethod->getPools()],
+        };
 
         return $this;
+    }
+
+    /**
+     * @param callable(ConstPool): void $callback
+     */
+    private function addCallableConstants(callable $callback): void
+    {
+        $const = new ConstPool();
+
+        call_user_func_array($callback, [$const]);
+
+        $this->constants = [...$this->constants, ...$const->getPools()];
+    }
+
+    /**
+     * @param callable(PropertyPool): void $callback
+     */
+    private function addCallableProperties(callable $callback): void
+    {
+        $property = new PropertyPool();
+
+        call_user_func_array($callback, [$property]);
+
+        $this->properties = [...$this->properties, ...$property->getPools()];
+    }
+
+    /**
+     * @param callable(MethodPool): void $callback
+     */
+    private function addCallableMethods(callable $callback): void
+    {
+        $method = new MethodPool();
+
+        call_user_func_array($callback, [$method]);
+
+        $this->methods = [...$this->methods, ...$method->getPools()];
     }
 
     /**

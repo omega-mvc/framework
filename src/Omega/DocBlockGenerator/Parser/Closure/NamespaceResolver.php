@@ -8,11 +8,17 @@ use Omega\DocBlockGenerator\Parser\File\NamespaceResolver as ParseNamespace;
 use ReflectionFunction;
 use ReflectionIntersectionType;
 use ReflectionNamedType;
+use ReflectionParameter;
 use ReflectionType;
 use ReflectionUnionType;
 
+use function array_filter;
+use function array_map;
+use function array_merge;
 use function array_unique;
 use function array_values;
+use function array_walk;
+use function in_array;
 use function is_object;
 use function strtolower;
 
@@ -27,46 +33,44 @@ final class NamespaceResolver
         $neededClasses = [];
 
         // Collect types actually used by the closure from reflection
-        foreach ($reflection->getParameters() as $parameter) {
-            $this->collectFromType($parameter->getType(), $neededClasses);
-        }
+        $parameters = $reflection->getParameters();
+        array_walk(
+            $parameters,
+            function (ReflectionParameter &$parameter) use (&$neededClasses): void {
+                $this->collectFromType($parameter->getType(), $neededClasses);
+            },
+        );
 
         $this->collectFromType($reflection->getReturnType(), $neededClasses);
 
-        foreach ($reflection->getStaticVariables() as $value) {
-            if (true === is_object($value)) {
-                $neededClasses[] = $value::class;
-            }
-        }
+        /** @var array<int, object> $staticObjects */
+        $staticObjects = array_filter(
+            $reflection->getStaticVariables(),
+            static fn (mixed $value): bool => is_object($value),
+        );
+
+        $neededClasses = array_merge(
+            $neededClasses,
+            array_map(static fn (object $value): string => $value::class, $staticObjects),
+        );
 
         // Get all class imports from the file
-        $classParse = new ParseNamespace();
-        $file = $reflection->getFileName();
-        $fileImports = false === $file ? [] : $classParse->resolveClasses($file);
+        $file       = $reflection->getFileName();
+        $fileImports = false === $file ? [] : (new ParseNamespace())->resolveClasses($file);
+        $neededLower = array_map('strtolower', $neededClasses);
+        $importLower = array_map('strtolower', $fileImports);
 
         // Filter file imports to only those that match needed classes (case-insensitive)
-        $neededLower = array_map('strtolower', $neededClasses);
-        $result = [];
-        foreach ($fileImports as $import) {
-            if (in_array(strtolower($import), $neededLower, true)) {
-                $result[] = $import;
-            }
-        }
-
-        // Also add any needed classes that weren't in file imports (e.g., same namespace)
-        foreach ($neededClasses as $needed) {
-            $neededLower = strtolower($needed);
-            $found = false;
-            foreach ($fileImports as $import) {
-                if (strtolower($import) === $neededLower) {
-                    $found = true;
-                    break;
-                }
-            }
-            if (!$found) {
-                $result[] = $needed;
-            }
-        }
+        $result = array_merge(
+            array_filter(
+                $fileImports,
+                static fn (string $import): bool => in_array(strtolower($import), $neededLower, true),
+            ),
+            array_filter(
+                $neededClasses,
+                static fn (string $needed): bool => !in_array(strtolower($needed), $importLower, true),
+            ),
+        );
 
         return array_values(array_unique($result));
     }
@@ -87,13 +91,16 @@ final class NamespaceResolver
             return;
         }
 
-        if (
-            $type instanceof ReflectionUnionType
-            || $type instanceof ReflectionIntersectionType
-        ) {
-            foreach ($type->getTypes() as $inner) {
+        $innerTypes = match (true) {
+            $type instanceof ReflectionUnionType, $type instanceof ReflectionIntersectionType => $type->getTypes(),
+            default => [],
+        };
+
+        array_walk(
+            $innerTypes,
+            function (ReflectionType &$inner) use (&$classes): void {
                 $this->collectFromType($inner, $classes);
-            }
-        }
+            },
+        );
     }
 }

@@ -7,7 +7,10 @@ namespace Omega\DocBlockGenerator\VarExport;
 use InvalidArgumentException;
 use ReflectionFunction;
 
-use function array_pop;
+use function array_filter;
+use function array_keys;
+use function array_map;
+use function array_reduce;
 use function array_slice;
 use function count;
 use function explode;
@@ -18,11 +21,11 @@ use function is_array;
 use function is_readable;
 use function is_string;
 use function min;
-use function preg_match;
 use function rtrim;
 use function str_ends_with;
 use function str_replace;
 use function strlen;
+use function strspn;
 use function substr;
 use function token_get_all;
 use function trim;
@@ -166,82 +169,85 @@ final class ClosureExtractor
      */
     private function extractFromSourceCode(string $code, string $file, int $lineNumber): string
     {
-        // Tokenize the code with PHP tags
         $tokens = $this->tokenize('<?php ' . $code);
 
-        $closureStart    = null;
-        $closureEnd      = null;
-        $inClosure       = false;
-        $braceDepth      = 0;
-        $parenDepth      = 0;
-        $isArrowFunction = false;
+        $starts = array_keys(array_filter(
+            $tokens,
+            fn (array|string $token): bool => $this->isToken($token, T_FUNCTION) || $this->isToken($token, T_FN)
+        ));
+        $closureStart = $starts[0] ?? null;
 
-        for ($i = 0; $i < count($tokens); $i++) {
-            $token = $tokens[$i];
-
-            if ($this->isToken($token, T_OPEN_TAG)) {
-                continue;
-            }
-
-            // Detect closure start
-            if (false === $inClosure && ($this->isToken($token, T_FUNCTION) || $this->isToken($token, T_FN))) {
-                $inClosure       = true;
-                $closureStart    = $i;
-                $isArrowFunction = $this->isToken($token, T_FN);
-                continue;
-            }
-
-            // Skip everything before closure starts
-            if (false === $inClosure) {
-                continue;
-            }
-
-            // Track parentheses (parameters)
-            if ($this->isChar($token, '(')) {
-                $parenDepth++;
-            } elseif ($this->isChar($token, ')')) {
-                $parenDepth--;
-            }
-
-            // Track braces (body)
-            if ($this->isChar($token, '{')) {
-                $braceDepth++;
-            } elseif ($this->isChar($token, '}')) {
-                $braceDepth--;
-
-                // End of function closure
-                if ($braceDepth === 0 && !$isArrowFunction) {
-                    $closureEnd = $i;
-                    break;
-                }
-            }
-
-            // Handle arrow function
-            if ($isArrowFunction && $this->isToken($token, T_DOUBLE_ARROW)) {
-                // Continue until we hit delimiter or semicolon
-                for ($j = $i + 1; $j < count($tokens); $j++) {
-                    $nextToken = $tokens[$j];
-
-                    if (
-                        $this->isChar($nextToken, ',')
-                        || $this->isChar($nextToken, ';')
-                        || $this->isChar($nextToken, ')')
-                    ) {
-                        $closureEnd = $j - 1;
-                        break 2;
-                    }
-                }
-            }
-        }
-
-        if (null === $closureStart || null === $closureEnd) {
+        if (null === $closureStart) {
             throw new InvalidArgumentException("Could not extract closure from line {$lineNumber} in {$file}");
         }
 
-        // Extract tokens between start and end
+        $isArrowFunction = $this->isToken($tokens[$closureStart], T_FN);
+        $tail            = array_slice($tokens, $closureStart, null, true);
+
+        if ($isArrowFunction) {
+            $arrows = array_keys(array_filter(
+                $tail,
+                fn (array|string $token): bool => $this->isToken($token, T_DOUBLE_ARROW)
+            ));
+            $arrow = $arrows[0] ?? null;
+
+            if (null === $arrow) {
+                throw new InvalidArgumentException("Could not extract closure from line {$lineNumber} in {$file}");
+            }
+
+            $delimiters = array_keys(array_filter(
+                array_slice($tokens, $arrow + 1, null, true),
+                fn (array|string $token): bool =>
+                    $this->isChar($token, ',') || $this->isChar($token, ';') || $this->isChar($token, ')')
+            ));
+            $delimiter  = $delimiters[0] ?? null;
+            $closureEnd = null === $delimiter ? null : $delimiter - 1;
+        } else {
+            $braces = array_keys(array_filter(
+                $tail,
+                fn (array|string $token): bool => $this->isChar($token, '{') || $this->isChar($token, '}')
+            ));
+            /** @var array{depth: int, end: int|null} $scan */
+            $scan = array_reduce(
+                $braces,
+                fn (array $carry, int $key): array => $this->reduceBraceScan($carry, $key, $tokens),
+                ['depth' => 0, 'end' => null]
+            );
+            $closureEnd = $scan['end'];
+        }
+
+        if (null === $closureEnd) {
+            throw new InvalidArgumentException("Could not extract closure from line {$lineNumber} in {$file}");
+        }
+
         $closureTokens = array_slice($tokens, $closureStart, $closureEnd - $closureStart + 1);
 
         return $this->tokensToString($closureTokens);
+    }
+
+    /**
+     * @param array{depth: int, end: int|null} $carry
+     * @param array<int, array{0: int, 1: string, 2: int}|string> $tokens
+     * @return array{depth: int, end: int|null}
+     */
+    private function reduceBraceScan(array $carry, int $key, array $tokens): array
+    {
+        if (null !== $carry['end']) {
+            return $carry;
+        }
+
+        if ($this->isChar($tokens[$key], '{')) {
+            $carry['depth']++;
+            return $carry;
+        }
+
+        $carry['depth']--;
+
+        if (0 === $carry['depth']) {
+            $carry['end'] = $key;
+        }
+
+        return $carry;
     }
 
     /**
@@ -269,92 +275,103 @@ final class ClosureExtractor
      */
     private function buildClosureAST(array $tokens): array
     {
-        $ast = [
-            'type'            => 'closure',
-            'isArrowFunction' => false,
-            'parameters'      => [],
-            'body'            => '',
-            'returnType'      => null,
+        /**
+         * @var array{
+         *   ast: array{
+         *     type: string,
+         *     isArrowFunction: bool,
+         *     parameters: string[],
+         *     body: string,
+         *     returnType: string|null
+         *   },
+         *   state: string,
+         *   buffer: string
+         * } $carry
+         */
+        $carry = [
+            'ast' => [
+                'type'            => 'closure',
+                'isArrowFunction' => false,
+                'parameters'      => [],
+                'body'            => '',
+                'returnType'      => null,
+            ],
+            'state'  => 'initial',
+            'buffer' => '',
         ];
 
-        $state  = 'initial';
-        $buffer = '';
+        $carry                = array_reduce($tokens, $this->reduceClosureAst(...), $carry);
+        $carry['ast']['body'] = trim($carry['buffer']);
 
-        foreach ($tokens as $token) {
-            if ($this->isToken($token, T_OPEN_TAG)) {
-                continue;
-            }
+        return $carry['ast'];
+    }
 
-            // Detect type
-            if ('initial' === $state) {
-                if ($this->isToken($token, T_FUNCTION)) {
-                    $ast['isArrowFunction'] = false;
-                    $state                  = 'parameters';
-                    continue;
-                } elseif ($this->isToken($token, T_FN)) {
-                    $ast['isArrowFunction'] = true;
-                    $state                  = 'parameters';
-                    continue;
-                }
-            }
+    /**
+     * @param array{
+     *   ast: array{
+     *     type: string,
+     *     isArrowFunction: bool,
+     *     parameters: string[],
+     *     body: string,
+     *     returnType: string|null
+     *   },
+     *   state: string,
+     *   buffer: string
+     * } $carry
+     * @param array{0: int, 1: string, 2: int}|string $token
+     *
+     * @return array{
+     *   ast: array{
+     *     type: string,
+     *     isArrowFunction: bool,
+     *     parameters: string[],
+     *     body: string,
+     *     returnType: string|null
+     *   },
+     *   state: string,
+     *   buffer: string
+     * }
+     */
+    private function reduceClosureAst(array $carry, array|string $token): array
+    {
+        $ast    = $carry['ast'];
+        $state  = $carry['state'];
+        $buffer = $carry['buffer'];
 
-            // Parse parameters
-            if ('parameters' === $state && $this->isChar($token, '(')) {
-                $state = 'inside_params';
-                continue;
-            }
-
-            if ('inside_params' === $state) {
-                if ($this->isChar($token, ')')) {
-                    $ast['parameters'][] = trim($buffer);
-                    $buffer              = '';
-                    $state               = 'after_params';
-                    continue;
-                }
-
-                $buffer .= $this->tokenToString($token);
-            }
-
-            // Detect use clause
-            if ('after_params' === $state) {
-                if ($this->isToken($token, T_USE)) {
-                    $state = 'use_clause';
-                    continue;
-                }
-
-                if ($this->isChar($token, ':')) {
-                    $state = 'return_type';
-                    continue;
-                }
-
-                if ($this->isToken($token, T_DOUBLE_ARROW) || $this->isChar($token, '{')) {
-                    $state  = 'body';
-                    $buffer = $this->tokenToString($token);
-                    continue;
-                }
-            }
-
-            // Parse return type
-            if ('return_type' === $state) {
-                if ($this->isChar($token, '{') || $this->isToken($token, T_DOUBLE_ARROW)) {
-                    $ast['returnType'] = trim($buffer);
-                    $buffer            = $this->tokenToString($token);
-                    $state             = 'body';
-                    continue;
-                }
-
-                $buffer .= $this->tokenToString($token);
-            }
-
-            // Parse body
-            if ('body' === $state) {
-                $buffer .= $this->tokenToString($token);
-            }
+        if ($this->isToken($token, T_OPEN_TAG)) {
+            // The PHP open tag is not part of the closure source.
+        } elseif ('initial' === $state && $this->isToken($token, T_FUNCTION)) {
+            $ast['isArrowFunction'] = false;
+            $state                  = 'parameters';
+        } elseif ('initial' === $state && $this->isToken($token, T_FN)) {
+            $ast['isArrowFunction'] = true;
+            $state                  = 'parameters';
+        } elseif ('parameters' === $state && $this->isChar($token, '(')) {
+            $state = 'inside_params';
+        } elseif ('inside_params' === $state && $this->isChar($token, ')')) {
+            $ast['parameters'][] = trim($buffer);
+            $buffer              = '';
+            $state               = 'after_params';
+        } elseif ('inside_params' === $state) {
+            $buffer .= $this->tokenToString($token);
+        } elseif ('after_params' === $state && $this->isToken($token, T_USE)) {
+            $state = 'use_clause';
+        } elseif ('after_params' === $state && $this->isChar($token, ':')) {
+            $state = 'return_type';
+        } elseif ('after_params' === $state && ($this->isToken($token, T_DOUBLE_ARROW) || $this->isChar($token, '{'))) {
+            $state  = 'body';
+            $buffer = $this->tokenToString($token);
+        } elseif ('return_type' === $state && ($this->isChar($token, '{') || $this->isToken($token, T_DOUBLE_ARROW))) {
+            $ast['returnType'] = trim($buffer);
+            $buffer            = $this->tokenToString($token);
+            $state             = 'body';
+        } elseif ('return_type' === $state) {
+            $buffer .= $this->tokenToString($token);
+        } elseif ('body' === $state) {
+            $buffer .= $this->tokenToString($token);
         }
 
-        $ast['body'] = trim($buffer);
-
-        return $ast;
+        return ['ast' => $ast, 'state' => $state, 'buffer' => $buffer];
     }
 
     /**
@@ -409,25 +426,24 @@ final class ClosureExtractor
         $closureCode = str_replace(["\r\n", "\r"], "\n", $closureCode);
 
         $lines = explode("\n", $closureCode);
-        for ($i = count($lines) - 1; $i >= 0; $i--) {
-            if (trim($lines[$i]) === '') {
-                continue;
-            }
 
-            $trimmed = rtrim($lines[$i]);
-            if ('' !== $trimmed && (str_ends_with($trimmed, ','))) {
-                $lines[$i] = rtrim(substr($trimmed, 0, -1));
-            }
+        $nonBlank = array_keys(array_filter(
+            $lines,
+            static fn (string $line): bool => '' !== trim($line)
+        ));
 
-            break;
+        if ([] === $nonBlank) {
+            return '';
         }
 
-        // Remove trailing empty lines
-        while (false === empty($lines) && '' === trim($lines[count($lines) - 1])) {
-            array_pop($lines);
+        $last    = $nonBlank[count($nonBlank) - 1];
+        $trimmed = rtrim($lines[$last]);
+
+        if (str_ends_with($trimmed, ',')) {
+            $lines[$last] = rtrim(substr($trimmed, 0, -1));
         }
 
-        return implode("\n", $lines);
+        return implode("\n", array_slice($lines, 0, $last + 1));
     }
 
     /**
@@ -438,23 +454,15 @@ final class ClosureExtractor
     private function findMinimumIndentation(array $lines): int
     {
         if (count($lines) > 1) {
-            $lastLine = $lines[count($lines) - 1];
-            if (preg_match('/^(\s*)/', $lastLine, $matches)) {
-                return strlen($matches[1]);
-            }
+            return strspn($lines[count($lines) - 1], " \t\n\r\f\v");
         }
 
-        $minIndent = PHP_INT_MAX;
+        $indents = array_map(
+            static fn (string $line): int => strspn($line, " \t\n\r\f\v"),
+            array_filter($lines, static fn (string $line): bool => '' !== trim($line))
+        );
 
-        foreach ($lines as $line) {
-            if (trim($line) === '') {
-                continue;
-            }
-
-            if (preg_match('/^(\s*)/', $line, $matches)) {
-                $minIndent = min($minIndent, strlen($matches[1]));
-            }
-        }
+        $minIndent = [] === $indents ? PHP_INT_MAX : min($indents);
 
         return PHP_INT_MAX === $minIndent ? 0 : $minIndent;
     }
@@ -475,24 +483,24 @@ final class ClosureExtractor
             return $lines;
         }
 
-        $normalized = [];
+        $count = count($lines);
 
-        foreach ($lines as $i => $line) {
-            // For multi-line closures
-            if (0 === $i && count($lines) > 1) {
-                $normalized[] = $line;
-                continue;
-            }
+        // For multi-line closures, preserve the first line (opening brace) as-is.
+        return array_map(
+            static function (int|string $i, string $line) use ($indent, $count): string {
+                if (0 === $i && $count > 1) {
+                    return $line;
+                }
 
-            if ('' === trim($line)) {
-                $normalized[] = '';
-                continue;
-            }
+                if ('' === trim($line)) {
+                    return '';
+                }
 
-            $normalized[] = substr($line, min($indent, strlen($line)));
-        }
-
-        return $normalized;
+                return substr($line, min($indent, strlen($line)));
+            },
+            array_keys($lines),
+            $lines
+        );
     }
 
     /**
@@ -500,15 +508,10 @@ final class ClosureExtractor
      */
     public function validateSingleLine(string $line, int $lineNumber): void
     {
-        $tokens = $this->tokenize('<?php ' . $line);
-
-        $closureCount = 0;
-
-        foreach ($tokens as $token) {
-            if ($this->isToken($token, T_FUNCTION) || $this->isToken($token, T_FN)) {
-                $closureCount++;
-            }
-        }
+        $closureCount = count(array_filter(
+            $this->tokenize('<?php ' . $line),
+            fn (array|string $token): bool => $this->isToken($token, T_FUNCTION) || $this->isToken($token, T_FN)
+        ));
 
         if ($closureCount > 1) {
             throw new InvalidArgumentException(

@@ -13,9 +13,14 @@ use Omega\DocBlockGenerator\VarExport\Value\Constant;
 use ReflectionObject;
 use stdClass;
 
+use function array_filter;
 use function array_key_last;
 use function array_keys;
+use function array_map;
+use function array_merge;
+use function array_reduce;
 use function array_unshift;
+use function array_walk;
 use function dirname;
 use function file_put_contents;
 use function implode;
@@ -312,19 +317,12 @@ final class VarExport
     private function compileNamespace(array $namespaces): array
     {
         sort($namespaces);
-        $uses = [];
-        foreach ($namespaces as $namespaces) {
-            if ('' === $namespaces) {
-                continue;
-            }
-            $uses[] = "use {$namespaces};";
-            $uses[] = PHP_EOL;
-        }
-        if (false === empty($uses)) {
-            $uses[] = PHP_EOL;
-        }
+        $uses = array_merge(...array_map(
+            static fn (string $namespace): array => ["use {$namespace};", PHP_EOL],
+            array_filter($namespaces, static fn (string $namespace): bool => '' !== $namespace)
+        ));
 
-        return $uses;
+        return [] === $uses ? $uses : [...$uses, PHP_EOL];
     }
 
     public function flush(): void
@@ -386,31 +384,35 @@ final class VarExport
      */
     private function writeArrayElements(array $elements, bool $isArrayMode = true): void
     {
-        $keyLength = 0;
-        foreach (array_keys($elements) as $key) {
-            $keyLength = max($keyLength, strlen((string) $key));
-        }
+        $keyLength = array_reduce(
+            array_keys($elements),
+            static fn (int $length, int|string $key): int => max($length, strlen((string) $key)),
+            0
+        );
 
-        foreach ($elements as $key => $value) {
-            $this->addIndentation();
-            $this->writeArrayKey($key);
+        array_walk(
+            $elements,
+            function (mixed $value, int|string $key) use ($keyLength, $isArrayMode): void {
+                $this->addIndentation();
+                $this->writeArrayKey($key);
 
-            if ($isArrayMode && $this->alignArray) {
-                $buffer = $this->getLastBuffer() ?? $key;
-                $length = strlen((string) $buffer);
-                $this->addToBuffer(str_repeat(' ', max(0, ($keyLength - $length) + $this->indentLevel)));
-            } elseif (false === $isArrayMode) {
-                $unquotedKeyLength = strlen((string) $key);
-                if ($keyLength > $unquotedKeyLength) {
-                    $this->addToBuffer(str_repeat(' ', $keyLength - $unquotedKeyLength));
+                if ($isArrayMode && $this->alignArray) {
+                    $buffer = $this->getLastBuffer() ?? $key;
+                    $length = strlen((string) $buffer);
+                    $this->addToBuffer(str_repeat(' ', max(0, ($keyLength - $length) + $this->indentLevel)));
+                } elseif (false === $isArrayMode) {
+                    $unquotedKeyLength = strlen((string) $key);
+                    if ($keyLength > $unquotedKeyLength) {
+                        $this->addToBuffer(str_repeat(' ', $keyLength - $unquotedKeyLength));
+                    }
                 }
-            }
 
-            $this->addToBuffer(' => ');
-            $this->compileValue($value);
-            $this->addToBuffer(',');
-            $this->addLine();
-        }
+                $this->addToBuffer(' => ');
+                $this->compileValue($value);
+                $this->addToBuffer(',');
+                $this->addLine();
+            }
+        );
     }
 
     private function writeArrayKey(int|string $key): void
@@ -459,18 +461,20 @@ final class VarExport
     private function writeClosureLines(array $lines): void
     {
         $firstLine = true;
-
-        foreach ($lines as $line) {
-            if (false === $firstLine) {
-                $this->addLine();
-                if ('' !== trim($line)) {
-                    $this->addIndentation();
+        array_walk(
+            $lines,
+            function (string $line) use (&$firstLine): void {
+                if (false === $firstLine) {
+                    $this->addLine();
+                    if ('' !== trim($line)) {
+                        $this->addIndentation();
+                    }
                 }
-            }
 
-            $this->addToBuffer(rtrim($line));
-            $firstLine = false;
-        }
+                $this->addToBuffer(rtrim($line));
+                $firstLine = false;
+            }
+        );
     }
 
     // buffer helpers
