@@ -244,6 +244,20 @@ final class InvokerTest extends TestCase
 
         $this->assertNull($result);
     }
+
+    public function testFallsBackToTheDefaultForAUnionTypedParameter(): void
+    {
+        $result = $this->invoker->call(fn (DependencyClass|stdClass|null $value = null) => $value);
+
+        $this->assertNull($result);
+    }
+
+    public function testThrowsWhenAUnionTypedParameterHasNoResolvableValue(): void
+    {
+        $this->expectException(BindingResolutionException::class);
+
+        $this->invoker->call(fn (DependencyClass|stdClass $missing) => $missing);
+    }
 }
 
 /**
