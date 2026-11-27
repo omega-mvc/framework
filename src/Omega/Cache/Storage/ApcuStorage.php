@@ -22,10 +22,13 @@ use function apcu_inc;
 use function apcu_key_info;
 use function apcu_store;
 use function array_key_exists;
+use function array_map;
+use function array_walk;
 use function extension_loaded;
 use function is_array;
 use function is_float;
 use function is_int;
+use function iterator_to_array;
 
 class ApcuStorage extends AbstractCache
 {
@@ -103,10 +106,13 @@ class ApcuStorage extends AbstractCache
 
     public function getMultiple(iterable $keys, mixed $default = null): iterable
     {
-        $prefixedKeys = [];
-        foreach ($keys as $key) {
-            $prefixedKeys[] = $this->prefix . $key;
-        }
+        $keys   = is_array($keys) ? $keys : iterator_to_array($keys);
+        $prefix = $this->prefix;
+
+        $prefixedKeys = array_map(
+            static fn (string $key): string => $prefix . $key,
+            $keys
+        );
 
         $values = apcu_fetch($prefixedKeys);
 
@@ -116,10 +122,10 @@ class ApcuStorage extends AbstractCache
 
         $result = [];
 
-        foreach ($keys as $key) {
-            $prefixedKey  = $this->prefix . $key;
+        array_walk($keys, static function (string $key) use (&$result, $prefix, $values, $default): void {
+            $prefixedKey = $prefix . $key;
             $result[$key] = array_key_exists($prefixedKey, $values) ? $values[$prefixedKey] : $default;
-        }
+        });
 
         return $result;
     }

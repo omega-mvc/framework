@@ -21,6 +21,8 @@ use Omega\Cache\AbstractCache;
 use Omega\Cache\Traits\CacheTimeTrait;
 
 use function array_key_exists;
+use function array_keys;
+use function array_reduce;
 use function count;
 use function is_int;
 use function time;
@@ -267,20 +269,30 @@ class MemoryStorage extends AbstractCache
      */
     private function evictLeastRecentlyWritten(): void
     {
-        $oldestKey = null;
-        $oldestMtime = PHP_FLOAT_MAX;
+        $storage = $this->storage;
 
-        foreach ($this->storage as $key => $item) {
-            $mtime = $item['mtime'] ?? 0;
+        /** @var array{0: ?string, 1: float} $state */
+        $state = array_reduce(
+            array_keys($storage),
+            /**
+             * @param array{0: ?string, 1: float} $state
+             * @return array{0: ?string, 1: float}
+             */
+            static function (array $state, string $key) use ($storage): array {
+                [$oldestKey, $oldestMtime] = $state;
+                $mtime = (float) ($storage[$key]['mtime'] ?? 0);
 
-            if ($mtime < $oldestMtime) {
-                $oldestMtime = $mtime;
-                $oldestKey = $key;
-            }
-        }
+                if ($mtime < $oldestMtime) {
+                    return [$key, $mtime];
+                }
 
-        if (null !== $oldestKey) {
-            unset($this->storage[$oldestKey]);
+                return $state;
+            },
+            [null, PHP_FLOAT_MAX]
+        );
+
+        if (null !== $state[0]) {
+            unset($this->storage[$state[0]]);
         }
     }
 

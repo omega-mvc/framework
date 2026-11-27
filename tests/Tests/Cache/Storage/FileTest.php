@@ -261,4 +261,37 @@ final class FileTest extends TestCase
     {
         $this->assertTrue(FileStorage::isSupported());
     }
+
+    public function testSetMultipleReturnsFalseForAnEmptyIterable(): void
+    {
+        $this->assertFalse($this->storage->setMultiple([]));
+    }
+
+    public function testSetMultipleReportsAFailureFollowedBySuccess(): void
+    {
+        $storage = $this->getMockBuilder(FileStorage::class)
+            ->setConstructorArgs([['ttl' => 3600, 'path' => __DIR__ . '/../fixtures/cache']])
+            ->onlyMethods(['set'])
+            ->getMock();
+
+        $storage->expects($this->exactly(2))
+            ->method('set')
+            ->willReturnOnConsecutiveCalls(false, true);
+
+        $this->assertFalse($storage->setMultiple(['a' => 1, 'b' => 2]));
+    }
+
+    public function testSetMultipleReportsALastFailure(): void
+    {
+        $storage = $this->getMockBuilder(FileStorage::class)
+            ->setConstructorArgs([['ttl' => 3600, 'path' => __DIR__ . '/../fixtures/cache']])
+            ->onlyMethods(['set'])
+            ->getMock();
+
+        $storage->expects($this->exactly(2))
+            ->method('set')
+            ->willReturnOnConsecutiveCalls(true, false);
+
+        $this->assertFalse($storage->setMultiple(['a' => 1, 'b' => 2]));
+    }
 }

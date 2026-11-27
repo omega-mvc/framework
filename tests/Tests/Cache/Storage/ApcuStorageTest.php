@@ -243,6 +243,59 @@ final class ApcuStorageTest extends TestCase
         $storage->increment('key1', 1);
     }
 
+    public function testGetsAnEmptyResultForAnEmptyKeyList(): void
+    {
+        $storage = self::cacheApcuStorage();
+        if (null === $storage) {
+            $this->markTestSkipped('APCu is not available.');
+        }
+
+        $this->assertSame([], $storage->getMultiple([], 'default'));
+    }
+
+    public function testReturnsTheDefaultForTheFirstMissingKey(): void
+    {
+        $storage = self::cacheApcuStorage();
+        if (null === $storage) {
+            $this->markTestSkipped('APCu is not available.');
+        }
+
+        $storage->set('key15', 'value15');
+
+        $this->assertSame(
+            ['missing' => 'default', 'key15' => 'value15'],
+            $storage->getMultiple(['missing', 'key15'], 'default')
+        );
+    }
+
+    public function testReturnsTheDefaultForAllMissingKeys(): void
+    {
+        $storage = self::cacheApcuStorage();
+        if (null === $storage) {
+            $this->markTestSkipped('APCu is not available.');
+        }
+
+        $this->assertSame(
+            ['key16' => 'default', 'key17' => 'default'],
+            $storage->getMultiple(['key16', 'key17'], 'default')
+        );
+    }
+
+    public function testSupportsTraversableKeys(): void
+    {
+        $storage = self::cacheApcuStorage();
+        if (null === $storage) {
+            $this->markTestSkipped('APCu is not available.');
+        }
+
+        $storage->set('key18', 'value18');
+        $keys = (static function (): iterable {
+            yield 'key18';
+        })();
+
+        $this->assertSame(['key18' => 'value18'], $storage->getMultiple($keys));
+    }
+
     private static function cacheApcuStorage(): ?ApcuStorage
     {
         if (!ApcuStorage::isSupported()) {

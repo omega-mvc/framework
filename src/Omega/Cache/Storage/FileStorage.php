@@ -35,7 +35,6 @@ use function file_put_contents;
 use function implode;
 use function is_dir;
 use function is_int;
-use function is_null;
 use function mkdir;
 use function Omega\Application\slash;
 use function serialize;
@@ -220,8 +219,9 @@ class FileStorage extends AbstractCache
         $state = null;
 
         foreach ($values as $key => $value) {
-            $result = $this->set($key, $value, $ttl);
-            $state  = is_null($state) ? $result : $result && $state;
+            $state = (static function (?bool $state, bool $result): bool {
+                return null === $state ? $result : $result && $state;
+            })($state, $this->set($key, $value, $ttl));
         }
 
         return $state ?: false;

@@ -108,9 +108,9 @@ abstract class AbstractCache implements CacheInterface, StorageInterface
         $state = null;
 
         foreach ($keys as $key) {
-            $result = $this->delete($key);
-
-            $state = null === $state ? $result : $result && $state;
+            $state = (static function (?bool $state, bool $result): bool {
+                return null === $state ? $result : $result && $state;
+            })($state, $this->delete($key));
         }
 
         return $state ?: false;

@@ -9,6 +9,7 @@ use Exception;
 use InvalidArgumentException;
 use Omega\Cache\Storage\RedisStorage;
 use Omega\Redis\Redis;
+use Omega\Redis\RedisInterface;
 use PHPUnit\Framework\Attributes\CoversClass;
 use stdClass;
 use Tests\TestCase;
@@ -266,6 +267,24 @@ final class RedisStorageTest extends TestCase
         $redis            = new FakeRedisConnection();
         $redis->delResult = 0;
         $storage          = new RedisStorage(['ttl' => 3600], $redis);
+
+        $this->assertFalse($storage->deleteMultiple(['a', 'b']));
+    }
+
+    public function testReportsAFailureFollowedBySuccessInSetMultiple(): void
+    {
+        $redis = $this->createMock(RedisInterface::class);
+        $redis->expects($this->exactly(2))->method('set')->willReturnOnConsecutiveCalls(false, true);
+        $storage = new RedisStorage(['ttl' => 3600], $redis);
+
+        $this->assertFalse($storage->setMultiple(['a' => 1, 'b' => 2]));
+    }
+
+    public function testReportsAFailureFollowedBySuccessInDeleteMultiple(): void
+    {
+        $redis = $this->createMock(RedisInterface::class);
+        $redis->expects($this->exactly(2))->method('del')->willReturnOnConsecutiveCalls(0, 1);
+        $storage = new RedisStorage(['ttl' => 3600], $redis);
 
         $this->assertFalse($storage->deleteMultiple(['a', 'b']));
     }

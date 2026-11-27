@@ -10,6 +10,7 @@ use DateInterval;
 use Memcached as PhpMemcached;
 use Omega\Cache\AbstractCache;
 
+use function array_walk;
 use function extension_loaded;
 use function is_int;
 use function is_string;
@@ -40,21 +41,47 @@ class MemcachedStorage extends AbstractCache
 
         $this->memcached = new PhpMemcached();
 
-        if (isset($options['timeout'])) {
-            $this->memcached->setOption(PhpMemcached::OPT_CONNECT_TIMEOUT, (int) $options['timeout']);
-        }
+        /**
+         * @param array<string, mixed> $options
+         */
+        (static function (array $options, PhpMemcached $memcached): void {
+            if (isset($options['timeout'])) {
+                $memcached->setOption(PhpMemcached::OPT_CONNECT_TIMEOUT, (int) $options['timeout']);
+            }
+        })($options, $this->memcached);
 
-        $defaultServer = ['host' => $options['host'] ?? '127.0.0.1', 'port' => $options['port'] ?? 11211];
+        /**
+         * @param array<string, mixed> $options
+         * @return list<array{host: string, port: int}>
+         */
+        $servers = (static function (array $options): array {
+            if (isset($options['servers'])) {
+                return $options['servers'];
+            }
 
-        $servers = $options['servers'] ?? [$defaultServer];
+            return [[
+                'host' => $options['host'] ?? '127.0.0.1',
+                'port' => $options['port'] ?? 11211,
+            ]];
+        })($options);
 
-        foreach ($servers as $server) {
-            $this->memcached->addServer((string) $server['host'], (int) $server['port']);
-        }
+        $memcached = $this->memcached;
 
-        if (isset($options['username'], $options['password'])) {
-            $this->memcached->setSaslAuthData((string) $options['username'], (string) $options['password']);
-        }
+        /**
+         * @param array{host: string, port: int} $server
+         */
+        array_walk($servers, static function (array $server) use ($memcached): void {
+            $memcached->addServer((string) $server['host'], (int) $server['port']);
+        });
+
+        /**
+         * @param array<string, mixed> $options
+         */
+        (static function (array $options, PhpMemcached $memcached): void {
+            if (isset($options['username'], $options['password'])) {
+                $memcached->setSaslAuthData((string) $options['username'], (string) $options['password']);
+            }
+        })($options, $this->memcached);
 
         $this->prefix = (string) ($options['prefix'] ?? '');
     }
@@ -129,7 +156,9 @@ class MemcachedStorage extends AbstractCache
         $success = true;
 
         foreach ($values as $key => $value) {
-            $success = $this->set($key, $value, $ttl) && $success;
+            $success = (static function (bool $result, bool $success): bool {
+                return $result && $success;
+            })($this->set($key, $value, $ttl), $success);
         }
 
         return $success;
@@ -140,7 +169,9 @@ class MemcachedStorage extends AbstractCache
         $success = true;
 
         foreach ($keys as $key) {
-            $success = $this->delete($key) && $success;
+            $success = (static function (bool $result, bool $success): bool {
+                return $result && $success;
+            })($this->delete($key), $success);
         }
 
         return $success;

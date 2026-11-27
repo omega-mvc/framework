@@ -74,7 +74,9 @@ class RedisStorage extends AbstractCache
         $success = true;
 
         foreach ($values as $key => $value) {
-            $success = $this->set($key, $value, $ttl) && $success;
+            $success = (static function (bool $result, bool $success): bool {
+                return $result && $success;
+            })($this->set($key, $value, $ttl), $success);
         }
 
         return $success;
@@ -85,7 +87,9 @@ class RedisStorage extends AbstractCache
         $success = true;
 
         foreach ($keys as $key) {
-            $success = $this->delete($key) && $success;
+            $success = (static function (bool $result, bool $success): bool {
+                return $result && $success;
+            })($this->delete($key), $success);
         }
 
         return $success;

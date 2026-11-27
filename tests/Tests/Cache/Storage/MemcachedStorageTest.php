@@ -162,6 +162,34 @@ final class MemcachedStorageTest extends TestCase
         $this->assertNull($storage->get('key2'));
     }
 
+    public function testReportsAFailureFollowedBySuccessInSetMultiple(): void
+    {
+        $storage = self::cacheMemcachedStorage();
+
+        if (null === $storage) {
+            $this->markTestSkipped('Could not connect to Memcached server');
+        }
+
+        $longKey = str_repeat('a', 251);
+
+        $this->assertFalse($storage->setMultiple([$longKey => 'value', 'short_key' => 'value']));
+        $this->assertEquals('value', $storage->get('short_key'));
+    }
+
+    public function testReportsAFailureFollowedBySuccessInDeleteMultiple(): void
+    {
+        $storage = self::cacheMemcachedStorage();
+
+        if (null === $storage) {
+            $this->markTestSkipped('Could not connect to Memcached server');
+        }
+
+        $storage->set('present_key', 'value');
+
+        $this->assertFalse($storage->deleteMultiple(['missing_key', 'present_key']));
+        $this->assertNull($storage->get('present_key'));
+    }
+
     public function testDoesNotUnserializeObjectsByDefaultForSecurity(): void
     {
         $storage = self::cacheMemcachedStorage();
@@ -323,5 +351,77 @@ final class MemcachedStorageTest extends TestCase
         $this->assertTrue($storage->set('interval-key', 'value'));
 
         $storage->clear();
+    }
+
+    public function testAcceptsPartialSaslCredentials(): void
+    {
+        $withUsername = new MemcachedStorage([
+            'ttl'      => 3600,
+            'servers'  => [['host' => '127.0.0.1', 'port' => 11211]],
+            'username' => 'user',
+        ]);
+        $withPassword = new MemcachedStorage([
+            'ttl'      => 3600,
+            'servers'  => [['host' => '127.0.0.1', 'port' => 11211]],
+            'password' => 'pass',
+        ]);
+
+        $this->assertInstanceOf(MemcachedStorage::class, $withUsername);
+        $this->assertInstanceOf(MemcachedStorage::class, $withPassword);
+    }
+
+    public function testAcceptsAnEmptyServersList(): void
+    {
+        $storage = new MemcachedStorage(['ttl' => 3600, 'servers' => []]);
+
+        $this->assertInstanceOf(MemcachedStorage::class, $storage);
+    }
+
+    public function testAcceptsAnEmptyServersListWithPartialSaslCredentials(): void
+    {
+        $withUsername = new MemcachedStorage([
+            'ttl'      => 3600,
+            'servers'  => [],
+            'username' => 'user',
+        ]);
+        $withPassword = new MemcachedStorage([
+            'ttl'      => 3600,
+            'servers'  => [],
+            'password' => 'pass',
+        ]);
+
+        $this->assertInstanceOf(MemcachedStorage::class, $withUsername);
+        $this->assertInstanceOf(MemcachedStorage::class, $withPassword);
+    }
+
+    public function testCombinesTimeoutEmptyServersAndSaslCredentials(): void
+    {
+        set_error_handler(static fn (): bool => true);
+        try {
+            $storage = new MemcachedStorage([
+                'ttl'      => 3600,
+                'servers'  => [],
+                'timeout'  => 1,
+                'username' => 'user',
+                'password' => 'pass',
+            ]);
+        } finally {
+            restore_error_handler();
+        }
+
+        $this->assertInstanceOf(MemcachedStorage::class, $storage);
+    }
+
+    public function testCombinesTimeoutAndPartialSaslCredentials(): void
+    {
+        $storage = new MemcachedStorage([
+            'ttl'      => 3600,
+            'host'     => '127.0.0.1',
+            'port'     => 11211,
+            'timeout'  => 1,
+            'username' => 'user',
+        ]);
+
+        $this->assertInstanceOf(MemcachedStorage::class, $storage);
     }
 }

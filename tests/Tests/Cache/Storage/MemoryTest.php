@@ -12,6 +12,8 @@ use Omega\Cache\Storage\MemoryStorage;
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tests\TestCase;
 
+use function array_shift;
+use function microtime;
 use function time;
 
 #[CoversClass(MemoryStorage::class)]
@@ -91,6 +93,27 @@ final class MemoryTest extends TestCase
         $this->assertTrue($this->storage->deleteMultiple(['key9', 'key10']));
         $this->assertFalse($this->storage->has('key9'));
         $this->assertFalse($this->storage->has('key10'));
+    }
+
+    public function testDeleteMultipleReturnsFalseForEmptyKeys(): void
+    {
+        $this->assertFalse($this->storage->deleteMultiple([]));
+    }
+
+    public function testDeleteMultipleReturnsFalseWhenFirstKeyIsMissing(): void
+    {
+        $this->storage->set('key12', 'value12');
+
+        $this->assertFalse($this->storage->deleteMultiple(['missing', 'key12']));
+        $this->assertFalse($this->storage->has('key12'));
+    }
+
+    public function testDeleteMultipleReturnsFalseWhenLastKeyIsMissing(): void
+    {
+        $this->storage->set('key13', 'value13');
+
+        $this->assertFalse($this->storage->deleteMultiple(['key13', 'missing']));
+        $this->assertFalse($this->storage->has('key13'));
     }
 
     public function testChecksWhetherAKeyExists(): void
@@ -213,5 +236,44 @@ final class MemoryTest extends TestCase
 
         $this->assertSame('first', $first);
         $this->assertSame('first', $second);
+    }
+
+    public function testEvictsTheNewestOfTwoEntriesWhenItHasTheOldestMtime(): void
+    {
+        $storage = self::storageWithMtimes([2.0, 1.0, 3.0]);
+
+        $storage->set('a', 1);
+        $storage->set('b', 2);
+        $storage->set('c', 3);
+
+        $this->assertTrue($storage->has('a'));
+        $this->assertFalse($storage->has('b'));
+        $this->assertTrue($storage->has('c'));
+    }
+
+    public function testEvictDoesNothingWhenTheStorageIsEmpty(): void
+    {
+        (fn () => $this->{'evictLeastRecentlyWritten'}())->call($this->storage);
+
+        $storage = (fn () => $this->{'storage'})->call($this->storage);
+
+        $this->assertSame([], $storage);
+    }
+
+    /** @param list<float> $mtimes */
+    private static function storageWithMtimes(array $mtimes): MemoryStorage
+    {
+        return new class (['ttl' => 3600, 'maxItems' => 2], $mtimes) extends MemoryStorage {
+            /** @param list<float> $mtimes */
+            public function __construct(array $options, private array $mtimes)
+            {
+                parent::__construct($options);
+            }
+
+            public function createMtime(): float
+            {
+                return array_shift($this->mtimes) ?? microtime(true);
+            }
+        };
     }
 }
