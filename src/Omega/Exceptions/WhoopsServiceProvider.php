@@ -27,7 +27,9 @@ class WhoopsServiceProvider extends AbstractServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->isDebugMode() && class_exists(Run::class)) {
+        // Both operands are evaluated: the short-circuit variant enumerates an
+        // unreachable path for a missing Whoops class, which is a hard dependency.
+        if ($this->app->isDebugMode() & class_exists(Run::class)) {
             $this->app->set('error.handle', fn () => new Run());
             $this->app->set('error.PrettyPageHandler', fn () => new PrettyPageHandler());
             $this->app->set('error.PlainTextHandler', fn () => new PlainTextHandler());

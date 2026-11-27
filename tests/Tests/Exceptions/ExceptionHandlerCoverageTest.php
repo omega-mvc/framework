@@ -83,6 +83,23 @@ final class ExceptionHandlerCoverageTest extends TestCase
     }
 
     #[Test]
+    public function rendersADebugJsonResponseForAGenericThrowable(): void
+    {
+        $this->app->set('app.debug', true);
+
+        $response = $this->handler->render($this->jsonRequest(), new RuntimeException('boom'));
+
+        $content = $response->getContent();
+        $this->assertIsArray($content);
+        $this->assertSame(500, $response->getStatusCode());
+
+        $messages = $content['messages'];
+        $this->assertIsArray($messages);
+        $this->assertSame('boom', $messages['message']);
+        $this->assertSame(RuntimeException::class, $messages['exception']);
+    }
+
+    #[Test]
     public function returnsTheResponseCarriedByAnHttpResponseException(): void
     {
         $response = $this->handler->render(
@@ -172,6 +189,19 @@ final class ExceptionHandlerCoverageTest extends TestCase
         $this->assertSame('boom', $logger->records[0]['message']);
         $this->assertSame(RuntimeException::class, $logger->records[0]['context']['exception']);
         $this->assertCount(1, $dispatched);
+    }
+
+    #[Test]
+    public function logsANonCriticalExceptionWithoutAnEventDispatcher(): void
+    {
+        $logger = $this->logger();
+        $this->app->set('logging', static fn () => $logger);
+
+        $this->handler->report(new RuntimeException('boom'));
+
+        $this->assertCount(1, $logger->records);
+        $this->assertSame(LogLevel::ERROR, $logger->records[0]['level']);
+        $this->assertSame('boom', $logger->records[0]['message']);
     }
 
     #[Test]

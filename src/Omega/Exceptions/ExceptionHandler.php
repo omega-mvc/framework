@@ -279,10 +279,10 @@ class ExceptionHandler
         $view_paths = is_array($pathsView)
             ? array_map(fn (string $path): string => $path . 'pages/', $pathsView)
             : [];
+        /** @var string $pathView */
         $pathView = get_path('path.view');
-        if (is_string($pathView)) {
-            $view_paths[] = $pathView;
-        }
+        $view_paths[] = $pathView;
+
         /** @var TemplatorFinder $finder */
         $finder = $this->app->make(TemplatorFinder::class);
         $finder->setPaths($view_paths);

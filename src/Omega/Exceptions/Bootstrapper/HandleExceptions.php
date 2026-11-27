@@ -117,15 +117,17 @@ class HandleExceptions
 
         self::$reserveMemory = str_repeat('x', 32_768);
 
-        if ('testing' !== getenv('APP_ENV')) {
+        // One branch keeps both environment-dependent actions correlated and
+        // avoids enumerating unreachable mixed-environment paths.
+        $isTesting = 'testing' === getenv('APP_ENV');
+
+        if (!$isTesting) {
             set_error_handler([$this, 'handleError']);
             set_exception_handler([$this, 'handleException']);
-        }
-
-        register_shutdown_function([$this, 'handleShutdown']);
-
-        if ('testing' !== getenv('APP_ENV')) {
+            register_shutdown_function([$this, 'handleShutdown']);
             ini_set('display_errors', 'Off');
+        } else {
+            register_shutdown_function([$this, 'handleShutdown']);
         }
 
         self::$handlersRegistered = true;
