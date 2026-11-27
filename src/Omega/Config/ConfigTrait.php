@@ -17,6 +17,7 @@ namespace Omega\Config;
 use function array_filter;
 use function array_key_exists;
 use function array_keys;
+use function array_reduce;
 use function count;
 use function is_array;
 use function is_string;
@@ -53,52 +54,46 @@ trait ConfigTrait
      */
     protected function mergeArrays(array $a, array $b, MergeStrategy $strategy): array
     {
-        foreach ($b as $key => $value) {
-            // If the key doesn't exist in the first array, add it
-            if (!array_key_exists($key, $a)) {
-                $a[$key] = $value;
-                continue;
-            }
+        /** @var array<string, mixed> $result */
+        $result = array_reduce(
+            array_keys($b),
+            function (array $result, int|string $key) use ($b, $strategy): array {
+                $value = $b[$key];
 
-            // If both values are associative arrays, recursively merge them
-            if (
-                is_array($a[$key]) &&
-                is_array($value) &&
-                $this->isAssociative($a[$key]) &&
-                $this->isAssociative($value)
-            ) {
-                $a[$key] = $this->mergeArrays(
-                    $this->normalizeConfigArray($a[$key]),
-                    $this->normalizeConfigArray($value),
-                    $strategy
-                );
-                continue;
-            }
+                if (!array_key_exists($key, $result)) {
+                    $result[$key] = $value;
 
-            // If the strategy is MERGE_INDEXED and both values are arrays, merge them with unique values
-            if (
-                $strategy === MergeStrategy::MERGE_INDEXED &&
-                is_array($a[$key]) &&
-                is_array($value)
-            ) {
-                $a[$key] = array_values(array_unique(array_merge($a[$key], $value), SORT_REGULAR));
-                continue;
-            }
-
-            // If the strategy is MERGE_ADD_NEW, add new keys from $b that don't exist in $a
-            if ($strategy === MergeStrategy::MERGE_ADD_NEW) {
-                foreach ($b as $k => $v) {
-                    if (!array_key_exists($k, $a)) {
-                        $a[$k] = $v;
-                    }
+                    return $result;
                 }
-            }
 
-            // Default behavior: replace the value in the first array with the value from the second array
-            $a[$key] = $value;
-        }
+                if ($this->isAssociative($result[$key]) && $this->isAssociative($value)) {
+                    $result[$key] = $this->mergeArrays(
+                        $this->normalizeConfigArray($result[$key]),
+                        $this->normalizeConfigArray($value),
+                        $strategy
+                    );
 
-        return $a;
+                    return $result;
+                }
+
+                if (
+                    $strategy === MergeStrategy::MERGE_INDEXED &&
+                    is_array($result[$key]) &&
+                    is_array($value)
+                ) {
+                    $result[$key] = array_values(array_unique(array_merge($result[$key], $value), SORT_REGULAR));
+
+                    return $result;
+                }
+
+                $result[$key] = $value;
+
+                return $result;
+            },
+            $a
+        );
+
+        return $result;
     }
 
     /**

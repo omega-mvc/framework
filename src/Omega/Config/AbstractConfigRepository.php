@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace Omega\Config;
 
 use function array_key_exists;
+use function array_reduce;
 use function count;
 use function explode;
 use function is_array;
@@ -68,17 +69,30 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
      */
     public function has(string $key): bool
     {
-        $config = $this->config;
+        /** @var array{0: bool, 1: mixed} $state */
+        $state = array_reduce(
+            explode('.', $key),
+            /**
+             * @param array{0: bool, 1: mixed} $state
+             * @return array{0: bool, 1: mixed}
+             */
+            static function (array $state, string $section): array {
+                if (!$state[0]) {
+                    return $state;
+                }
 
-        foreach (explode('.', $key) as $section) {
-            if (!is_array($config) || !array_key_exists($section, $config)) {
-                return false;
-            }
+                $config = $state[1];
 
-            $config = $config[$section];
-        }
+                if (!is_array($config) || !array_key_exists($section, $config)) {
+                    return [false, null];
+                }
 
-        return true;
+                return [true, $config[$section]];
+            },
+            [true, $this->config]
+        );
+
+        return $state[0];
     }
 
     /**
@@ -86,17 +100,30 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
      */
     public function get(string $key, mixed $default = null): mixed
     {
-        $config = $this->config;
+        /** @var array{0: bool, 1: mixed} $state */
+        $state = array_reduce(
+            explode('.', $key),
+            /**
+             * @param array{0: bool, 1: mixed} $state
+             * @return array{0: bool, 1: mixed}
+             */
+            static function (array $state, string $section): array {
+                if (!$state[0]) {
+                    return $state;
+                }
 
-        foreach (explode('.', $key) as $section) {
-            if (!is_array($config) || ! array_key_exists($section, $config)) {
-                return $default;
-            }
+                $config = $state[1];
 
-            $config = $config[$section];
-        }
+                if (!is_array($config) || !array_key_exists($section, $config)) {
+                    return [false, null];
+                }
 
-        return $config;
+                return [true, $config[$section]];
+            },
+            [true, $this->config]
+        );
+
+        return $state[0] ? $state[1] : $default;
     }
 
     /**
@@ -107,11 +134,15 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
         $config = &$this->config;
 
         foreach (explode('.', $key) as $section) {
-            if (!is_array($config)) {
-                $config = [];
-            }
+            (static function (mixed &$config): void {
+                if (!is_array($config)) {
+                    $config = [];
+                }
+            })($config);
 
-            $config = &$config[$section];
+            /** @var array<string, mixed> $config */
+            $arrayConfig = &$config;
+            $config      = &$arrayConfig[$section];
         }
 
         $config = $value;
@@ -127,17 +158,24 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
         $last     = count($sections) - 1;
 
         foreach ($sections as $i => $section) {
-            if (!is_array($config) || !array_key_exists($section, $config)) {
+            $exists = (static function (mixed $config, string $section): bool {
+                return is_array($config) && array_key_exists($section, $config);
+            })($config, $section);
+
+            if (!$exists) {
                 return;
             }
+
+            /** @var array<string, mixed> $config */
+            $arrayConfig = &$config;
 
             if ($i === $last) {
-                unset($config[$section]);
+                unset($arrayConfig[$section]);
 
                 return;
             }
 
-            $config = &$config[$section];
+            $config = &$arrayConfig[$section];
         }
     }
 
@@ -154,10 +192,13 @@ abstract class AbstractConfigRepository implements ConfigRepositoryInterface
      */
     public function push(string $key, mixed $value): void
     {
-        if (!isset($this->config[$key]) || !is_array($this->config[$key])) {
-            $this->config[$key] = [];
+        $current = $this->config[$key] ?? null;
+
+        if (!is_array($current)) {
+            $current = [];
         }
 
-        $this->config[$key][] = $value;
+        $current[] = $value;
+        $this->config[$key] = $current;
     }
 }

@@ -236,6 +236,16 @@ final class ConfigTest extends TestCase
         $this->assertEquals(['indexed' => [1, 2, 3, 4, 5]], $configuration->getAll());
     }
 
+    public function testShouldMergeConfigurationAtKeyWithStrategyInstance(): void
+    {
+        $configuration        = new ConfigRepository(['nested' => ['indexed' => [1, 2, 3]]]);
+        $anotherConfiguration = new ConfigRepository(['indexed' => [3, 4, 5]]);
+
+        $configuration->merge($anotherConfiguration, 'nested', MergeStrategy::MERGE_INDEXED);
+
+        $this->assertSame(['indexed' => [1, 2, 3, 4, 5]], $configuration->get('nested'));
+    }
+
     public function testShouldAddNewKeysWithTheMergeAddNewStrategy(): void
     {
         $configuration        = new ConfigRepository(['existing' => 'old']);
@@ -245,6 +255,68 @@ final class ConfigTest extends TestCase
 
         $this->assertSame('new', $configuration->get('existing'));
         $this->assertSame('value', $configuration->get('added'));
+    }
+
+    public function testShouldMergeEmptyConfiguration(): void
+    {
+        $configuration = new ConfigRepository(['key' => 'value']);
+
+        $configuration->merge(new ConfigRepository());
+
+        $this->assertSame(['key' => 'value'], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWhenValuesAreIndexedArrays(): void
+    {
+        $configuration        = new ConfigRepository(['indexed' => [1, 2]]);
+        $anotherConfiguration = new ConfigRepository(['indexed' => [3], 'added' => 'value']);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame(['indexed' => [3], 'added' => 'value'], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWhenFirstValueIsArray(): void
+    {
+        $configuration        = new ConfigRepository(['mixed' => ['a' => 1]]);
+        $anotherConfiguration = new ConfigRepository(['mixed' => 'scalar', 'added' => 'value']);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame(['mixed' => 'scalar', 'added' => 'value'], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWhenSecondValueIsArray(): void
+    {
+        $configuration        = new ConfigRepository(['mixed' => 'scalar']);
+        $anotherConfiguration = new ConfigRepository(['mixed' => ['a' => 1], 'added' => 'value']);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame(['mixed' => ['a' => 1], 'added' => 'value'], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWhenValuesAreAssociative(): void
+    {
+        $configuration        = new ConfigRepository(['nested' => ['a' => 1]]);
+        $anotherConfiguration = new ConfigRepository(['nested' => ['b' => 2], 'added' => 'value']);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame([
+            'nested' => ['a' => 1, 'b' => 2],
+            'added'  => 'value',
+        ], $configuration->getAll());
+    }
+
+    public function testShouldAddNewKeysWhenAllKeysAlreadyExist(): void
+    {
+        $configuration        = new ConfigRepository(['a' => 1, 'b' => 2]);
+        $anotherConfiguration = new ConfigRepository(['a' => 3, 'b' => 4]);
+
+        $configuration->merge($anotherConfiguration, null, MergeStrategy::MERGE_ADD_NEW);
+
+        $this->assertSame(['a' => 3, 'b' => 4], $configuration->getAll());
     }
 
     public function testShouldPushValuesOntoAKey(): void
@@ -289,5 +361,65 @@ final class ConfigTest extends TestCase
         }
 
         $this->assertSame([1, 2], $values);
+    }
+
+    public function testShouldReturnFalseWhenAnIntermediateSectionIsNotAnArray(): void
+    {
+        $configuration = new ConfigRepository(['nested' => 'scalar']);
+
+        $this->assertFalse($configuration->has('nested.key'));
+        $this->assertSame('default', $configuration->get('nested.key', 'default'));
+    }
+
+    public function testShouldReturnNullForAnExistingNullValue(): void
+    {
+        $configuration = new ConfigRepository(['key' => null]);
+
+        $this->assertTrue($configuration->has('key'));
+        $this->assertNull($configuration->get('key', 'default'));
+    }
+
+    public function testShouldReadADeepNestedValue(): void
+    {
+        $configuration = new ConfigRepository(['a' => ['b' => ['c' => 3]]]);
+
+        $this->assertTrue($configuration->has('a.b.c'));
+        $this->assertSame(3, $configuration->get('a.b.c'));
+    }
+
+    public function testShouldReplaceAScalarIntermediateSectionOnSet(): void
+    {
+        $configuration = new ConfigRepository(['nested' => 'scalar']);
+
+        $configuration->set('nested.key', 'value');
+
+        $this->assertSame(['nested' => ['key' => 'value']], $configuration->getAll());
+    }
+
+    public function testShouldCreateADeepNestedValueOverAScalar(): void
+    {
+        $configuration = new ConfigRepository(['a' => ['b' => 'scalar']]);
+
+        $configuration->set('a.b.c', 'value');
+
+        $this->assertSame(['a' => ['b' => ['c' => 'value']]], $configuration->getAll());
+    }
+
+    public function testShouldIgnoreRemoveWhenAnIntermediateSectionIsNotAnArray(): void
+    {
+        $configuration = new ConfigRepository(['nested' => 'scalar']);
+
+        $configuration->remove('nested.key');
+
+        $this->assertSame(['nested' => 'scalar'], $configuration->getAll());
+    }
+
+    public function testShouldInitializeANullKeyOnPush(): void
+    {
+        $configuration = new ConfigRepository(['items' => null]);
+
+        $configuration->push('items', 'first');
+
+        $this->assertSame(['items' => ['first']], $configuration->getAll());
     }
 }
