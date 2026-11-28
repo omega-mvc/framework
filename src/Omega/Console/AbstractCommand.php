@@ -183,8 +183,8 @@ abstract class AbstractCommand extends Command
             [$mode, $description] = $config;
             $default = $config[2] ?? null;
 
-            if (!is_int($mode)) {
-                throw new InvalidArgumentException("Argument '$name': mode must be an integer.");
+            if (!is_int($mode) || $mode < 0 || $mode > 7) {
+                throw new InvalidArgumentException("Argument '$name': mode must be an integer between 0 and 7.");
             }
             if (!is_string($description)) {
                 throw new InvalidArgumentException("Argument '$name': description must be a string.");
@@ -207,8 +207,8 @@ abstract class AbstractCommand extends Command
             $default = $config[3] ?? null;
             $suggestedValues = $config[4] ?? [];
 
-            if (!is_int($mode)) {
-                throw new InvalidArgumentException("Option '$name': mode must be an integer.");
+            if (!is_int($mode) || $mode < 0 || $mode > 127) {
+                throw new InvalidArgumentException("Option '$name': mode must be an integer between 0 and 127.");
             }
             if (!is_string($description)) {
                 throw new InvalidArgumentException("Option '$name': description must be a string.");
@@ -216,9 +216,17 @@ abstract class AbstractCommand extends Command
             if (!is_null($shortcut) && !is_string($shortcut) && !is_array($shortcut)) {
                 throw new InvalidArgumentException("Option '$name': shortcut must be string, array or null.");
             }
+            if (is_array($shortcut)) {
+                foreach ($shortcut as $candidate) {
+                    if (!is_string($candidate)) {
+                        throw new InvalidArgumentException("Option '$name': shortcut entries must be strings.");
+                    }
+                }
+            }
             if (!is_array($suggestedValues) && !$suggestedValues instanceof Closure) {
                 throw new InvalidArgumentException("Option '$name': suggestedValues must be array or Closure.");
             }
+            /** @var array<string>|string|null $shortcut */
             $this->addOption($name, $shortcut, $mode, $description, $default, $suggestedValues);
         }
     }
