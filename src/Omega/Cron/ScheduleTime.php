@@ -17,6 +17,8 @@ namespace Omega\Cron;
 use Closure;
 use Throwable;
 
+use function array_map;
+use function array_reduce;
 use function call_user_func;
 use function date;
 use function microtime;
@@ -218,31 +220,37 @@ class ScheduleTime
      */
     public function expect(): void
     {
-        if ($this->isDue() && false === $this->skip) {
-            $watchStart = microtime(true);
+        if (!$this->isDue()) {
+            return;
+        }
 
-            try {
-                $outPut              = call_user_func($this->callBack, $this->params) ?? [];
-                $this->retryAttempts = 0;
-            } catch (Throwable $th) {
-                $this->retryAttempts--;
-                $outPut       = ['error' => $th->getMessage()];
-            }
+        if ($this->skip) {
+            return;
+        }
 
-            $watchEnd = round(microtime(true) - $watchStart, 3) * 1000;
+        $watchStart = microtime(true);
 
-            if (!$this->anonymously) {
-                $this->logger?->interpolate(
-                    $this->eventName,
-                    [
-                        'execute_time'  => $watchEnd,
-                        'cron_time'     => $this->time,
-                        'event_name'    => $this->eventName,
-                        'attempts'      => $this->retryAttempts,
-                        'error_message' => $outPut,
-                    ]
-                );
-            }
+        try {
+            $outPut              = call_user_func($this->callBack, $this->params) ?? [];
+            $this->retryAttempts = 0;
+        } catch (Throwable $th) {
+            $this->retryAttempts--;
+            $outPut       = ['error' => $th->getMessage()];
+        }
+
+        $watchEnd = round(microtime(true) - $watchStart, 3) * 1000;
+
+        if (!$this->anonymously) {
+            $this->logger?->interpolate(
+                $this->eventName,
+                [
+                    'execute_time'  => $watchEnd,
+                    'cron_time'     => $this->time,
+                    'event_name'    => $this->eventName,
+                    'attempts'      => $this->retryAttempts,
+                    'error_message' => $outPut,
+                ]
+            );
         }
     }
 
@@ -294,26 +302,34 @@ class ScheduleTime
      */
     public function isDue(): bool
     {
-        $events     = $this->timeExpect;
         $dayLetter  = date('D', $this->time);
         $day        = date('d', $this->time);
         $hour       = date('H', $this->time);
         $minute     = date('i', $this->time);
 
-        foreach ($events as $event) {
-            $eventDayLetter = $event['D'] ?? $dayLetter;
+        return array_reduce(
+            $this->timeExpect,
+            static function (bool $due, array $event) use ($dayLetter, $day, $hour, $minute): bool {
+                if ($due) {
+                    return true;
+                }
 
-            if (
-                $eventDayLetter == $dayLetter
-                && $event['d'] == $day
-                && $event['h'] == $hour
-                && $event['m'] == $minute
-            ) {
-                return true;
-            }
-        }
+                if (($event['D'] ?? $dayLetter) != $dayLetter) {
+                    return false;
+                }
 
-        return false;
+                if ($event['d'] != $day) {
+                    return false;
+                }
+
+                if ($event['h'] != $hour) {
+                    return false;
+                }
+
+                return $event['m'] == $minute;
+            },
+            false
+        );
     }
 
     /**
@@ -347,19 +363,15 @@ class ScheduleTime
      */
     public function everyTenMinute(): self
     {
-        $this->timeName = __FUNCTION__;
-        $minute = [];
-        foreach (range(0, 59) as $time) {
-            if ($time % 10 === 0) {
-                $minute[] = [
-                    'd' => date('d', $this->time),
-                    'h' => date('H', $this->time),
-                    'm' => $time,
-                ];
-            }
-        }
-
-        $this->timeExpect = $minute;
+        $this->timeName   = __FUNCTION__;
+        $this->timeExpect = array_map(
+            fn (int $minute): array => [
+                'd' => date('d', $this->time),
+                'h' => date('H', $this->time),
+                'm' => $minute,
+            ],
+            range(0, 59, 10)
+        );
 
         return $this;
     }
@@ -387,15 +399,12 @@ class ScheduleTime
      */
     public function everyTwoHour(): self
     {
-        $this->timeName = __FUNCTION__;
-        $thisDay = date('d', $this->time);
-        $hourly = [];
-        foreach (range(0, 23) as $time) {
-            if ($time % 2 === 0) {
-                $hourly[] = ['d' => $thisDay, 'h' => $time, 'm' => 0];
-            }
-        }
-        $this->timeExpect = $hourly;
+        $this->timeName   = __FUNCTION__;
+        $thisDay          = date('d', $this->time);
+        $this->timeExpect = array_map(
+            fn (int $hour): array => ['d' => $thisDay, 'h' => $hour, 'm' => 0],
+            range(0, 23, 2)
+        );
 
         return $this;
     }

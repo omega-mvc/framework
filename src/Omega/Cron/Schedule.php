@@ -16,6 +16,7 @@ namespace Omega\Cron;
 
 use Closure;
 
+use function array_map;
 use function time;
 
 /**
@@ -91,22 +92,31 @@ class Schedule
      */
     public function execute(): void
     {
-        foreach ($this->pools as $cron) {
-            if (null !== $this->logger) {
-                $cron->setLogger($this->logger);
-            }
+        array_map($this->executeTask(...), $this->pools);
+    }
 
-            if (null !== $this->time) {
-                $cron->setTime($this->time);
-            }
+    /**
+     * Execute a single scheduled task with the configured logger, time and retry policy.
+     *
+     * @param ScheduleTime $cron Task to execute.
+     * @return void
+     */
+    private function executeTask(ScheduleTime $cron): void
+    {
+        if (null !== $this->logger) {
+            $cron->setLogger($this->logger);
+        }
 
-            do {
-                $cron->expect();
-            } while ($cron->retryAttempts() > 0);
+        if (null !== $this->time) {
+            $cron->setTime($this->time);
+        }
 
-            if ($cron->isRetry()) {
-                $cron->expect();
-            }
+        do {
+            $cron->expect();
+        } while ($cron->retryAttempts() > 0);
+
+        if ($cron->isRetry()) {
+            $cron->expect();
         }
     }
 
