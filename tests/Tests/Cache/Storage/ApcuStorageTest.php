@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Cache\Storage;
 
+use ArrayIterator;
 use InvalidArgumentException;
 use Omega\Cache\Exceptions\CacheConfigurationException;
 use Omega\Cache\Storage\ApcuStorage;
@@ -289,9 +290,7 @@ final class ApcuStorageTest extends TestCase
         }
 
         $storage->set('key18', 'value18');
-        $keys = (static function (): iterable {
-            yield 'key18';
-        })();
+        $keys = new ArrayIterator(['key18']);
 
         $this->assertSame(['key18' => 'value18'], $storage->getMultiple($keys));
     }
