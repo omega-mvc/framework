@@ -14,9 +14,13 @@ declare(strict_types=1);
 
 namespace Omega\Http\Upload;
 
+use function array_diff;
+use function array_keys;
+use function array_map;
 use function copy;
 use function file_exists;
 use function in_array;
+use function max;
 use function mkdir;
 use function move_uploaded_file;
 use function uniqid;
@@ -172,47 +176,80 @@ abstract class AbstractUpload
      */
     protected function validate(): bool
     {
-        // check file error
-        foreach ($this->fileError as $error) {
-            $fileError = $error === 4;
-            if ($fileError) {
-                $this->errorMessage = 'no file upload';
-
-                return false;
-            }
-        }
-
-        // check file type (upload_type must set)
-        foreach ($this->fileExtension as $extension) {
-            $extensionError = !in_array($extension, $this->uploadTypes);
-            if ($extensionError) {
-                $this->errorMessage = 'file type not support';
-
-                return false;
-            }
-        }
-
-        // check mime type (upload_mime must set)
-        foreach ($this->fileType as $type) {
-            $mimeError = !in_array($type, $this->uploadMime);
-            if ($mimeError) {
-                $this->errorMessage = 'file type not support';
-
-                return false;
-            }
-        }
-
-        // check file size
-        foreach ($this->fileSize as $size) {
-            $isSizeError = $size > $this->uploadSizeMax;
-            if ($isSizeError) {
-                $this->errorMessage = 'file size too large';
-
-                return false;
-            }
+        if (
+            !$this->validateErrors()
+            || !$this->validateExtensions()
+            || !$this->validateMimes()
+            || !$this->validateSizes()
+        ) {
+            return false;
         }
 
         $this->errorMessage = 'success';
+
+        return true;
+    }
+
+    /**
+     * Check that every uploaded file reported no PHP upload error.
+     *
+     * @return bool True when no upload error is present.
+     */
+    protected function validateErrors(): bool
+    {
+        if (in_array(4, $this->fileError, true)) {
+            $this->errorMessage = 'no file upload';
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check that every file extension is allowed.
+     *
+     * @return bool True when all extensions are allowed.
+     */
+    protected function validateExtensions(): bool
+    {
+        if (array_diff($this->fileExtension, $this->uploadTypes) !== []) {
+            $this->errorMessage = 'file type not support';
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check that every file MIME type is allowed.
+     *
+     * @return bool True when all MIME types are allowed.
+     */
+    protected function validateMimes(): bool
+    {
+        if (array_diff($this->fileType, $this->uploadMime) !== []) {
+            $this->errorMessage = 'file type not support';
+
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Check that no uploaded file exceeds the configured maximum size.
+     *
+     * @return bool True when all files are within the size limit.
+     */
+    protected function validateSizes(): bool
+    {
+        if ($this->fileSize !== [] && max($this->fileSize) > $this->uploadSizeMax) {
+            $this->errorMessage = 'file size too large';
+
+            return false;
+        }
 
         return true;
     }
@@ -230,33 +267,35 @@ abstract class AbstractUpload
     {
         // isset property, enable when data has been validated
         $this->isset = true;
-        $destinations = [];
 
         if (!$this->validate()) {
-            return $destinations;
+            return [];
         }
 
-        if ($this->test) {
-            foreach ($this->fileExtension as $key => $extension) {
-                $suffix        = $this->isMulti ? $key : '';
-                $destination   = $this->uploadLocation . $this->uploadName . $suffix . '.' . $extension;
-                $this->success = copy($this->fileTmp[$key], $destination);
+        return array_map(
+            [$this, 'persistFile'],
+            array_keys($this->fileExtension),
+            $this->fileExtension
+        );
+    }
 
-                $destinations[] = $destination;
-            }
+    /**
+     * Persist a single file and return its destination path.
+     *
+     * @param int|string $key       Key identifying the file in the upload arrays.
+     * @param string     $extension File extension used for the destination path.
+     *
+     * @return string Destination path of the persisted file.
+     */
+    protected function persistFile(int|string $key, string $extension): string
+    {
+        $suffix        = $this->isMulti ? $key : '';
+        $destination   = $this->uploadLocation . $this->uploadName . $suffix . '.' . $extension;
+        $this->success = $this->test
+            ? copy($this->fileTmp[$key], $destination)
+            : move_uploaded_file($this->fileTmp[$key], $destination);
 
-            return $destinations;
-        }
-
-        foreach ($this->fileExtension as $key => $extension) {
-            $suffix        = $this->isMulti ? $key : '';
-            $destination   = $this->uploadLocation . $this->uploadName . $suffix . '.' . $extension;
-            $this->success = move_uploaded_file($this->fileTmp[$key], $destination);
-
-            $destinations[] = $destination;
-        }
-
-        return $destinations;
+        return $destination;
     }
 
     /**

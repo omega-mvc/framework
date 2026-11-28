@@ -36,11 +36,13 @@ use Psr\Container\ContainerExceptionInterface;
 use ReflectionException;
 use Throwable;
 
+use function array_filter;
 use function array_merge;
 use function array_reduce;
+use function array_walk;
+use function gettype;
+use function in_array;
 use function is_array;
-use function is_bool;
-use function is_int;
 use function is_object;
 use function is_string;
 use function method_exists;
@@ -153,12 +155,10 @@ class Http
 
             $dispatcher = $this->dispatcher($request);
 
-            $parameters = [];
-            foreach ($dispatcher['parameters'] as $key => $value) {
-                if (is_string($value) || is_int($value) || is_bool($value)) {
-                    $parameters[$key] = $value;
-                }
-            }
+            $parameters = array_filter(
+                $dispatcher['parameters'],
+                static fn (mixed $value): bool => in_array(gettype($value), ['string', 'integer', 'boolean'], true)
+            );
             $request->with($parameters);
 
             $middleware = array_merge($this->middleware, $dispatcher['middleware']);
@@ -212,12 +212,15 @@ class Http
      */
     public function terminate(Request $request, Response $response): void
     {
-        $middleware = $this->dispatcherMiddleware($request) ?? [];
-        foreach (array_merge($this->middleware, $middleware) as $middleware) {
-            if (method_exists($middleware, 'terminate')) {
-                $this->app->call([$middleware, 'terminate'], ['request' => $request, 'response' => $response]);
+        $stack = array_merge($this->middleware, $this->dispatcherMiddleware($request) ?? []);
+        array_walk(
+            $stack,
+            function (mixed $item) use ($request, $response): void {
+                if (method_exists($item, 'terminate')) {
+                    $this->app->call([$item, 'terminate'], ['request' => $request, 'response' => $response]);
+                }
             }
-        }
+        );
 
         $this->app->terminate();
 
@@ -243,11 +246,12 @@ class Http
     {
         $this->middlewareUsed = [];
 
-        if ($this->app->resolved(DatabaseManager::class)) {
-            $manager = $this->app->get(DatabaseManager::class);
-            if ($manager instanceof DatabaseManager) {
-                $manager->resetConnectionsForRequest();
-            }
+        $manager = $this->app->resolved(DatabaseManager::class)
+            ? $this->app->get(DatabaseManager::class)
+            : null;
+
+        if ($manager instanceof DatabaseManager) {
+            $manager->resetConnectionsForRequest();
         }
 
         if (method_exists($this->app, 'resetForRequest')) {

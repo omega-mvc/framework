@@ -111,4 +111,104 @@ final class HeaderCollectionTest extends TestCase
         $this->assertTrue($header->hasDirective('Cache-Control', 's-maxage'));
         $this->assertFalse($header->hasDirective('Cache-Control', 'private'));
     }
+
+    public function testGetDirectiveHandlesMissingAndNonStringHeaders(): void
+    {
+        $header = new HeaderCollection([
+            'X' => 'public',
+        ]);
+
+        $this->assertSame([], $header->getDirective('Missing'));
+
+        $header->set('Broken', 123);
+        $this->assertSame([], $header->getDirective('Broken'));
+    }
+
+    public function testGetDirectiveHandlesEmptyAndSingleDirectives(): void
+    {
+        $header = new HeaderCollection([
+            'X' => '',
+        ]);
+        $this->assertSame([''], $header->getDirective('X'));
+
+        $header = new HeaderCollection([
+            'X' => 'public',
+        ]);
+        $this->assertSame(['public'], $header->getDirective('X'));
+
+        $header = new HeaderCollection([
+            'X' => 'max-age=10',
+        ]);
+        $this->assertSame(['max-age' => '10'], $header->getDirective('X'));
+    }
+
+    public function testGetDirectiveKeepsUnterminatedQuotedValue(): void
+    {
+        $header = new HeaderCollection([
+            'X' => 'no-cache="unterminated',
+        ]);
+
+        $this->assertSame(['no-cache' => '"unterminated'], $header->getDirective('X'));
+    }
+
+    public function testAddDirectiveQuotesArrayValues(): void
+    {
+        $header = new HeaderCollection([]);
+        $header->addDirective('Cache-Control', [
+            'no-cache' => ['http://a.test', 'http://b.test'],
+        ]);
+
+        $this->assertSame('no-cache="http://a.test, http://b.test"', $header->get('Cache-Control'));
+        $this->assertSame([
+            'no-cache' => ['http://a.test', 'http://b.test'],
+        ], $header->getDirective('Cache-Control'));
+    }
+
+    public function testAddDirectiveAppendsNumericKeysAndAcceptsEmptyInput(): void
+    {
+        $header = new HeaderCollection([
+            'X' => 'public',
+        ]);
+        $header->addDirective('X', ['private']);
+        $this->assertSame('public, private', $header->get('X'));
+
+        $header->addDirective('X', []);
+        $this->assertSame('public, private', $header->get('X'));
+    }
+
+    public function testRemoveDirectiveMatchesKeysValuesAndMissingHeader(): void
+    {
+        $header = new HeaderCollection([
+            'X' => 'max-age=10',
+        ]);
+        $header->removeDirective('X', 'max-age');
+        $this->assertSame('', $header->get('X'));
+
+        $header = new HeaderCollection([
+            'X' => 'public',
+        ]);
+        $header->removeDirective('X', 'public');
+        $this->assertSame('', $header->get('X'));
+
+        $header = new HeaderCollection([
+            'X' => 'public',
+        ]);
+        $header->removeDirective('X', 'private');
+        $this->assertSame('public', $header->get('X'));
+
+        $header->removeDirective('Missing', 'public');
+        $this->assertSame('', $header->get('Missing'));
+    }
+
+    public function testHasDirectiveChecksKeysValuesAndEmptyHeaders(): void
+    {
+        $header = new HeaderCollection([
+            'X' => 'max-age=10, public',
+        ]);
+
+        $this->assertTrue($header->hasDirective('X', 'max-age'));
+        $this->assertTrue($header->hasDirective('X', 'public'));
+        $this->assertFalse($header->hasDirective('X', 'private'));
+        $this->assertFalse($header->hasDirective('Missing', 'public'));
+    }
 }

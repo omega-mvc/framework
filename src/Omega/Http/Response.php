@@ -20,12 +20,14 @@ namespace Omega\Http;
 use Exception;
 
 use function array_merge;
+use function array_walk;
 use function count;
 use function fastcgi_finish_request;
 use function flush;
 use function function_exists;
 use function header;
 use function header_remove;
+use function headers_sent;
 use function in_array;
 use function is_array;
 use function is_numeric;
@@ -163,7 +165,7 @@ class Response
      */
     private function sendHeaders(): void
     {
-        if (headers_sent()) {
+        if ($this->headersSent()) {
             return;
         }
 
@@ -181,14 +183,34 @@ class Response
         // header
         $this->headers->set('Content-Type', $this->contentType);
         // add custom header
-        foreach ($this->headers as $key => $header) {
-            header($key . ':' . $header);
-        }
+        $headers = $this->headers->toArray();
+        array_walk($headers, [$this, 'sendHeader']);
 
         // remove header
-        foreach ($this->removeHeaders as $header) {
-            header_remove($header);
-        }
+        array_map([$this, 'removeHeaderByName'], $this->removeHeaders);
+    }
+
+    /**
+     * Send a single header line.
+     *
+     * @param string     $value Header value.
+     * @param int|string $key   Header name.
+     * @return void
+     */
+    private function sendHeader(string $value, int|string $key): void
+    {
+        header($key . ':' . $value);
+    }
+
+    /**
+     * Remove a single header before the response is sent.
+     *
+     * @param string $header Name of the header to remove.
+     * @return void
+     */
+    private function removeHeaderByName(string $header): void
+    {
+        header_remove($header);
     }
 
     /**
@@ -212,25 +234,13 @@ class Response
      */
     public static function closeOutputBuffers(int $targetLevel, bool $flush): void
     {
+        /** @var array<int, array{flags: int}> $status */
         $status = ob_get_status(true);
         $level  = count($status);
         $flags  = PHP_OUTPUT_HANDLER_REMOVABLE | ($flush ? PHP_OUTPUT_HANDLER_FLUSHABLE : PHP_OUTPUT_HANDLER_CLEANABLE);
 
         while ($level-- > $targetLevel) {
-            $s = $status[$level] ?? null;
-
-            if (!is_array($s)) {
-                break;
-            }
-
-            $del   = $s['del'] ?? null;
-            $sflags = $s['flags'] ?? null;
-
-            $matches = $del !== null
-                ? $del === true
-                : $sflags === null || (is_int($sflags) && ($sflags & $flags) === $flags);
-
-            if (!$matches) {
+            if (($status[$level]['flags'] & $flags) !== $flags) {
                 break;
             }
 
@@ -266,7 +276,7 @@ class Response
             return $this;
         }
 
-        if (!in_array(PHP_SAPI, ['cli', 'phpdbg'], true)) {
+        if (!$this->isCommandLine()) {
             static::closeOutputBuffers(0, true);
             flush();
 
@@ -359,7 +369,7 @@ class Response
      */
     public function close(): void
     {
-        exit;
+        exit; // @codeCoverageIgnore
     }
 
     /**
@@ -391,7 +401,7 @@ class Response
     /**
      * Replace the current set of headers with a new collection.
      *
-     * @param array<string, string> $headers Associative array of headers to set (name => value).
+     * @param array<array-key, string> $headers Associative array of headers to set (name => value).
      * @return self Returns the current instance for method chaining.
      * @throws Exception Throws if an invalid header is encountered.
      * @todo Deprecated: use the headers property directly instead of this method.
@@ -565,6 +575,26 @@ class Response
     }
 
     /**
+     * Whether HTTP headers have already been sent.
+     *
+     * @return bool True when the headers were already sent.
+     */
+    protected function headersSent(): bool
+    {
+        return headers_sent();
+    }
+
+    /**
+     * Whether the current SAPI is a command line interface.
+     *
+     * @return bool True for CLI and PHPDBG, false otherwise.
+     */
+    protected function isCommandLine(): bool
+    {
+        return in_array(PHP_SAPI, ['cli', 'phpdbg'], true);
+    }
+
+    /**
      * Follow headers from a request and apply them to this response.
      *
      * @param Request            $request    The HTTP request to follow headers from.
@@ -578,13 +608,24 @@ class Response
             'content-type',
         ]);
 
-        foreach ($followRule as $rule) {
-            if ($request->hasHeader($rule)) {
-                $this->headers->set($rule, $request->getHeaders($rule));
-            }
-        }
+        array_walk($followRule, [$this, 'followHeader'], $request);
 
         return $this;
+    }
+
+    /**
+     * Copy a single request header into this response when present.
+     *
+     * @param string  $rule    Name of the header to follow.
+     * @param int     $index   Position of the header in the follow rule list.
+     * @param Request $request Request that provides the header value.
+     * @return void
+     */
+    private function followHeader(string $rule, int $index, Request $request): void
+    {
+        if ($request->hasHeader($rule)) {
+            $this->headers->set($rule, $request->getHeaders($rule));
+        }
     }
 
     /**

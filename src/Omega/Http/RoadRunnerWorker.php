@@ -122,21 +122,53 @@ class RoadRunnerWorker
                 break;
             }
 
-            $omegaRequest  = null;
-            $omegaResponse = null;
-
-            try {
-                $omegaRequest  = $this->makeRequest($request);
-                $omegaResponse = $this->http->handle($omegaRequest);
-                $responder->respond($this->toPsr7($omegaResponse));
-            } catch (Throwable $th) {
-                $responder->respond($this->errorResponse($th));
-            } finally {
-                if ($omegaRequest !== null && $omegaResponse !== null) {
-                    $this->http->terminate($omegaRequest, $omegaResponse);
-                }
-            }
+            $this->handleRequest($responder, $request);
         }
+    }
+
+    /**
+     * Handle a single incoming request and perform the per-request reset.
+     *
+     * @param RoadRunnerResponderInterface $responder The RoadRunner PSR-7 worker.
+     * @param ServerRequestInterface       $request   The PSR-7 server request.
+     * @return void
+     */
+    protected function handleRequest(
+        RoadRunnerResponderInterface $responder,
+        ServerRequestInterface $request
+    ): void {
+        $omegaRequest  = null;
+        $omegaResponse = null;
+
+        try {
+            $omegaRequest  = $this->makeRequest($request);
+            $omegaResponse = $this->http->handle($omegaRequest);
+            $responder->respond($this->toPsr7($omegaResponse));
+        } catch (Throwable $th) {
+            $responder->respond($this->errorResponse($th));
+        }
+
+        $this->terminateRequest($omegaRequest, $omegaResponse);
+    }
+
+    /**
+     * Perform the per-request reset when both request and response are available.
+     *
+     * @param Request|null  $request  The Omega request, if it was created.
+     * @param Response|null $response The Omega response, if it was produced.
+     * @return void
+     */
+    protected function terminateRequest(?Request $request, ?Response $response): void
+    {
+        if ($request === null) {
+            return;
+        }
+
+        if ($response === null) {
+            return;
+        }
+
+        $this->http->terminate($request, $response);
     }
 
     /**

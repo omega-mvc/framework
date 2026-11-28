@@ -20,11 +20,21 @@ use Exception;
 use Omega\Collection\Collection;
 use Omega\Text\Str;
 
+use function array_diff_key;
+use function array_filter;
+use function array_flip;
+use function array_key_exists;
+use function array_keys;
 use function array_map;
+use function array_merge;
+use function array_reduce;
+use function array_replace;
 use function explode;
 use function implode;
+use function in_array;
 use function is_array;
 use function is_int;
+use function is_string;
 use function preg_split;
 use function rtrim;
 use function str_contains;
@@ -132,13 +142,8 @@ class HeaderCollection extends Collection
     public function addDirective(string $header, array $value): self
     {
         $items = $this->parseDirective($header);
-        foreach ($value as $key => $newItem) {
-            if (is_int($key)) {
-                $items[] = $newItem;
-                continue;
-            }
-            $items[$key] = $newItem;
-        }
+        $items = array_replace($items, array_filter($value, 'is_string', ARRAY_FILTER_USE_KEY));
+        $items = array_merge($items, array_filter($value, 'is_int', ARRAY_FILTER_USE_KEY));
 
         return $this->set($header, $this->encodeToString($items));
     }
@@ -155,17 +160,9 @@ class HeaderCollection extends Collection
      */
     public function removeDirective(string $header, string $item): self
     {
-        $items     = $this->parseDirective($header);
-        $newItems  = [];
-        foreach ($items as $key => $value) {
-            if ($key === $item) {
-                continue;
-            }
-            if ($value === $item) {
-                continue;
-            }
-            $newItems[$key] = $value;
-        }
+        $items    = $this->parseDirective($header);
+        $newItems = array_diff_key($items, [$item => true]);
+        $newItems = array_diff_key($newItems, array_flip(array_keys($newItems, $item, true)));
 
         return $this->set($header, $this->encodeToString($newItems));
     }
@@ -183,16 +180,12 @@ class HeaderCollection extends Collection
     public function hasDirective(string $header, string $item): bool
     {
         $items = $this->parseDirective($header);
-        foreach ($items as $key => $value) {
-            if ($key === $item) {
-                return true;
-            }
-            if ($value === $item) {
-                return true;
-            }
+
+        if (array_key_exists($item, $items)) {
+            return true;
         }
 
-        return false;
+        return in_array($item, $items, true);
     }
 
     /**
@@ -216,30 +209,51 @@ class HeaderCollection extends Collection
             return [];
         }
 
-        $pattern      = '/,\s*(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/';
-        $headerItem   = preg_split($pattern, $header);
+        $pattern = '/,\s*(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/';
 
-        if (false === $headerItem) {
-            return [];
-        }
+        /** @var list<string> $parts */
+        $parts = preg_split($pattern, $header);
 
-        $result = [];
-        foreach ($headerItem as $item) {
-            if (str_contains($item, '=')) {
-                $parts = explode('=', $item, 2);
-                $key   = trim($parts[0]);
-                $value = trim($parts[1]);
-                if (str_starts_with($value, '"') && str_ends_with($value, '"')) {
-                    $value = substr($value, 1, -1);
-                    $value = array_map('trim', explode(', ', $value));
-                }
-                $result[$key] = $value;
-                continue;
-            }
+        return array_reduce($parts, [$this, 'appendDirective'], []);
+    }
+
+    /**
+     * Append a single directive item to the parsed result.
+     *
+     * @param array<string|int, string|string[]> $result Parsed directives so far.
+     * @param string                             $item   Raw directive item.
+     * @return array<string|int, string|string[]> Updated directives.
+     */
+    private function appendDirective(array $result, string $item): array
+    {
+        if (!str_contains($item, '=')) {
             $result[] = $item;
+
+            return $result;
         }
+
+        [$name, $value] = explode('=', $item, 2);
+        $result[trim($name)] = $this->directiveValue(trim($value));
 
         return $result;
+    }
+
+    /**
+     * Normalize a directive value, expanding quoted lists when present.
+     *
+     * @param string $value Raw directive value.
+     * @return string|array<string> Normalized value.
+     */
+    private function directiveValue(string $value): string|array
+    {
+        if (!str_starts_with($value, '"')) {
+            return $value;
+        }
+        if (!str_ends_with($value, '"')) {
+            return $value;
+        }
+
+        return array_map('trim', explode(', ', substr($value, 1, -1)));
     }
 
     /**
@@ -253,21 +267,41 @@ class HeaderCollection extends Collection
      */
     private function encodeToString(array $data): string
     {
-        $encodedString = '';
+        $encoded = array_map([$this, 'encodeDirective'], array_keys($data), $data);
 
-        foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                $value = '"' . implode(', ', $value) . '"';
-            }
+        return rtrim(implode(', ', $encoded) . ', ', ', ');
+    }
 
-            if (is_int($key)) {
-                $encodedString .= $value . ', ';
-                continue;
-            }
+    /**
+     * Encode a single directive entry.
+     *
+     * @param int|string      $key   Directive key.
+     * @param string|string[] $value Directive value.
+     * @return string Encoded directive entry.
+     */
+    private function encodeDirective(int|string $key, string|array $value): string
+    {
+        $value = $this->encodeValue($value);
 
-            $encodedString .= $key . '=' . $value . ', ';
+        if (is_int($key)) {
+            return $value;
         }
 
-        return rtrim($encodedString, ', ');
+        return $key . '=' . $value;
+    }
+
+    /**
+     * Encode a directive value, quoting array values.
+     *
+     * @param string|string[] $value Directive value.
+     * @return string Encoded value.
+     */
+    private function encodeValue(string|array $value): string
+    {
+        if (is_array($value)) {
+            return '"' . implode(', ', $value) . '"';
+        }
+
+        return $value;
     }
 }

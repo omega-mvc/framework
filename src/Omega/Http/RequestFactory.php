@@ -18,7 +18,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
 use function apache_request_headers;
+use function array_change_key_case;
 use function array_filter;
+use function array_keys;
+use function array_map;
+use function array_reduce;
 use function array_values;
 use function base64_encode;
 use function file_get_contents;
@@ -30,10 +34,12 @@ use function is_scalar;
 use function is_string;
 use function preg_match;
 use function strncmp;
-use function strtolower;
 use function strtr;
+use function strval;
 use function substr;
 use function trim;
+
+use const ARRAY_FILTER_USE_KEY;
 
 /**
  * Class RequestFactory
@@ -76,12 +82,11 @@ class RequestFactory
      */
     public static function fromPsr7ServerRequest(ServerRequestInterface $psr7): Request
     {
-        $factory = new self();
+        $factory     = new self();
+        $psr7Headers = $psr7->getHeaders();
 
-        $headers = [];
-        foreach ($psr7->getHeaders() as $name => $values) {
-            $headers[strtolower($name)] = implode(', ', $values);
-        }
+        /** @var array<string, string> $headers */
+        $headers = array_change_key_case(array_map([$factory, 'implodeHeaderValues'], $psr7Headers));
 
         $uri     = $psr7->getUri();
         $method  = $psr7->getMethod() ?: 'GET';
@@ -106,6 +111,17 @@ class RequestFactory
             is_string($remote) ? $remote : '::1',
             (string) $psr7->getBody()
         );
+    }
+
+    /**
+     * Join the values of one PSR-7 header into a single comma separated value.
+     *
+     * @param array<string> $values Header values.
+     * @return string The joined header value.
+     */
+    private function implodeHeaderValues(array $values): string
+    {
+        return implode(', ', $values);
     }
 
     /**
@@ -143,39 +159,75 @@ class RequestFactory
             return $this->lowercaseKeys(apache_request_headers());
         }
 
-        $headers = [];
-        foreach ($_SERVER as $key => $value) {
-            if (!is_string($value)) {
-                continue;
-            }
+        $headers = array_reduce(array_keys($_SERVER), [$this, 'collectServerHeader'], []);
 
-            if (strncmp($key, 'HTTP_', 5) === 0) {
-                $key = substr($key, 5);
-            } elseif (strncmp($key, 'CONTENT_', 8)) {
-                continue;
-            }
+        return $this->lowercaseKeys($this->resolveAuthorization($headers));
+    }
 
-            $headers[strtr($key, '_', '-')] = $value;
+    /**
+     * Collect one header from the `$_SERVER` superglobal.
+     *
+     * @param array<string, string> $headers Headers collected so far.
+     * @param int|string $key The `$_SERVER` key to inspect.
+     * @return array<string, string> The headers with the collected entry added, if valid.
+     */
+    private function collectServerHeader(array $headers, int|string $key): array
+    {
+        $value = $_SERVER[$key] ?? null;
+
+        if (!is_string($value)) {
+            return $headers;
         }
 
-        if (!isset($headers['Authorization'])) {
-            $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+        $name = (string) $key;
 
-            if (is_string($authorization)) {
-                $headers['Authorization'] = $authorization;
-            } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
-                $user = $_SERVER['PHP_AUTH_USER'];
-                $pass = $_SERVER['PHP_AUTH_PW'] ?? '';
-
-                if (is_string($user) && is_string($pass)) {
-                    $headers['Authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
-                }
-            } elseif (isset($_SERVER['PHP_AUTH_DIGEST']) && is_string($_SERVER['PHP_AUTH_DIGEST'])) {
-                $headers['Authorization'] = $_SERVER['PHP_AUTH_DIGEST'];
-            }
+        if (strncmp($name, 'HTTP_', 5) === 0) {
+            $name = substr($name, 5);
+        } elseif (strncmp($name, 'CONTENT_', 8)) {
+            return $headers;
         }
 
-        return $this->lowercaseKeys($headers);
+        $headers[strtr($name, '_', '-')] = $value;
+
+        return $headers;
+    }
+
+    /**
+     * Add the Authorization header from the available server credentials.
+     *
+     * @param array<string, string> $headers Headers collected from `$_SERVER`.
+     * @return array<string, string> The headers with the Authorization fallback applied.
+     */
+    private function resolveAuthorization(array $headers): array
+    {
+        if (isset($headers['Authorization'])) {
+            return $headers;
+        }
+
+        $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null;
+
+        if (is_string($authorization)) {
+            $headers['Authorization'] = $authorization;
+
+            return $headers;
+        }
+
+        if (isset($_SERVER['PHP_AUTH_USER'])) {
+            $user = $_SERVER['PHP_AUTH_USER'];
+            $pass = $_SERVER['PHP_AUTH_PW'] ?? '';
+
+            if (is_string($user) && is_string($pass)) {
+                $headers['Authorization'] = 'Basic ' . base64_encode($user . ':' . $pass);
+            }
+
+            return $headers;
+        }
+
+        if (isset($_SERVER['PHP_AUTH_DIGEST']) && is_string($_SERVER['PHP_AUTH_DIGEST'])) {
+            $headers['Authorization'] = $_SERVER['PHP_AUTH_DIGEST'];
+        }
+
+        return $headers;
     }
 
     /**
@@ -186,15 +238,9 @@ class RequestFactory
      */
     private function lowercaseKeys(array $headers): array
     {
-        $lowercased = [];
+        $filtered = array_filter($headers, 'is_string');
 
-        foreach ($headers as $key => $value) {
-            if (is_string($key) && is_string($value)) {
-                $lowercased[strtolower($key)] = $value;
-            }
-        }
-
-        return $lowercased;
+        return array_change_key_case(array_filter($filtered, 'is_string', ARRAY_FILTER_USE_KEY));
     }
 
     /**
@@ -243,15 +289,9 @@ class RequestFactory
      */
     private function normalizeToStringArray(?array $input): array
     {
-        $normalized = [];
+        $values = array_filter($input ?? [], 'is_scalar');
 
-        foreach ($input ?? [] as $key => $value) {
-            if (is_string($key) && is_scalar($value)) {
-                $normalized[$key] = (string) $value;
-            }
-        }
-
-        return $normalized;
+        return array_map('strval', array_filter($values, 'is_string', ARRAY_FILTER_USE_KEY));
     }
 
     /**
@@ -263,17 +303,9 @@ class RequestFactory
      */
     private function normalizeGlobalFiles(?array $files): array
     {
-        $normalized = [];
+        $entries = array_filter($files ?? [], 'is_array');
 
-        foreach ($files ?? [] as $key => $value) {
-            if (!is_string($key) || !is_array($value)) {
-                continue;
-            }
-
-            $normalized[$key] = $this->normalizeFileEntry($value);
-        }
-
-        return $normalized;
+        return array_map([$this, 'normalizeFileEntry'], array_filter($entries, 'is_string', ARRAY_FILTER_USE_KEY));
     }
 
     /**
@@ -343,66 +375,78 @@ class RequestFactory
      */
     private function normalizeFiles(array $files): array
     {
-        $normalized = [];
+        $normalized = array_map([$this, 'normalizeFileValue'], $files);
+        $normalized = array_filter($normalized, 'is_array');
 
-        foreach ($files as $key => $value) {
-            if (!is_string($key)) {
-                continue;
-            }
+        return array_filter($normalized, 'is_string', ARRAY_FILTER_USE_KEY);
+    }
 
-            if ($value instanceof UploadedFileInterface) {
-                $uri = $value->getStream()->getMetadata('uri');
+    /**
+     * Normalize a single PSR-7 uploaded file entry.
+     *
+     * @return array<string, string|int|array<int, string>|array<int, int>>|null
+     *         The normalized entry, or null when the value is not an uploaded file.
+     */
+    private function normalizeFileValue(mixed $value): ?array
+    {
+        if ($value instanceof UploadedFileInterface) {
+            $uri = $value->getStream()->getMetadata('uri');
 
-                $normalized[$key] = [
-                    'name'     => $value->getClientFilename() ?? '',
-                    'type'     => $value->getClientMediaType() ?? '',
-                    'tmp_name' => is_string($uri) ? $uri : '',
-                    'error'    => $value->getError(),
-                    'size'     => $value->getSize() ?? 0,
-                ];
-            } elseif (is_array($value)) {
-                $normalized[$key] = $this->normalizeFileList($value);
-            }
+            return [
+                'name'     => $value->getClientFilename() ?? '',
+                'type'     => $value->getClientMediaType() ?? '',
+                'tmp_name' => is_string($uri) ? $uri : '',
+                'error'    => $value->getError(),
+                'size'     => $value->getSize() ?? 0,
+            ];
         }
 
-        return $normalized;
+        if (is_array($value)) {
+            return $this->normalizeFileList($value);
+        }
+
+        return null;
     }
 
     /**
      * Convert a list of PSR-7 uploaded files into a single multi-file entry.
      *
      * @param array<mixed, mixed> $files List or map of uploaded files.
-     * @return array<string, string|int|array<int, string>|array<int, int>>
+     * @return array<string, array<int, string|int>>
      *         A normalized multi-file entry.
      */
     private function normalizeFileList(array $files): array
     {
-        $names    = [];
-        $types    = [];
-        $tmpNames = [];
-        $errors   = [];
-        $sizes    = [];
+        return array_reduce($files, [$this, 'appendUploadedFile'], [
+            'name'     => [],
+            'type'     => [],
+            'tmp_name' => [],
+            'error'    => [],
+            'size'     => [],
+        ]);
+    }
 
-        foreach ($files as $file) {
-            if (!$file instanceof UploadedFileInterface) {
-                continue;
-            }
-
-            $uri = $file->getStream()->getMetadata('uri');
-
-            $names[]    = $file->getClientFilename() ?? '';
-            $types[]    = $file->getClientMediaType() ?? '';
-            $tmpNames[] = is_string($uri) ? $uri : '';
-            $errors[]   = $file->getError();
-            $sizes[]    = $file->getSize() ?? 0;
+    /**
+     * Append one uploaded file to a multi-file accumulator.
+     *
+     * @param array<string, array<int, string|int>> $carry Accumulated fields.
+     * @param mixed $file A possible uploaded file.
+     * @return array<string, array<int, string|int>> The updated accumulator.
+     */
+    private function appendUploadedFile(array $carry, mixed $file): array
+    {
+        if (!$file instanceof UploadedFileInterface) {
+            return $carry;
         }
 
-        return [
-            'name'     => $names,
-            'type'     => $types,
-            'tmp_name' => $tmpNames,
-            'error'    => $errors,
-            'size'     => $sizes,
-        ];
+        $uri = $file->getStream()->getMetadata('uri');
+
+        $carry['name'][]     = $file->getClientFilename() ?? '';
+        $carry['type'][]     = $file->getClientMediaType() ?? '';
+        $carry['tmp_name'][] = is_string($uri) ? $uri : '';
+        $carry['error'][]    = $file->getError();
+        $carry['size'][]     = $file->getSize() ?? 0;
+
+        return $carry;
     }
 }

@@ -21,6 +21,7 @@ final class MacroServiceProviderTest extends TestCase
         $provider = new MacroServiceProvider(new Application(''));
 
         $provider->register();
+        $provider->boot();
 
         $this->assertTrue(Request::hasMacro('validate'));
         $this->assertTrue(Request::hasMacro('upload'));
@@ -30,6 +31,7 @@ final class MacroServiceProviderTest extends TestCase
     {
         $provider = new MacroServiceProvider(new Application(''));
         $provider->register();
+        $provider->boot();
 
         $mockFiles = [
             'avatar' => [

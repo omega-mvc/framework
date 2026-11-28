@@ -19,13 +19,12 @@ use Omega\Http\Exceptions\FileNotUploadedException;
 use Omega\Http\Exceptions\FolderNotExistsException;
 
 use function array_filter;
+use function array_map;
 use function array_values;
 use function explode;
 use function file_get_contents;
-use function is_array;
+use function implode;
 use function is_dir;
-use function is_int;
-use function is_string;
 use function strtolower;
 use function urlencode;
 
@@ -64,52 +63,101 @@ final class UploadMultiFile extends AbstractUpload
     {
         parent::__construct($files);
 
-        $name    = $files['name'];
-        $type    = $files['type'];
-        $tmpName = $files['tmp_name'];
-        $error   = $files['error'];
-        $size    = $files['size'];
+        $values = [$files['name'], $files['type'], $files['tmp_name'], $files['error'], $files['size']];
+        $shape  = implode('', array_map('gettype', $values));
 
-        if (is_array($name) && is_array($type) && is_array($tmpName) && is_array($error) && is_array($size)) {
-            $this->fileName  = array_values(array_filter($name, 'is_string'));
-            $this->fileType  = array_values(array_filter($type, 'is_string'));
-            $this->fileTmp   = array_values(array_filter($tmpName, 'is_string'));
-            $this->fileError = array_values(array_filter($error, 'is_int'));
-            $this->fileSize  = array_values(array_filter($size, 'is_int'));
-            // parse file extension
-            foreach ($name as $nameValue) {
-                if (!is_string($nameValue)) {
-                    continue;
-                }
-
-                $extension             = explode('.', $nameValue);
-                $this->fileExtension[] = strtolower(end($extension));
-            }
-        } elseif (
-            is_string($name)
-            && is_string($type)
-            && is_string($tmpName)
-            && is_int($error)
-            && is_int($size)
-        ) {
-            $this->fileName[]  = $name;
-            $this->fileType[]  = $type;
-            $this->fileTmp[]   = $tmpName;
-            $this->fileError[] = $error;
-            $this->fileSize[]  = $size;
-            // parse files extension
-            $extension             = explode('.', $name);
-            $this->fileExtension[] = strtolower(end($extension));
-        } else {
-            $this->fileName       = [];
-            $this->fileType       = [];
-            $this->fileTmp        = [];
-            $this->fileError      = [];
-            $this->fileSize       = [];
-            $this->fileExtension  = [];
-        }
+        match ($shape) {
+            'arrayarrayarrayarrayarray'        => $this->normalizeMultiFiles($files),
+            'stringstringstringintegerinteger' => $this->normalizeSingleFile($files),
+            default                            => $this->resetFiles(),
+        };
 
         $this->isMulti = true;
+    }
+
+    /**
+     * Normalize a multi-file `$_FILES` structure.
+     *
+     * @param array<string, string|int|array<int, string>|array<int, int>> $files Entry from $_FILES.
+     * @return void
+     */
+    private function normalizeMultiFiles(array $files): void
+    {
+        /** @var array<int, string> $names */
+        $names = $files['name'];
+        /** @var array<int, string> $types */
+        $types = $files['type'];
+        /** @var array<int, string> $tmpNames */
+        $tmpNames = $files['tmp_name'];
+        /** @var array<int, int> $errors */
+        $errors = $files['error'];
+        /** @var array<int, int> $sizes */
+        $sizes = $files['size'];
+
+        $this->fileName  = array_values(array_filter($names, 'is_string'));
+        $this->fileType  = array_values(array_filter($types, 'is_string'));
+        $this->fileTmp   = array_values(array_filter($tmpNames, 'is_string'));
+        $this->fileError = array_values(array_filter($errors, 'is_int'));
+        $this->fileSize  = array_values(array_filter($sizes, 'is_int'));
+        $this->fileExtension = array_values(array_map(
+            [$this, 'extensionOf'],
+            array_filter($names, 'is_string')
+        ));
+    }
+
+    /**
+     * Normalize a single-file `$_FILES` structure as a one-item multi upload.
+     *
+     * @param array<string, string|int|array<int, string>|array<int, int>> $files Entry from $_FILES.
+     * @return void
+     */
+    private function normalizeSingleFile(array $files): void
+    {
+        /** @var string $name */
+        $name = $files['name'];
+        /** @var string $type */
+        $type = $files['type'];
+        /** @var string $tmpName */
+        $tmpName = $files['tmp_name'];
+        /** @var int $error */
+        $error = $files['error'];
+        /** @var int $size */
+        $size = $files['size'];
+
+        $this->fileName      = [$name];
+        $this->fileType      = [$type];
+        $this->fileTmp       = [$tmpName];
+        $this->fileError     = [$error];
+        $this->fileSize      = [$size];
+        $this->fileExtension = [$this->extensionOf($name)];
+    }
+
+    /**
+     * Reset all normalized file collections to an empty upload.
+     *
+     * @return void
+     */
+    private function resetFiles(): void
+    {
+        $this->fileName      = [];
+        $this->fileType      = [];
+        $this->fileTmp       = [];
+        $this->fileError     = [];
+        $this->fileSize      = [];
+        $this->fileExtension = [];
+    }
+
+    /**
+     * Extract and normalize the extension from a file name.
+     *
+     * @param string $name File name, possibly containing a path.
+     * @return string Lowercase extension.
+     */
+    private function extensionOf(string $name): string
+    {
+        $extension = explode('.', $name);
+
+        return strtolower(end($extension));
     }
 
     /**
